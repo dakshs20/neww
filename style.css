@@ -3,6 +3,8 @@
 /* Ensure html and body take full height for consistent layout */
 html, body {
     height: 100%;
+    /* Prevent horizontal scroll on mobile due to animations/overflow */
+    overflow-x: hidden;
 }
 
 /* Font Definitions */
@@ -218,104 +220,173 @@ body {
     }
 }
 
-/* Verse Page Specific Styles */
-#verse-page-element { /* Renamed from #chat-page-element */
-    display: flex; /* Flex container for chat layout */
-    flex-direction: column; /* Stack chat input and messages vertically */
-    height: 100%; /* Take full height of its parent */
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
 }
 
-#verse-messages-container { /* Renamed from #chat-messages */
-    flex-grow: 1; /* Allow messages to take available space */
-    overflow-y: auto; /* Enable scrolling for messages */
-    padding: 1rem;
-    border-radius: 0.75rem; /* rounded-xl */
-    background-color: rgba(31, 41, 55, 0.7); /* bg-gray-800/70 */
-    margin-bottom: 1rem;
-    display: flex;
-    flex-direction: column; /* Ensure messages stack top-down */
-    gap: 0.75rem; /* space-y-3 */
-    /* Removed fixed max-height to rely on flex-grow within h-[80vh] parent */
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #374151; /* Tailwind gray-700 */
+    border-radius: 10px;
 }
 
-.chat-bubble {
-    max-width: 80%; /* Limit bubble width */
-    padding: 0.75rem 1rem; /* p-3 px-4 */
-    border-radius: 1.25rem; /* rounded-2xl */
-    word-wrap: break-word; /* Ensure long words break */
-    white-space: pre-wrap; /* Preserve whitespace and line breaks */
-    /* font-size removed, now handled by Tailwind classes in HTML */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #60a5fa; /* Tailwind blue-400 */
+    border-radius: 10px;
 }
 
-.chat-bubble.user {
-    align-self: flex-end; /* User messages on the right */
-    background-color: #3b82f6; /* bg-blue-500 */
-    color: white;
-    border-bottom-right-radius: 0.5rem; /* rounded-br-lg */
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6; /* Tailwind blue-500 */
 }
 
-.chat-bubble.ai {
-    align-self: flex-start; /* AI messages on the left */
-    background-color: #6b7280; /* bg-gray-600 */
-    color: white;
-    border-bottom-left-radius: 0.5rem; /* rounded-bl-lg */
-    /* font-size removed, now handled by Tailwind classes in HTML */
+/* Custom radio button styles */
+input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #6b7280;
+    background-color: #4b5563;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease-in-out;
 }
 
-/* Verse Input Area */
-#verse-input-form { /* Renamed from #chat-input-form */
-    display: flex;
-    gap: 0.5rem; /* space-x-2 */
-    margin-top: auto; /* Push to bottom */
-    width: 100%;
+input[type="radio"]:checked {
+    border-color: #3b82f6;
+    background-color: #3b82f6;
 }
 
-#verse-input { /* Renamed from #chat-input */
-    flex-grow: 1;
-    padding: 0.75rem 1rem; /* p-3 px-4 */
-    border-radius: 0.75rem; /* rounded-xl */
-    border: 1px solid #4b5563; /* border-gray-600 */
-    background-color: #374151; /* bg-gray-700 */
-    color: white;
-    font-size: 0.95rem;
-    resize: none; /* Disable manual resize */
-    height: 3rem; /* Fixed height, will expand with JS */
-    min-height: 3rem;
-    overflow-y: hidden; /* Hide scrollbar initially */
+input[type="radio"]:checked::before {
+    content: '';
+    display: block;
+    width: 10px;
+    height: 10px;
+    background-color: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.2s ease-in-out;
 }
 
-#verse-input:focus { /* Renamed from #chat-input:focus */
+input[type="radio"]:hover {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.5);
+}
+
+/* Custom select dropdown styles */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%239CA3AF" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+    cursor: pointer;
+}
+
+select:focus {
     outline: none;
-    border-color: #60a5fa; /* focus:border-blue-400 */
-    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5); /* focus:ring-2 focus:ring-blue-400 */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+    border-color: #3b82f6;
 }
 
-#send-verse-btn { /* Renamed from #send-chat-btn */
-    flex-shrink: 0;
-    padding: 0.75rem 1rem; /* px-4 py-3 */
-    background-color: #2563eb; /* bg-blue-600 */
-    color: white;
-    border-radius: 0.75rem; /* rounded-xl */
-    font-weight: 600; /* font-semibold */
-    transition: background-color 0.2s ease-in-out;
+/* Input/Textarea focus glow (for Generator page) */
+input[type="text"]:focus,
+textarea:focus {
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.5), 0 0 15px rgba(96, 165, 250, 0.3); /* Blue glow */
+    border-color: #60a5fa;
 }
 
-#send-verse-btn:hover:not(:disabled) { /* Renamed from #send-chat-btn:hover:not(:disabled) */
-    background-color: #1d4ed8; /* hover:bg-blue-700 */
+/* Image reveal animation */
+@keyframes imageReveal {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+        filter: blur(20px);
+    }
+    50% {
+        opacity: 0.5;
+        filter: blur(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        filter: blur(0);
+    }
 }
 
-#send-verse-btn:disabled { /* Renamed from #send-chat-btn:disabled */
-    background-color: #4b5563; /* disabled:bg-gray-500 */
-    cursor: not-allowed;
-    opacity: 0.7;
+.animate-image-reveal {
+    animation: imageReveal 1s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+    will-change: transform, opacity, filter; /* Hint browser for animation optimization */
+}
+
+/* Button hover glow/ripple (for Generator page buttons) */
+.group button {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    will-change: transform, box-shadow; /* Hint browser for animation optimization */
+}
+
+.group button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: width 0.3s ease-out, height 0.3s ease-out, opacity 0.3s ease-out;
+    z-index: -1;
+    will-change: width, height, opacity; /* Hint browser for animation optimization */
+}
+
+.group button:hover::before {
+    width: 150%;
+    height: 150%;
+    opacity: 1;
+}
+
+/* Specific button animations (for Home page button) */
+#start-creating-btn {
+    position: relative;
+    overflow: hidden;
+    will-change: transform, box-shadow; /* Hint browser for animation optimization */
+}
+
+#start-creating-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: all 0.4s ease-in-out;
+    will-change: left; /* Hint browser for animation optimization */
+}
+
+#start-creating-btn:hover::after {
+    left: 100%;
+}
+
+/* Mobile Menu Overlay */
+#mobile-menu-overlay {
+    transition: opacity 0.3s ease-in-out;
+    will-change: opacity; /* Hint browser for animation optimization */
 }
 
 /* Toast Notifications */
-#toast-container {
-    z-index: 1000;
-}
-
 .toast {
     background-color: rgba(31, 41, 55, 0.95); /* Tailwind gray-800 with opacity */
     color: #d1d5db; /* Tailwind gray-300 */
@@ -369,3 +440,163 @@ body {
     animation: image-reveal 0.5s ease-out forwards;
 }
 
+/* Light Mode Styles */
+body.light-mode {
+    background: linear-gradient(to bottom right, #e0f2fe, #f0f9ff); /* Light blue to white gradient */
+    color: #333; /* Darker text */
+}
+
+body.light-mode .text-gray-100 { color: #333; }
+body.light-mode .text-gray-200 { color: #444; }
+body.light-mode .text-gray-300 { color: #555; }
+body.light-mode .text-gray-400 { color: #666; }
+
+body.light-mode .bg-gradient-to-br {
+    background: linear-gradient(to bottom right, #f0f9ff, #e0f2fe);
+}
+
+body.light-mode .bg-white\/5,
+body.light-mode .bg-gray-800\/50,
+body.light-mode .bg-gray-800\/70 {
+    background-color: rgba(255, 255, 255, 0.7); /* Lighter, more opaque background */
+    backdrop-filter: blur(8px); /* Keep blur */
+    border-color: rgba(0, 0, 0, 0.1); /* Lighter border */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Lighter shadow */
+}
+
+body.light-mode .border-slate-700 {
+    border-color: #cbd5e1; /* Tailwind slate-300 */
+}
+
+body.light-mode .text-blue-300 { color: #2563eb; } /* Blue-600 */
+body.light-mode .text-teal-300 { color: #0d9488; } /* Teal-600 */
+body.light-mode .text-purple-200 { color: #7c3aed; } /* Purple-600 */
+body.light-mode .text-pink-200 { color: #db2777; } /* Pink-600 */
+body.light-mode .text-yellow-200 { color: #ca8a04; } /* Yellow-700 */
+body.light-mode .text-orange-200 { color: #ea580c; } /* Orange-600 */
+
+body.light-mode #header-element,
+body.light-mode #mobile-header-element,
+body.light-mode #mobile-menu,
+body.light-mode #mobile-bottom-nav {
+    background-color: rgba(255, 255, 255, 0.8);
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+body.light-mode .toast {
+    background-color: rgba(255, 255, 255, 0.95);
+    color: #333;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+body.light-mode .toast.success { border-left-color: #10b981; }
+body.light-mode .toast.error { border-left-color: #ef4444; }
+body.light-mode .toast.info { border-left-color: #3b82f6; }
+
+body.light-mode .chat-bubble.ai {
+    background-color: #e2e8f0; /* Light gray */
+    color: #333;
+}
+body.light-mode .chat-bubble.user {
+    background-color: #60a5fa; /* Blue-400 */
+    color: white;
+}
+
+/* Light mode specific input styles */
+body.light-mode input[type="text"],
+body.light-mode textarea,
+body.light-mode #verse-input {
+    background-color: rgba(255, 255, 255, 0.7);
+    border-color: #94a3b8; /* Tailwind slate-400 */
+    color: #333;
+    placeholder-color: #666;
+}
+
+body.light-mode input[type="text"]:focus,
+body.light-mode textarea:focus,
+body.light-mode #verse-input:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5), 0 0 15px rgba(59, 130, 246, 0.3);
+    border-color: #3b82f6;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 639px) { /* Tailwind's 'sm' breakpoint */
+    body {
+        padding-bottom: 60px; /* Space for bottom nav bar */
+    }
+
+    /* Mobile Home Page specific animations */
+    @keyframes pulse-slow {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.7); }
+        70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(96, 165, 250, 0); }
+    }
+    .animate-pulse-slow {
+        animation: pulse-slow 3s infinite cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    /* Verse (Chat) Page Specific Styles for Mobile */
+    #verse-page-element {
+        height: calc(100vh - 120px); /* Adjust for mobile header and bottom nav */
+        padding: 1rem; /* Smaller padding for mobile */
+    }
+
+    #verse-messages-container {
+        padding: 0.75rem; /* Smaller padding for mobile */
+        gap: 0.5rem; /* Smaller gap between messages */
+    }
+
+    .chat-bubble {
+        max-width: 90%; /* Allow bubbles to take more width on small screens */
+        padding: 0.6rem 0.8rem; /* Slightly smaller padding for mobile */
+        border-radius: 1rem; /* Slightly smaller border-radius */
+    }
+
+    .chat-bubble.user {
+        border-bottom-right-radius: 0.4rem;
+    }
+
+    .chat-bubble.ai {
+        border-bottom-left-radius: 0.4rem;
+    }
+
+    #verse-input {
+        padding: 0.6rem 0.8rem; /* Smaller padding for input */
+        font-size: 0.9rem; /* Slightly smaller font for input */
+        height: 2.5rem; /* Smaller initial height */
+        min-height: 2.5rem;
+    }
+
+    #send-verse-btn, #toggle-voice-input-btn {
+        padding: 0.6rem; /* Smaller padding for buttons */
+        font-size: 1rem; /* Smaller icon size */
+    }
+
+    #verse-prompt-templates-container {
+        padding-top: 0.75rem;
+        margin-top: 0.75rem;
+    }
+
+    #verse-prompt-templates-list button {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+
+    /* Typing indicator dots animation */
+    .dot {
+        animation: bounce 0.6s infinite alternate;
+    }
+
+    .dot:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .dot:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+        from { transform: translateY(0); }
+        to { transform: translateY(-5px); }
+    }
+}
