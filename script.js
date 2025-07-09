@@ -71,9 +71,10 @@ console.log(Date.now(), "script.js: IMAGEN_GEMINI_API_KEY value set at top level
 
 
 // --- UI Element References (Will be populated in initApp) ---
-let homePageElement;
+let homePageElement; // Desktop home
+let mobileHomePageElement; // Mobile home
 let generatorPageElement;
-let versePageElement; // Renamed from chatAIPageElement
+let versePageElement;
 let allPageElements = []; // Group for easy iteration
 
 let persistentDebugMessage;
@@ -106,8 +107,12 @@ let freeGenerationsDisplay;
 let signinRequiredModal;
 let modalSignInBtn;
 let closeSigninModalBtn;
-let startCreatingBtn;
-let logoBtn;
+let startCreatingBtn; // Desktop home button
+let logoBtn; // Desktop logo button
+
+// Mobile Header elements
+let mobileHeaderElement;
+let mobileLogoBtn;
 
 let hamburgerBtn;
 let hamburgerIcon;
@@ -119,10 +124,10 @@ let mobileNavLinks;
 let toastContainer;
 
 // Header specific elements
-let mainHeader;
+let mainHeader; // Refers to desktop header
 
 // Verse (Chat AI) specific elements
-let verseCreditsDisplay; // Renamed from chatCreditsDisplay
+let verseCreditsDisplay;
 let toggleThemeBtn;
 let themeIcon;
 let toggleVoiceInputBtn;
@@ -130,13 +135,29 @@ let voiceInputIcon;
 let toggleVoiceOutputBtn;
 let voiceOutputIcon;
 let stopVoiceOutputBtn;
-let clearVerseBtn; // Renamed from clearChatBtn
-let verseMessagesContainer; // Renamed from chatMessagesContainer
+let clearVerseBtn;
+let verseMessagesContainer;
 let typingIndicator;
-let verseInput; // Renamed from chatInput
-let sendVerseBtn; // Renamed from sendChatBtn
-let versePromptTemplatesContainer; // Renamed from promptTemplatesContainer
-let versePromptTemplatesList; // Renamed from promptTemplatesList
+let verseInput;
+let sendVerseBtn;
+let versePromptTemplatesContainer;
+let versePromptTemplatesList;
+let verseBackBtn;
+let verseChatTitle;
+let verseMenuBtn;
+let verseMenuDropdown;
+
+// Mobile Home Page elements
+let startNewChatBtnMobile;
+let quickPromptBtnsMobile;
+
+// Mobile Bottom Navigation elements
+let mobileBottomNav;
+let bottomNavHomeBtn;
+let bottomNavVerseBtn;
+let bottomNavTemplatesBtn;
+let bottomNavProfileBtn;
+
 
 // --- Helper function to get elements and log if not found (Declared at top level) ---
 const getElement = (id) => {
@@ -144,7 +165,7 @@ const getElement = (id) => {
     if (!element) {
         console.error(Date.now(), `getElement: Element with ID '${id}' NOT FOUND in the DOM.`);
     } else {
-        console.log(Date.now(), `getElement: Element with ID '${id}' FOUND.`);
+        // console.log(Date.now(), `getElement: Element with ID '${id}' FOUND.`); // Too verbose
     }
     return element;
 };
@@ -493,19 +514,28 @@ async function setPage(newPage) {
     });
 
     let newPageElement;
-    if (newPage === 'home') {
-        newPageElement = homePageElement;
-    } else if (newPage === 'generator') {
-        newPageElement = generatorPageElement;
-    } else if (newPage === 'verse') { // New case for 'verse' page
-        newPageElement = versePageElement;
-        // Load chat history when navigating to Verse page
-        loadChatHistory();
+    if (window.innerWidth >= 640) { // Desktop view (sm breakpoint and up)
+        if (newPage === 'home') {
+            newPageElement = homePageElement;
+        } else if (newPage === 'generator') {
+            newPageElement = generatorPageElement;
+        } else if (newPage === 'verse') {
+            newPageElement = versePageElement;
+        }
+    } else { // Mobile view (below sm breakpoint)
+        if (newPage === 'home') {
+            newPageElement = mobileHomePageElement; // Show mobile home
+        } else if (newPage === 'generator') {
+            newPageElement = generatorPageElement; // Generator is shared
+        } else if (newPage === 'verse') {
+            newPageElement = versePageElement;
+        }
     }
 
     if (newPageElement) {
         newPageElement.classList.remove('hidden');
-        void newPageElement.offsetWidth; // Trigger reflow for animation
+        // Trigger reflow for animation
+        void newPageElement.offsetWidth;
         newPageElement.classList.add('animate-fade-in-up');
         console.log(Date.now(), `setPage: Displayed page '${newPage}' and applied animation.`);
     } else {
@@ -520,13 +550,45 @@ async function setPage(newPage) {
 function updateUI() {
     console.log(Date.now(), `updateUI: Updating UI for current page: ${currentPage}. Auth Ready: ${isAuthReady}`);
 
+    // Control header visibility based on screen size
+    if (mainHeader) { // Desktop header
+        mainHeader.classList.toggle('hidden', window.innerWidth < 640);
+    }
+    if (mobileHeaderElement) { // Mobile header
+        mobileHeaderElement.classList.toggle('hidden', window.innerWidth >= 640);
+    }
+    if (mobileBottomNav) { // Mobile bottom nav
+        mobileBottomNav.classList.toggle('hidden', window.innerWidth >= 640);
+    }
+
+    // Hide all main content pages first
+    homePageElement?.classList.add('hidden');
+    mobileHomePageElement?.classList.add('hidden');
+    generatorPageElement?.classList.add('hidden');
+    versePageElement?.classList.add('hidden');
+
+    // Show the current page based on screen size
+    if (window.innerWidth >= 640) { // Desktop
+        if (currentPage === 'home') homePageElement?.classList.remove('hidden');
+        else if (currentPage === 'generator') generatorPageElement?.classList.remove('hidden');
+        else if (currentPage === 'verse') versePageElement?.classList.remove('hidden');
+    } else { // Mobile
+        if (currentPage === 'home') mobileHomePageElement?.classList.remove('hidden');
+        else if (currentPage === 'generator') generatorPageElement?.classList.remove('hidden');
+        else if (currentPage === 'verse') versePageElement?.classList.remove('hidden');
+    }
+
+
     const interactiveElements = [
-        homePageElement, generatorPageElement, versePageElement, logoBtn,
+        homePageElement, mobileHomePageElement, generatorPageElement, versePageElement, logoBtn, mobileLogoBtn,
         hamburgerBtn, closeMobileMenuBtn, mobileMenuOverlay,
-        startCreatingBtn, promptInput, copyPromptBtn, clearPromptBtn, generateBtn,
+        startCreatingBtn, startNewChatBtnMobile, ...Array.from(quickPromptBtnsMobile || []),
+        promptInput, copyPromptBtn, clearPromptBtn, generateBtn,
         enhanceBtn, variationBtn, useEnhancedPromptBtn, downloadBtn,
         signInBtnDesktop, signOutBtnDesktop, signInBtnMobile, signOutBtnMobile, modalSignInBtn, closeSigninModalBtn,
-        toggleThemeBtn, toggleVoiceInputBtn, toggleVoiceOutputBtn, stopVoiceOutputBtn, clearVerseBtn, verseInput, sendVerseBtn
+        toggleThemeBtn, toggleVoiceInputBtn, toggleVoiceOutputBtn, stopVoiceOutputBtn, clearVerseBtn, verseInput, sendVerseBtn,
+        verseBackBtn, verseMenuBtn,
+        bottomNavHomeBtn, bottomNavVerseBtn, bottomNavTemplatesBtn, bottomNavProfileBtn
     ];
 
     interactiveElements.forEach(el => {
@@ -558,7 +620,7 @@ function updateUI() {
         }
     });
 
-    // Update active navigation button styles
+    // Update active navigation button styles for desktop
     document.querySelectorAll('#desktop-nav button').forEach(btn => {
         btn.classList.remove('text-blue-300');
         btn.classList.add('text-gray-100');
@@ -569,16 +631,27 @@ function updateUI() {
         currentDesktopBtn.classList.add('text-blue-300');
     }
 
+    // Update active navigation button styles for mobile sidebar
     document.querySelectorAll('#mobile-menu button.mobile-nav-link').forEach(btn => {
         btn.classList.remove('text-blue-300');
         btn.classList.add('text-gray-200');
     });
-    const currentMobileBtn = getElement(`mobile-${currentPage}-btn`);
-    if (currentMobileBtn) {
-        currentMobileBtn.classList.remove('text-gray-200');
-        currentMobileBtn.classList.add('text-blue-300');
+    const currentMobileSidebarBtn = getElement(`mobile-${currentPage}-btn`);
+    if (currentMobileSidebarBtn) {
+        currentMobileSidebarBtn.classList.remove('text-gray-200');
+        currentMobileSidebarBtn.classList.add('text-blue-300');
     }
 
+    // Update active navigation button styles for mobile bottom nav
+    document.querySelectorAll('#mobile-bottom-nav button').forEach(btn => {
+        btn.classList.remove('text-blue-300');
+        btn.classList.add('text-gray-400');
+    });
+    const currentBottomNavBtn = getElement(`bottom-nav-${currentPage}-btn`);
+    if (currentBottomNavBtn) {
+        currentBottomNavBtn.classList.remove('text-gray-400');
+        currentBottomNavBtn.classList.add('text-blue-300');
+    }
 
     if (currentPage === 'generator') {
         updateGeneratorPageUI();
@@ -807,7 +880,7 @@ async function saveChatMessage(role, text) {
 
 async function sendMessage() {
     console.log(Date.now(), "sendMessage: Function called.");
-    const messageText = verseInput.value.trim(); // Changed from chatInput
+    const messageText = verseInput.value.trim();
     if (!messageText) {
         showToast("Please enter a message.", "info");
         return;
@@ -829,8 +902,8 @@ async function sendMessage() {
     saveChatMessage('user', messageText); // Save user message to Firestore
     renderChatMessages();
     scrollToBottomChat();
-    verseInput.value = ''; // Clear input field (Changed from chatInput)
-    verseInput.style.height = 'auto'; // Reset textarea height (Changed from chatInput)
+    verseInput.value = ''; // Clear input field
+    verseInput.style.height = 'auto'; // Reset textarea height
 
     isChatLoading = true;
     updateUI(); // Show typing indicator
@@ -886,6 +959,7 @@ async function sendMessage() {
         if (!currentUser) {
             freeChatMessagesLeft++;
             localStorage.setItem('freeChatMessagesLeft', freeChatMessagesLeft);
+            updateUI(); // Update UI to show refunded credit
             showToast(`Credit refunded due to Verse AI error. You now have ${freeChatMessagesLeft} free messages.`, "info", 5000);
         }
     } finally {
@@ -896,9 +970,9 @@ async function sendMessage() {
 }
 
 function renderChatMessages() {
-    if (!verseMessagesContainer) return; // Changed from chatMessagesContainer
+    if (!verseMessagesContainer) return;
 
-    verseMessagesContainer.innerHTML = ''; // Clear existing messages (Changed from chatMessagesContainer)
+    verseMessagesContainer.innerHTML = ''; // Clear existing messages
     if (chatHistory.length === 0) {
         verseMessagesContainer.innerHTML = `<div class="text-center text-gray-400 text-sm py-4">
             Start a conversation! Type your message below.
@@ -908,12 +982,13 @@ function renderChatMessages() {
 
     chatHistory.forEach((msg, index) => {
         const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-bubble ${msg.role} opacity-0 transform ${msg.role === 'user' ? 'translate-x-full text-sm sm:text-base' : '-translate-x-full text-base sm:text-lg'}`; // Added responsive text sizes
+        // Apply responsive text sizes here
+        messageDiv.className = `chat-bubble ${msg.role} opacity-0 transform ${msg.role === 'user' ? 'translate-x-full text-sm sm:text-base' : '-translate-x-full text-base sm:text-lg'}`;
         
         // Use marked.js to convert Markdown to HTML
         messageDiv.innerHTML = marked.parse(msg.parts[0].text);
         
-        verseMessagesContainer.appendChild(messageDiv); // Changed from chatMessagesContainer
+        verseMessagesContainer.appendChild(messageDiv);
 
         // Animate message in
         gsap.to(messageDiv, {
@@ -927,8 +1002,8 @@ function renderChatMessages() {
 }
 
 function scrollToBottomChat() {
-    if (verseMessagesContainer) { // Changed from chatMessagesContainer
-        gsap.to(verseMessagesContainer, { // Changed from chatMessagesContainer
+    if (verseMessagesContainer) {
+        gsap.to(verseMessagesContainer, {
             scrollTop: verseMessagesContainer.scrollHeight,
             duration: 0.8,
             ease: "power2.out"
@@ -1013,14 +1088,14 @@ function toggleVoiceInput() {
                 isVoiceInputActive = true;
                 updateUI();
                 showToast("Voice input active. Speak now!", "info");
-                verseInput.placeholder = "Listening..."; // Changed from chatInput
+                verseInput.placeholder = "Listening...";
             };
 
             speechRecognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                verseInput.value = transcript; // Changed from chatInput
-                verseInput.style.height = 'auto'; // Reset height (Changed from chatInput)
-                verseInput.style.height = (verseInput.scrollHeight) + 'px'; // Adjust height (Changed from chatInput)
+                verseInput.value = transcript;
+                verseInput.style.height = 'auto';
+                verseInput.style.height = (verseInput.scrollHeight) + 'px';
                 console.log(Date.now(), "Voice input result:", transcript);
                 // Automatically send message after speech recognition
                 sendMessage();
@@ -1031,13 +1106,13 @@ function toggleVoiceInput() {
                 showToast(`Voice input error: ${event.error}`, "error");
                 isVoiceInputActive = false;
                 updateUI();
-                verseInput.placeholder = "Type your message here..."; // Changed from chatInput
+                verseInput.placeholder = "Type your message here...";
             };
 
             speechRecognition.onend = () => {
                 isVoiceInputActive = false;
                 updateUI();
-                verseInput.placeholder = "Type your message here..."; // Changed from chatInput
+                verseInput.placeholder = "Type your message here...";
                 console.log(Date.now(), "Voice input ended.");
             };
         }
@@ -1104,20 +1179,20 @@ const defaultPromptTemplates = [
 ];
 
 function populatePromptTemplates() {
-    if (!versePromptTemplatesList) return; // Changed from promptTemplatesList
+    if (!versePromptTemplatesList) return;
 
-    versePromptTemplatesList.innerHTML = ''; // Clear existing templates (Changed from promptTemplatesList)
+    versePromptTemplatesList.innerHTML = ''; // Clear existing templates
     defaultPromptTemplates.forEach(templateText => {
         const button = document.createElement('button');
         button.className = 'px-4 py-2 rounded-full bg-blue-500/30 text-blue-200 hover:bg-blue-500/50 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500';
         button.textContent = templateText;
         button.addEventListener('click', () => {
-            verseInput.value = templateText; // Changed from chatInput
-            verseInput.style.height = 'auto'; // Reset height (Changed from chatInput)
-            verseInput.style.height = (verseInput.scrollHeight) + 'px'; // Adjust height (Changed from chatInput)
+            verseInput.value = templateText;
+            verseInput.style.height = 'auto';
+            verseInput.style.height = (verseInput.scrollHeight) + 'px';
             sendMessage();
         });
-        versePromptTemplatesList.appendChild(button); // Changed from promptTemplatesList
+        versePromptTemplatesList.appendChild(button);
     });
     console.log(Date.now(), "populatePromptTemplates: Default prompt templates populated.");
 }
@@ -1127,7 +1202,7 @@ function populatePromptTemplates() {
 function setupEventListeners() {
     console.log(Date.now(), "setupEventListeners: Setting up all event listeners...");
 
-    // Header Hover Effect
+    // Header Hover Effect (Desktop only)
     if (mainHeader) {
         mainHeader.addEventListener('mouseenter', () => {
             gsap.to(mainHeader, {
@@ -1148,7 +1223,7 @@ function setupEventListeners() {
         console.log(Date.now(), "Event Listeners Attached: mainHeader hover effects.");
     }
 
-    // Header Navigation Buttons
+    // Desktop Navigation Buttons
     const homeBtn = getElement('home-btn');
     if (homeBtn) {
         homeBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Home button clicked."); setPage('home'); });
@@ -1161,18 +1236,21 @@ function setupEventListeners() {
         console.log(Date.now(), "Event Listener Attached: generator-btn");
     }
 
-    const verseBtn = getElement('verse-btn'); // Renamed from chat-ai-btn
+    const verseBtn = getElement('verse-btn');
     if (verseBtn) {
         verseBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Verse button clicked."); setPage('verse'); });
         console.log(Date.now(), "Event Listener Attached: verse-btn");
     }
 
     if (logoBtn) {
-        logoBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Logo button clicked."); setPage('home'); });
+        logoBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Logo button clicked."); setPage('home'); });
         console.log(Date.now(), "Event Listener Attached: logoBtn");
     }
 
-    // Mobile Menu Buttons
+    // Mobile Header & Menu Buttons
+    if (mobileLogoBtn) {
+        mobileLogoBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Mobile Logo button clicked."); setPage('home'); });
+    }
     if (hamburgerBtn) {
         hamburgerBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Hamburger button clicked."); toggleMobileMenu(); });
         console.log(Date.now(), "Event Listener Attached: hamburgerBtn");
@@ -1199,14 +1277,40 @@ function setupEventListeners() {
                 console.log(Date.now(), `Event: Mobile nav link clicked: ${e.target.id}`);
                 if (e.target.id === 'mobile-home-btn') setPage('home');
                 else if (e.target.id === 'mobile-generator-btn') setPage('generator');
-                else if (e.target.id === 'mobile-verse-btn') setPage('verse'); // Renamed mobile chat AI button
+                else if (e.target.id === 'mobile-verse-btn') setPage('verse');
                 toggleMobileMenu();
             });
             console.log(Date.now(), `Event Listener Attached: mobile-nav-link (${link.id})`);
         }
     });
 
-    // Home Page Button
+    // Mobile Home Page Specific Buttons
+    if (startNewChatBtnMobile) {
+        startNewChatBtnMobile.addEventListener('click', () => {
+            console.log(Date.now(), "Event: Start New Chat (Mobile Home) button clicked.");
+            setPage('verse');
+        });
+    }
+    if (quickPromptBtnsMobile) {
+        quickPromptBtnsMobile.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const promptText = e.target.textContent.trim();
+                console.log(Date.now(), `Event: Quick prompt (Mobile Home) clicked: "${promptText}"`);
+                setPage('verse'); // Go to verse page
+                // Use a small delay to ensure the verseInput is visible before setting value
+                setTimeout(() => {
+                    if (verseInput) {
+                        verseInput.value = promptText;
+                        verseInput.style.height = 'auto'; // Reset height
+                        verseInput.style.height = (verseInput.scrollHeight) + 'px'; // Adjust height
+                        sendMessage(); // Send the message automatically
+                    }
+                }, 100);
+            });
+        });
+    }
+
+    // Desktop Home Page Button
     if (startCreatingBtn) {
         startCreatingBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Start Creating Now button clicked."); setPage('generator'); });
         console.log(Date.now(), "Event Listener Attached: startCreatingBtn");
@@ -1305,11 +1409,11 @@ function setupEventListeners() {
     }
 
     // Verse Specific Event Listeners
-    if (sendVerseBtn) { // Changed from sendChatBtn
+    if (sendVerseBtn) {
         sendVerseBtn.addEventListener('click', sendMessage);
         console.log(Date.now(), "Event Listener Attached: sendVerseBtn");
     }
-    if (verseInput) { // Changed from chatInput
+    if (verseInput) {
         verseInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault(); // Prevent new line
@@ -1318,7 +1422,7 @@ function setupEventListeners() {
         });
         console.log(Date.now(), "Event Listener Attached: verseInput keydown");
     }
-    if (clearVerseBtn) { // Changed from clearChatBtn
+    if (clearVerseBtn) {
         clearVerseBtn.addEventListener('click', clearChatHistory);
         console.log(Date.now(), "Event Listener Attached: clearVerseBtn");
     }
@@ -1334,15 +1438,43 @@ function setupEventListeners() {
         toggleVoiceOutputBtn.addEventListener('click', toggleVoiceOutput);
         console.log(Date.now(), "Event Listener Attached: toggleVoiceOutputBtn");
     }
-    // New: Stop Voice Output Button Listener
     if (stopVoiceOutputBtn) {
         stopVoiceOutputBtn.addEventListener('click', stopSpeaking);
         console.log(Date.now(), "Event Listener Attached: stopVoiceOutputBtn");
     }
+    if (verseBackBtn) {
+        verseBackBtn.addEventListener('click', () => setPage('home'));
+    }
+    if (verseMenuBtn) {
+        verseMenuBtn.addEventListener('click', () => {
+            verseMenuDropdown?.classList.toggle('hidden');
+        });
+        // Close dropdown if clicked outside
+        document.addEventListener('click', (event) => {
+            if (verseMenuDropdown && !verseMenuBtn.contains(event.target) && !verseMenuDropdown.contains(event.target)) {
+                verseMenuDropdown.classList.add('hidden');
+            }
+        });
+    }
+
+    // Mobile Bottom Navigation Listeners
+    if (bottomNavHomeBtn) {
+        bottomNavHomeBtn.addEventListener('click', () => setPage('home'));
+    }
+    if (bottomNavVerseBtn) {
+        bottomNavVerseBtn.addEventListener('click', () => setPage('verse'));
+    }
+    if (bottomNavTemplatesBtn) {
+        bottomNavTemplatesBtn.addEventListener('click', () => showToast("Templates coming soon!", "info")); // Placeholder
+    }
+    if (bottomNavProfileBtn) {
+        bottomNavProfileBtn.addEventListener('click', () => showToast("Profile coming soon!", "info")); // Placeholder
+    }
 
 
+    // Initial population calls
     populateAspectRatioRadios();
-    populatePromptTemplates(); // Populate templates on load
+    populatePromptTemplates();
     console.log(Date.now(), "setupEventListeners: All event listeners setup attempted.");
 }
 
@@ -1356,10 +1488,11 @@ function initApp() {
         initFirebase();
 
         // Populate ALL UI Element References here, after DOM is ready
-        homePageElement = getElement('home-page-element');
+        homePageElement = getElement('home-page-element'); // Desktop home
+        mobileHomePageElement = getElement('mobile-home-page-element'); // Mobile home
         generatorPageElement = getElement('generator-page-element');
-        versePageElement = getElement('verse-page-element'); // Renamed from chatAIPageElement
-        allPageElements = [homePageElement, generatorPageElement, versePageElement].filter(Boolean); // Filter out nulls
+        versePageElement = getElement('verse-page-element');
+        allPageElements = [homePageElement, mobileHomePageElement, generatorPageElement, versePageElement].filter(Boolean); // Filter out nulls
 
         persistentDebugMessage = getElement('persistent-debug-message');
         closeDebugMessageBtn = getElement('close-debug-message-btn');
@@ -1394,6 +1527,10 @@ function initApp() {
         startCreatingBtn = getElement('start-creating-btn');
         logoBtn = getElement('logo-btn');
 
+        // Mobile Header elements
+        mobileHeaderElement = getElement('mobile-header-element');
+        mobileLogoBtn = getElement('mobile-logo-btn');
+
         hamburgerBtn = getElement('hamburger-btn');
         hamburgerIcon = getElement('hamburger-icon');
         mobileMenu = getElement('mobile-menu');
@@ -1407,7 +1544,7 @@ function initApp() {
         mainHeader = getElement('header-element');
 
         // Verse (Chat AI) specific elements
-        verseCreditsDisplay = getElement('verse-credits-display'); // Renamed
+        verseCreditsDisplay = getElement('verse-credits-display');
         toggleThemeBtn = getElement('toggle-theme-btn');
         themeIcon = getElement('theme-icon');
         toggleVoiceInputBtn = getElement('toggle-voice-input-btn');
@@ -1415,13 +1552,28 @@ function initApp() {
         toggleVoiceOutputBtn = getElement('toggle-voice-output-btn');
         voiceOutputIcon = getElement('voice-output-icon');
         stopVoiceOutputBtn = getElement('stop-voice-output-btn');
-        clearVerseBtn = getElement('clear-verse-btn'); // Renamed
-        verseMessagesContainer = getElement('verse-messages-container'); // Renamed
+        clearVerseBtn = getElement('clear-verse-btn');
+        verseMessagesContainer = getElement('verse-messages-container');
         typingIndicator = getElement('typing-indicator');
-        verseInput = getElement('verse-input'); // Renamed
-        sendVerseBtn = getElement('send-verse-btn'); // Renamed
-        versePromptTemplatesContainer = getElement('verse-prompt-templates-container'); // Renamed
-        versePromptTemplatesList = getElement('verse-prompt-templates-list'); // Renamed
+        verseInput = getElement('verse-input');
+        sendVerseBtn = getElement('send-verse-btn');
+        versePromptTemplatesContainer = getElement('verse-prompt-templates-container');
+        versePromptTemplatesList = getElement('verse-prompt-templates-list');
+        verseBackBtn = getElement('verse-back-btn');
+        verseChatTitle = getElement('verse-chat-title');
+        verseMenuBtn = getElement('verse-menu-btn');
+        verseMenuDropdown = getElement('verse-menu-dropdown');
+
+        // Mobile Home Page elements
+        startNewChatBtnMobile = getElement('start-new-chat-btn-mobile');
+        quickPromptBtnsMobile = document.querySelectorAll('.quick-prompt-btn-mobile');
+
+        // Mobile Bottom Navigation elements
+        mobileBottomNav = getElement('mobile-bottom-nav');
+        bottomNavHomeBtn = getElement('bottom-nav-home-btn');
+        bottomNavVerseBtn = getElement('bottom-nav-verse-btn');
+        bottomNavTemplatesBtn = getElement('bottom-nav-templates-btn');
+        bottomNavProfileBtn = getElement('bottom-nav-profile-btn');
 
 
         console.log(Date.now(), "initApp: All UI element references obtained.");
@@ -1429,9 +1581,20 @@ function initApp() {
         console.log(Date.now(), "initApp: Calling setupEventListeners().");
         setupEventListeners();
         console.log(Date.now(), "initApp: Calling setPage('home').");
-        setPage('home'); // Set initial page
+        setPage('home'); // Set initial page based on screen size
         applySavedTheme(); // Apply theme on load
         updateUI(); // Initial UI update after all elements are ready and listeners are set up
+
+        // Add a resize listener to handle page changes on orientation/window resize
+        window.addEventListener('resize', () => {
+            console.log(Date.now(), "Window resized. Updating UI.");
+            updateUI();
+            if (currentPage === 'verse' && verseInput) {
+                verseInput.style.height = 'auto'; // Reset height
+                verseInput.style.height = (verseInput.scrollHeight) + 'px'; // Adjust height
+            }
+        });
+
 
         console.timeEnd("AppInitialization");
         console.log(Date.now(), "initApp: App initialization complete.");
