@@ -47,7 +47,7 @@ let prompt = ''; // For image generator
 let imageUrl = ''; // For generated image
 let loading = false; // For image generation
 let currentError = ''; // Error message for display
-let currentPage = 'home'; // 'home', 'generator', 'verse'
+let currentPage = 'home'; // 'home', 'generator', 'chat-ai'
 let isSigningIn = false; // New state for sign-in loading
 let isAuthReady = false; // Flag to indicate if Firebase Auth state has been checked and services initialized
 
@@ -71,10 +71,9 @@ console.log(Date.now(), "script.js: IMAGEN_GEMINI_API_KEY value set at top level
 
 
 // --- UI Element References (Will be populated in initApp) ---
-let homePageElement; // Desktop home
-let mobileArtHomePageElement; // Mobile home (new name)
+let homePageElement;
 let generatorPageElement;
-let versePageElement; // The actual chat conversation screen
+let chatAIPageElement; // New chat AI page element
 let allPageElements = []; // Group for easy iteration
 
 let persistentDebugMessage;
@@ -107,64 +106,37 @@ let freeGenerationsDisplay;
 let signinRequiredModal;
 let modalSignInBtn;
 let closeSigninModalBtn;
-let startCreatingBtn; // Desktop home button
-let logoBtn; // Desktop logo button
+let startCreatingBtn;
+let logoBtn;
 
-// Mobile Header elements
-let mobileHeaderElement;
 let hamburgerBtn;
 let hamburgerIcon;
 let mobileMenu;
 let mobileMenuOverlay;
 let closeMobileMenuBtn;
 let mobileNavLinks;
-let generateArtBtnMobile; // New mobile header button
-let mobileProfileBtn; // New mobile header button
 
 let toastContainer;
 
 // Header specific elements
-let mainHeader; // Refers to desktop header
+let mainHeader;
 
-// Verse (Chat AI) specific elements
-let verseCreditsDisplay;
+// Chat AI specific elements
+let chatCreditsDisplay;
 let toggleThemeBtn;
 let themeIcon;
 let toggleVoiceInputBtn;
 let voiceInputIcon;
 let toggleVoiceOutputBtn;
 let voiceOutputIcon;
-let stopVoiceOutputBtn;
-let clearVerseBtn;
-let verseMessagesContainer;
+let stopVoiceOutputBtn; // New: Stop Voice Output Button
+let clearChatBtn;
+let chatMessagesContainer;
 let typingIndicator;
-let verseInput;
-let sendVerseBtn;
-let versePromptTemplatesContainer;
-let versePromptTemplatesList;
-let verseBackBtn;
-let verseChatTitle;
-let verseMenuBtn;
-let verseMenuDropdown;
-
-// Mobile Art Home Page elements (new)
-let createImageBtnMobile;
-let generatePromptBtnMobile;
-let exploreGalleryBtnMobile;
-let moreOptionsBtnMobile;
-let mobileStyleSelectorBtn;
-let mobileArtPromptInput;
-let mobileVoiceInputArtBtn;
-let mobileGenerateArtBtn;
-
-
-// Mobile Bottom Navigation elements
-let mobileBottomNav;
-let bottomNavHomeBtn;
-let bottomNavGeneratorBtn; // Changed from verse
-let bottomNavGalleryBtn; // Changed from templates
-let bottomNavProfileBtn;
-
+let chatInput;
+let sendChatBtn;
+let promptTemplatesContainer;
+let promptTemplatesList;
 
 // --- Helper function to get elements and log if not found (Declared at top level) ---
 const getElement = (id) => {
@@ -172,7 +144,7 @@ const getElement = (id) => {
     if (!element) {
         console.error(Date.now(), `getElement: Element with ID '${id}' NOT FOUND in the DOM.`);
     } else {
-        // console.log(Date.now(), `getElement: Element with ID '${id}' FOUND.`); // Too verbose
+        console.log(Date.now(), `getElement: Element with ID '${id}' FOUND.`);
     }
     return element;
 };
@@ -224,7 +196,7 @@ function initFirebase() {
                 } else {
                     freeChatMessagesLeft = parseInt(localStorage.getItem('freeChatMessagesLeft'));
                 }
-                console.log(Date.now(), "onAuthStateChanged: Loaded unauthenticated credits from local storage. Image:", freeGenerationsLeft, "Verse:", freeChatMessagesLeft);
+                console.log(Date.now(), "onAuthStateChanged: Loaded unauthenticated credits from local storage. Image:", freeGenerationsLeft, "Chat:", freeChatMessagesLeft);
             }
             isAuthReady = true; // Confirm auth state is fully processed
             console.log(Date.now(), "onAuthStateChanged: isAuthReady confirmed true. Updating UI.");
@@ -438,7 +410,7 @@ async function fetchUserData(uid) {
             freeGenerationsLeft = 3;
             freeChatMessagesLeft = 5;
             console.log(Date.now(), "fetchUserData: New user data initialized in Firestore for UID:", uid);
-            showToast(`Welcome, ${currentUser.displayName || currentUser.email}! You have 3 image generations and 5 Verse messages.`, "success");
+            showToast(`Welcome, ${currentUser.displayName || currentUser.email}! You have 3 image generations and 5 chat messages.`, "success");
         }
         localStorage.removeItem('freeGenerationsLeft');
         localStorage.removeItem('freeChatMessagesLeft');
@@ -508,59 +480,36 @@ function populateAspectRatioRadios() {
 // --- Page Visibility Logic ---
 async function setPage(newPage) {
     console.log(Date.now(), `setPage: Attempting to switch to page: ${newPage}. Current page: ${currentPage}`);
-    
-    // Determine if we are already on the target page for the current device type
-    let alreadyOnPage = false;
-    if (window.innerWidth >= 640) { // Desktop
-        if (newPage === 'home' && currentPage === 'home') alreadyOnPage = true;
-        else if (newPage === 'generator' && currentPage === 'generator') alreadyOnPage = true;
-        else if (newPage === 'verse' && currentPage === 'verse') alreadyOnPage = true;
-    } else { // Mobile
-        if (newPage === 'home' && currentPage === 'home') alreadyOnPage = true; // mobile-art-home-page-element
-        else if (newPage === 'generator' && currentPage === 'generator') alreadyOnPage = true; // generator-page-element
-        // Note: 'verse' page is desktop-only for now, so no mobile check for it here
-    }
-
-    if (alreadyOnPage) {
-        console.log(Date.now(), `setPage: Already on page ${newPage} for current device, no change needed.`);
+    if (currentPage === newPage) {
+        console.log(Date.now(), `setPage: Already on page ${newPage}, no change needed.`);
         return;
     }
 
-    // Hide all main content pages first, regardless of screen size
     allPageElements.forEach(element => {
         if (element) {
             element.classList.add('hidden');
-            element.classList.remove('animate-fade-in-up'); // Remove animation class for clean transition
+            element.classList.remove('animate-fade-in-up');
         }
     });
 
-    let newPageElementToShow;
-
-    if (window.innerWidth >= 640) { // Desktop view (sm breakpoint and up)
-        if (newPage === 'home') {
-            newPageElementToShow = homePageElement;
-        } else if (newPage === 'generator') {
-            newPageElementToShow = generatorPageElement;
-        } else if (newPage === 'verse') {
-            newPageElementToShow = versePageElement; // Desktop goes directly to chat conversation
-        }
-    } else { // Mobile view (below sm breakpoint)
-        if (newPage === 'home') {
-            newPageElementToShow = mobileArtHomePageElement; // Mobile's new home
-        } else if (newPage === 'generator') {
-            newPageElementToShow = generatorPageElement; // Generator is shared
-        }
-        // 'verse' page is not intended for direct mobile navigation in this context
+    let newPageElement;
+    if (newPage === 'home') {
+        newPageElement = homePageElement;
+    } else if (newPage === 'generator') {
+        newPageElement = generatorPageElement;
+    } else if (newPage === 'chat-ai') {
+        newPageElement = chatAIPageElement;
+        // Load chat history when navigating to chat page
+        loadChatHistory();
     }
 
-    if (newPageElementToShow) {
-        newPageElementToShow.classList.remove('hidden');
-        // Trigger reflow for animation
-        void newPageElementToShow.offsetWidth;
-        newPageElementToShow.classList.add('animate-fade-in-up');
+    if (newPageElement) {
+        newPageElement.classList.remove('hidden');
+        void newPageElement.offsetWidth; // Trigger reflow for animation
+        newPageElement.classList.add('animate-fade-in-up');
         console.log(Date.now(), `setPage: Displayed page '${newPage}' and applied animation.`);
     } else {
-        console.error(Date.now(), `setPage: New page element for '${newPage}' not found or not intended for mobile.`);
+        console.error(Date.now(), `setPage: New page element for '${newPage}' not found.`);
     }
 
     currentPage = newPage;
@@ -571,37 +520,20 @@ async function setPage(newPage) {
 function updateUI() {
     console.log(Date.now(), `updateUI: Updating UI for current page: ${currentPage}. Auth Ready: ${isAuthReady}`);
 
-    // Control header visibility based on screen size
-    if (mainHeader) { // Desktop header
-        mainHeader.classList.toggle('hidden', window.innerWidth < 640);
-    }
-    if (mobileHeaderElement) { // Mobile header
-        mobileHeaderElement.classList.toggle('hidden', window.innerWidth >= 640);
-    }
-    if (mobileBottomNav) { // Mobile bottom nav
-        mobileBottomNav.classList.toggle('hidden', window.innerWidth >= 640);
-    }
-
-    // Disable/enable interactive elements based on loading/auth state
     const interactiveElements = [
-        logoBtn,
+        homePageElement, generatorPageElement, chatAIPageElement, logoBtn,
         hamburgerBtn, closeMobileMenuBtn, mobileMenuOverlay,
-        startCreatingBtn, generateArtBtnMobile, mobileProfileBtn,
-        createImageBtnMobile, generatePromptBtnMobile, exploreGalleryBtnMobile, moreOptionsBtnMobile,
-        mobileStyleSelectorBtn, mobileArtPromptInput, mobileVoiceInputArtBtn, mobileGenerateArtBtn,
-        promptInput, copyPromptBtn, clearPromptBtn, generateBtn, enhanceBtn, variationBtn, useEnhancedPromptBtn, downloadBtn,
+        startCreatingBtn, promptInput, copyPromptBtn, clearPromptBtn, generateBtn,
+        enhanceBtn, variationBtn, useEnhancedPromptBtn, downloadBtn,
         signInBtnDesktop, signOutBtnDesktop, signInBtnMobile, signOutBtnMobile, modalSignInBtn, closeSigninModalBtn,
-        toggleThemeBtn, toggleVoiceInputBtn, toggleVoiceOutputBtn, stopVoiceOutputBtn, clearVerseBtn, verseInput, sendVerseBtn,
-        verseBackBtn, verseChatTitle, verseMenuBtn,
-        bottomNavHomeBtn, bottomNavGeneratorBtn, bottomNavGalleryBtn, bottomNavProfileBtn
+        toggleThemeBtn, toggleVoiceInputBtn, toggleVoiceOutputBtn, stopVoiceOutputBtn, clearChatBtn, chatInput, sendChatBtn
     ];
-
 
     interactiveElements.forEach(el => {
         if (el) {
             const isAuthButton = el.id && (el.id.includes('sign-in-btn') || el.id.includes('sign-out-btn') || el.id.includes('modal-sign-in-btn'));
-            const isGeneratorButton = el.id && (el.id === 'generate-image-btn' || el.id === 'enhance-prompt-btn' || el.id === 'generate-variation-ideas-btn' || el.id === 'mobile-generate-art-btn');
-            const isChatButton = el.id && (el.id === 'send-verse-btn');
+            const isGeneratorButton = el.id && (el.id === 'generate-image-btn' || el.id === 'enhance-prompt-btn' || el.id === 'generate-variation-ideas-btn');
+            const isChatButton = el.id && (el.id === 'send-chat-btn');
             
             if (isAuthButton) {
                 el.disabled = isSigningIn;
@@ -626,44 +558,32 @@ function updateUI() {
         }
     });
 
-    // Update active navigation button styles for desktop
+    // Update active navigation button styles
     document.querySelectorAll('#desktop-nav button').forEach(btn => {
         btn.classList.remove('text-blue-300');
         btn.classList.add('text-gray-100');
     });
-    const currentDesktopNavBtn = getElement(`${currentPage}-btn`);
-    if (currentDesktopNavBtn) {
-        currentDesktopNavBtn.classList.remove('text-gray-100');
-        currentDesktopNavBtn.classList.add('text-blue-300');
+    const currentDesktopBtn = getElement(`${currentPage}-btn`);
+    if (currentDesktopBtn) {
+        currentDesktopBtn.classList.remove('text-gray-100');
+        currentDesktopBtn.classList.add('text-blue-300');
     }
 
-    // Update active navigation button styles for mobile sidebar
     document.querySelectorAll('#mobile-menu button.mobile-nav-link').forEach(btn => {
         btn.classList.remove('text-blue-300');
         btn.classList.add('text-gray-200');
     });
-    const currentMobileSidebarBtn = getElement(`mobile-${currentPage}-btn`);
-    if (currentMobileSidebarBtn) {
-        currentMobileSidebarBtn.classList.remove('text-gray-200');
-        currentMobileSidebarBtn.classList.add('text-blue-300');
+    const currentMobileBtn = getElement(`mobile-${currentPage}-btn`);
+    if (currentMobileBtn) {
+        currentMobileBtn.classList.remove('text-gray-200');
+        currentMobileBtn.classList.add('text-blue-300');
     }
 
-    // Update active navigation button styles for mobile bottom nav
-    document.querySelectorAll('#mobile-bottom-nav button').forEach(btn => {
-        btn.classList.remove('text-blue-300');
-        btn.classList.add('text-gray-400');
-    });
-    const currentBottomNavBtn = getElement(`bottom-nav-${currentPage}-btn`);
-    if (currentBottomNavBtn) {
-        currentBottomNavBtn.classList.remove('text-gray-400');
-        currentBottomNavBtn.classList.add('text-blue-300');
-    }
 
-    // Specific UI updates for each page type
     if (currentPage === 'generator') {
         updateGeneratorPageUI();
-    } else if (currentPage === 'verse') {
-        updateVersePageUI();
+    } else if (currentPage === 'chat-ai') {
+        updateChatAIPageUI();
     }
     updateUIForAuthStatus();
     console.log(Date.now(), "updateUI: Finished general UI update.");
@@ -810,6 +730,379 @@ function updateGeneratorPageUI() {
     }
 }
 
+function updateChatAIPageUI() {
+    console.log(Date.now(), "updateChatAIPageUI: Updating dynamic chat AI UI.");
+
+    if (chatCreditsDisplay) {
+        if (currentUser) {
+            chatCreditsDisplay.textContent = `You have unlimited messages!`;
+            chatCreditsDisplay.classList.remove('text-red-400', 'text-gray-400');
+            chatCreditsDisplay.classList.add('text-green-400');
+            console.log(Date.now(), "updateChatAIPageUI: Displaying unlimited messages for authenticated user.");
+        } else {
+            chatCreditsDisplay.textContent = `You have ${freeChatMessagesLeft} messages left without sign in.`;
+            if (freeChatMessagesLeft <= 0) {
+                chatCreditsDisplay.classList.remove('text-green-400', 'text-gray-400');
+                chatCreditsDisplay.classList.add('text-red-400');
+                console.log(Date.now(), "updateChatAIPageUI: Displaying 0 messages left, red text.");
+            } else {
+                chatCreditsDisplay.classList.remove('text-red-400', 'text-gray-400');
+                chatCreditsDisplay.classList.add('text-green-400');
+                console.log(Date.now(), "updateChatAIPageUI: Displaying free messages left, green text.");
+            }
+        }
+    }
+
+    if (typingIndicator) {
+        typingIndicator.classList.toggle('hidden', !isChatLoading);
+        console.log(Date.now(), "updateChatAIPageUI: Typing indicator hidden:", !isChatLoading);
+    }
+
+    if (chatInput) {
+        chatInput.disabled = isChatLoading;
+        chatInput.classList.toggle('opacity-50', isChatLoading);
+        chatInput.classList.toggle('cursor-not-allowed', isChatLoading);
+    }
+
+    if (sendChatBtn) {
+        sendChatBtn.disabled = isChatLoading || (!currentUser && freeChatMessagesLeft <= 0);
+        sendChatBtn.classList.toggle('opacity-50', sendChatBtn.disabled);
+        sendChatBtn.classList.toggle('cursor-not-allowed', sendChatBtn.disabled);
+    }
+
+    // Update voice input/output icons and button states
+    if (voiceInputIcon) {
+        voiceInputIcon.classList.toggle('fa-microphone', !isVoiceInputActive);
+        voiceInputIcon.classList.toggle('fa-microphone-slash', isVoiceInputActive);
+        toggleVoiceInputBtn.classList.toggle('bg-blue-600/70', isVoiceInputActive);
+        toggleVoiceInputBtn.classList.toggle('text-white', isVoiceInputActive);
+        toggleVoiceInputBtn.classList.toggle('bg-gray-700/50', !isVoiceInputActive);
+        toggleVoiceInputBtn.classList.toggle('text-gray-300', !isVoiceInputActive);
+    }
+    if (voiceOutputIcon) {
+        voiceOutputIcon.classList.toggle('fa-volume-up', !isVoiceOutputActive);
+        voiceOutputIcon.classList.toggle('fa-volume-mute', isVoiceOutputActive);
+        toggleVoiceOutputBtn.classList.toggle('bg-blue-600/70', isVoiceOutputActive);
+        toggleVoiceOutputBtn.classList.toggle('text-white', isVoiceOutputActive);
+        toggleVoiceOutputBtn.classList.toggle('bg-gray-700/50', !isVoiceOutputActive);
+        toggleVoiceOutputBtn.classList.toggle('text-gray-300', !isVoiceOutputActive);
+    }
+    // New: Stop Voice Output Button visibility
+    if (stopVoiceOutputBtn) {
+        const isSpeaking = speechSynthesis.speaking;
+        stopVoiceOutputBtn.classList.toggle('hidden', !isSpeaking);
+        stopVoiceOutputBtn.disabled = !isSpeaking;
+        stopVoiceOutputBtn.classList.toggle('opacity-50', !isSpeaking);
+        stopVoiceOutputBtn.classList.toggle('cursor-not-allowed', !isSpeaking);
+    }
+
+
+    renderChatMessages(); // Re-render messages to ensure latest state
+    populatePromptTemplates(); // Re-populate prompt templates
+    console.log(Date.now(), "updateChatAIPageUI: Chat UI updated.");
+}
+
+async function generateImage() {
+    console.log(Date.now(), "generateImage: Function called.");
+    clearError();
+
+    if (!IMAGEN_GEMINI_API_KEY || IMAGEN_GEMINI_API_KEY === "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE") {
+        setError('API Key is not configured for image generation. Please replace "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE" in script.js with your actual key obtained from Google Cloud Console and ensure the Imagen API is enabled.');
+        updateUI();
+        console.error(Date.now(), "generateImage: API Key not configured.");
+        showToast("API Key missing for image generation. Check console.", "error");
+        return;
+    }
+
+    if (!prompt.trim()) {
+        setError('Please enter a prompt to generate an image.');
+        updateUI();
+        console.warn(Date.now(), "generateImage: Prompt is empty.");
+        showToast("Please enter a prompt to generate an image.", "info");
+        return;
+    }
+
+    if (!currentUser) {
+        if (freeGenerationsLeft <= 0) {
+            console.log(Date.now(), "generateImage: Free generations exhausted for unauthenticated user. Showing sign-in modal.");
+            signinRequiredModal?.classList.remove('hidden');
+            updateUI();
+            showToast("You've used your free generations. Please sign in!", "info");
+            return;
+        } else {
+            freeGenerationsLeft--;
+            localStorage.setItem('freeGenerationsLeft', freeGenerationsLeft);
+            console.log(Date.now(), `generateImage: Unauthenticated generation. ${freeGenerationsLeft} left.`);
+            showToast(`Generating image... ${freeGenerationsLeft} free generations left.`, "info");
+        }
+    } else {
+        console.log(Date.now(), "generateImage: Authenticated user generating image (unlimited).");
+        showToast("Generating image...", "info");
+    }
+
+    loading = true;
+    imageUrl = '';
+    updateUI();
+    console.log(Date.now(), "generateImage: Starting image generation request.");
+    console.time("imageGenerationAPI");
+
+    try {
+        let finalPrompt = prompt;
+        const textKeywords = ['text', 'number', 'letter', 'font', 'word', 'digits', 'characters'];
+        const containsTextKeyword = textKeywords.some(keyword => prompt.toLowerCase().includes(keyword));
+
+        if (containsTextKeyword) {
+            finalPrompt += ", clear, legible, sharp, high-resolution text, sans-serif font, precisely rendered, not distorted, no gibberish, accurate spelling, crisp edges";
+            console.log(Date.now(), "generateImage: Added text-specific enhancements to prompt.");
+        }
+
+        let aspectRatioInstruction = '';
+        switch (aspectRatio) {
+            case '1:1': aspectRatioInstruction = ', square aspect ratio'; break;
+            case '4:5': aspectRatioInstruction = ', portrait 4:5 aspect ratio'; break;
+            case '9:16': aspectRatioInstruction = ', vertical 9:16 aspect ratio'; break;
+            case '16:9': aspectRatioInstruction = ', horizontal 16:9 aspect ratio'; break;
+        }
+        finalPrompt += aspectRatioInstruction;
+        console.log(Date.now(), "generateImage: Final prompt for API:", finalPrompt);
+
+
+        const payload = { instances: { prompt: finalPrompt }, parameters: { "sampleCount": 1 } };
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${IMAGEN_GEMINI_API_KEY}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        console.log(Date.now(), "generateImage: API fetch response received.");
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
+        }
+
+        const result = await response.json();
+        console.log(Date.now(), "generateImage: API response parsed.", result);
+
+        if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+            imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+            console.log(Date.now(), "generateImage: Image URL successfully created from Base64 data.");
+            showToast("Image generated successfully!", "success");
+        } else {
+            setError('Failed to generate image. No image data received.');
+            showToast('Failed to generate image. No data data received.', "error");
+            console.error(Date.now(), 'generateImage: API response missing image data:', result);
+        }
+    } catch (e) {
+        setError(`An error occurred during image generation: ${e.message || 'Unknown error'}. Please try again.`);
+        showToast(`Image generation failed: ${e.message}`, "error");
+        console.error(Date.now(), 'generateImage: Error during image generation:', e);
+    } finally {
+        console.timeEnd("imageGenerationAPI");
+        loading = false;
+        updateUI();
+        console.log(Date.now(), "generateImage: Image generation process finished (loading state reset).");
+    }
+}
+
+function downloadImage() {
+    console.log(Date.now(), "downloadImage: Function called.");
+    if (imageUrl) {
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = 'generated_image.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("Image downloaded!", "success");
+        console.log(Date.now(), "downloadImage: Image download initiated.");
+    } else {
+        showToast("No image to download.", "info");
+        console.warn(Date.now(), "downloadImage: No image URL available to download.");
+    }
+}
+
+function copyToClipboard(text) {
+    console.log(Date.now(), "copyToClipboard: Attempting to copy text.");
+    if (!text) {
+        showToast("Nothing to copy!", "info");
+        return;
+    }
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showToast("Content copied to clipboard!", "success");
+            console.log(Date.now(), "copyToClipboard: Text successfully copied.");
+        } else {
+            throw new Error('execCommand failed');
+        }
+    } catch (err) {
+        console.error(Date.now(), 'copyToClipboard: Failed to copy text using execCommand:', err);
+        try {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("Content copied to clipboard!", "success");
+                console.log(Date.now(), "copyToClipboard: Text successfully copied using Clipboard API.");
+            }).catch(clipboardErr => {
+                console.error(Date.now(), 'copyToClipboard: Failed to copy text using Clipboard API:', clipboardErr);
+                showToast("Failed to copy text. Please try manually.", "error");
+            });
+        } catch (apiErr) {
+            console.error(Date.now(), 'copyToClipboard: Clipboard API not available or failed:', apiErr);
+            showToast("Failed to copy text. Please try manually.", "error");
+        }
+    }
+    document.body.removeChild(textarea);
+}
+
+async function enhancePrompt() {
+    console.log(Date.now(), "enhancePrompt: Function called.");
+    clearError();
+
+    if (!IMAGEN_GEMINI_API_KEY || IMAGEN_GEMINI_API_KEY === "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE") {
+        setError('API Key is not configured for prompt enhancement. Please replace "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE" in script.js with your actual key obtained from Google Cloud Console and ensure the Generative Language API is enabled.');
+        updateUI();
+        console.error(Date.now(), "enhancePrompt: API Key not configured.");
+        showToast("API Key missing for prompt enhancement. Check console.", "error");
+        return;
+    }
+    if (!prompt.trim()) {
+        setError('Please enter a prompt to enhance.');
+        updateUI();
+        console.warn(Date.now(), "enhancePrompt: Prompt is empty.");
+        showToast("Please enter a prompt to enhance.", "info");
+        return;
+    }
+    loadingEnhancePrompt = true;
+    enhancedPrompt = '';
+    updateUI();
+    console.log(Date.now(), "enhancePrompt: Starting prompt enhancement request.");
+    showToast("Enhancing prompt...", "info");
+    console.time("enhancePromptAPI");
+
+    try {
+        const llmPrompt = `Elaborate on the following image generation prompt to make it more descriptive and detailed, suitable for an advanced AI image generator. Add elements like lighting, mood, specific details, or artistic styles. Keep it concise, around 1-3 sentences.
+        Original prompt: "${prompt}"`;
+
+        let chatHistoryForEnhance = [];
+        chatHistoryForEnhance.push({ role: "user", parts: [{ text: llmPrompt }] });
+        const payload = { contents: chatHistoryForEnhance };
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${IMAGEN_GEMINI_API_KEY}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        console.log(Date.now(), "enhancePrompt: API fetch response received.");
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
+        }
+
+        const result = await response.json();
+        console.log(Date.now(), "enhancePrompt: API response parsed.", result);
+        if (result.candidates && result.candidates.length > 0 &&
+            result.candidates[0].content && result.candidates[0].content.parts &&
+            result.candidates[0].content.parts.length > 0) {
+            enhancedPrompt = result.candidates[0].content.parts[0].text;
+            console.log(Date.now(), "enhancePrompt: Prompt successfully enhanced.");
+            showToast("Prompt enhanced!", "success");
+        } else {
+            setError("Failed to enhance prompt. Please try again.");
+            showToast("Failed to enhance prompt.", "error");
+            console.error(Date.now(), "enhancePrompt: API response missing enhanced prompt data:", result);
+        }
+    } catch (e) {
+        setError(`Error enhancing prompt: ${e.message}`);
+        showToast(`Prompt enhancement failed: ${e.message}`, "error");
+        console.error(Date.now(), "enhancePrompt: Error enhancing prompt:", e);
+    } finally {
+        console.timeEnd("enhancePromptAPI");
+        loadingEnhancePrompt = false;
+        updateUI();
+        console.log(Date.now(), "enhancePrompt: Prompt enhancement process finished (loading state reset).");
+    }
+}
+
+async function generateVariationIdeas() {
+    console.log(Date.now(), "generateVariationIdeas: Function called.");
+    clearError();
+
+    if (!IMAGEN_GEMINI_API_KEY || IMAGEN_GEMINI_API_KEY === "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE") {
+        setError('API Key is not configured for variation ideas. Please replace "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE" in script.js with your actual key obtained from Google Cloud Console and ensure the Generative Language API is enabled.');
+        updateUI();
+        console.error(Date.now(), "generateVariationIdeas: API Key not configured.");
+        showToast("API Key missing for variation ideas. Check console.", "error");
+        return;
+    }
+    if (!prompt.trim()) {
+        setError('Please enter a prompt to get variation ideas.');
+        updateUI();
+        console.warn(Date.now(), "generateVariationIdeas: Prompt is empty.");
+        showToast("Please enter a prompt to get variation ideas.", "info");
+        return;
+    }
+    loadingVariationIdeas = true;
+    variationIdeas = [];
+    updateUI();
+    console.log(Date.now(), "generateVariationIdeas: Starting variation ideas request.");
+    showToast("Generating variation ideas...", "info");
+    console.time("generateVariationIdeasAPI");
+
+    try {
+        const llmPrompt = `Given the image generation prompt: "${prompt}", suggest 3-5 distinct creative variations or alternative ideas for generating similar but unique images. Focus on changing elements like setting, time of day, artistic style, or subject perspective. List each idea concisely.`;
+
+        let chatHistoryForVariations = [];
+        chatHistoryForVariations.push({ role: "user", parts: [{ text: llmPrompt }] });
+        const payload = { contents: chatHistoryForVariations };
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${IMAGEN_GEMINI_API_KEY}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        console.log(Date.now(), "generateVariationIdeas: API fetch response received.");
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
+        }
+
+        const result = await response.json();
+        console.log(Date.now(), "generateVariationIdeas: API response parsed.", result);
+        if (result.candidates && result.candidates.length > 0 &&
+            result.candidates[0].content && result.candidates[0].content.parts &&
+            result.candidates[0].content.parts.length > 0) {
+            const ideasText = result.candidates[0].content.parts[0].text;
+            variationIdeas = ideasText.split('\n').filter(line => line.trim() !== '');
+            console.log(Date.now(), "generateVariationIdeas: Variation ideas successfully generated.");
+            showToast("Variation ideas generated!", "success");
+        } else {
+            setError("Failed to generate variation ideas. Please try again.");
+            showToast("Failed to generate variation ideas.", "error");
+            console.error(Date.now(), "generateVariationIdeas: API response missing variation ideas data:", result);
+        }
+    } catch (e) {
+        setError(`Error generating variation ideas: ${e.message}`);
+        showToast(`Variation ideas failed: ${e.message}`, "error");
+        console.error(Date.now(), "generateVariationIdeas: Error generating variation ideas:", e);
+    } finally {
+        console.timeEnd("generateVariationIdeasAPI");
+        loadingVariationIdeas = false;
+        updateUI();
+        console.log(Date.now(), "generateVariationIdeas: Variation ideas process finished (loading state reset).");
+    }
+}
+
 function getImageDisplayStyles() {
     switch (aspectRatio) {
         case '1:1': return 'width: 100%; height: auto; aspect-ratio: 1 / 1;';
@@ -831,7 +1124,7 @@ function clearError() {
     currentError = '';
 }
 
-// --- Verse (Chat AI) Functions ---
+// --- Chat AI Functions ---
 
 async function loadChatHistory() {
     console.log(Date.now(), `loadChatHistory: Attempting to load chat history for userId: ${userId}`);
@@ -848,7 +1141,7 @@ async function loadChatHistory() {
         chatHistory = []; // Clear current history before loading
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            // Ensure message structure matches {role: 'user', parts: [{text: '...'}]}
+            // Ensure message structure matches {role: 'user/model', parts: [{text: '...'}]}
             if (data.role && data.text) { // Simple check for old format
                 chatHistory.push({ role: data.role, parts: [{ text: data.text }] });
             } else if (data.role && data.parts) { // New, correct format
@@ -860,7 +1153,7 @@ async function loadChatHistory() {
         scrollToBottomChat();
     } catch (e) {
         console.error(Date.now(), "loadChatHistory: Error loading chat history:", e);
-        showToast("Failed to load Verse history.", "error");
+        showToast("Failed to load chat history.", "error");
     }
 }
 
@@ -887,7 +1180,7 @@ async function saveChatMessage(role, text) {
 
 async function sendMessage() {
     console.log(Date.now(), "sendMessage: Function called.");
-    const messageText = verseInput.value.trim();
+    const messageText = chatInput.value.trim();
     if (!messageText) {
         showToast("Please enter a message.", "info");
         return;
@@ -895,7 +1188,7 @@ async function sendMessage() {
 
     if (!currentUser) {
         if (freeChatMessagesLeft <= 0) {
-            showToast("You've used all your free Verse messages. Please sign in for unlimited Verse!", "info");
+            showToast("You've used all your free chat messages. Please sign in for unlimited chat!", "info");
             signinRequiredModal?.classList.remove('hidden');
             return;
         }
@@ -909,8 +1202,8 @@ async function sendMessage() {
     saveChatMessage('user', messageText); // Save user message to Firestore
     renderChatMessages();
     scrollToBottomChat();
-    verseInput.value = ''; // Clear input field
-    verseInput.style.height = 'auto'; // Reset textarea height
+    chatInput.value = ''; // Clear input field
+    chatInput.style.height = 'auto'; // Reset textarea height
 
     isChatLoading = true;
     updateUI(); // Show typing indicator
@@ -920,7 +1213,7 @@ async function sendMessage() {
         localStorage.setItem('freeChatMessagesLeft', freeChatMessagesLeft);
     }
 
-    console.log(Date.now(), "sendMessage: Sending message to Verse AI.");
+    console.log(Date.now(), "sendMessage: Sending message to AI.");
     console.time("geminiChatAPI");
 
     try {
@@ -935,7 +1228,7 @@ async function sendMessage() {
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(`Verse AI API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
+            throw new Error(`AI API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
         }
 
         const result = await response.json();
@@ -954,11 +1247,11 @@ async function sendMessage() {
         if (isVoiceOutputActive) {
             speakText(aiResponseText);
         }
-        showToast("Verse responded!", "success");
+        showToast("AI responded!", "success");
 
     } catch (e) {
-        console.error(Date.now(), "sendMessage: Error during Verse AI response generation:", e);
-        showToast(`Verse response failed: ${e.message}`, "error");
+        console.error(Date.now(), "sendMessage: Error during AI response generation:", e);
+        showToast(`AI response failed: ${e.message}`, "error");
         chatHistory.push({ role: 'model', parts: [{ text: `Error: ${e.message}. Please try again.` }] });
         renderChatMessages();
         scrollToBottomChat();
@@ -966,8 +1259,7 @@ async function sendMessage() {
         if (!currentUser) {
             freeChatMessagesLeft++;
             localStorage.setItem('freeChatMessagesLeft', freeChatMessagesLeft);
-            updateUI(); // Update UI to show refunded credit
-            showToast(`Credit refunded due to Verse AI error. You now have ${freeChatMessagesLeft} free messages.`, "info", 5000);
+            showToast(`Credit refunded due to AI error. You now have ${freeChatMessagesLeft} free messages.`, "info", 5000);
         }
     } finally {
         console.timeEnd("geminiChatAPI");
@@ -977,11 +1269,11 @@ async function sendMessage() {
 }
 
 function renderChatMessages() {
-    if (!verseMessagesContainer) return;
+    if (!chatMessagesContainer) return;
 
-    verseMessagesContainer.innerHTML = ''; // Clear existing messages
+    chatMessagesContainer.innerHTML = ''; // Clear existing messages
     if (chatHistory.length === 0) {
-        verseMessagesContainer.innerHTML = `<div class="text-center text-gray-400 text-sm py-4">
+        chatMessagesContainer.innerHTML = `<div class="text-center text-gray-400 text-sm py-4">
             Start a conversation! Type your message below.
         </div>`;
         return;
@@ -989,13 +1281,12 @@ function renderChatMessages() {
 
     chatHistory.forEach((msg, index) => {
         const messageDiv = document.createElement('div');
-        // Apply responsive text sizes here
-        messageDiv.className = `chat-bubble ${msg.role} opacity-0 transform ${msg.role === 'user' ? 'translate-x-full text-sm sm:text-base' : '-translate-x-full text-base sm:text-lg'}`;
+        messageDiv.className = `chat-bubble ${msg.role} opacity-0 transform ${msg.role === 'user' ? 'translate-x-full' : '-translate-x-full'}`;
         
         // Use marked.js to convert Markdown to HTML
         messageDiv.innerHTML = marked.parse(msg.parts[0].text);
         
-        verseMessagesContainer.appendChild(messageDiv);
+        chatMessagesContainer.appendChild(messageDiv);
 
         // Animate message in
         gsap.to(messageDiv, {
@@ -1009,9 +1300,9 @@ function renderChatMessages() {
 }
 
 function scrollToBottomChat() {
-    if (verseMessagesContainer) {
-        gsap.to(verseMessagesContainer, {
-            scrollTop: verseMessagesContainer.scrollHeight,
+    if (chatMessagesContainer) {
+        gsap.to(chatMessagesContainer, {
+            scrollTop: chatMessagesContainer.scrollHeight,
             duration: 0.8,
             ease: "power2.out"
         });
@@ -1019,10 +1310,10 @@ function scrollToBottomChat() {
 }
 
 async function clearChatHistory() {
-    console.log(Date.now(), "clearChatHistory: Clearing Verse history.");
+    console.log(Date.now(), "clearChatHistory: Clearing chat history.");
     chatHistory = [];
     renderChatMessages();
-    showToast("Verse history cleared!", "info");
+    showToast("Chat history cleared!", "info");
 
     if (currentUser && db && userId) {
         const chatCollectionRef = collection(db, `users/${userId}/chatHistory`);
@@ -1033,214 +1324,19 @@ async function clearChatHistory() {
                 deletePromises.push(deleteDoc(doc.ref));
             });
             await Promise.all(deletePromises);
-            console.log(Date.now(), "clearChatHistory: Verse history cleared from Firestore.");
+            console.log(Date.now(), "clearChatHistory: Chat history cleared from Firestore.");
         } catch (e) {
-            console.error(Date.now(), "clearChatHistory: Error clearing Verse history from Firestore:", e);
-            showToast("Failed to clear Verse history from cloud.", "error");
+            console.error(Date.now(), "clearChatHistory: Error clearing chat history from Firestore:", e);
+            showToast("Failed to clear chat history from cloud.", "error");
         }
     } else if (!currentUser) {
         // For unauthenticated users, reset free messages if they clear chat
         freeChatMessagesLeft = 5;
         localStorage.setItem('freeChatMessagesLeft', freeChatMessagesLeft);
         updateUI();
-        showToast("Free Verse messages reset to 5.", "info");
+        showToast("Free chat messages reset to 5.", "info");
     }
 }
-
-// --- Image Generation Functions ---
-async function generateImage() {
-    console.log(Date.now(), "generateImage: Function called.");
-    if (!promptInput || !promptInput.value.trim()) {
-        setError("Please enter a prompt to generate an image.");
-        showToast("Please enter a prompt.", "error");
-        return;
-    }
-
-    if (!currentUser && freeGenerationsLeft <= 0) {
-        signinRequiredModal?.classList.remove('hidden');
-        return;
-    }
-
-    loading = true;
-    currentError = '';
-    imageUrl = '';
-    updateUI();
-    showToast("Generating your image...", "info", 5000);
-
-    if (!currentUser) {
-        freeGenerationsLeft--;
-        localStorage.setItem('freeGenerationsLeft', freeGenerationsLeft);
-    } else {
-        // For authenticated users, update Firestore
-        try {
-            const userDocRef = doc(db, 'users', userId);
-            await updateDoc(userDocRef, {
-                freeGenerationsLeft: freeGenerationsLeft - 1 // Decrement for authenticated user
-            });
-            console.log(Date.now(), "generateImage: Decremented freeGenerationsLeft in Firestore.");
-        } catch (e) {
-            console.error(Date.now(), "generateImage: Error updating freeGenerationsLeft in Firestore:", e);
-            // Don't block generation, but show a warning
-            showToast("Failed to update generation count in cloud. Please check console.", "error");
-        }
-    }
-
-    console.time("imageGenerationAPI");
-    try {
-        const payload = { instances: { prompt: promptInput.value.trim() }, parameters: { "sampleCount": 1} };
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${IMAGEN_GEMINI_API_KEY}`;
-        
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Image generation API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
-        }
-
-        const result = await response.json();
-        if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-            imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-            showToast("Image generated successfully!", "success");
-        } else {
-            throw new Error("No image data received from the API.");
-        }
-    } catch (e) {
-        console.error(Date.now(), "generateImage: Error during image generation:", e);
-        setError(`Image generation failed: ${e.message}`);
-        showToast(`Image generation failed: ${e.message}`, "error");
-        // If an error occurs and it's an unauthenticated user, refund the credit
-        if (!currentUser) {
-            freeGenerationsLeft++;
-            localStorage.setItem('freeGenerationsLeft', freeGenerationsLeft);
-            updateUI(); // Update UI to show refunded credit
-            showToast(`Credit refunded due to image generation error. You now have ${freeGenerationsLeft} free generations.`, "info", 5000);
-        }
-    } finally {
-        console.timeEnd("imageGenerationAPI");
-        loading = false;
-        updateUI();
-    }
-}
-
-function downloadImage() {
-    console.log(Date.now(), "downloadImage: Function called.");
-    if (imageUrl) {
-        const link = document.createElement('a');
-        link.href = imageUrl;
-        link.download = `genart_image_${Date.now()}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showToast("Image downloaded!", "success");
-        console.log(Date.now(), "Image downloaded.");
-    } else {
-        showToast("No image to download.", "info");
-        console.warn(Date.now(), "downloadImage: No image URL found.");
-    }
-}
-
-async function enhancePrompt() {
-    console.log(Date.now(), "enhancePrompt: Function called.");
-    if (!promptInput || !promptInput.value.trim()) {
-        showToast("Please enter a prompt to enhance.", "info");
-        return;
-    }
-
-    loadingEnhancePrompt = true;
-    enhancedPrompt = '';
-    updateUI();
-    showToast("Enhancing your prompt...", "info");
-
-    try {
-        const userPrompt = promptInput.value.trim();
-        const chatHistoryForEnhance = [
-            { role: "user", parts: [{ text: `Enhance this image generation prompt for better results: "${userPrompt}". Provide only the enhanced prompt text, nothing else.` }] }
-        ];
-        const payload = { contents: chatHistoryForEnhance };
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${IMAGEN_GEMINI_API_KEY}`;
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Prompt enhancement API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
-        }
-
-        const result = await response.json();
-        if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
-            enhancedPrompt = result.candidates[0].content.parts[0].text;
-            showToast("Prompt enhanced!", "success");
-        } else {
-            throw new Error("No enhanced prompt received from the API.");
-        }
-    } catch (e) {
-        console.error(Date.now(), "enhancePrompt: Error during prompt enhancement:", e);
-        showToast(`Prompt enhancement failed: ${e.message}`, "error");
-    } finally {
-        loadingEnhancePrompt = false;
-        updateUI();
-    }
-}
-
-async function generateVariationIdeas() {
-    console.log(Date.now(), "generateVariationIdeas: Function called.");
-    if (!promptInput || !promptInput.value.trim()) {
-        showToast("Please enter a prompt to get variation ideas.", "info");
-        return;
-    }
-
-    loadingVariationIdeas = true;
-    variationIdeas = [];
-    updateUI();
-    showToast("Generating variation ideas...", "info");
-
-    try {
-        const userPrompt = promptInput.value.trim();
-        const chatHistoryForVariations = [
-            { role: "user", parts: [{ text: `Generate 3 distinct creative variations for an image generation prompt based on this: "${userPrompt}". Provide them as a numbered list, one idea per line, without any introductory or concluding text.` }] }
-        ];
-        const payload = { contents: chatHistoryForVariations };
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${IMAGEN_GEMINI_API_KEY}`;
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Variation ideas API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
-        }
-
-        const result = await response.json();
-        if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
-            const rawText = result.candidates[0].content.parts[0].text;
-            // Split by new line and clean up numbering/whitespace
-            variationIdeas = rawText.split('\n')
-                                    .map(line => line.replace(/^\d+\.\s*/, '').trim())
-                                    .filter(line => line.length > 0);
-            showToast("Variation ideas generated!", "success");
-        } else {
-            throw new Error("No variation ideas received from the API.");
-        }
-    } catch (e) {
-        console.error(Date.now(), "generateVariationIdeas: Error during variation ideas generation:", e);
-        showToast(`Variation ideas failed: ${e.message}`, "error");
-    } finally {
-        loadingVariationIdeas = false;
-        updateUI();
-    }
-}
-
 
 // --- Theme Toggle ---
 function toggleTheme() {
@@ -1248,8 +1344,11 @@ function toggleTheme() {
     document.body.classList.toggle('light-mode');
     const isLightMode = document.body.classList.contains('light-mode');
     localStorage.setItem('theme', isLightMode ? 'light' : 'dark');
-    // The UI elements for theme toggle are now handled by the mobile profile menu or desktop
-    // No direct icon/text update on the main screen for this.
+    if (themeIcon) {
+        themeIcon.classList.toggle('fa-sun', !isLightMode);
+        themeIcon.classList.toggle('fa-moon', isLightMode);
+        toggleThemeBtn.querySelector('span').textContent = isLightMode ? 'Dark Mode' : 'Light Mode';
+    }
     showToast(`Switched to ${isLightMode ? 'Light' : 'Dark'} Mode`, "info");
 }
 
@@ -1257,23 +1356,25 @@ function applySavedTheme() {
     const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark
     if (savedTheme === 'light') {
         document.body.classList.add('light-mode');
+        if (themeIcon) {
+            themeIcon.classList.remove('fa-sun');
+            themeIcon.classList.add('fa-moon');
+            toggleThemeBtn.querySelector('span').textContent = 'Dark Mode';
+        }
     } else {
         document.body.classList.remove('light-mode');
+        if (themeIcon) {
+            themeIcon.classList.remove('fa-moon');
+            themeIcon.classList.add('fa-sun');
+            toggleThemeBtn.querySelector('span').textContent = 'Light Mode';
+        }
     }
     console.log(Date.now(), `applySavedTheme: Applied theme: ${savedTheme}`);
 }
 
-// --- Voice Input/Output (for chat, but can be adapted for image prompt) ---
+// --- Voice Input/Output ---
 function toggleVoiceInput() {
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-        const targetInput = (currentPage === 'verse' && verseInput) ? verseInput : mobileArtPromptInput;
-
-        if (!targetInput) {
-            console.warn(Date.now(), "toggleVoiceInput: No active input for voice recognition.");
-            showToast("No active input field for voice.", "info");
-            return;
-        }
-
         if (!speechRecognition) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             speechRecognition = new SpeechRecognition();
@@ -1285,22 +1386,17 @@ function toggleVoiceInput() {
                 isVoiceInputActive = true;
                 updateUI();
                 showToast("Voice input active. Speak now!", "info");
-                targetInput.placeholder = "Listening...";
+                chatInput.placeholder = "Listening...";
             };
 
             speechRecognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                targetInput.value = transcript;
-                targetInput.style.height = 'auto';
-                targetInput.style.height = (targetInput.scrollHeight) + 'px';
+                chatInput.value = transcript;
+                chatInput.style.height = 'auto'; // Reset height
+                chatInput.style.height = (chatInput.scrollHeight) + 'px'; // Adjust height
                 console.log(Date.now(), "Voice input result:", transcript);
-                // If it's the mobile art prompt input, trigger generate
-                if (targetInput.id === 'mobile-art-prompt-input') {
-                    prompt = transcript; // Update global prompt state
-                    generateImage();
-                } else { // Otherwise, it's for chat
-                    sendMessage();
-                }
+                // Automatically send message after speech recognition
+                sendMessage();
             };
 
             speechRecognition.onerror = (event) => {
@@ -1308,13 +1404,13 @@ function toggleVoiceInput() {
                 showToast(`Voice input error: ${event.error}`, "error");
                 isVoiceInputActive = false;
                 updateUI();
-                targetInput.placeholder = (targetInput.id === 'mobile-art-prompt-input') ? "Describe your art prompt here..." : "Ask anything...";
+                chatInput.placeholder = "Type your message here...";
             };
 
             speechRecognition.onend = () => {
                 isVoiceInputActive = false;
                 updateUI();
-                targetInput.placeholder = (targetInput.id === 'mobile-art-prompt-input') ? "Describe your art prompt here..." : "Ask anything...";
+                chatInput.placeholder = "Type your message here...";
                 console.log(Date.now(), "Voice input ended.");
             };
         }
@@ -1366,7 +1462,7 @@ function stopSpeaking() {
     }
 }
 
-// --- Prompt Templates (for chat screen) ---
+// --- Prompt Templates ---
 const defaultPromptTemplates = [
     "Explain quantum physics simply.",
     "Write a short story about a brave knight.",
@@ -1381,20 +1477,20 @@ const defaultPromptTemplates = [
 ];
 
 function populatePromptTemplates() {
-    if (!versePromptTemplatesList) return;
+    if (!promptTemplatesList) return;
 
-    versePromptTemplatesList.innerHTML = ''; // Clear existing templates
+    promptTemplatesList.innerHTML = ''; // Clear existing templates
     defaultPromptTemplates.forEach(templateText => {
         const button = document.createElement('button');
         button.className = 'px-4 py-2 rounded-full bg-blue-500/30 text-blue-200 hover:bg-blue-500/50 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500';
         button.textContent = templateText;
         button.addEventListener('click', () => {
-            verseInput.value = templateText;
-            verseInput.style.height = 'auto';
-            verseInput.style.height = (verseInput.scrollHeight) + 'px';
+            chatInput.value = templateText;
+            chatInput.style.height = 'auto'; // Reset height
+            chatInput.style.height = (chatInput.scrollHeight) + 'px'; // Adjust height
             sendMessage();
         });
-        versePromptTemplatesList.appendChild(button);
+        promptTemplatesList.appendChild(button);
     });
     console.log(Date.now(), "populatePromptTemplates: Default prompt templates populated.");
 }
@@ -1404,7 +1500,7 @@ function populatePromptTemplates() {
 function setupEventListeners() {
     console.log(Date.now(), "setupEventListeners: Setting up all event listeners...");
 
-    // Header Hover Effect (Desktop only)
+    // Header Hover Effect
     if (mainHeader) {
         mainHeader.addEventListener('mouseenter', () => {
             gsap.to(mainHeader, {
@@ -1425,7 +1521,7 @@ function setupEventListeners() {
         console.log(Date.now(), "Event Listeners Attached: mainHeader hover effects.");
     }
 
-    // Desktop Navigation Buttons
+    // Header Navigation Buttons
     const homeBtn = getElement('home-btn');
     if (homeBtn) {
         homeBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Home button clicked."); setPage('home'); });
@@ -1438,30 +1534,18 @@ function setupEventListeners() {
         console.log(Date.now(), "Event Listener Attached: generator-btn");
     }
 
-    const verseBtn = getElement('verse-btn');
-    if (verseBtn) {
-        verseBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Verse button clicked."); setPage('verse'); });
-        console.log(Date.now(), "Event Listener Attached: verse-btn");
+    const chatAIBtn = getElement('chat-ai-btn'); // New chat AI button
+    if (chatAIBtn) {
+        chatAIBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Chat AI button clicked."); setPage('chat-ai'); });
+        console.log(Date.now(), "Event Listener Attached: chat-ai-btn");
     }
 
     if (logoBtn) {
-        logoBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Logo button clicked."); setPage('home'); });
+        logoBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Logo button clicked."); setPage('home'); });
         console.log(Date.now(), "Event Listener Attached: logoBtn");
     }
 
-    // Mobile Header & Menu Buttons
-    if (generateArtBtnMobile) {
-        generateArtBtnMobile.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Mobile Header 'Generate Art' button clicked.");
-            setPage('generator');
-        });
-    }
-    if (mobileProfileBtn) {
-        mobileProfileBtn.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Mobile Header 'Profile' button clicked.");
-            showToast("Profile options coming soon!", "info"); // Placeholder
-        });
-    }
+    // Mobile Menu Buttons
     if (hamburgerBtn) {
         hamburgerBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Hamburger button clicked."); toggleMobileMenu(); });
         console.log(Date.now(), "Event Listener Attached: hamburgerBtn");
@@ -1488,77 +1572,20 @@ function setupEventListeners() {
                 console.log(Date.now(), `Event: Mobile nav link clicked: ${e.target.id}`);
                 if (e.target.id === 'mobile-home-btn') setPage('home');
                 else if (e.target.id === 'mobile-generator-btn') setPage('generator');
-                else if (e.target.id === 'mobile-verse-btn') showToast("Verse (Chat AI) is currently a desktop-only feature. Please use a desktop browser to access it.", "info", 5000); // Verse is desktop only for now
+                else if (e.target.id === 'mobile-chat-ai-btn') setPage('chat-ai'); // New mobile chat AI button
                 toggleMobileMenu();
             });
             console.log(Date.now(), `Event Listener Attached: mobile-nav-link (${link.id})`);
         }
     });
 
-    // Mobile Art Home Page Specific Buttons (new)
-    if (createImageBtnMobile) {
-        createImageBtnMobile.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Mobile 'Create Image' button clicked.");
-            setPage('generator'); // Go to the generator page
-        });
-    }
-    if (generatePromptBtnMobile) {
-        generatePromptBtnMobile.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Mobile 'Generate Prompt' button clicked.");
-            showToast("Generating prompt ideas...", "info"); // Placeholder for actual LLM call
-            // In a real app, you'd call a function like generatePromptIdeas()
-        });
-    }
-    if (exploreGalleryBtnMobile) {
-        exploreGalleryBtnMobile.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Mobile 'Explore Gallery' button clicked.");
-            showToast("Gallery coming soon!", "info"); // Placeholder
-        });
-    }
-    if (moreOptionsBtnMobile) {
-        moreOptionsBtnMobile.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Mobile 'More' button clicked.");
-            showToast("More options coming soon!", "info"); // Placeholder for modal/menu
-        });
-    }
-
-    // Mobile Art Home Page Bottom Input Bar
-    if (mobileStyleSelectorBtn) {
-        mobileStyleSelectorBtn.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Mobile Style Selector button clicked.");
-            showToast("Style selector options coming soon!", "info"); // Placeholder
-        });
-    }
-    if (mobileVoiceInputArtBtn) {
-        mobileVoiceInputArtBtn.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Mobile Voice Input (Art) button clicked.");
-            toggleVoiceInput(); // Use existing voice input function
-        });
-    }
-    if (mobileGenerateArtBtn) {
-        mobileGenerateArtBtn.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Mobile Generate Art button clicked.");
-            prompt = mobileArtPromptInput.value.trim(); // Get prompt from mobile input
-            generateImage(); // Trigger image generation
-        });
-    }
-    if (mobileArtPromptInput) {
-        mobileArtPromptInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                prompt = mobileArtPromptInput.value.trim();
-                generateImage();
-            }
-        });
-    }
-
-    // Desktop Home Page Button
+    // Home Page Button
     if (startCreatingBtn) {
         startCreatingBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Start Creating Now button clicked."); setPage('generator'); });
         console.log(Date.now(), "Event Listener Attached: startCreatingBtn");
     }
 
-    // Image Generator Page Controls (shared with desktop)
+    // Image Generator Page Controls
     if (promptInput) {
         promptInput.addEventListener('input', (e) => {
             prompt = e.target.value;
@@ -1650,29 +1677,28 @@ function setupEventListeners() {
         console.log(Date.now(), "Event Listener Attached: closeDebugMessageBtn");
     }
 
-    // Verse Specific Event Listeners (for actual chat screen - desktop only)
-    if (sendVerseBtn) {
-        sendVerseBtn.addEventListener('click', sendMessage);
-        console.log(Date.now(), "Event Listener Attached: sendVerseBtn");
+    // Chat AI Specific Event Listeners
+    if (sendChatBtn) {
+        sendChatBtn.addEventListener('click', sendMessage);
+        console.log(Date.now(), "Event Listener Attached: sendChatBtn");
     }
-    if (verseInput) {
-        verseInput.addEventListener('keydown', (e) => {
+    if (chatInput) {
+        chatInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault(); // Prevent new line
                 sendMessage();
             }
         });
-        console.log(Date.now(), "Event Listener Attached: verseInput keydown");
+        console.log(Date.now(), "Event Listener Attached: chatInput keydown");
     }
-    if (clearVerseBtn) {
-        clearVerseBtn.addEventListener('click', clearChatHistory);
-        console.log(Date.now(), "Event Listener Attached: clearVerseBtn");
+    if (clearChatBtn) {
+        clearChatBtn.addEventListener('click', clearChatHistory);
+        console.log(Date.now(), "Event Listener Attached: clearChatBtn");
     }
-    // Theme toggle is now handled by a "More" menu or profile settings
-    // if (toggleThemeBtn) {
-    //     toggleThemeBtn.addEventListener('click', toggleTheme);
-    //     console.log(Date.now(), "Event Listener Attached: toggleThemeBtn");
-    // }
+    if (toggleThemeBtn) {
+        toggleThemeBtn.addEventListener('click', toggleTheme);
+        console.log(Date.now(), "Event Listener Attached: toggleThemeBtn");
+    }
     if (toggleVoiceInputBtn) {
         toggleVoiceInputBtn.addEventListener('click', toggleVoiceInput);
         console.log(Date.now(), "Event Listener Attached: toggleVoiceInputBtn");
@@ -1681,43 +1707,15 @@ function setupEventListeners() {
         toggleVoiceOutputBtn.addEventListener('click', toggleVoiceOutput);
         console.log(Date.now(), "Event Listener Attached: toggleVoiceOutputBtn");
     }
+    // New: Stop Voice Output Button Listener
     if (stopVoiceOutputBtn) {
         stopVoiceOutputBtn.addEventListener('click', stopSpeaking);
         console.log(Date.now(), "Event Listener Attached: stopVoiceOutputBtn");
     }
-    if (verseBackBtn) {
-        verseBackBtn.addEventListener('click', () => setPage('home')); // On desktop, back from verse goes to desktop home
-    }
-    if (verseMenuBtn) {
-        verseMenuBtn.addEventListener('click', () => {
-            verseMenuDropdown?.classList.toggle('hidden');
-        });
-        // Close dropdown if clicked outside
-        document.addEventListener('click', (event) => {
-            if (verseMenuDropdown && !verseMenuBtn.contains(event.target) && !verseMenuDropdown.contains(event.target)) {
-                verseMenuDropdown.classList.add('hidden');
-            }
-        });
-    }
-
-    // Mobile Bottom Navigation Listeners
-    if (bottomNavHomeBtn) {
-        bottomNavHomeBtn.addEventListener('click', () => setPage('home'));
-    }
-    if (bottomNavGeneratorBtn) {
-        bottomNavGeneratorBtn.addEventListener('click', () => setPage('generator'));
-    }
-    if (bottomNavGalleryBtn) {
-        bottomNavGalleryBtn.addEventListener('click', () => showToast("Gallery coming soon!", "info")); // Placeholder
-    }
-    if (bottomNavProfileBtn) {
-        bottomNavProfileBtn.addEventListener('click', () => showToast("Profile coming soon!", "info")); // Placeholder
-    }
 
 
-    // Initial population calls
     populateAspectRatioRadios();
-    populatePromptTemplates(); // Still needed for desktop Verse page
+    populatePromptTemplates(); // Populate templates on load
     console.log(Date.now(), "setupEventListeners: All event listeners setup attempted.");
 }
 
@@ -1731,13 +1729,10 @@ function initApp() {
         initFirebase();
 
         // Populate ALL UI Element References here, after DOM is ready
-        homePageElement = getElement('home-page-element'); // Desktop home
-        mobileArtHomePageElement = getElement('mobile-art-home-page-element'); // Mobile home
+        homePageElement = getElement('home-page-element');
         generatorPageElement = getElement('generator-page-element');
-        versePageElement = getElement('verse-page-element'); // The actual chat conversation screen
-        
-        // Ensure all possible top-level page elements are in this array for hiding logic
-        allPageElements = [homePageElement, mobileArtHomePageElement, generatorPageElement, versePageElement].filter(Boolean);
+        chatAIPageElement = getElement('chat-ai-page-element'); // New chat AI page
+        allPageElements = [homePageElement, generatorPageElement, chatAIPageElement].filter(Boolean); // Filter out nulls
 
         persistentDebugMessage = getElement('persistent-debug-message');
         closeDebugMessageBtn = getElement('close-debug-message-btn');
@@ -1772,10 +1767,6 @@ function initApp() {
         startCreatingBtn = getElement('start-creating-btn');
         logoBtn = getElement('logo-btn');
 
-        // Mobile Header elements
-        mobileHeaderElement = getElement('mobile-header-element');
-        generateArtBtnMobile = getElement('generate-art-btn-mobile');
-        mobileProfileBtn = getElement('mobile-profile-btn');
         hamburgerBtn = getElement('hamburger-btn');
         hamburgerIcon = getElement('hamburger-icon');
         mobileMenu = getElement('mobile-menu');
@@ -1788,44 +1779,22 @@ function initApp() {
         // Header specific elements
         mainHeader = getElement('header-element');
 
-        // Verse (Chat AI) specific elements (desktop only)
-        verseCreditsDisplay = getElement('verse-credits-display');
-        toggleThemeBtn = getElement('toggle-theme-btn'); // This will be unused in mobile for now
-        themeIcon = getElement('theme-icon'); // This will be unused in mobile for now
+        // Chat AI specific elements
+        chatCreditsDisplay = getElement('chat-credits-display');
+        toggleThemeBtn = getElement('toggle-theme-btn');
+        themeIcon = getElement('theme-icon');
         toggleVoiceInputBtn = getElement('toggle-voice-input-btn');
         voiceInputIcon = getElement('voice-input-icon');
         toggleVoiceOutputBtn = getElement('toggle-voice-output-btn');
         voiceOutputIcon = getElement('voice-output-icon');
-        stopVoiceOutputBtn = getElement('stop-voice-output-btn');
-        clearVerseBtn = getElement('clear-verse-btn');
-        verseMessagesContainer = getElement('verse-messages-container');
+        stopVoiceOutputBtn = getElement('stop-voice-output-btn'); // New: Get reference to stop button
+        clearChatBtn = getElement('clear-chat-btn');
+        chatMessagesContainer = getElement('chat-messages-container');
         typingIndicator = getElement('typing-indicator');
-        verseInput = getElement('verse-input');
-        sendVerseBtn = getElement('send-verse-btn');
-        versePromptTemplatesContainer = getElement('verse-prompt-templates-container');
-        versePromptTemplatesList = getElement('verse-prompt-templates-list');
-        verseBackBtn = getElement('verse-back-btn');
-        verseChatTitle = getElement('verse-chat-title');
-        verseMenuBtn = getElement('verse-menu-btn');
-        verseMenuDropdown = getElement('verse-menu-dropdown');
-
-        // Mobile Art Home Page elements (new)
-        createImageBtnMobile = getElement('create-image-btn-mobile');
-        generatePromptBtnMobile = getElement('generate-prompt-btn-mobile');
-        exploreGalleryBtnMobile = getElement('explore-gallery-btn-mobile');
-        moreOptionsBtnMobile = getElement('more-options-btn-mobile');
-        mobileStyleSelectorBtn = getElement('mobile-style-selector-btn');
-        mobileArtPromptInput = getElement('mobile-art-prompt-input');
-        mobileVoiceInputArtBtn = getElement('mobile-voice-input-art-btn');
-        mobileGenerateArtBtn = getElement('mobile-generate-art-btn');
-
-
-        // Mobile Bottom Navigation elements
-        mobileBottomNav = getElement('mobile-bottom-nav');
-        bottomNavHomeBtn = getElement('bottom-nav-home-btn');
-        bottomNavGeneratorBtn = getElement('bottom-nav-generator-btn');
-        bottomNavGalleryBtn = getElement('bottom-nav-gallery-btn');
-        bottomNavProfileBtn = getElement('bottom-nav-profile-btn');
+        chatInput = getElement('chat-input');
+        sendChatBtn = getElement('send-chat-btn');
+        promptTemplatesContainer = getElement('prompt-templates-container');
+        promptTemplatesList = getElement('prompt-templates-list');
 
 
         console.log(Date.now(), "initApp: All UI element references obtained.");
@@ -1833,29 +1802,9 @@ function initApp() {
         console.log(Date.now(), "initApp: Calling setupEventListeners().");
         setupEventListeners();
         console.log(Date.now(), "initApp: Calling setPage('home').");
-        setPage('home'); // Set initial page based on screen size
+        setPage('home'); // Set initial page
         applySavedTheme(); // Apply theme on load
         updateUI(); // Initial UI update after all elements are ready and listeners are set up
-
-        // Add a resize listener to handle page changes on orientation/window resize
-        window.addEventListener('resize', () => {
-            console.log(Date.now(), "Window resized. Updating UI.");
-            updateUI();
-            // Adjust textarea height on resize for both generator and verse inputs
-            if (promptInput) {
-                promptInput.style.height = 'auto';
-                promptInput.style.height = (promptInput.scrollHeight) + 'px';
-            }
-            if (verseInput) {
-                verseInput.style.height = 'auto';
-                verseInput.style.height = (verseInput.scrollHeight) + 'px';
-            }
-            if (mobileArtPromptInput) {
-                mobileArtPromptInput.style.height = 'auto';
-                mobileArtPromptInput.style.height = (mobileArtPromptInput.scrollHeight) + 'px';
-            }
-        });
-
 
         console.timeEnd("AppInitialization");
         console.log(Date.now(), "initApp: App initialization complete.");
