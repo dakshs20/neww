@@ -440,7 +440,7 @@ textarea:focus {
     animation: image-reveal 0.5s ease-out forwards;
 }
 
-/* Light Mode Styles */
+/* Light Mode Styles (Brand Light Mode) */
 body.light-mode {
     background: linear-gradient(to bottom right, #e0f2fe, #f0f9ff); /* Light blue to white gradient */
     color: #333; /* Darker text */
@@ -450,6 +450,9 @@ body.light-mode .text-gray-100 { color: #333; }
 body.light-mode .text-gray-200 { color: #444; }
 body.light-mode .text-gray-300 { color: #555; }
 body.light-mode .text-gray-400 { color: #666; }
+body.light-mode .text-gray-800 { color: #111827; } /* Darkest gray for text in light mode */
+body.light-mode .text-gray-900 { color: #111827; } /* Darkest gray for text in light mode */
+
 
 body.light-mode .bg-gradient-to-br {
     background: linear-gradient(to bottom right, #f0f9ff, #e0f2fe);
@@ -506,97 +509,257 @@ body.light-mode .chat-bubble.user {
 /* Light mode specific input styles */
 body.light-mode input[type="text"],
 body.light-mode textarea,
-body.light-mode #verse-input {
+body.light-mode #verse-input,
+body.light-mode #mobile-art-prompt-input {
     background-color: rgba(255, 255, 255, 0.7);
     border-color: #94a3b8; /* Tailwind slate-400 */
     color: #333;
-    placeholder-color: #666;
+    /* placeholder-color: #666; This is not a direct CSS property, handled by browser or JS */
 }
 
 body.light-mode input[type="text"]:focus,
 body.light-mode textarea:focus,
-body.light-mode #verse-input:focus {
+body.light-mode #verse-input:focus,
+body.light-mode #mobile-art-prompt-input:focus {
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5), 0 0 15px rgba(59, 130, 246, 0.3);
     border-color: #3b82f6;
 }
 
-/* Mobile-specific styles */
-@media (max-width: 639px) { /* Tailwind's 'sm' breakpoint */
+/* Desktop Specific Styles (sm and up) */
+@media (min-width: 640px) {
+    #main-content-container {
+        display: block; /* Ensure block layout on desktop to prevent side-by-side */
+        height: auto; /* Let content dictate height */
+        padding-top: 1.5rem; /* Default desktop padding */
+        padding-bottom: 1.5rem;
+    }
+
+    #verse-page-element {
+        width: 100%;
+        max-width: 80rem; /* Increased max-width for desktop chat */
+        height: calc(100vh - 8rem); /* Adjusted height for desktop chat */
+        margin-left: auto;
+        margin-right: auto;
+        display: flex; /* Keep flex for internal layout */
+        flex-direction: column;
+        background-color: rgba(255, 255, 255, 0.05); /* Restore original desktop blur background */
+        backdrop-filter: blur(8px);
+        border-radius: 1rem;
+        border: 1px solid #334155; /* slate-700 */
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    }
+}
+
+
+/* Mobile-specific styles (max-width: 639px) */
+@media (max-width: 639px) {
     body {
         padding-bottom: 60px; /* Space for bottom nav bar */
+        /* Ensure main content takes full height minus header/footer */
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding-left: 0;
+        padding-right: 0;
     }
 
-    /* Mobile Home Page specific animations */
-    @keyframes pulse-slow {
-        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(96, 165, 250, 0.7); }
-        70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(96, 165, 250, 0); }
-    }
-    .animate-pulse-slow {
-        animation: pulse-slow 3s infinite cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    /* Main content container adjustments for mobile */
+    #main-content-container {
+        padding: 0; /* Remove padding from main container on mobile */
+        flex-grow: 1;
+        display: flex; /* Ensure it's a flex container for its children */
+        flex-direction: column;
+        height: calc(100vh - 56px - 60px); /* Full viewport height minus header and bottom nav */
+        overflow-y: auto; /* Allow scrolling if content overflows */
     }
 
-    /* Verse (Chat) Page Specific Styles for Mobile */
+    /* Mobile Header Styling */
+    #mobile-header-element {
+        background-color: transparent; /* Keep transparent */
+        box-shadow: none; /* No shadow */
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    #generate-art-btn-mobile {
+        background: linear-gradient(90deg, #6366F1, #06B6D4); /* Indigo to Cyan gradient */
+        box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4); /* Shadow matching indigo */
+        font-weight: 600;
+        padding: 0.6rem 1.2rem;
+        border-radius: 9999px; /* Fully rounded */
+        transition: all 0.2s ease-in-out;
+    }
+    #generate-art-btn-mobile:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(99, 102, 241, 0.5);
+    }
+
+    /* Mobile Art Home Page Styles */
+    #mobile-art-home-page-element {
+        background-color: transparent; /* Let body background show through */
+        height: 100%; /* Take full height of main content area */
+        width: 100%;
+        padding: 0; /* Remove padding, handled by children */
+        display: flex; /* Ensure flex column layout */
+        flex-direction: column;
+        justify-content: space-between; /* Push input to bottom */
+        align-items: center;
+        border: none; /* No border for this page */
+        box-shadow: none; /* No shadow for this page */
+        border-radius: 0; /* No rounded corners for this page */
+        color: #111827; /* Dark text for light background */
+    }
+
+    body.dark-mode #mobile-art-home-page-element {
+        color: #f3f4f6; /* Light text for dark background */
+    }
+
+    #mobile-art-home-page-element h2 {
+        font-size: 1.875rem; /* 3xl */
+        font-weight: 700; /* Bold */
+        margin-bottom: 2.5rem; /* More spacing */
+        line-height: 1.2;
+    }
+
+    .mobile-action-btn {
+        background-color: white; /* White background for buttons */
+        border-radius: 0.75rem; /* Rounded corners */
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Soft shadow */
+        transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+        min-height: 90px; /* Ensure a decent tap target size */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        color: #111827; /* Dark text */
+    }
+
+    .mobile-action-btn:active {
+        transform: scale(0.98); /* Subtle bounce on tap */
+        box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+
+    body.dark-mode .mobile-action-btn {
+        background-color: #2c2c2c; /* Darker background for buttons in dark mode */
+        color: #f3f4f6; /* Light text */
+        box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+
+    .mobile-action-btn i {
+        margin-bottom: 0.5rem;
+    }
+
+    /* Mobile Bottom Input Bar Styling */
+    #mobile-art-prompt-input {
+        background-color: transparent; /* Transparent background */
+        border-radius: 9999px; /* Fully rounded capsule */
+        padding: 0.75rem 0.5rem; /* Adjust padding */
+        color: #111827; /* Dark text */
+        font-size: 1rem;
+        height: auto; /* Allow height to adjust */
+        min-height: 44px; /* Minimum tap target height */
+        box-shadow: none; /* No inner shadow */
+        border: none; /* No border for input itself */
+    }
+    #mobile-art-prompt-input::placeholder {
+        color: #6b7280; /* Gray-500 */
+    }
+
+    body.dark-mode #mobile-art-prompt-input {
+        color: #f3f4f6; /* Light text */
+        background-color: transparent;
+    }
+    body.dark-mode #mobile-art-prompt-input::placeholder {
+        color: #9ca3af; /* Gray-400 */
+    }
+
+    #mobile-art-home-page-element .w-full.p-4.sticky.bottom-0.bg-transparent > div {
+        background-color: white; /* White background for the input container */
+        border-radius: 9999px; /* Fully rounded */
+        padding: 0.5rem 1rem; /* Adjust padding */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15); /* More pronounced shadow */
+        border: 1px solid #d1d5db; /* Light border */
+    }
+
+    body.dark-mode #mobile-art-home-page-element .w-full.p-4.sticky.bottom-0.bg-transparent > div {
+        background-color: #333333; /* Darker background for input container in dark mode */
+        border: 1px solid #4b5563; /* Darker border */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+
+    #mobile-generate-art-btn {
+        background: linear-gradient(90deg, #6366F1, #06B6D4); /* Indigo to Cyan gradient */
+        box-shadow: 0 2px 5px rgba(99, 102, 241, 0.4);
+        transition: all 0.2s ease-in-out;
+        width: 44px; /* Fixed size for tap target */
+        height: 44px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    #mobile-generate-art-btn:active {
+        transform: scale(0.9); /* Smaller bounce on tap */
+        box-shadow: 0 1px 3px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Verse (Chat) Page Specific Styles for Mobile (hidden by default) */
     #verse-page-element {
-        height: calc(100vh - 120px); /* Adjust for mobile header and bottom nav */
+        display: none !important; /* Ensure it's hidden on mobile */
+    }
+
+    /* Generator Page on Mobile */
+    #generator-page-element {
         padding: 1rem; /* Smaller padding for mobile */
+        max-width: 100%; /* Take full width on mobile */
+        margin: 0; /* Remove any auto margins */
+        height: calc(100vh - 56px - 60px); /* Adjust height for mobile header and bottom nav */
+        background-color: rgba(255, 255, 255, 0.05); /* Restore original desktop blur background */
+        backdrop-filter: blur(8px);
+        border-radius: 1rem;
+        border: 1px solid #334155; /* slate-700 */
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    }
+    body.light-mode #generator-page-element {
+        background-color: rgba(255, 255, 255, 0.7);
+        border-color: rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
-    #verse-messages-container {
-        padding: 0.75rem; /* Smaller padding for mobile */
-        gap: 0.5rem; /* Smaller gap between messages */
+    #prompt-input {
+        min-height: 80px; /* Adjust min-height for mobile */
     }
 
-    .chat-bubble {
-        max-width: 90%; /* Allow bubbles to take more width on small screens */
-        padding: 0.6rem 0.8rem; /* Slightly smaller padding for mobile */
-        border-radius: 1rem; /* Slightly smaller border-radius */
+    #generate-image-btn, #enhance-prompt-btn, #generate-variation-ideas-btn {
+        padding: 0.75rem 1rem; /* Adjust button padding */
+        font-size: 1rem; /* Adjust font size */
     }
 
-    .chat-bubble.user {
-        border-bottom-right-radius: 0.4rem;
+    /* Mobile Bottom Navigation Bar */
+    #mobile-bottom-nav {
+        background-color: white; /* White background for bottom nav */
+        border-top: 1px solid #e5e7eb; /* Light border */
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
     }
 
-    .chat-bubble.ai {
-        border-bottom-left-radius: 0.4rem;
+    body.dark-mode #mobile-bottom-nav {
+        background-color: #1a1a1a; /* Dark background for bottom nav in dark mode */
+        border-top: 1px solid #333333;
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.4);
     }
 
-    #verse-input {
-        padding: 0.6rem 0.8rem; /* Smaller padding for input */
-        font-size: 0.9rem; /* Slightly smaller font for input */
-        height: 2.5rem; /* Smaller initial height */
-        min-height: 2.5rem;
+    #mobile-bottom-nav button {
+        color: #6b7280; /* Gray-500 for inactive icons */
     }
 
-    #send-verse-btn, #toggle-voice-input-btn {
-        padding: 0.6rem; /* Smaller padding for buttons */
-        font-size: 1rem; /* Smaller icon size */
+    body.dark-mode #mobile-bottom-nav button {
+        color: #9ca3af; /* Gray-400 for inactive icons in dark mode */
     }
 
-    #verse-prompt-templates-container {
-        padding-top: 0.75rem;
-        margin-top: 0.75rem;
+    #mobile-bottom-nav button.text-blue-300 {
+        color: #6366F1; /* Indigo-500 for active icon */
     }
-
-    #verse-prompt-templates-list button {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.8rem;
-    }
-
-    /* Typing indicator dots animation */
-    .dot {
-        animation: bounce 0.6s infinite alternate;
-    }
-
-    .dot:nth-child(2) {
-        animation-delay: 0.2s;
-    }
-
-    .dot:nth-child(3) {
-        animation-delay: 0.4s;
-    }
-
-    @keyframes bounce {
-        from { transform: translateY(0); }
-        to { transform: translateY(-5px); }
+    body.dark-mode #mobile-bottom-nav button.text-blue-300 {
+        color: #60a5fa; /* Blue-400 for active icon in dark mode */
     }
 }
