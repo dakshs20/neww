@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- SEO: Optimized Title Tag - Removed "Free" as requested -->
-    <title>AI Image Generator | GenArt - Create Stunning Art Online</title>
+    <title>AI Image & Chat Generator | GenArt - Create Stunning Art Online</title>
     <!-- SEO: Optimized Meta Description for better keyword integration and CTR -->
-    <meta name="description" content="Generate stunning AI art for free with GenArt! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art creator.">
+    <meta name="description" content="Generate stunning AI art and engage in intelligent text conversations for free with GenArt! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art and chat creator.">
 
     <!-- Open Graph / Facebook / LinkedIn / Pinterest -->
     <meta property="og:type" content="website">
     <!-- SEO: Updated URL for social sharing to your actual domain -->
     <meta property="og:url" content="https://www.gensart.space/">
-    <meta property="og:title" content="AI Image Generator | GenArt - Create Stunning Art Online">
-    <meta property="og:description" content="Generate stunning AI art for free with GenArt! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art creator.">
-    <meta property="og:image" content="https://placehold.co/1200x630/333333/FFFFFF?text=GenArt+AI+Image+Generator"> <!-- IMPORTANT: Replace with a compelling image URL for social sharing (e.g., a sample AI art piece from your gallery) -->
+    <meta property="og:title" content="AI Image & Chat Generator | GenArt - Create Stunning Art Online">
+    <meta property="og:description" content="Generate stunning AI art and engage in intelligent text conversations for free with GenArt! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art and chat creator.">
+    <meta property="og:image" content="https://placehold.co/1200x630/333333/FFFFFF"> <!-- Removed ?text= -->
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
 
@@ -22,20 +22,20 @@
     <meta name="twitter:card" content="summary_large_image">
     <!-- SEO: Updated URL for Twitter sharing to your actual domain -->
     <meta name="twitter:url" content="https://www.gensart.space/">
-    <meta name="twitter:title" content="AI Image Generator | GenArt - Create Stunning Art Online">
-    <meta name="twitter:description" content="Generate stunning AI art for free with GenArt! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art creator.">
-    <meta name="twitter:image" content="https://placehold.co/1200x675/333333/FFFFFF?text=GenArt+AI+Image+Generator"> <!-- IMPORTANT: Replace with a compelling image URL for social sharing -->
+    <meta name="twitter:title" content="AI Image & Chat Generator | GenArt - Create Stunning Art Online">
+    <meta name="twitter:description" content="Generate stunning AI art and engage in intelligent text conversations for free with GenArt! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art and chat creator.">
+    <meta name="twitter:image" content="https://placehold.co/1200x675/333333/FFFFFF"> <!-- Removed ?text= -->
 
     <!-- SEO: Schema Markup (JSON-LD) for SoftwareApplication -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      "name": "GenArt - Free AI Image Generator",
+      "name": "GenArt - Free AI Image & Chat Generator",
       "operatingSystem": "Web",
       "applicationCategory": "MultimediaApplication",
       "url": "https://www.gensart.space/",
-      "description": "Generate stunning AI art for free with GenArt! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art creator.",
+      "description": "Generate stunning AI art and engage in intelligent text conversations for free with GenArt! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art and chat creator.",
       "offers": {
         "@type": "Offer",
         "price": "0",
@@ -96,8 +96,8 @@
     </div>
 
 
-    <!-- Header / Navigation (Desktop) -->
-    <header id="header-element" class="w-full bg-slate-900/80 backdrop-blur-md text-white shadow-lg z-20 sticky top-0 py-3 animate-fade-in-down rounded-full px-4 sm:flex hidden">
+    <!-- Header / Navigation -->
+    <header id="header-element" class="w-full bg-slate-900/80 backdrop-blur-md text-white shadow-lg z-20 sticky top-0 py-3 animate-fade-in-down rounded-full px-4">
         <div class="container mx-auto flex justify-between items-center">
             <!-- Logo Text with H1 for SEO, but styled as a button -->
             <button id="logo-btn" class="cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
@@ -105,7 +105,7 @@
             </button>
 
             <!-- Desktop Navigation (visible on sm and larger screens) -->
-            <nav id="desktop-nav" class="flex items-center space-x-4 sm:space-x-6">
+            <nav id="desktop-nav" class="hidden sm:flex items-center space-x-4 sm:space-x-6">
                 <ul class="flex space-x-4 sm:space-x-6 items-center">
                     <li>
                         <button id="home-btn" class="relative text-lg font-semibold hover:text-blue-300 transition-colors duration-200 py-1 px-2 sm:px-3 rounded-full overflow-hidden group">
@@ -117,14 +117,15 @@
                     <li>
                         <button id="generator-btn" class="relative text-lg font-semibold hover:text-blue-300 transition-colors duration-200 py-1 px-2 sm:px-3 rounded-full overflow-hidden group">
                             <span class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
-                            Generator
+                            Image Generator
                             <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-300 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
                         </button>
                     </li>
+                    <!-- New Chat AI Nav Link -->
                     <li>
-                        <button id="verse-btn" class="relative text-lg font-semibold hover:text-blue-300 transition-colors duration-200 py-1 px-2 sm:px-3 rounded-full overflow-hidden group">
+                        <button id="chat-ai-btn" class="relative text-lg font-semibold hover:text-blue-300 transition-colors duration-200 py-1 px-2 sm:px-3 rounded-full overflow-hidden group">
                             <span class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
-                            Verse
+                            Chat AI
                             <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-300 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
                         </button>
                     </li>
@@ -136,21 +137,13 @@
                     <button id="sign-out-btn-desktop" class="px-4 py-2 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 transition-colors duration-200 shadow-md hidden">Sign Out</button>
                 </div>
             </nav>
-        </div>
-    </header>
 
-    <!-- Mobile Header (visible only on small screens) -->
-    <header id="mobile-header-element" class="w-full bg-transparent text-white z-20 sticky top-0 py-3 px-4 flex justify-between items-center sm:hidden">
-        <button id="hamburger-btn" class="text-gray-300 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-2 transition-colors duration-200"
-                aria-controls="mobile-menu" aria-expanded="false">
-            <i class="fas fa-bars text-2xl" id="hamburger-icon"></i>
-        </button>
-        <button id="generate-art-btn-mobile" class="px-4 py-2 bg-indigo-600 text-white rounded-full text-sm font-semibold shadow-md flex items-center space-x-2 hover:bg-indigo-700 transition-colors duration-200">
-            <span>Generate Art</span>
-        </button>
-        <button id="mobile-profile-btn" class="text-gray-300 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-2 transition-colors duration-200">
-            <i class="fas fa-user-circle text-2xl"></i>
-        </button>
+            <!-- Hamburger Menu Button (visible only on small screens) -->
+            <button id="hamburger-btn" class="sm:hidden text-gray-300 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-2 transition-colors duration-200"
+                    aria-controls="mobile-menu" aria-expanded="false">
+                <i class="fas fa-bars text-2xl" id="hamburger-icon"></i>
+            </button>
+        </div>
     </header>
 
     <!-- Mobile Navigation Menu Overlay -->
@@ -167,7 +160,8 @@
             <ul class="flex flex-col space-y-6 text-xl font-semibold text-gray-200">
                 <li><button id="mobile-home-btn" class="mobile-nav-link hover:text-blue-300 transition-colors duration-200 w-full text-left py-2">Home</button></li>
                 <li><button id="mobile-generator-btn" class="mobile-nav-link hover:text-blue-300 transition-colors duration-200 w-full text-left py-2">Image Generator</button></li>
-                <li><button id="mobile-verse-btn" class="mobile-nav-link hover:text-blue-300 transition-colors duration-200 w-full text-left py-2">Verse</button></li>
+                <!-- New Mobile Chat AI Nav Link -->
+                <li><button id="mobile-chat-ai-btn" class="mobile-nav-link hover:text-blue-300 transition-colors duration-200 w-full text-left py-2">Chat AI</button></li>
             </ul>
             <div class="mt-auto pt-8 border-t border-gray-700 flex flex-col items-start space-y-4">
                 <span id="user-display-mobile" class="text-sm text-gray-300 hidden"></span>
@@ -179,10 +173,11 @@
 
 
     <!-- Main content area container for dynamic pages - SEO: Using <main> semantic tag -->
-    <main id="main-content-container" class="flex-grow flex items-center justify-center w-full p-4 sm:p-6 lg:p-8 sm:block">
+    <main id="main-content-container" class="flex-grow flex items-center justify-center w-full p-4 sm:p-6 lg:p-8">
 
-        <!-- Home Page Content (Desktop) - SEO: Using <section> semantic tag -->
-        <section id="home-page-element" class="home-section text-center relative z-10 bg-white/5 backdrop-blur-sm p-8 sm:p-12 rounded-2xl shadow-3xl w-full max-w-5xl animate-fade-in-up border border-slate-700 sm:block hidden">
+        <!-- Home Page Content - SEO: Using <section> semantic tag -->
+        <!-- Aesthetic: Increased padding for more breathing room -->
+        <section id="home-page-element" class="home-section text-center relative z-10 bg-white/5 backdrop-blur-sm p-8 sm:p-12 rounded-2xl shadow-3xl w-full max-w-5xl animate-fade-in-up border border-slate-700">
             <!-- SEO: More descriptive H2 with keywords - Removed "Free" from title -->
             <h2 class="text-3xl md:text-5xl font-mersad text-blue-300 mb-4 sm:mb-6 animate-text-gradient-professional-alt">
                 Unleash Your Imagination with AI Image Generation
@@ -249,49 +244,6 @@
                 </div>
             </div>
         </section>
-
-        <!-- Mobile Art Home Page Content (visible only on small screens) -->
-        <section id="mobile-art-home-page-element" class="relative z-10 bg-white/5 backdrop-blur-sm rounded-2xl shadow-3xl w-full h-full flex flex-col items-center justify-between sm:hidden animate-fade-in-up">
-            <!-- Top Section: "What will you create today?" -->
-            <div class="flex-grow flex flex-col items-center justify-center text-center px-4 pt-8">
-                <h2 class="text-3xl font-bold text-gray-900 font-mersad mb-8">What will you create today?</h2>
-                <div class="grid grid-cols-2 gap-4 w-full max-w-sm">
-                    <button id="create-image-btn-mobile" class="mobile-action-btn bg-white text-gray-800 py-4 px-3 rounded-xl shadow-lg flex flex-col items-center space-y-2 hover:scale-105 transition-transform duration-200">
-                        <i class="fas fa-magic text-green-500 text-2xl"></i>
-                        <span class="text-sm font-semibold">Create Image</span>
-                    </button>
-                    <button id="generate-prompt-btn-mobile" class="mobile-action-btn bg-white text-gray-800 py-4 px-3 rounded-xl shadow-lg flex flex-col items-center space-y-2 hover:scale-105 transition-transform duration-200">
-                        <i class="fas fa-lightbulb text-purple-500 text-2xl"></i>
-                        <span class="text-sm font-semibold">Generate Prompt</span>
-                    </button>
-                    <button id="explore-gallery-btn-mobile" class="mobile-action-btn bg-white text-gray-800 py-4 px-3 rounded-xl shadow-lg flex flex-col items-center space-y-2 hover:scale-105 transition-transform duration-200">
-                        <i class="fas fa-image text-orange-500 text-2xl"></i>
-                        <span class="text-sm font-semibold">Explore Gallery</span>
-                    </button>
-                    <button id="more-options-btn-mobile" class="mobile-action-btn bg-white text-gray-800 py-4 px-3 rounded-xl shadow-lg flex flex-col items-center space-y-2 hover:scale-105 transition-transform duration-200">
-                        <i class="fas fa-ellipsis-h text-gray-500 text-2xl"></i>
-                        <span class="text-sm font-semibold">More</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Bottom Input Bar -->
-            <div class="w-full p-4 sticky bottom-0 bg-transparent">
-                <div class="relative flex items-center bg-white rounded-full px-4 py-2 shadow-xl border border-gray-300">
-                    <button id="mobile-style-selector-btn" class="text-gray-500 hover:text-gray-700 text-xl p-2 rounded-full">
-                        <i class="fas fa-palette"></i>
-                    </button>
-                    <input type="text" id="mobile-art-prompt-input" placeholder="Describe your art prompt here..." class="flex-grow bg-transparent text-gray-800 placeholder-gray-500 focus:outline-none text-base px-2">
-                    <button id="mobile-voice-input-art-btn" class="text-gray-500 hover:text-gray-700 text-xl p-2 rounded-full">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                    <button id="mobile-generate-art-btn" class="p-2 ml-2 rounded-full bg-indigo-600 text-white shadow-md hover:bg-indigo-700 transition-colors duration-200">
-                        <i class="fas fa-arrow-up"></i>
-                    </button>
-                </div>
-            </div>
-        </section>
-
 
         <!-- Image Generator Page Content - SEO: Using <section> semantic tag -->
         <section id="generator-page-element" class="relative z-10 bg-white/5 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-3xl w-full max-w-md border border-slate-700 hidden">
@@ -392,29 +344,35 @@
             </div>
         </section>
 
-        <!-- Verse Page Content (Actual Chat Conversation - Primarily for Desktop) -->
-        <section id="verse-page-element" class="relative z-10 bg-white/5 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-3xl w-full max-w-4xl border border-slate-700 flex-col h-[calc(100vh-8rem)] sm:flex hidden">
-            <!-- Top Bar -->
-            <div class="flex justify-between items-center mb-4">
-                <button id="verse-back-btn" class="text-gray-300 hover:text-blue-300 transition-colors duration-200 text-xl p-2 rounded-full hover:bg-white/10">
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <h1 id="verse-chat-title" class="text-2xl font-mersad text-blue-300 truncate mx-2">New Chat</h1>
-                <div class="relative">
-                    <button id="verse-menu-btn" class="text-gray-300 hover:text-blue-300 transition-colors duration-200 text-xl p-2 rounded-full hover:bg-white/10">
-                        <i class="fas fa-ellipsis-v"></i>
+        <!-- Chat AI Page Content -->
+        <section id="chat-ai-page-element" class="relative z-10 bg-white/5 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-3xl w-full max-w-2xl border border-slate-700 flex flex-col h-[80vh] hidden">
+            <h1 class="text-3xl sm:text-4xl font-mersad text-blue-300 mb-4 text-center animate-text-gradient-professional">
+                AI Chat
+            </h1>
+
+            <div id="chat-ai-controls" class="flex flex-wrap justify-center sm:justify-between items-center gap-2 mb-4">
+                <span id="chat-credits-display" class="text-sm font-semibold text-green-400">You have 5 free messages left.</span>
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                    <button id="toggle-theme-btn" class="px-3 py-2 rounded-full bg-gray-700/50 text-gray-300 hover:bg-gray-600/70 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i class="fas fa-sun" id="theme-icon"></i> <span class="hidden sm:inline">Light Mode</span>
                     </button>
-                    <div id="verse-menu-dropdown" class="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg py-2 z-50 hidden">
-                        <button class="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700" id="rename-chat-btn">Rename Chat</button>
-                        <button class="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700" id="export-chat-btn">Export Chat</button>
-                        <button class="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700" id="regenerate-response-btn">Regenerate Response</button>
-                        <button class="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700" id="clear-context-btn">Clear Context</button>
-                        <button class="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700" id="feedback-btn">Feedback</button>
-                    </div>
+                    <button id="toggle-voice-input-btn" class="px-3 py-2 rounded-full bg-gray-700/50 text-gray-300 hover:bg-gray-600/70 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i class="fas fa-microphone" id="voice-input-icon"></i> <span class="hidden sm:inline">Voice Input</span>
+                    </button>
+                    <button id="toggle-voice-output-btn" class="px-3 py-2 rounded-full bg-gray-700/50 text-gray-300 hover:bg-gray-600/70 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i class="fas fa-volume-up" id="voice-output-icon"></i> <span class="hidden sm:inline">Voice Output</span>
+                    </button>
+                    <!-- New Stop Voice Output Button -->
+                    <button id="stop-voice-output-btn" class="px-3 py-2 rounded-full bg-red-500/70 text-white hover:bg-red-600/80 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 hidden">
+                        <i class="fas fa-stop"></i> <span class="hidden sm:inline">Stop Speaking</span>
+                    </button>
+                    <button id="clear-chat-btn" class="px-3 py-2 rounded-full bg-red-600/70 text-white hover:bg-red-700/80 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-red-500">
+                        <i class="fas fa-trash-alt"></i> <span class="hidden sm:inline">Clear Chat</span>
+                    </button>
                 </div>
             </div>
 
-            <div id="verse-messages-container" class="flex-1 overflow-y-auto p-3 sm:p-4 bg-gray-800/50 rounded-xl mb-4 shadow-inner custom-scrollbar">
+            <div id="chat-messages-container" class="flex-1 overflow-y-auto p-3 sm:p-4 bg-gray-800/50 rounded-xl mb-4 shadow-inner custom-scrollbar">
                 <!-- Chat messages will be appended here -->
                 <div class="text-center text-gray-400 text-sm py-4">
                     Start a conversation! Type your message below.
@@ -425,66 +383,32 @@
                 <span class="dot bg-blue-400 rounded-full w-2 h-2"></span>
                 <span class="dot bg-blue-400 rounded-full w-2 h-2"></span>
                 <span class="dot bg-blue-400 rounded-full w-2 h-2"></span>
-                <span class="text-gray-400 text-sm ml-2">Verse is typing...</span>
+                <span class="text-gray-400 text-sm ml-2">AI is typing...</span>
             </div>
 
             <div class="flex items-center space-x-3">
-                <button id="toggle-voice-input-btn" class="p-3 rounded-full bg-gray-700/50 text-gray-300 hover:bg-gray-600/70 transition-colors duration-200 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <i class="fas fa-microphone" id="voice-input-icon"></i>
-                </button>
                 <textarea
-                    id="verse-input"
-                    class="flex-1 p-3 bg-gray-800/50 border border-gray-600 rounded-full focus:ring-3 focus:ring-blue-500 focus:border-transparent transition duration-300 ease-in-out resize-none h-12 overflow-hidden text-gray-100 placeholder-gray-400 shadow-inner font-helvetica text-base"
+                    id="chat-input"
+                    class="flex-1 p-3 sm:p-4 bg-gray-800/50 border border-gray-600 rounded-xl focus:ring-3 focus:ring-blue-500 focus:border-transparent transition duration-300 ease-in-out resize-none h-12 overflow-hidden text-gray-100 placeholder-gray-400 shadow-inner font-helvetica text-sm sm:text-base"
                     rows="1"
-                    placeholder="Ask anything..."
+                    placeholder="Type your message here..."
                     oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';"
                 ></textarea>
-                <button id="send-verse-btn" class="p-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold text-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <button id="send-chat-btn" class="px-5 py-3 rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg hover:bg-blue-700 transition-colors duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
 
-            <!-- Quick Replies Section for Chat Screen -->
-            <div id="verse-prompt-templates-container" class="mt-4 pt-4 border-t border-gray-700">
+            <!-- Prompt Templates / Quick Replies Section -->
+            <div id="prompt-templates-container" class="mt-4 pt-4 border-t border-gray-700">
                 <h3 class="text-lg font-semibold text-gray-300 mb-3">Quick Replies:</h3>
-                <div id="verse-prompt-templates-list" class="flex flex-wrap gap-2">
+                <div id="prompt-templates-list" class="flex flex-wrap gap-2">
                     <!-- Templates will be added here by JS -->
                 </div>
             </div>
         </section>
 
     </main>
-
-    <!-- Mobile Bottom Navigation Bar -->
-    <nav id="mobile-bottom-nav" class="fixed bottom-0 left-0 w-full bg-slate-900/90 backdrop-blur-md border-t border-slate-700 z-30 py-2 sm:hidden">
-        <ul class="flex justify-around items-center h-full">
-            <li>
-                <button id="bottom-nav-home-btn" class="flex flex-col items-center text-gray-400 hover:text-blue-300 transition-colors duration-200 py-1 px-2 rounded-lg">
-                    <i class="fas fa-home text-xl"></i>
-                    <span class="text-xs mt-1">Home</span>
-                </button>
-            </li>
-            <li>
-                <button id="bottom-nav-generator-btn" class="flex flex-col items-center text-gray-400 hover:text-blue-300 transition-colors duration-200 py-1 px-2 rounded-lg">
-                    <i class="fas fa-paint-brush text-xl"></i>
-                    <span class="text-xs mt-1">Generate</span>
-                </button>
-            </li>
-            <li>
-                <button id="bottom-nav-gallery-btn" class="flex flex-col items-center text-gray-400 hover:text-blue-300 transition-colors duration-200 py-1 px-2 rounded-lg">
-                    <i class="fas fa-images text-xl"></i>
-                    <span class="text-xs mt-1">Gallery</span>
-                </button>
-            </li>
-            <li>
-                <button id="bottom-nav-profile-btn" class="flex flex-col items-center text-gray-400 hover:text-blue-300 transition-colors duration-200 py-1 px-2 rounded-lg">
-                    <i class="fas fa-user text-xl"></i>
-                    <span class="text-xs mt-1">Profile</span>
-                </button>
-            </li>
-        </ul>
-    </nav>
-
 
     <!-- Sign-in Required Modal -->
     <div id="signin-required-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
