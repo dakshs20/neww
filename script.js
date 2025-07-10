@@ -72,9 +72,9 @@ console.log(Date.now(), "script.js: IMAGEN_GEMINI_API_KEY value set at top level
 
 // --- UI Element References (Will be populated in initApp) ---
 let homePageElement; // Desktop home
-let mobileHomePageElement; // Mobile home
+let mobileArtHomePageElement; // Mobile home (new name)
 let generatorPageElement;
-let versePageElement;
+let versePageElement; // The actual chat conversation screen
 let allPageElements = []; // Group for easy iteration
 
 let persistentDebugMessage;
@@ -112,14 +112,14 @@ let logoBtn; // Desktop logo button
 
 // Mobile Header elements
 let mobileHeaderElement;
-let mobileLogoBtn;
-
 let hamburgerBtn;
 let hamburgerIcon;
 let mobileMenu;
 let mobileMenuOverlay;
 let closeMobileMenuBtn;
 let mobileNavLinks;
+let generateArtBtnMobile; // New mobile header button
+let mobileProfileBtn; // New mobile header button
 
 let toastContainer;
 
@@ -147,15 +147,22 @@ let verseChatTitle;
 let verseMenuBtn;
 let verseMenuDropdown;
 
-// Mobile Home Page elements
-let startNewChatBtnMobile;
-let quickPromptBtnsMobile;
+// Mobile Art Home Page elements (new)
+let createImageBtnMobile;
+let generatePromptBtnMobile;
+let exploreGalleryBtnMobile;
+let moreOptionsBtnMobile;
+let mobileStyleSelectorBtn;
+let mobileArtPromptInput;
+let mobileVoiceInputArtBtn;
+let mobileGenerateArtBtn;
+
 
 // Mobile Bottom Navigation elements
 let mobileBottomNav;
 let bottomNavHomeBtn;
-let bottomNavVerseBtn;
-let bottomNavTemplatesBtn;
+let bottomNavGeneratorBtn; // Changed from verse
+let bottomNavGalleryBtn; // Changed from templates
 let bottomNavProfileBtn;
 
 
@@ -501,45 +508,59 @@ function populateAspectRatioRadios() {
 // --- Page Visibility Logic ---
 async function setPage(newPage) {
     console.log(Date.now(), `setPage: Attempting to switch to page: ${newPage}. Current page: ${currentPage}`);
-    if (currentPage === newPage) {
-        console.log(Date.now(), `setPage: Already on page ${newPage}, no change needed.`);
+    
+    // Determine if we are already on the target page for the current device type
+    let alreadyOnPage = false;
+    if (window.innerWidth >= 640) { // Desktop
+        if (newPage === 'home' && currentPage === 'home') alreadyOnPage = true;
+        else if (newPage === 'generator' && currentPage === 'generator') alreadyOnPage = true;
+        else if (newPage === 'verse' && currentPage === 'verse') alreadyOnPage = true;
+    } else { // Mobile
+        if (newPage === 'home' && currentPage === 'home') alreadyOnPage = true; // mobile-art-home-page-element
+        else if (newPage === 'generator' && currentPage === 'generator') alreadyOnPage = true; // generator-page-element
+        // Note: 'verse' page is desktop-only for now, so no mobile check for it here
+    }
+
+    if (alreadyOnPage) {
+        console.log(Date.now(), `setPage: Already on page ${newPage} for current device, no change needed.`);
         return;
     }
 
+    // Hide all main content pages first, regardless of screen size
     allPageElements.forEach(element => {
         if (element) {
             element.classList.add('hidden');
-            element.classList.remove('animate-fade-in-up');
+            element.classList.remove('animate-fade-in-up'); // Remove animation class for clean transition
         }
     });
 
-    let newPageElement;
+    let newPageElementToShow;
+
     if (window.innerWidth >= 640) { // Desktop view (sm breakpoint and up)
         if (newPage === 'home') {
-            newPageElement = homePageElement;
+            newPageElementToShow = homePageElement;
         } else if (newPage === 'generator') {
-            newPageElement = generatorPageElement;
+            newPageElementToShow = generatorPageElement;
         } else if (newPage === 'verse') {
-            newPageElement = versePageElement;
+            newPageElementToShow = versePageElement; // Desktop goes directly to chat conversation
         }
     } else { // Mobile view (below sm breakpoint)
         if (newPage === 'home') {
-            newPageElement = mobileHomePageElement; // Show mobile home
+            newPageElementToShow = mobileArtHomePageElement; // Mobile's new home
         } else if (newPage === 'generator') {
-            newPageElement = generatorPageElement; // Generator is shared
-        } else if (newPage === 'verse') {
-            newPageElement = versePageElement;
+            newPageElementToShow = generatorPageElement; // Generator is shared
         }
+        // 'verse' page is not intended for direct mobile navigation in this context
     }
 
-    if (newPageElement) {
-        newPageElement.classList.remove('hidden');
+    if (newPageElementToShow) {
+        newPageElementToShow.classList.remove('hidden');
         // Trigger reflow for animation
-        void newPageElement.offsetWidth;
-        newPageElement.classList.add('animate-fade-in-up');
+        void newPageElementToShow.offsetWidth;
+        newPageElementToShow.classList.add('animate-fade-in-up');
         console.log(Date.now(), `setPage: Displayed page '${newPage}' and applied animation.`);
     } else {
-        console.error(Date.now(), `setPage: New page element for '${newPage}' not found.`);
+        console.error(Date.now(), `setPage: New page element for '${newPage}' not found or not intended for mobile.`);
     }
 
     currentPage = newPage;
@@ -561,40 +582,25 @@ function updateUI() {
         mobileBottomNav.classList.toggle('hidden', window.innerWidth >= 640);
     }
 
-    // Hide all main content pages first
-    homePageElement?.classList.add('hidden');
-    mobileHomePageElement?.classList.add('hidden');
-    generatorPageElement?.classList.add('hidden');
-    versePageElement?.classList.add('hidden');
-
-    // Show the current page based on screen size
-    if (window.innerWidth >= 640) { // Desktop
-        if (currentPage === 'home') homePageElement?.classList.remove('hidden');
-        else if (currentPage === 'generator') generatorPageElement?.classList.remove('hidden');
-        else if (currentPage === 'verse') versePageElement?.classList.remove('hidden');
-    } else { // Mobile
-        if (currentPage === 'home') mobileHomePageElement?.classList.remove('hidden');
-        else if (currentPage === 'generator') generatorPageElement?.classList.remove('hidden');
-        else if (currentPage === 'verse') versePageElement?.classList.remove('hidden');
-    }
-
-
+    // Disable/enable interactive elements based on loading/auth state
     const interactiveElements = [
-        homePageElement, mobileHomePageElement, generatorPageElement, versePageElement, logoBtn, mobileLogoBtn,
+        logoBtn,
         hamburgerBtn, closeMobileMenuBtn, mobileMenuOverlay,
-        startCreatingBtn, startNewChatBtnMobile, ...Array.from(quickPromptBtnsMobile || []),
-        promptInput, copyPromptBtn, clearPromptBtn, generateBtn,
-        enhanceBtn, variationBtn, useEnhancedPromptBtn, downloadBtn,
+        startCreatingBtn, generateArtBtnMobile, mobileProfileBtn,
+        createImageBtnMobile, generatePromptBtnMobile, exploreGalleryBtnMobile, moreOptionsBtnMobile,
+        mobileStyleSelectorBtn, mobileArtPromptInput, mobileVoiceInputArtBtn, mobileGenerateArtBtn,
+        promptInput, copyPromptBtn, clearPromptBtn, generateBtn, enhanceBtn, variationBtn, useEnhancedPromptBtn, downloadBtn,
         signInBtnDesktop, signOutBtnDesktop, signInBtnMobile, signOutBtnMobile, modalSignInBtn, closeSigninModalBtn,
         toggleThemeBtn, toggleVoiceInputBtn, toggleVoiceOutputBtn, stopVoiceOutputBtn, clearVerseBtn, verseInput, sendVerseBtn,
-        verseBackBtn, verseMenuBtn,
-        bottomNavHomeBtn, bottomNavVerseBtn, bottomNavTemplatesBtn, bottomNavProfileBtn
+        verseBackBtn, verseChatTitle, verseMenuBtn,
+        bottomNavHomeBtn, bottomNavGeneratorBtn, bottomNavGalleryBtn, bottomNavProfileBtn
     ];
+
 
     interactiveElements.forEach(el => {
         if (el) {
             const isAuthButton = el.id && (el.id.includes('sign-in-btn') || el.id.includes('sign-out-btn') || el.id.includes('modal-sign-in-btn'));
-            const isGeneratorButton = el.id && (el.id === 'generate-image-btn' || el.id === 'enhance-prompt-btn' || el.id === 'generate-variation-ideas-btn');
+            const isGeneratorButton = el.id && (el.id === 'generate-image-btn' || el.id === 'enhance-prompt-btn' || el.id === 'generate-variation-ideas-btn' || el.id === 'mobile-generate-art-btn');
             const isChatButton = el.id && (el.id === 'send-verse-btn');
             
             if (isAuthButton) {
@@ -625,10 +631,10 @@ function updateUI() {
         btn.classList.remove('text-blue-300');
         btn.classList.add('text-gray-100');
     });
-    const currentDesktopBtn = getElement(`${currentPage}-btn`);
-    if (currentDesktopBtn) {
-        currentDesktopBtn.classList.remove('text-gray-100');
-        currentDesktopBtn.classList.add('text-blue-300');
+    const currentDesktopNavBtn = getElement(`${currentPage}-btn`);
+    if (currentDesktopNavBtn) {
+        currentDesktopNavBtn.classList.remove('text-gray-100');
+        currentDesktopNavBtn.classList.add('text-blue-300');
     }
 
     // Update active navigation button styles for mobile sidebar
@@ -653,6 +659,7 @@ function updateUI() {
         currentBottomNavBtn.classList.add('text-blue-300');
     }
 
+    // Specific UI updates for each page type
     if (currentPage === 'generator') {
         updateGeneratorPageUI();
     } else if (currentPage === 'verse') {
@@ -841,7 +848,7 @@ async function loadChatHistory() {
         chatHistory = []; // Clear current history before loading
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            // Ensure message structure matches {role: 'user/model', parts: [{text: '...'}]}
+            // Ensure message structure matches {role: 'user', parts: [{text: '...'}]}
             if (data.role && data.text) { // Simple check for old format
                 chatHistory.push({ role: data.role, parts: [{ text: data.text }] });
             } else if (data.role && data.parts) { // New, correct format
@@ -1040,17 +1047,209 @@ async function clearChatHistory() {
     }
 }
 
+// --- Image Generation Functions ---
+async function generateImage() {
+    console.log(Date.now(), "generateImage: Function called.");
+    if (!promptInput || !promptInput.value.trim()) {
+        setError("Please enter a prompt to generate an image.");
+        showToast("Please enter a prompt.", "error");
+        return;
+    }
+
+    if (!currentUser && freeGenerationsLeft <= 0) {
+        signinRequiredModal?.classList.remove('hidden');
+        return;
+    }
+
+    loading = true;
+    currentError = '';
+    imageUrl = '';
+    updateUI();
+    showToast("Generating your image...", "info", 5000);
+
+    if (!currentUser) {
+        freeGenerationsLeft--;
+        localStorage.setItem('freeGenerationsLeft', freeGenerationsLeft);
+    } else {
+        // For authenticated users, update Firestore
+        try {
+            const userDocRef = doc(db, 'users', userId);
+            await updateDoc(userDocRef, {
+                freeGenerationsLeft: freeGenerationsLeft - 1 // Decrement for authenticated user
+            });
+            console.log(Date.now(), "generateImage: Decremented freeGenerationsLeft in Firestore.");
+        } catch (e) {
+            console.error(Date.now(), "generateImage: Error updating freeGenerationsLeft in Firestore:", e);
+            // Don't block generation, but show a warning
+            showToast("Failed to update generation count in cloud. Please check console.", "error");
+        }
+    }
+
+    console.time("imageGenerationAPI");
+    try {
+        const payload = { instances: { prompt: promptInput.value.trim() }, parameters: { "sampleCount": 1} };
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${IMAGEN_GEMINI_API_KEY}`;
+        
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Image generation API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
+        }
+
+        const result = await response.json();
+        if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+            imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+            showToast("Image generated successfully!", "success");
+        } else {
+            throw new Error("No image data received from the API.");
+        }
+    } catch (e) {
+        console.error(Date.now(), "generateImage: Error during image generation:", e);
+        setError(`Image generation failed: ${e.message}`);
+        showToast(`Image generation failed: ${e.message}`, "error");
+        // If an error occurs and it's an unauthenticated user, refund the credit
+        if (!currentUser) {
+            freeGenerationsLeft++;
+            localStorage.setItem('freeGenerationsLeft', freeGenerationsLeft);
+            updateUI(); // Update UI to show refunded credit
+            showToast(`Credit refunded due to image generation error. You now have ${freeGenerationsLeft} free generations.`, "info", 5000);
+        }
+    } finally {
+        console.timeEnd("imageGenerationAPI");
+        loading = false;
+        updateUI();
+    }
+}
+
+function downloadImage() {
+    console.log(Date.now(), "downloadImage: Function called.");
+    if (imageUrl) {
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = `genart_image_${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("Image downloaded!", "success");
+        console.log(Date.now(), "Image downloaded.");
+    } else {
+        showToast("No image to download.", "info");
+        console.warn(Date.now(), "downloadImage: No image URL found.");
+    }
+}
+
+async function enhancePrompt() {
+    console.log(Date.now(), "enhancePrompt: Function called.");
+    if (!promptInput || !promptInput.value.trim()) {
+        showToast("Please enter a prompt to enhance.", "info");
+        return;
+    }
+
+    loadingEnhancePrompt = true;
+    enhancedPrompt = '';
+    updateUI();
+    showToast("Enhancing your prompt...", "info");
+
+    try {
+        const userPrompt = promptInput.value.trim();
+        const chatHistoryForEnhance = [
+            { role: "user", parts: [{ text: `Enhance this image generation prompt for better results: "${userPrompt}". Provide only the enhanced prompt text, nothing else.` }] }
+        ];
+        const payload = { contents: chatHistoryForEnhance };
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${IMAGEN_GEMINI_API_KEY}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Prompt enhancement API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
+        }
+
+        const result = await response.json();
+        if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+            enhancedPrompt = result.candidates[0].content.parts[0].text;
+            showToast("Prompt enhanced!", "success");
+        } else {
+            throw new Error("No enhanced prompt received from the API.");
+        }
+    } catch (e) {
+        console.error(Date.now(), "enhancePrompt: Error during prompt enhancement:", e);
+        showToast(`Prompt enhancement failed: ${e.message}`, "error");
+    } finally {
+        loadingEnhancePrompt = false;
+        updateUI();
+    }
+}
+
+async function generateVariationIdeas() {
+    console.log(Date.now(), "generateVariationIdeas: Function called.");
+    if (!promptInput || !promptInput.value.trim()) {
+        showToast("Please enter a prompt to get variation ideas.", "info");
+        return;
+    }
+
+    loadingVariationIdeas = true;
+    variationIdeas = [];
+    updateUI();
+    showToast("Generating variation ideas...", "info");
+
+    try {
+        const userPrompt = promptInput.value.trim();
+        const chatHistoryForVariations = [
+            { role: "user", parts: [{ text: `Generate 3 distinct creative variations for an image generation prompt based on this: "${userPrompt}". Provide them as a numbered list, one idea per line, without any introductory or concluding text.` }] }
+        ];
+        const payload = { contents: chatHistoryForVariations };
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${IMAGEN_GEMINI_API_KEY}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Variation ideas API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
+        }
+
+        const result = await response.json();
+        if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+            const rawText = result.candidates[0].content.parts[0].text;
+            // Split by new line and clean up numbering/whitespace
+            variationIdeas = rawText.split('\n')
+                                    .map(line => line.replace(/^\d+\.\s*/, '').trim())
+                                    .filter(line => line.length > 0);
+            showToast("Variation ideas generated!", "success");
+        } else {
+            throw new Error("No variation ideas received from the API.");
+        }
+    } catch (e) {
+        console.error(Date.now(), "generateVariationIdeas: Error during variation ideas generation:", e);
+        showToast(`Variation ideas failed: ${e.message}`, "error");
+    } finally {
+        loadingVariationIdeas = false;
+        updateUI();
+    }
+}
+
+
 // --- Theme Toggle ---
 function toggleTheme() {
     console.log(Date.now(), "toggleTheme: Toggling theme.");
     document.body.classList.toggle('light-mode');
     const isLightMode = document.body.classList.contains('light-mode');
     localStorage.setItem('theme', isLightMode ? 'light' : 'dark');
-    if (themeIcon) {
-        themeIcon.classList.toggle('fa-sun', !isLightMode);
-        themeIcon.classList.toggle('fa-moon', isLightMode);
-        toggleThemeBtn.querySelector('span').textContent = isLightMode ? 'Dark Mode' : 'Light Mode';
-    }
+    // The UI elements for theme toggle are now handled by the mobile profile menu or desktop
+    // No direct icon/text update on the main screen for this.
     showToast(`Switched to ${isLightMode ? 'Light' : 'Dark'} Mode`, "info");
 }
 
@@ -1058,25 +1257,23 @@ function applySavedTheme() {
     const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark
     if (savedTheme === 'light') {
         document.body.classList.add('light-mode');
-        if (themeIcon) {
-            themeIcon.classList.remove('fa-sun');
-            themeIcon.classList.add('fa-moon');
-            toggleThemeBtn.querySelector('span').textContent = 'Dark Mode';
-        }
     } else {
         document.body.classList.remove('light-mode');
-        if (themeIcon) {
-            themeIcon.classList.remove('fa-moon');
-            themeIcon.classList.add('fa-sun');
-            toggleThemeBtn.querySelector('span').textContent = 'Light Mode';
-        }
     }
     console.log(Date.now(), `applySavedTheme: Applied theme: ${savedTheme}`);
 }
 
-// --- Voice Input/Output ---
+// --- Voice Input/Output (for chat, but can be adapted for image prompt) ---
 function toggleVoiceInput() {
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+        const targetInput = (currentPage === 'verse' && verseInput) ? verseInput : mobileArtPromptInput;
+
+        if (!targetInput) {
+            console.warn(Date.now(), "toggleVoiceInput: No active input for voice recognition.");
+            showToast("No active input field for voice.", "info");
+            return;
+        }
+
         if (!speechRecognition) {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             speechRecognition = new SpeechRecognition();
@@ -1088,17 +1285,22 @@ function toggleVoiceInput() {
                 isVoiceInputActive = true;
                 updateUI();
                 showToast("Voice input active. Speak now!", "info");
-                verseInput.placeholder = "Listening...";
+                targetInput.placeholder = "Listening...";
             };
 
             speechRecognition.onresult = (event) => {
                 const transcript = event.results[0][0].transcript;
-                verseInput.value = transcript;
-                verseInput.style.height = 'auto';
-                verseInput.style.height = (verseInput.scrollHeight) + 'px';
+                targetInput.value = transcript;
+                targetInput.style.height = 'auto';
+                targetInput.style.height = (targetInput.scrollHeight) + 'px';
                 console.log(Date.now(), "Voice input result:", transcript);
-                // Automatically send message after speech recognition
-                sendMessage();
+                // If it's the mobile art prompt input, trigger generate
+                if (targetInput.id === 'mobile-art-prompt-input') {
+                    prompt = transcript; // Update global prompt state
+                    generateImage();
+                } else { // Otherwise, it's for chat
+                    sendMessage();
+                }
             };
 
             speechRecognition.onerror = (event) => {
@@ -1106,13 +1308,13 @@ function toggleVoiceInput() {
                 showToast(`Voice input error: ${event.error}`, "error");
                 isVoiceInputActive = false;
                 updateUI();
-                verseInput.placeholder = "Type your message here...";
+                targetInput.placeholder = (targetInput.id === 'mobile-art-prompt-input') ? "Describe your art prompt here..." : "Ask anything...";
             };
 
             speechRecognition.onend = () => {
                 isVoiceInputActive = false;
                 updateUI();
-                verseInput.placeholder = "Type your message here...";
+                targetInput.placeholder = (targetInput.id === 'mobile-art-prompt-input') ? "Describe your art prompt here..." : "Ask anything...";
                 console.log(Date.now(), "Voice input ended.");
             };
         }
@@ -1164,7 +1366,7 @@ function stopSpeaking() {
     }
 }
 
-// --- Prompt Templates ---
+// --- Prompt Templates (for chat screen) ---
 const defaultPromptTemplates = [
     "Explain quantum physics simply.",
     "Write a short story about a brave knight.",
@@ -1248,8 +1450,17 @@ function setupEventListeners() {
     }
 
     // Mobile Header & Menu Buttons
-    if (mobileLogoBtn) {
-        mobileLogoBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Mobile Logo button clicked."); setPage('home'); });
+    if (generateArtBtnMobile) {
+        generateArtBtnMobile.addEventListener('click', () => {
+            console.log(Date.now(), "Event: Mobile Header 'Generate Art' button clicked.");
+            setPage('generator');
+        });
+    }
+    if (mobileProfileBtn) {
+        mobileProfileBtn.addEventListener('click', () => {
+            console.log(Date.now(), "Event: Mobile Header 'Profile' button clicked.");
+            showToast("Profile options coming soon!", "info"); // Placeholder
+        });
     }
     if (hamburgerBtn) {
         hamburgerBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Hamburger button clicked."); toggleMobileMenu(); });
@@ -1277,36 +1488,67 @@ function setupEventListeners() {
                 console.log(Date.now(), `Event: Mobile nav link clicked: ${e.target.id}`);
                 if (e.target.id === 'mobile-home-btn') setPage('home');
                 else if (e.target.id === 'mobile-generator-btn') setPage('generator');
-                else if (e.target.id === 'mobile-verse-btn') setPage('verse');
+                else if (e.target.id === 'mobile-verse-btn') showToast("Verse (Chat AI) is currently a desktop-only feature. Please use a desktop browser to access it.", "info", 5000); // Verse is desktop only for now
                 toggleMobileMenu();
             });
             console.log(Date.now(), `Event Listener Attached: mobile-nav-link (${link.id})`);
         }
     });
 
-    // Mobile Home Page Specific Buttons
-    if (startNewChatBtnMobile) {
-        startNewChatBtnMobile.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Start New Chat (Mobile Home) button clicked.");
-            setPage('verse');
+    // Mobile Art Home Page Specific Buttons (new)
+    if (createImageBtnMobile) {
+        createImageBtnMobile.addEventListener('click', () => {
+            console.log(Date.now(), "Event: Mobile 'Create Image' button clicked.");
+            setPage('generator'); // Go to the generator page
         });
     }
-    if (quickPromptBtnsMobile) {
-        quickPromptBtnsMobile.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const promptText = e.target.textContent.trim();
-                console.log(Date.now(), `Event: Quick prompt (Mobile Home) clicked: "${promptText}"`);
-                setPage('verse'); // Go to verse page
-                // Use a small delay to ensure the verseInput is visible before setting value
-                setTimeout(() => {
-                    if (verseInput) {
-                        verseInput.value = promptText;
-                        verseInput.style.height = 'auto'; // Reset height
-                        verseInput.style.height = (verseInput.scrollHeight) + 'px'; // Adjust height
-                        sendMessage(); // Send the message automatically
-                    }
-                }, 100);
-            });
+    if (generatePromptBtnMobile) {
+        generatePromptBtnMobile.addEventListener('click', () => {
+            console.log(Date.now(), "Event: Mobile 'Generate Prompt' button clicked.");
+            showToast("Generating prompt ideas...", "info"); // Placeholder for actual LLM call
+            // In a real app, you'd call a function like generatePromptIdeas()
+        });
+    }
+    if (exploreGalleryBtnMobile) {
+        exploreGalleryBtnMobile.addEventListener('click', () => {
+            console.log(Date.now(), "Event: Mobile 'Explore Gallery' button clicked.");
+            showToast("Gallery coming soon!", "info"); // Placeholder
+        });
+    }
+    if (moreOptionsBtnMobile) {
+        moreOptionsBtnMobile.addEventListener('click', () => {
+            console.log(Date.now(), "Event: Mobile 'More' button clicked.");
+            showToast("More options coming soon!", "info"); // Placeholder for modal/menu
+        });
+    }
+
+    // Mobile Art Home Page Bottom Input Bar
+    if (mobileStyleSelectorBtn) {
+        mobileStyleSelectorBtn.addEventListener('click', () => {
+            console.log(Date.now(), "Event: Mobile Style Selector button clicked.");
+            showToast("Style selector options coming soon!", "info"); // Placeholder
+        });
+    }
+    if (mobileVoiceInputArtBtn) {
+        mobileVoiceInputArtBtn.addEventListener('click', () => {
+            console.log(Date.now(), "Event: Mobile Voice Input (Art) button clicked.");
+            toggleVoiceInput(); // Use existing voice input function
+        });
+    }
+    if (mobileGenerateArtBtn) {
+        mobileGenerateArtBtn.addEventListener('click', () => {
+            console.log(Date.now(), "Event: Mobile Generate Art button clicked.");
+            prompt = mobileArtPromptInput.value.trim(); // Get prompt from mobile input
+            generateImage(); // Trigger image generation
+        });
+    }
+    if (mobileArtPromptInput) {
+        mobileArtPromptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                prompt = mobileArtPromptInput.value.trim();
+                generateImage();
+            }
         });
     }
 
@@ -1316,7 +1558,7 @@ function setupEventListeners() {
         console.log(Date.now(), "Event Listener Attached: startCreatingBtn");
     }
 
-    // Image Generator Page Controls
+    // Image Generator Page Controls (shared with desktop)
     if (promptInput) {
         promptInput.addEventListener('input', (e) => {
             prompt = e.target.value;
@@ -1408,7 +1650,7 @@ function setupEventListeners() {
         console.log(Date.now(), "Event Listener Attached: closeDebugMessageBtn");
     }
 
-    // Verse Specific Event Listeners
+    // Verse Specific Event Listeners (for actual chat screen - desktop only)
     if (sendVerseBtn) {
         sendVerseBtn.addEventListener('click', sendMessage);
         console.log(Date.now(), "Event Listener Attached: sendVerseBtn");
@@ -1426,10 +1668,11 @@ function setupEventListeners() {
         clearVerseBtn.addEventListener('click', clearChatHistory);
         console.log(Date.now(), "Event Listener Attached: clearVerseBtn");
     }
-    if (toggleThemeBtn) {
-        toggleThemeBtn.addEventListener('click', toggleTheme);
-        console.log(Date.now(), "Event Listener Attached: toggleThemeBtn");
-    }
+    // Theme toggle is now handled by a "More" menu or profile settings
+    // if (toggleThemeBtn) {
+    //     toggleThemeBtn.addEventListener('click', toggleTheme);
+    //     console.log(Date.now(), "Event Listener Attached: toggleThemeBtn");
+    // }
     if (toggleVoiceInputBtn) {
         toggleVoiceInputBtn.addEventListener('click', toggleVoiceInput);
         console.log(Date.now(), "Event Listener Attached: toggleVoiceInputBtn");
@@ -1443,7 +1686,7 @@ function setupEventListeners() {
         console.log(Date.now(), "Event Listener Attached: stopVoiceOutputBtn");
     }
     if (verseBackBtn) {
-        verseBackBtn.addEventListener('click', () => setPage('home'));
+        verseBackBtn.addEventListener('click', () => setPage('home')); // On desktop, back from verse goes to desktop home
     }
     if (verseMenuBtn) {
         verseMenuBtn.addEventListener('click', () => {
@@ -1461,11 +1704,11 @@ function setupEventListeners() {
     if (bottomNavHomeBtn) {
         bottomNavHomeBtn.addEventListener('click', () => setPage('home'));
     }
-    if (bottomNavVerseBtn) {
-        bottomNavVerseBtn.addEventListener('click', () => setPage('verse'));
+    if (bottomNavGeneratorBtn) {
+        bottomNavGeneratorBtn.addEventListener('click', () => setPage('generator'));
     }
-    if (bottomNavTemplatesBtn) {
-        bottomNavTemplatesBtn.addEventListener('click', () => showToast("Templates coming soon!", "info")); // Placeholder
+    if (bottomNavGalleryBtn) {
+        bottomNavGalleryBtn.addEventListener('click', () => showToast("Gallery coming soon!", "info")); // Placeholder
     }
     if (bottomNavProfileBtn) {
         bottomNavProfileBtn.addEventListener('click', () => showToast("Profile coming soon!", "info")); // Placeholder
@@ -1474,7 +1717,7 @@ function setupEventListeners() {
 
     // Initial population calls
     populateAspectRatioRadios();
-    populatePromptTemplates();
+    populatePromptTemplates(); // Still needed for desktop Verse page
     console.log(Date.now(), "setupEventListeners: All event listeners setup attempted.");
 }
 
@@ -1489,10 +1732,12 @@ function initApp() {
 
         // Populate ALL UI Element References here, after DOM is ready
         homePageElement = getElement('home-page-element'); // Desktop home
-        mobileHomePageElement = getElement('mobile-home-page-element'); // Mobile home
+        mobileArtHomePageElement = getElement('mobile-art-home-page-element'); // Mobile home
         generatorPageElement = getElement('generator-page-element');
-        versePageElement = getElement('verse-page-element');
-        allPageElements = [homePageElement, mobileHomePageElement, generatorPageElement, versePageElement].filter(Boolean); // Filter out nulls
+        versePageElement = getElement('verse-page-element'); // The actual chat conversation screen
+        
+        // Ensure all possible top-level page elements are in this array for hiding logic
+        allPageElements = [homePageElement, mobileArtHomePageElement, generatorPageElement, versePageElement].filter(Boolean);
 
         persistentDebugMessage = getElement('persistent-debug-message');
         closeDebugMessageBtn = getElement('close-debug-message-btn');
@@ -1529,8 +1774,8 @@ function initApp() {
 
         // Mobile Header elements
         mobileHeaderElement = getElement('mobile-header-element');
-        mobileLogoBtn = getElement('mobile-logo-btn');
-
+        generateArtBtnMobile = getElement('generate-art-btn-mobile');
+        mobileProfileBtn = getElement('mobile-profile-btn');
         hamburgerBtn = getElement('hamburger-btn');
         hamburgerIcon = getElement('hamburger-icon');
         mobileMenu = getElement('mobile-menu');
@@ -1543,10 +1788,10 @@ function initApp() {
         // Header specific elements
         mainHeader = getElement('header-element');
 
-        // Verse (Chat AI) specific elements
+        // Verse (Chat AI) specific elements (desktop only)
         verseCreditsDisplay = getElement('verse-credits-display');
-        toggleThemeBtn = getElement('toggle-theme-btn');
-        themeIcon = getElement('theme-icon');
+        toggleThemeBtn = getElement('toggle-theme-btn'); // This will be unused in mobile for now
+        themeIcon = getElement('theme-icon'); // This will be unused in mobile for now
         toggleVoiceInputBtn = getElement('toggle-voice-input-btn');
         voiceInputIcon = getElement('voice-input-icon');
         toggleVoiceOutputBtn = getElement('toggle-voice-output-btn');
@@ -1564,15 +1809,22 @@ function initApp() {
         verseMenuBtn = getElement('verse-menu-btn');
         verseMenuDropdown = getElement('verse-menu-dropdown');
 
-        // Mobile Home Page elements
-        startNewChatBtnMobile = getElement('start-new-chat-btn-mobile');
-        quickPromptBtnsMobile = document.querySelectorAll('.quick-prompt-btn-mobile');
+        // Mobile Art Home Page elements (new)
+        createImageBtnMobile = getElement('create-image-btn-mobile');
+        generatePromptBtnMobile = getElement('generate-prompt-btn-mobile');
+        exploreGalleryBtnMobile = getElement('explore-gallery-btn-mobile');
+        moreOptionsBtnMobile = getElement('more-options-btn-mobile');
+        mobileStyleSelectorBtn = getElement('mobile-style-selector-btn');
+        mobileArtPromptInput = getElement('mobile-art-prompt-input');
+        mobileVoiceInputArtBtn = getElement('mobile-voice-input-art-btn');
+        mobileGenerateArtBtn = getElement('mobile-generate-art-btn');
+
 
         // Mobile Bottom Navigation elements
         mobileBottomNav = getElement('mobile-bottom-nav');
         bottomNavHomeBtn = getElement('bottom-nav-home-btn');
-        bottomNavVerseBtn = getElement('bottom-nav-verse-btn');
-        bottomNavTemplatesBtn = getElement('bottom-nav-templates-btn');
+        bottomNavGeneratorBtn = getElement('bottom-nav-generator-btn');
+        bottomNavGalleryBtn = getElement('bottom-nav-gallery-btn');
         bottomNavProfileBtn = getElement('bottom-nav-profile-btn');
 
 
@@ -1589,9 +1841,18 @@ function initApp() {
         window.addEventListener('resize', () => {
             console.log(Date.now(), "Window resized. Updating UI.");
             updateUI();
-            if (currentPage === 'verse' && verseInput) {
-                verseInput.style.height = 'auto'; // Reset height
-                verseInput.style.height = (verseInput.scrollHeight) + 'px'; // Adjust height
+            // Adjust textarea height on resize for both generator and verse inputs
+            if (promptInput) {
+                promptInput.style.height = 'auto';
+                promptInput.style.height = (promptInput.scrollHeight) + 'px';
+            }
+            if (verseInput) {
+                verseInput.style.height = 'auto';
+                verseInput.style.height = (verseInput.scrollHeight) + 'px';
+            }
+            if (mobileArtPromptInput) {
+                mobileArtPromptInput.style.height = 'auto';
+                mobileArtPromptInput.style.height = (mobileArtPromptInput.scrollHeight) + 'px';
             }
         });
 
