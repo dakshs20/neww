@@ -3,422 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- SEO: Optimized Title Tag - Removed "Free" as requested -->
-    <title>AI Image & Chat Generator | GenArt - Create Stunning Art Online</title>
-    <!-- SEO: Optimized Meta Description for better keyword integration and CTR -->
-    <meta name="description" content="Generate stunning AI art and engage in intelligent text conversations for free with GenArt! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art and chat creator.">
+    <title>GenArt Verse - AI Image & Chat Generator</title>
+    <meta name="description" content="Engage in intelligent AI conversations and generate stunning images from text prompts with GenArt Verse. A clean, modern, and responsive AI experience.">
 
     <!-- Open Graph / Facebook / LinkedIn / Pinterest -->
     <meta property="og:type" content="website">
-    <!-- SEO: Updated URL for social sharing to your actual domain -->
     <meta property="og:url" content="https://www.gensart.space/">
-    <meta property="og:title" content="AI Image & Chat Generator | GenArt - Create Stunning Art Online">
-    <meta property="og:description" content="Generate stunning AI art and engage in intelligent text conversations for free with GenArt! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art and chat creator.">
-    <meta property="og:image" content="https://placehold.co/1200x630/333333/FFFFFF"> <!-- Removed ?text= -->
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
+    <meta property="og:title" content="GenArt Verse - AI Image & Chat Generator">
+    <meta property="og:description" content="Engage in intelligent AI conversations and generate stunning images from text prompts with GenArt Verse. A clean, modern, and responsive AI experience.">
+    <meta property="og:image" content="https://placehold.co/1200x630/181818/C1C1C1?text=GenArt+Verse">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <!-- SEO: Updated URL for Twitter sharing to your actual domain -->
     <meta name="twitter:url" content="https://www.gensart.space/">
-    <meta name="twitter:title" content="AI Image & Chat Generator | GenArt - Create Stunning Art Online">
-    <meta name="twitter:description" content="Generate stunning AI art and engage in intelligent text conversations for free with GenArt! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art and chat creator.">
-    <meta name="twitter:image" content="https://placehold.co/1200x675/333333/FFFFFF"> <!-- Removed ?text= -->
+    <meta name="twitter:title" content="GenArt Verse - AI Image & Chat Generator">
+    <meta name="twitter:description" content="Engage in intelligent AI conversations and generate stunning images from text prompts with GenArt Verse. A clean, modern, and responsive AI experience.">
+    <meta name="twitter:image" content="https://placehold.co/1200x630/181818/C1C1C1?text=GenArt+Verse">
 
-    <!-- SEO: Schema Markup (JSON-LD) for SoftwareApplication -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "GenArt - Free AI Image & Chat Generator",
-      "operatingSystem": "Web",
-      "applicationCategory": "MultimediaApplication",
-      "url": "https://www.gensart.space/",
-      "description": "Generate stunning AI art and engage in intelligent text conversations for free with GenArt! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art and chat creator.",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8", <!-- Adjust based on actual or estimated rating -->
-        "reviewCount": "150" <!-- Adjust based on actual or estimated reviews -->
-      },
-      "publisher": {
-        "@type": "Organization",
-        "name": "GenArt"
-      }
-    }
-    </script>
+    <!-- Favicon -->
+    <link rel="icon" href="https://placehold.co/32x32/181818/C1C1C1?text=GV" type="image/x-icon">
+
+    <!-- Google Fonts - Inter for general text, Mersad for headings -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Mersad:wght@400;700&display=swap" rel="stylesheet">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                        mersad: ['Mersad', 'serif'],
+                    },
+                    colors: {
+                        // Custom colors matching CSS variables for Tailwind direct use
+                        'dark-gray-1': 'var(--color-dark-gray-1)',
+                        'dark-gray-2': 'var(--color-dark-gray-2)',
+                        'light-gray': 'var(--color-light-gray)',
+                        'bluish-tint': 'var(--color-bluish-tint)',
+                        'optional-black-tint': 'var(--color-optional-black-tint)',
+                    },
+                    borderRadius: {
+                        'xs': 'var(--radius-xs)',
+                        'sm': 'var(--radius-sm)',
+                        'md': 'var(--radius-md)',
+                        'lg': 'var(--radius-lg)',
+                        'full': 'var(--radius-full)',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- GSAP CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/TextPlugin.min.js"></script>
+    <!-- Marked.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Highlight.js CDN for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
-    <!-- Google Fonts Preconnect and Preload for Performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Google Fonts for Mersad and Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Mersad&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
-    <!-- Custom Stylesheet Link -->
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
-
-    <!-- GSAP CDN for animations -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/TextPlugin.min.js"></script>
-
-    <!-- Marked.js for Markdown parsing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
-
 </head>
-<body class="min-h-screen relative bg-gradient-to-br from-gray-950 to-gray-800 flex flex-col items-center p-4 text-gray-100 overflow-x-hidden">
+<body class="bg-dark-gray-1 text-light-gray font-inter overflow-hidden flex flex-col h-screen">
 
-    <!-- Ethereal Background Animations -->
-    <div class="absolute inset-0 z-0 overflow-hidden">
-        <!-- Blobs (ensure these use Tailwind classes that map to rem/px for sizes) -->
-        <div class="absolute w-72 h-72 rounded-full bg-blue-700 mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-0" style="top: 0; left: -4%;"></div>
-        <div class="absolute w-72 h-72 rounded-full bg-purple-700 mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000" style="top: 0; right: -4%;"></div>
-        <div class="absolute w-72 h-72 rounded-full bg-teal-700 mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000" style="bottom: -8%; left: 20%;"></div>
-        <div class="absolute w-80 h-80 rounded-full bg-indigo-700 mix-blend-multiply filter blur-xl opacity-15 animate-blob animation-delay-3000" style="top: -20%; right: 40%;"></div>
-        <div class="absolute w-64 h-64 rounded-full bg-cyan-700 mix-blend-multiply filter blur-xl opacity-15 animate-blob animation-delay-1000" style="bottom: 10%; left: -10%;"></div>
+    <!-- Ethereal Background Gradients -->
+    <div class="ethereal-gradient-1"></div>
+    <div class="ethereal-gradient-2"></div>
+    <div class="ethereal-gradient-3"></div>
+    <!-- Ethereal Pattern Overlay -->
+    <div class="ethereal-pattern"></div>
 
-        <!-- Ethereal Gradients (from style.css) -->
-        <div class="ethereal-gradient-1"></div>
-        <div class="ethereal-gradient-2"></div>
-        <div class="ethereal-gradient-3"></div>
-        <div class="ethereal-pattern"></div>
+    <!-- Main Application Container -->
+    <div id="app-container" class="relative z-10 flex flex-col h-full w-full">
+
+        <!-- Sidebar Toggle Button (Hamburger) -->
+        <button id="sidebar-toggle-btn" class="p-2">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+
+        <!-- Top Navbar -->
+        <nav id="main-navbar" class="bg-dark-gray-1/90 backdrop-blur-md p-4 shadow-lg flex justify-between items-center z-50">
+            <div class="flex items-center">
+                <!-- Replaced H1 with IMG for logo -->
+                <img id="app-logo" src="https://placehold.co/150x40/181818/C1C1C1?text=GenArt+Verse+Logo" alt="GenArt Verse Logo">
+            </div>
+            <div class="flex items-center space-x-4">
+                <!-- User Profile/Sign In -->
+                <div id="user-info" class="relative group">
+                    <button id="user-avatar-btn" class="overflow-hidden border-2 border-dark-gray-2 flex items-center justify-center font-semibold">
+                        <i class="fas fa-user text-light-gray"></i>
+                    </button>
+                    <div id="auth-dropdown" class="absolute right-0 mt-2 w-48 bg-dark-gray-2 border border-dark-gray-2 shadow-xl opacity-0 scale-95 origin-top-right transition-all duration-200 ease-out pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto rounded-md">
+                        <div class="p-4 text-center">
+                            <p id="user-display-name" class="font-semibold truncate text-light-gray">Guest</p>
+                            <p id="user-display-email" class="text-light-gray text-sm truncate"></p>
+                        </div>
+                        <ul class="border-t border-dark-gray-2 py-2">
+                            <li><button id="sign-in-out-btn" class="block w-full text-left px-4 py-2 text-light-gray hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-150 rounded-sm">Sign In</button></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area (Sidebar + Chat) -->
+        <div class="flex flex-grow overflow-hidden">
+
+            <!-- Left Sidebar -->
+            <aside id="sidebar" class="bg-dark-gray-1 border-r border-dark-gray-2 shadow-xl z-40 flex flex-col">
+                <div class="chat-header-section p-4 border-b border-dark-gray-2 flex items-center justify-between">
+                    <button id="new-chat-btn" class="p-2 bg-dark-gray-2 text-light-gray hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-200 rounded-md border border-dark-gray-2">
+                        <i class="fas fa-plus"></i> New Chat
+                    </button>
+                </div>
+                <div id="chat-history-sidebar" class="flex-grow overflow-y-auto custom-scrollbar p-2">
+                    <!-- Recent chats will be dynamically loaded here -->
+                    <div class="text-light-gray/80 p-2">No recent chats.</div>
+                </div>
+                <div class="p-4 border-t border-dark-gray-2 space-y-2">
+                    <button id="settings-btn" class="text-light-gray hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-200 rounded-md">
+                        <i class="fas fa-cog mr-2"></i> Settings
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Chat Area -->
+            <div id="chat-main-area" class="flex flex-col flex-grow relative bg-dark-gray-1">
+                <div id="chat-history" class="flex-grow overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-6">
+                    <!-- Initial welcome message -->
+                    <div class="chat-bubble ai max-w-2xl mx-auto p-4 shadow-md rounded-lg">
+                        <p class="text-light-gray/80">Hello! I'm GenArt Verse, your AI assistant. I can help you with text conversations and generate images. Just tell me what you need!</p>
+                    </div>
+                </div>
+
+                <!-- Typing indicator -->
+                <div id="typing-indicator" class="flex items-center justify-center space-x-2 py-4 hidden">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <span class="text-light-gray/80 text-sm">GenArt Verse is typing...</span>
+                </div>
+
+                <!-- Prompt Suggestions Carousel -->
+                <div id="prompt-suggestions-container" class="w-full max-w-3xl mx-auto px-4 md:px-6 mb-4 overflow-x-auto custom-scrollbar flex space-x-2">
+                    <!-- Suggestions will be dynamically loaded here -->
+                    <button class="prompt-suggestion-btn flex-shrink-0 bg-dark-gray-2 text-light-gray/80 text-sm hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-200 rounded-full border border-dark-gray-2">
+                        Suggest a story idea
+                    </button>
+                    <button class="prompt-suggestion-btn flex-shrink-0 bg-dark-gray-2 text-light-gray/80 text-sm hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-200 rounded-full border border-dark-gray-2">
+                        Generate an image of a cat
+                    </button>
+                    <button class="prompt-suggestion-btn flex-shrink-0 bg-dark-gray-2 text-light-gray/80 text-sm hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-200 rounded-full border border-dark-gray-2">
+                        Explain quantum physics
+                    </button>
+                    <button class="prompt-suggestion-btn flex-shrink-0 bg-dark-gray-2 text-light-gray/80 text-sm hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-200 rounded-full border border-dark-gray-2">
+                        Draw a futuristic city
+                    </button>
+                </div>
+
+                <!-- Unified Message Input -->
+                <div id="message-input-area" class="w-full max-w-3xl mx-auto p-4 md:p-6 bg-dark-gray-2/80 backdrop-blur-md border-t border-dark-gray-2 shadow-lg flex items-end space-x-2 rounded-t-lg">
+
+                    <!-- Modes Toggle Button -->
+                    <div class="relative flex-shrink-0">
+                        <button id="modes-toggle-btn" class="bg-dark-gray-2 text-light-gray border border-dark-gray-2 rounded-md py-2 px-3 text-sm font-medium transition-all duration-200 hover:bg-dark-gray-1 hover:border-bluish-tint hover:text-bluish-tint">
+                            Modes <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-200"></i>
+                        </button>
+
+                        <!-- Modes Dropdown Panel -->
+                        <div id="modes-dropdown-panel" class="absolute bottom-full left-0 mb-2 bg-dark-gray-1 border border-dark-gray-2 shadow-lg rounded-lg p-3 space-y-1 opacity-0 scale-95 origin-bottom-left pointer-events-none transition-all duration-200 ease-out">
+                            <button id="mode-verse-btn" class="dropdown-mode-item w-full text-left text-light-gray hover:bg-dark-gray-2 hover:text-bluish-tint rounded-md px-4 py-2 transition-all duration-150">Verse</button>
+                            <button id="mode-image-btn" class="dropdown-mode-item w-full text-left text-light-gray hover:bg-dark-gray-2 hover:text-bluish-tint rounded-md px-4 py-2 transition-all duration-150">Image Verse</button>
+                            <button id="mode-code-btn" class="dropdown-mode-item w-full text-left text-light-gray hover:bg-dark-gray-2 hover:text-bluish-tint rounded-md px-4 py-2 transition-all duration-150">Code</button>
+                        </div>
+                    </div>
+
+                    <textarea id="unified-input" class="flex-grow p-3 bg-dark-gray-1 border border-dark-gray-2 text-light-gray focus:ring-2 focus:ring-bluish-tint focus:border-transparent transition-all duration-200 resize-none overflow-hidden text-base placeholder-light-gray/80 rounded-full" rows="1" placeholder="Start your conversation..."></textarea>
+                    <button id="send-message-btn" class="bg-bluish-tint text-white shadow-md flex-shrink-0 rounded-lg">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                    <button id="stop-response-btn" class="bg-dark-gray-2 text-light-gray shadow-md flex-shrink-0 rounded-lg">
+                        <i class="fas fa-stop mr-1"></i> Stop
+                    </button>
+                    <button id="voice-input-btn" class="bg-dark-gray-2 text-light-gray shadow-md flex-shrink-0 rounded-lg">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
-
-    <!-- Header / Navigation -->
-    <header id="header-element" class="w-full bg-slate-900/80 backdrop-blur-md text-white shadow-lg z-20 sticky top-0 py-3 animate-fade-in-down rounded-full px-4">
-        <div class="container mx-auto flex justify-between items-center">
-            <!-- Logo Text with H1 for SEO, but styled as a button -->
-            <button id="logo-btn" class="cursor-pointer hover:scale-105 transition-transform duration-300 ease-in-out">
-                <h1 class="text-3xl sm:text-4xl font-mersad text-blue-300">GenArt</h1>
+    <!-- Sign-in Modal -->
+    <div id="signin-modal" class="fixed inset-0 bg-optional-black-tint/75 flex items-center justify-center z-[100] hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-dark-gray-2/85 p-8 shadow-2xl text-center border border-dark-gray-2 max-w-sm w-full transform scale-95 transition-transform duration-300 rounded-lg">
+            <h3 class="text-2xl font-bold font-mersad mb-4 text-light-gray">Sign In to Unlock Full Features</h3>
+            <p class="text-light-gray mb-6">Sign in with your Google account to save your chat history and enjoy unlimited creations!</p>
+            <button id="google-signin-btn" class="w-full flex items-center justify-center px-6 py-3 text-white font-semibold text-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 rounded-lg" style="background-image: linear-gradient(to right, var(--color-bluish-tint), color-mix(in srgb, var(--color-bluish-tint) 80%, black));">
+                <i class="fab fa-google mr-3"></i> Sign In With Google
             </button>
-
-            <!-- Desktop Navigation (visible on sm and larger screens) -->
-            <nav id="desktop-nav" class="hidden sm:flex items-center space-x-4 sm:space-x-6">
-                <ul class="flex space-x-4 sm:space-x-6 items-center">
-                    <li>
-                        <button id="home-btn" class="relative text-lg font-semibold hover:text-blue-300 transition-colors duration-200 py-1 px-2 sm:px-3 rounded-full overflow-hidden group">
-                            <span class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
-                            Home
-                            <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-300 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
-                        </button>
-                    </li>
-                    <li>
-                        <button id="generator-btn" class="relative text-lg font-semibold hover:text-blue-300 transition-colors duration-200 py-1 px-2 sm:px-3 rounded-full overflow-hidden group">
-                            <span class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
-                            Image Generator
-                            <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-300 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
-                        </button>
-                    </li>
-                    <!-- New Chat AI Nav Link -->
-                    <li>
-                        <button id="chat-ai-btn" class="relative text-lg font-semibold hover:text-blue-300 transition-colors duration-200 py-1 px-2 sm:px-3 rounded-full overflow-hidden group">
-                            <span class="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></span>
-                            Chat AI
-                            <span class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-300 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
-                        </button>
-                    </li>
-                </ul>
-                <!-- User Info & Auth Buttons for Desktop -->
-                <div class="flex items-center space-x-3 ml-4">
-                    <span id="user-display-desktop" class="text-sm text-gray-300 hidden"></span>
-                    <button id="sign-in-btn-desktop" class="px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-md">Sign In</button>
-                    <button id="sign-out-btn-desktop" class="px-4 py-2 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 transition-colors duration-200 shadow-md hidden">Sign Out</button>
-                </div>
-            </nav>
-
-            <!-- Hamburger Menu Button (visible only on small screens) -->
-            <button id="hamburger-btn" class="sm:hidden text-gray-300 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-2 transition-colors duration-200"
-                    aria-controls="mobile-menu" aria-expanded="false">
-                <i class="fas fa-bars text-2xl" id="hamburger-icon"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- Mobile Navigation Menu Overlay -->
-    <div id="mobile-menu-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity duration-300"></div>
-
-    <!-- Mobile Navigation Menu (initially hidden, slides in from right) -->
-    <nav id="mobile-menu" class="fixed inset-y-0 right-0 w-64 bg-slate-900/95 backdrop-blur-lg z-50 transform translate-x-full transition-transform duration-300 ease-in-out sm:hidden shadow-lg border-l border-slate-700">
-        <div class="flex flex-col h-full p-6">
-            <div class="flex justify-end mb-8">
-                <button id="close-mobile-menu-btn" class="text-gray-300 hover:text-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-2">
-                    <i class="fas fa-times text-2xl"></i>
-                </button>
-            </div>
-            <ul class="flex flex-col space-y-6 text-xl font-semibold text-gray-200">
-                <li><button id="mobile-home-btn" class="mobile-nav-link hover:text-blue-300 transition-colors duration-200 w-full text-left py-2">Home</button></li>
-                <li><button id="mobile-generator-btn" class="mobile-nav-link hover:text-blue-300 transition-colors duration-200 w-full text-left py-2">Image Generator</button></li>
-                <!-- New Mobile Chat AI Nav Link -->
-                <li><button id="mobile-chat-ai-btn" class="mobile-nav-link hover:text-blue-300 transition-colors duration-200 w-full text-left py-2">Chat AI</button></li>
-            </ul>
-            <div class="mt-auto pt-8 border-t border-gray-700 flex flex-col items-start space-y-4">
-                <span id="user-display-mobile" class="text-sm text-gray-300 hidden"></span>
-                <button id="sign-in-btn-mobile" class="w-full py-2 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-md text-left">Sign In</button>
-                <button id="sign-out-btn-mobile" class="w-full py-2 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 transition-colors duration-200 shadow-md text-left hidden">Sign Out</button>
-            </div>
-        </div>
-    </nav>
-
-
-    <!-- Main content area container for dynamic pages - SEO: Using <main> semantic tag -->
-    <main id="main-content-container" class="flex-grow flex items-center justify-center w-full p-4 sm:p-6 lg:p-8">
-
-        <!-- Home Page Content - SEO: Using <section> semantic tag -->
-        <!-- Aesthetic: Increased padding for more breathing room -->
-        <section id="home-page-element" class="home-section text-center relative z-10 bg-white/5 backdrop-blur-sm p-8 sm:p-12 rounded-2xl shadow-3xl w-full max-w-5xl animate-fade-in-up border border-slate-700">
-            <!-- SEO: More descriptive H2 with keywords - Removed "Free" from title -->
-            <h2 class="text-3xl md:text-5xl font-mersad text-blue-300 mb-4 sm:mb-6 animate-text-gradient-professional-alt">
-                Unleash Your Imagination with AI Image Generation
-            </h2>
-            <!-- Aesthetic: Improved readability with leading-relaxed and tracking-wide, increased bottom margin -->
-            <p class="text-base md:text-xl font-helvetica text-gray-300 mb-10 sm:mb-12 max-w-3xl mx-auto animate-fade-in animation-delay-200 leading-relaxed tracking-wide">
-                Welcome to GenArt, your ultimate online platform to transform ideas into stunning visuals. Our advanced AI image generator allows you to create unique digital paintings, illustrations, and abstract art from simple text prompts, instantly. Discover the power of artificial intelligence in art creation and bring your creative visions to life with ease.
-            </p>
-            <!-- Aesthetic: Added margin-bottom to separate button from feature cards -->
-            <div class="mb-12">
-                <button id="start-creating-btn" class="px-8 py-4 sm:px-10 sm:py-5 rounded-full font-bold text-lg sm:text-xl shadow-xl font-helvetica bg-gradient-to-r from-blue-600 to-indigo-700 text-white hover:from-blue-700 hover:to-indigo-800 transform hover:scale-105 transition-all duration-300 ease-in-out animate-pop-in">
-                    Start Creating Now! <i class="fas fa-arrow-right ml-2"></i>
-                </button>
-            </div>
-
-            <!-- Aesthetic: Transformed bullet points into interactive feature cards with icons -->
-            <div class="mt-12 pt-8 border-t border-slate-700">
-                <h3 class="text-2xl font-mersad text-teal-300 mb-8 text-center">Why GenArt is Your Go-To AI Art Creator</h3>
-                <!-- Mobile-first grid: single column on mobile, then 2, then 3 columns -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                    <!-- Feature Card 1: Free & Accessible -->
-                    <div class="bg-white/5 p-6 rounded-xl shadow-md border border-slate-700 flex flex-col items-center text-center transform transition-all duration-300 hover:bg-white/10 hover:shadow-lg hover:scale-102">
-                        <i class="fas fa-gem text-4xl text-blue-400 mb-4"></i>
-                        <h4 class="text-xl font-semibold text-blue-200 mb-2">Completely Free & Accessible</h4>
-                        <p class="text-gray-300 text-base leading-relaxed">Unleash your creativity without any cost. GenArt is designed to be accessible to everyone, everywhere, on any device.</p>
-                    </div>
-
-                    <!-- Feature Card 2: Intuitive Interface -->
-                    <div class="bg-white/5 p-6 rounded-xl shadow-md border border-slate-700 flex flex-col items-center text-center transform transition-all duration-300 hover:bg-white/10 hover:shadow-lg hover:scale-102">
-                        <i class="fas fa-lightbulb text-4xl text-purple-400 mb-4"></i>
-                        <h4 class="text-xl font-semibold text-purple-200 mb-2">Intuitive & User-Friendly</h4>
-                        <p class="text-gray-300 text-base leading-relaxed">No steep learning curve. Our streamlined interface makes AI art generation simple and enjoyable for beginners and pros alike.</p>
-                    </div>
-
-                    <!-- Feature Card 3: Powerful AI -->
-                    <div class="bg-white/5 p-6 rounded-xl shadow-md border border-slate-700 flex flex-col items-center text-center transform transition-all duration-300 hover:bg-white/10 hover:shadow-lg hover:scale-102">
-                        <i class="fas fa-robot text-4xl text-teal-400 mb-4"></i>
-                        <h4 class="text-xl font-semibold text-teal-200 mb-2">Powered by Advanced AI</h4>
-                        <p class="text-gray-300 text-base leading-relaxed">Leveraging cutting-edge generative AI models to transform your wildest ideas into stunning, high-quality images.</p>
-                    </div>
-
-                    <!-- Feature Card 4: Instant Creations -->
-                    <div class="bg-white/5 p-6 rounded-xl shadow-md border border-slate-700 flex flex-col items-center text-center transform transition-all duration-300 hover:bg-white/10 hover:shadow-lg hover:scale-102">
-                        <i class="fas fa-bolt text-4xl text-yellow-400 mb-4"></i>
-                        <h4 class="text-xl font-semibold text-yellow-200 mb-2">Instant & High-Quality Results</h4>
-                        <p class="text-gray-300 text-base leading-relaxed">Get your masterpieces in seconds. Our efficient system delivers impressive visuals without the wait.</p>
-                    </div>
-
-                    <!-- Feature Card 5: Versatile Outputs -->
-                    <div class="bg-white/5 p-6 rounded-xl shadow-md border border-slate-700 flex flex-col items-center text-center transform transition-all duration-300 hover:bg-white/10 hover:shadow-lg hover:scale-102">
-                        <i class="fas fa-palette text-4xl text-pink-400 mb-4"></i>
-                        <h4 class="text-xl font-semibold text-pink-200 mb-2">Versatile Art Styles</h4>
-                        <p class="text-gray-300 text-base leading-relaxed">From realistic photos to abstract paintings, explore a wide range of artistic styles to match your creative vision.</p>
-                    </div>
-
-                    <!-- Feature Card 6: Community & Inspiration (Placeholder for future) -->
-                    <div class="bg-white/5 p-6 rounded-xl shadow-md border border-slate-700 flex flex-col items-center text-center transform transition-all duration-300 hover:bg-white/10 hover:shadow-lg hover:scale-102">
-                        <i class="fas fa-users text-4xl text-orange-400 mb-4"></i>
-                        <h4 class="text-xl font-semibold text-orange-200 mb-2">Inspiring Community</h4>
-                        <p class="text-gray-300 text-base leading-relaxed">Join a growing community of creators. Share your art, get inspired, and discover new possibilities in AI generation.</p>
-                    </div>
-
-                </div>
-            </div>
-        </section>
-
-        <!-- Image Generator Page Content - SEO: Using <section> semantic tag -->
-        <section id="generator-page-element" class="relative z-10 bg-white/5 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-3xl w-full max-w-md border border-slate-700 hidden">
-            <!-- H1 for the main topic of this page -->
-            <h1 class="text-3xl sm:text-4xl font-mersad text-blue-300 mb-4 sm:mb-6 text-center animate-text-gradient-professional">
-                AI Image Generator
-            </h1>
-
-            <div id="free-generations-display" class="mb-4 text-center text-lg font-semibold text-green-400">
-                You have 3 free generations left.
-            </div>
-
-            <div class="mb-6">
-                <label for="prompt-input" class="block text-gray-300 text-base font-semibold mb-2 font-helvetica">
-                    Describe your vision:
-                </label>
-                <textarea
-                    id="prompt-input"
-                    class="w-full p-3 sm:p-4 bg-gray-800/50 border border-gray-600 rounded-xl focus:ring-3 focus:ring-blue-500 focus:border-transparent transition duration-300 ease-in-out resize-y min-h-[100px] text-gray-100 placeholder-gray-400 shadow-inner font-helvetica text-sm sm:text-base"
-                    rows="4"
-                    placeholder="e.g., A vibrant cyberpunk city street at night, neon lights, rainy, highly detailed, 8k, cinematic"
-                ></textarea>
-                <!-- Separate space for Copy and Clear buttons - FIXED UI OVERLAY -->
-                <div class="flex justify-end space-x-2 mt-2">
-                    <button id="copy-prompt-btn" class="px-4 py-2 text-gray-400 hover:text-blue-300 transition-colors duration-200 rounded-full bg-gray-700/50 hover:bg-gray-600/70 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold" title="Copy Prompt">
-                        <i class="fas fa-copy mr-1"></i> Copy
-                    </button>
-                    <button id="clear-prompt-btn" class="px-4 py-2 text-gray-400 hover:text-red-300 transition-colors duration-200 rounded-full bg-gray-700/50 hover:bg-gray-600/70 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm font-semibold" title="Clear Prompt">
-                        <i class="fas fa-times-circle mr-1"></i> Clear
-                    </button>
-                </div>
-            </div>
-
-            <!-- Aspect Ratio Selection -->
-            <div class="mb-6">
-                <label class="block text-gray-300 text-base font-semibold mb-2 font-helvetica">
-                    Choose Aspect Ratio:
-                </label>
-                <div id="aspect-ratio-selection" class="flex flex-wrap gap-2 sm:gap-3 justify-center">
-                    <!-- Radio buttons will be inserted here by JS -->
-                </div>
-            </div>
-
-            <button id="generate-image-btn" class="w-full py-3 sm:py-4 px-6 rounded-xl text-white font-bold text-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 font-helvetica">
-                Generate Image
-            </button>
-
-            <div id="error-display" class="mt-6 p-4 bg-red-800/70 border border-red-600 text-red-200 rounded-lg text-sm text-center shadow-md animate-fade-in font-helvetica hidden"></div>
-
-            <!-- Image Output Display Container -->
-            <div id="image-display-container" class="mt-8 text-center hidden">
-                <h2 class="text-xl sm:text-2xl font-mersad text-blue-300 mb-4 sm:mb-5">Your Masterpiece:</h2>
-                <div class="relative border-4 border-blue-600 rounded-xl overflow-hidden shadow-2xl group">
-                    <img
-                        id="generated-image"
-                        src=""
-                        alt="AI generated image based on your prompt" <!-- SEO: This alt text will be dynamically updated by script.js for better SEO -->
-                        class="w-full h-auto object-cover rounded-lg transform transition-transform duration-500 group-hover:scale-105"
-                        onerror="this.onerror=null;this.src='https://placehold.co/600x400/333333/FFFFFF?text=Image+Load+Error';"
-                    />
-                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity duration-300 flex items-center justify-center">
-                        <button id="download-image-btn" class="opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-100 transition-all duration-300 px-5 py-2 sm:px-6 sm:py-3 bg-teal-600 text-white rounded-full font-bold text-sm sm:text-md shadow-lg font-helvetica hover:bg-teal-700 transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400">
-                            <i class="fas fa-download mr-2"></i> Download Image
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Prompt Enhancer Section -->
-            <div class="mt-8 pt-6 border-t border-gray-700">
-                <h2 class="text-xl sm:text-2xl font-mersad text-teal-300 mb-4 text-center">
-                    Enhance Your Prompt
-                </h2>
-                <button id="enhance-prompt-btn" class="w-full py-3 px-4 rounded-xl text-white font-bold text-md shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 font-helvetica text-sm sm:text-base">
-                    <i class="fas fa-magic mr-2"></i> Enhance Prompt
-                </button>
-                <div id="enhanced-prompt-display" class="mt-4 p-4 bg-gray-800/50 border border-gray-600 rounded-xl shadow-inner animate-fade-in font-helvetica hidden">
-                    <p class="text-gray-300 text-xs sm:text-sm italic mb-3">Suggested Enhancement:</p>
-                    <p id="enhanced-prompt-text" class="text-gray-100 text-sm sm:text-base leading-relaxed"></p>
-                    <button id="use-enhanced-prompt-btn" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-full text-xs sm:text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-md font-helvetica">
-                        Use This Prompt
-                    </button>
-                </div>
-            </div>
-
-            <!-- Creative Variation Ideas Section -->
-            <div class="mt-8 pt-6 border-t border-gray-700">
-                <h2 class="text-xl sm:text-2xl font-mersad text-teal-300 mb-4 text-center">
-                    Creative Variation Ideas
-                </h2>
-                <button id="generate-variation-ideas-btn" class="w-full py-3 px-4 rounded-xl text-white font-bold text-md shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400 font-helvetica text-sm sm:text-base">
-                    <i class="fas fa-lightbulb mr-2"></i> Get Variation Ideas
-                </button>
-                <div id="variation-ideas-display" class="mt-4 p-4 bg-gray-800/50 border border-gray-600 rounded-xl shadow-inner animate-fade-in font-helvetica hidden">
-                    <p class="text-gray-300 text-xs sm:text-sm italic mb-3">Here are some ideas:</p>
-                    <ul id="variation-ideas-list" class="list-disc list-inside text-gray-100 text-sm sm:text-base space-y-2"></ul>
-                </div>
-            </div>
-        </section>
-
-        <!-- Chat AI Page Content -->
-        <section id="chat-ai-page-element" class="relative z-10 bg-white/5 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-3xl w-full max-w-2xl border border-slate-700 flex flex-col h-[80vh] hidden">
-            <h1 class="text-3xl sm:text-4xl font-mersad text-blue-300 mb-4 text-center animate-text-gradient-professional">
-                AI Chat
-            </h1>
-
-            <div id="chat-ai-controls" class="flex flex-wrap justify-center sm:justify-between items-center gap-2 mb-4">
-                <span id="chat-credits-display" class="text-sm font-semibold text-green-400">You have 5 free messages left.</span>
-                <div class="flex flex-wrap items-center justify-center gap-2">
-                    <button id="toggle-theme-btn" class="px-3 py-2 rounded-full bg-gray-700/50 text-gray-300 hover:bg-gray-600/70 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <i class="fas fa-sun" id="theme-icon"></i> <span class="hidden sm:inline">Light Mode</span>
-                    </button>
-                    <button id="toggle-voice-input-btn" class="px-3 py-2 rounded-full bg-gray-700/50 text-gray-300 hover:bg-gray-600/70 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <i class="fas fa-microphone" id="voice-input-icon"></i> <span class="hidden sm:inline">Voice Input</span>
-                    </button>
-                    <button id="toggle-voice-output-btn" class="px-3 py-2 rounded-full bg-gray-700/50 text-gray-300 hover:bg-gray-600/70 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <i class="fas fa-volume-up" id="voice-output-icon"></i> <span class="hidden sm:inline">Voice Output</span>
-                    </button>
-                    <!-- New Stop Voice Output Button -->
-                    <button id="stop-voice-output-btn" class="px-3 py-2 rounded-full bg-red-500/70 text-white hover:bg-red-600/80 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-red-500 hidden">
-                        <i class="fas fa-stop"></i> <span class="hidden sm:inline">Stop Speaking</span>
-                    </button>
-                    <button id="clear-chat-btn" class="px-3 py-2 rounded-full bg-red-600/70 text-white hover:bg-red-700/80 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-red-500">
-                        <i class="fas fa-trash-alt"></i> <span class="hidden sm:inline">Clear Chat</span>
-                    </button>
-                </div>
-            </div>
-
-            <div id="chat-messages-container" class="flex-1 overflow-y-auto p-3 sm:p-4 bg-gray-800/50 rounded-xl mb-4 shadow-inner custom-scrollbar">
-                <!-- Chat messages will be appended here -->
-                <div class="text-center text-gray-400 text-sm py-4">
-                    Start a conversation! Type your message below.
-                </div>
-            </div>
-
-            <div id="typing-indicator" class="flex items-center space-x-1 mb-3 hidden">
-                <span class="dot bg-blue-400 rounded-full w-2 h-2"></span>
-                <span class="dot bg-blue-400 rounded-full w-2 h-2"></span>
-                <span class="dot bg-blue-400 rounded-full w-2 h-2"></span>
-                <span class="text-gray-400 text-sm ml-2">AI is typing...</span>
-            </div>
-
-            <div class="flex items-center space-x-3">
-                <textarea
-                    id="chat-input"
-                    class="flex-1 p-3 sm:p-4 bg-gray-800/50 border border-gray-600 rounded-xl focus:ring-3 focus:ring-blue-500 focus:border-transparent transition duration-300 ease-in-out resize-none h-12 overflow-hidden text-gray-100 placeholder-gray-400 shadow-inner font-helvetica text-sm sm:text-base"
-                    rows="1"
-                    placeholder="Type your message here..."
-                    oninput="this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';"
-                ></textarea>
-                <button id="send-chat-btn" class="px-5 py-3 rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg hover:bg-blue-700 transition-colors duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
-
-            <!-- Prompt Templates / Quick Replies Section -->
-            <div id="prompt-templates-container" class="mt-4 pt-4 border-t border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-300 mb-3">Quick Replies:</h3>
-                <div id="prompt-templates-list" class="flex flex-wrap gap-2">
-                    <!-- Templates will be added here by JS -->
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Sign-in Required Modal -->
-    <div id="signin-required-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
-        <div class="bg-gray-800 p-8 rounded-lg shadow-xl text-center max-w-sm mx-auto border border-blue-600">
-            <h3 class="text-2xl font-bold text-blue-300 mb-4">Sign In to Create More!</h3>
-            <p class="text-gray-200 mb-6">You've used your 3 free generations. Please sign in with Google to continue creating amazing art!</p>
-            <button id="modal-sign-in-btn" class="w-full py-3 px-6 rounded-xl text-white font-bold text-lg shadow-lg bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 transition-all duration-300 ease-in-out transform hover:scale-105">
-                Sign In With Google
-            </button>
-            <button id="close-signin-modal-btn" class="mt-4 text-gray-400 hover:text-gray-200 transition-colors duration-200">No Thanks</button>
+            <button id="close-signin-modal-btn" class="mt-4 text-light-gray/80 hover:text-light-gray transition-colors duration-200">No Thanks</button>
         </div>
     </div>
 
@@ -428,14 +218,14 @@
     </div>
 
     <!-- Persistent Error/Debug Message -->
-    <div id="persistent-debug-message" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-900/90 text-white p-6 rounded-lg shadow-2xl z-[99] text-center max-w-md hidden border border-red-700">
+    <div id="persistent-debug-message" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-optional-black-tint/90 text-light-gray p-6 shadow-2xl z-[99] text-center max-w-md hidden border border-dark-gray-2 rounded-lg">
         <h3 class="text-xl font-bold mb-3">App Initialization Issue</h3>
         <p class="text-sm">It seems there was a problem loading all services. Some features may not work.</p>
         <p class="text-sm mt-2 font-semibold">Please open your browser's **Developer Console (F12 on desktop)** and copy all messages to the AI for debugging.</p>
-        <button id="close-debug-message-btn" class="mt-4 px-4 py-2 bg-red-700 hover:bg-red-800 rounded-full text-sm font-semibold">Dismiss</button>
+        <button id="close-debug-message" class="mt-4 px-4 py-2 bg-white/10 hover:bg-white/20 text-sm rounded-md">Dismiss</button>
     </div>
 
-    <!-- Your JavaScript file, now loaded as a module -->
-    <script src="script.js" type="module" defer></script>
+    <!-- Custom JavaScript -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>
