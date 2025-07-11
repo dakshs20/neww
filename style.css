@@ -1,4 +1,4 @@
-/* Custom CSS for GenArt Verse - ChatGPT Replica Design System (V13) */
+/* Custom CSS for GenArt Verse - ChatGPT Replica Design System (V12) */
 
 /* Root variables for colors - STRICTLY following the new palette */
 :root {
@@ -21,8 +21,7 @@ html, body {
     height: 100%;
     margin: 0;
     padding: 0;
-    /* Prevent horizontal scrolling on smaller screens due to layout shifts */
-    overflow-x: hidden;
+    overflow: hidden; /* Control overflow at the highest level */
     font-family: 'Inter', sans-serif;
     background-color: var(--color-dark-gray-1); /* Main background */
     color: var(--color-light-gray); /* Primary text */
@@ -124,7 +123,7 @@ html, body {
     flex-direction: column;
     height: 100vh;
     width: 100vw;
-    overflow: hidden; /* Control overflow at the highest level */
+    overflow: hidden;
 }
 
 /* Top Navbar - Mobile Styles (Default) */
@@ -135,7 +134,7 @@ html, body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Subtle border */
     box-shadow: 0 2px 10px var(--color-optional-black-tint); /* Deeper shadow */
     transition: all 0.3s ease; /* Transition for sidebar open/close */
-    height: 4rem; /* Consistent height */
+    height: 4rem;
     display: flex;
     align-items: center;
     padding: 0 0.5rem; /* Reduced padding for mobile */
@@ -232,7 +231,6 @@ html, body {
     border-top-right-radius: 0; /* No radius on mobile sidebar */
     border-bottom-right-radius: 0;
     padding-bottom: 1rem;
-    overflow-y: auto; /* Allow scrolling for chat history in sidebar */
 }
 
 #sidebar.collapsed {
@@ -241,7 +239,7 @@ html, body {
 
 /* Sidebar Toggle Button (Hamburger) - Always visible on mobile */
 #sidebar-toggle-btn {
-    display: flex; /* Always display on mobile */
+    display: flex;
     align-items: center;
     justify-content: center;
     width: 3.5rem;
@@ -318,13 +316,12 @@ html, body {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    /* Removed padding-bottom here, moved to chat-history for better control */
+    padding-bottom: 1rem;
     overflow-y: auto;
     transition: margin-left 0.3s ease-in-out;
     margin-left: 0; /* No margin on mobile */
     padding-top: 4rem; /* Offset for fixed navbar */
     background-color: var(--color-dark-gray-1); /* Main background */
-    height: calc(100vh - 4rem); /* Occupy full height minus navbar on mobile */
 }
 
 /* Chat History Container - Mobile Styles (Default) */
@@ -333,8 +330,7 @@ html, body {
     padding: 1rem 0.75rem; /* Reduced padding for mobile */
     max-width: 100%;
     box-sizing: border-box;
-    padding-bottom: 7rem; /* Adjusted for mobile input area height (approx 4rem input + 1rem padding + 2rem margin) */
-    overflow-y: auto; /* Ensure chat history is scrollable */
+    padding-bottom: 7rem; /* Adjusted for mobile input area height */
 }
 
 /* Chat Bubbles - Mobile Styles (Default) */
@@ -873,7 +869,6 @@ html, body {
         transform: translateX(0); /* Always visible on desktop */
         border-top-right-radius: var(--radius-sm); /* Rounded corners */
         border-bottom-right-radius: var(--radius-sm);
-        overflow-y: auto; /* Ensure sidebar content is scrollable on desktop too */
     }
 
     /* Sidebar Toggle Button (Hamburger) - Hide on desktop if sidebar is always open */
@@ -885,7 +880,6 @@ html, body {
     #chat-main-area {
         margin-left: 18rem; /* Default margin for open sidebar on desktop */
         padding-bottom: 1rem; /* Restore original desktop padding */
-        height: calc(100vh - 4rem); /* Restore full height minus navbar */
     }
 
     /* Chat History Container */
