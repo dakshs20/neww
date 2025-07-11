@@ -5,6 +5,10 @@ console.log(Date.now(), "script.js: File started parsing.");
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, limit, addDoc, serverTimestamp, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// getAnalytics is imported but not explicitly used in the provided snippet's logic,
+// but it's part of the user's Firebase config, so it's good to keep the import if they use it elsewhere.
+// import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+
 
 // GSAP is loaded via CDN, so it's globally available as `gsap`
 // Register ScrollTrigger and TextPlugin for GSAP
@@ -18,11 +22,15 @@ marked.setOptions({
     sanitize: true // Sanitize the output HTML to prevent XSS attacks
 });
 
-console.log(Date.now(), "script.js: Firebase and GSAP imports attempted.");
+// Highlight.js is loaded via CDN, so it's globally available as `hljs`
+// This will be used for syntax highlighting of code blocks.
+
+console.log(Date.now(), "script.js: Firebase, GSAP, Marked, and Highlight.js imports attempted.");
 
 // --- Firebase Configuration (Declared at top level) ---
-const firebaseConfig = {
-    apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y", // REPLACE WITH YOUR ACTUAL API KEY
+// Use __firebase_config if available (provided by Canvas environment), otherwise use the user's provided config.
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+    apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
     authDomain: "genart-a693a.firebaseapp.com",
     projectId: "genart-a693a",
     storageBucket: "genart-a693a.firebasestorage.app",
@@ -30,1795 +38,1444 @@ const firebaseConfig = {
     appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
     measurementId: "G-EDCW8VYXY6"
 };
-console.log(Date.now(), "script.js: Firebase config defined at top level.");
 
-// --- Firebase App and Service Variables (Declared at top level, initialized later) ---
-let firebaseApp;
+// Initialize Firebase (app, auth, db instances)
+let app;
 let auth;
 let db;
-let googleProvider;
-let userId = null; // Will store the authenticated user's UID or a random ID for anonymous
+// let analytics; // Declare analytics if you plan to use it in script.js
+let userId = "anonymous"; // Default to anonymous, will be updated by auth listener
 
-// --- State variables (Declared at top level and initialized) ---
-let currentUser = null; // Stores Firebase User object
-let freeGenerationsLeft = localStorage.getItem('freeGenerationsLeft') ? parseInt(localStorage.getItem('freeGenerationsLeft')) : 3;
-let freeChatMessagesLeft = localStorage.getItem('freeChatMessagesLeft') ? parseInt(localStorage.getItem('freeChatMessagesLeft')) : 5; // 5 free chat messages
-let prompt = ''; // For image generator
-let imageUrl = ''; // For generated image
-let loading = false; // For image generation
-let currentError = ''; // Error message for display
-let currentPage = 'home'; // 'home', 'generator', 'chat-ai'
-let isSigningIn = false; // New state for sign-in loading
-let isAuthReady = false; // Flag to indicate if Firebase Auth state has been checked and services initialized
+// Global state variables
+let currentUser = null;
+let isSignInModalOpen = false;
+let isGeneratingImage = false; // To prevent multiple image generation requests
+let isAITyping = false; // To manage AI typing indicator
+let userMessageCount = 0; // For free tier limits
+const MAX_FREE_MESSAGES = 5; // Max messages for unauthenticated users
+let isSidebarOpen = true; // Track sidebar state for desktop, will be set based on screen size
+let currentMode = 'verse'; // Default AI mode: 'verse', 'image-verse', or 'code'
+let isModesDropdownOpen = false; // Track state of the modes dropdown
 
-let aspectRatio = '1:1'; // Default aspect ratio
+// Chat history array to maintain context for AI
+// Each object will have { role: 'user' | 'ai', parts: [{ text: '...' }] }
+let chatHistory = [];
+let currentChatSessionId = null; // ID of the currently active chat session in Firestore
+let chatSessionsList = []; // Array to hold metadata of all chat sessions for the sidebar
 
-let enhancedPrompt = '';
-let loadingEnhancePrompt = false;
-let variationIdeas = [];
-let loadingVariationIdeas = false;
+// Scroll lock state
+let isScrollLocked = false;
+let lastScrollTop = 0;
 
-let chatHistory = []; // Stores chat messages: [{role: 'user', parts: [{text: '...'}]}, {role: 'model', parts: [{text: '...'}]}]
-let isChatLoading = false;
-let isVoiceInputActive = false;
-let isVoiceOutputActive = false;
-let speechRecognition = null;
-let speechSynthesis = window.speechSynthesis;
+// AbortController for cancelling fetch requests
+let currentAbortController = null;
+let typingIntervalId = null; // To store the interval ID for word-by-word typing
 
-// IMPORTANT: Your Google Cloud API Key for Imagen/Gemini (Declared at top level)
-const IMAGEN_GEMINI_API_KEY = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs";
-console.log(Date.now(), "script.js: IMAGEN_GEMINI_API_KEY value set at top level.");
+// Gemini API Key - This should be automatically provided by the Canvas environment.
+// If running outside Canvas, ensure a valid API key is set here or via environment variables.
+const GEMINI_API_KEY = "AIzaSyBuIeT-NaR_owNtnDJ8IN1pjvEmzUCDlPk"; // User's provided API Key
 
-
-// --- UI Element References (Will be populated in initApp) ---
-let homePageElement;
-let generatorPageElement;
-let chatAIPageElement; // New chat AI page element
-let allPageElements = []; // Group for easy iteration
-
-let persistentDebugMessage;
-let closeDebugMessageBtn;
-
-let promptInput;
-let copyPromptBtn;
-let clearPromptBtn;
-let aspectRatioSelectionDiv;
-let generateBtn;
-let enhanceBtn;
-let variationBtn;
-let useEnhancedPromptBtn;
-let downloadBtn;
-let errorDisplay;
-let imageDisplayContainer;
-let generatedImageElement;
-let enhancedPromptDisplay;
-let enhancedPromptText;
-let variationIdeasDisplay;
-let variationIdeasList;
-
-let userDisplayDesktop;
-let signInBtnDesktop;
-let signOutBtnDesktop;
-let userDisplayMobile;
-let signInBtnMobile;
-let signOutBtnMobile;
-let freeGenerationsDisplay;
-let signinRequiredModal;
-let modalSignInBtn;
-let closeSigninModalBtn;
-let startCreatingBtn;
-let logoBtn;
-
-let hamburgerBtn;
-let hamburgerIcon;
-let mobileMenu;
-let mobileMenuOverlay;
-let closeMobileMenuBtn;
-let mobileNavLinks;
-
-let toastContainer;
-
-// Header specific elements
-let mainHeader;
-
-// Chat AI specific elements
-let chatCreditsDisplay;
-let toggleThemeBtn;
-let themeIcon;
-let toggleVoiceInputBtn;
-let voiceInputIcon;
-let toggleVoiceOutputBtn;
-let voiceOutputIcon;
-let stopVoiceOutputBtn; // New: Stop Voice Output Button
-let clearChatBtn;
-let chatMessagesContainer;
-let typingIndicator;
-let chatInput;
-let sendChatBtn;
-let promptTemplatesContainer;
-let promptTemplatesList;
-
-// --- Helper function to get elements and log if not found (Declared at top level) ---
-const getElement = (id) => {
-    const element = document.getElementById(id);
-    if (!element) {
-        console.error(Date.now(), `getElement: Element with ID '${id}' NOT FOUND in the DOM.`);
-    } else {
-        console.log(Date.now(), `getElement: Element with ID '${id}' FOUND.`);
-    }
-    return element;
+// --- AI Persona Definition ---
+// This is the core of making the AI sound more human-like and knowledgeable.
+const AI_PERSONA_INSTRUCTION = {
+    role: "user", // System instructions are typically given as a user message that the AI should respond to.
+    parts: [{
+        text: `You are GenArt Verse, an advanced, highly intelligent, and articulate AI created by GenArt.
+        Your purpose is to provide precise, proper, and comprehensive answers across a vast range of topics.
+        You communicate like a knowledgeable human expert, offering clear explanations, well-structured information, and insightful perspectives.
+        Maintain a helpful, professional, and slightly sophisticated tone.
+        When asked to generate text, provide detailed and creative responses.
+        When asked about images, acknowledge the request for visual creation.
+        When asked about code, act as a programming assistant, providing well-commented, correct, and efficient code, explanations, or debugging advice.
+        Always strive for clarity and accuracy. Do not use emojis in your responses.`
+    }]
 };
 
-// --- Firebase Initialization Function (Called by initApp) ---
-function initFirebase() {
-    console.log(Date.now(), "initFirebase: Initializing Firebase services...");
-    try {
-        firebaseApp = initializeApp(firebaseConfig);
-        auth = getAuth(firebaseApp);
-        db = getFirestore(firebaseApp);
-        googleProvider = new GoogleAuthProvider();
-        console.log(Date.now(), "initFirebase: Firebase services initialized successfully.");
-        
-        // This is crucial for setting userId and handling initial auth state
-        onAuthStateChanged(auth, async (user) => {
-            console.log(Date.now(), "onAuthStateChanged: Auth state change detected. User:", user ? user.uid : "null");
-            currentUser = user;
-            if (user) {
-                userId = user.uid;
-                console.log(Date.now(), "onAuthStateChanged: User logged in. Attempting to fetch user data from Firestore for UID:", userId);
-                console.time("fetchUserData");
-                try {
-                    await fetchUserData(userId);
-                    console.log(Date.now(), "onAuthStateChanged: User data fetch completed successfully.");
-                } catch (dataFetchError) {
-                    console.error(Date.now(), "onAuthStateChanged: Error fetching user data:", dataFetchError);
-                    setError(`Failed to load user data: ${dataFetchError.message}. Some features may be limited.`);
-                    showToast(`Failed to load user data: ${dataFetchError.message}`, "error", 5000);
-                } finally {
-                    console.timeEnd("fetchUserData");
-                }
-            } else {
-                // User is not authenticated, generate a random ID for anonymous use
-                userId = crypto.randomUUID();
-                console.log(Date.now(), "onAuthStateChanged: User logged out or no user. Generated anonymous userId:", userId);
-                
-                // For unauthenticated users, load credits from localStorage or set default
-                if (localStorage.getItem('freeGenerationsLeft') === null || parseInt(localStorage.getItem('freeGenerationsLeft')) < 0) {
-                    freeGenerationsLeft = 3;
-                    localStorage.setItem('freeGenerationsLeft', freeGenerationsLeft);
-                } else {
-                    freeGenerationsLeft = parseInt(localStorage.getItem('freeGenerationsLeft'));
-                }
+// --- DOM Elements ---
+const unifiedInput = document.getElementById('unified-input');
+const sendMessageBtn = document.getElementById('send-message-btn');
+const stopResponseBtn = document.getElementById('stop-response-btn'); // New stop button
+const voiceInputBtn = document.getElementById('voice-input-btn'); // Voice input button
+const chatHistoryContainer = document.getElementById('chat-history');
+const typingIndicator = document.getElementById('typing-indicator');
+const sidebar = document.getElementById('sidebar');
+const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+const chatMainArea = document.getElementById('chat-main-area');
+const promptSuggestionsContainer = document.getElementById('prompt-suggestions-container');
+const userAvatarBtn = document.getElementById('user-avatar-btn');
+const signInOutBtn = document.getElementById('sign-in-out-btn');
+const userDisplayName = document.getElementById('user-display-name');
+const userDisplayEmail = document.getElementById('user-display-email');
+const signInModal = document.getElementById('signin-modal');
+const googleSignInBtn = document.getElementById('google-signin-btn');
+const closeSignInModalBtn = document.getElementById('close-signin-modal-btn');
+const newChatBtn = document.getElementById('new-chat-btn');
+const chatHistorySidebar = document.getElementById('chat-history-sidebar');
+const mainNavbar = document.getElementById('main-navbar'); // Get navbar element
 
-                if (localStorage.getItem('freeChatMessagesLeft') === null || parseInt(localStorage.getItem('freeChatMessagesLeft')) < 0) {
-                    freeChatMessagesLeft = 5;
-                    localStorage.setItem('freeChatMessagesLeft', freeChatMessagesLeft);
-                } else {
-                    freeChatMessagesLeft = parseInt(localStorage.getItem('freeChatMessagesLeft'));
-                }
-                console.log(Date.now(), "onAuthStateChanged: Loaded unauthenticated credits from local storage. Image:", freeGenerationsLeft, "Chat:", freeChatMessagesLeft);
-            }
-            isAuthReady = true; // Confirm auth state is fully processed
-            console.log(Date.now(), "onAuthStateChanged: isAuthReady confirmed true. Updating UI.");
-            updateUI(); // Update UI immediately after auth state is determined
-            loadChatHistory(); // Load chat history for the determined user ID
-            console.log(Date.now(), "onAuthStateChanged: Auth state processing complete.");
-        });
+// Sidebar action buttons (only Settings remains)
+const settingsBtn = document.getElementById('settings-btn');
 
-    } catch (e) {
-        console.error(Date.now(), "initFirebase: CRITICAL ERROR: Error initializing Firebase:", e);
-        currentError = `Firebase initialization failed: ${e.message}. App may not function correctly.`;
-        if (persistentDebugMessage) {
-            persistentDebugMessage.classList.remove('hidden');
-            const msgP = persistentDebugMessage.querySelector('p');
-            if (msgP) msgP.textContent = currentError + " Please check console (F12) for details.";
-        }
-        throw e;
-    }
-}
+// Mode Toggle Buttons (new structure)
+const modesToggleBtn = document.getElementById('modes-toggle-btn');
+const modesDropdownPanel = document.getElementById('modes-dropdown-panel');
+const modeVerseBtn = document.getElementById('mode-verse-btn');
+const modeImageBtn = document.getElementById('mode-image-btn');
+const modeCodeBtn = document.getElementById('mode-code-btn');
 
-// --- Toast Notification System ---
-function showToast(message, type = 'info', duration = 3000) {
+
+// --- Utility Functions ---
+
+/**
+ * Displays a toast notification.
+ * @param {string} message - The message to display.
+ * @param {string} type - Type of toast (success, error, info).
+ */
+function showToast(message, type = 'info') {
+    console.log(Date.now(), `showToast: Displaying ${type} toast: ${message}`);
+    const toastContainer = document.getElementById('toast-container');
     if (!toastContainer) {
-        console.warn(Date.now(), "showToast: Toast container not found. Cannot display toast.");
+        console.error(Date.now(), "showToast: Toast container not found.");
         return;
     }
 
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.textContent = message;
-    
-    let iconClass = '';
-    if (type === 'success') iconClass = 'fas fa-check-circle text-green-400';
-    else if (type === 'error') iconClass = 'fas fa-times-circle text-red-500';
-    else iconClass = 'fas fa-info-circle text-blue-400';
+    toast.className = `toast p-3 shadow-md flex items-center space-x-2 transition-all duration-300 transform translate-y-full opacity-0`;
 
-    const icon = document.createElement('i');
-    icon.className = iconClass;
-    toast.prepend(icon);
+    // Set background and border colors based on type
+    let bgColor, borderColor;
+    switch (type) {
+        case 'success':
+            bgColor = '#3FE18F'; // Using previous success color
+            borderColor = 'color-mix(in srgb, #3FE18F 50%, transparent)';
+            break;
+        case 'error':
+            bgColor = '#F95F62'; // Using previous error color
+            borderColor = 'color-mix(in srgb, #F95F62 50%, transparent)';
+            break;
+        case 'info':
+        default:
+            bgColor = 'var(--color-bluish-tint)'; // Bluish accent
+            borderColor = 'color-mix(in srgb, var(--color-bluish-tint) 50%, transparent)';
+            break;
+    }
+    toast.style.backgroundColor = bgColor;
+    toast.style.borderColor = borderColor;
+
+    toast.innerHTML = `<span class="text-white">${message}</span>`; // Text color is white for all toasts
 
     toastContainer.appendChild(toast);
-    console.log(Date.now(), `showToast: Displaying ${type} toast: "${message}"`);
 
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(20px)';
-        toast.addEventListener('transitionend', () => {
-            toast.remove();
-            console.log(Date.now(), "showToast: Toast removed.");
-        }, { once: true });
-    }, duration);
-}
-
-// --- Mobile Menu Toggle Function ---
-function toggleMobileMenu() {
-    console.log(Date.now(), "toggleMobileMenu: Function called.");
-    if (mobileMenu && mobileMenuOverlay && hamburgerBtn && hamburgerIcon) {
-        const isMenuOpen = mobileMenu.classList.contains('translate-x-0');
-        
-        mobileMenu.classList.toggle('translate-x-full', isMenuOpen);
-        mobileMenu.classList.toggle('translate-x-0', !isMenuOpen);
-        
-        mobileMenuOverlay.classList.toggle('hidden', isMenuOpen);
-        
-        hamburgerBtn.setAttribute('aria-expanded', !isMenuOpen);
-        hamburgerIcon.classList.toggle('fa-bars', isMenuOpen);
-        hamburgerIcon.classList.toggle('fa-times', !isMenuOpen);
-        
-        console.log(Date.now(), "toggleMobileMenu: Mobile menu toggled. Current state:", !isMenuOpen ? "OPEN" : "CLOSED");
-    } else {
-        console.error(Date.now(), "toggleMobileMenu: One or more mobile menu elements not found. Cannot toggle.");
-    }
-}
-
-// --- Authentication Functions ---
-async function signInWithGoogle() {
-    console.log(Date.now(), "signInWithGoogle: Function entered.");
-    clearError();
-
-    if (isSigningIn) {
-        console.log(Date.now(), "signInWithGoogle: Already signing in, ignoring multiple clicks.");
-        return;
-    }
-
-    isSigningIn = true;
-    updateSignInButtons(true);
-    
-    const testWindow = window.open('', '_blank', 'width=1,height=1,left=0,top=0');
-    if (testWindow) {
-        testWindow.close();
-        console.log(Date.now(), "signInWithGoogle: Popup blocker check passed.");
-    } else {
-        console.warn(Date.now(), "signInWithGoogle: Popup blocker check failed. Popups might be blocked.");
-        setError("Your browser might be blocking the sign-in popup. Please allow popups for this site and try again.");
-        isSigningIn = false;
-        updateSignInButtons(false);
-        return;
-    }
-
-    console.time("signInWithPopup");
-    try {
-        if (!auth || !googleProvider) {
-            console.error(Date.now(), "signInWithGoogle: Firebase Auth or Google Provider not initialized. Cannot sign in.");
-            setError("Firebase services not ready. Please refresh and try again.");
-            return;
-        }
-        console.log(Date.now(), "signInWithGoogle: Attempting signInWithPopup call...");
-        const result = await signInWithPopup(auth, googleProvider);
-        console.log(Date.now(), "signInWithPopup: signInWithPopup successful. User:", result.user.uid, result.user.displayName || result.user.email);
-        signinRequiredModal?.classList.add('hidden');
-    } catch (error) {
-        console.error(Date.now(), "signInWithGoogle: Error during Google Sign-In:", error);
-        console.error(Date.now(), "signInWithGoogle: Error code:", error.code);
-        console.error(Date.now(), "signInWithGoogle: Error message:", error.message);
-        if (error.code === 'auth/popup-closed-by-user') {
-            setError('Sign-in popup closed. Please try again.');
-        } else if (error.code === 'auth/cancelled-popup-request') {
-            setError('Sign-in popup was already open or another request was pending. Please try again.');
-        } else if (error.code === 'auth/network-request-failed') {
-            setError('Network error during sign-in. Check your internet connection.');
-        } else if (error.code === 'auth/unauthorized-domain') {
-            setError('Authentication failed: Unauthorized domain. Please check Firebase Console -> Authentication -> Sign-in method -> Authorized domains and add your current domain (e.g., localhost, or your preview URL).');
-        } else if (error.code === 'auth/popup-blocked') {
-            setError('Sign-in popup was blocked by your browser. Please disable popup blockers for this site and try again.');
-        }
-        else {
-            setError(`Failed to sign in: ${error.message}`);
-        }
-    } finally {
-        console.timeEnd("signInWithPopup");
-        isSigningIn = false;
-        updateSignInButtons(false);
-        updateUI();
-    }
-}
-
-// Function to update sign-in button states with loading spinner
-function updateSignInButtons(loadingState) {
-    console.log(Date.now(), "updateSignInButtons: Updating sign-in button state to loading:", loadingState);
-    const signInButtons = [signInBtnDesktop, signInBtnMobile, modalSignInBtn];
-    const buttonText = 'Sign In With Google';
-    const loadingText = `
-        <span class="flex items-center justify-center">
-            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Signing In...
-        </span>
-    `;
-
-    signInButtons.forEach(btn => {
-        if (btn) {
-            btn.innerHTML = loadingState ? loadingText : buttonText;
-            btn.disabled = loadingState;
-            btn.classList.toggle('opacity-70', loadingState);
-            btn.classList.toggle('cursor-not-allowed', loadingState);
-        }
-    });
-}
-
-async function signOutUser() {
-    console.log(Date.now(), "signOutUser: Attempting signOutUser...");
-    clearError();
-    console.time("signOut");
-    try {
-        if (!auth) {
-            console.error(Date.now(), "signOutUser: Firebase Auth not initialized. Cannot sign out.");
-            setError("Firebase services not ready. Cannot sign out.");
-            return;
-        }
-        await signOut(auth);
-        console.log(Date.now(), "signOutUser: User signed out successfully.");
-        showToast("Signed out successfully!", "info");
-    } catch (error) {
-        console.error(Date.now(), "signOutUser: Error signing out:", error);
-        setError(`Failed to sign out: ${error.message}`);
-        showToast(`Failed to sign out: ${error.message}`, "error");
-    } finally {
-        console.timeEnd("signOut");
-        updateUI();
-    }
-}
-
-async function fetchUserData(uid) {
-    console.log(Date.now(), `fetchUserData: Entering fetchUserData for UID: ${uid}`);
-    clearError();
-    if (!db) {
-        console.error(Date.now(), "fetchUserData: Firestore DB not initialized. Cannot fetch user data.");
-        setError("Database not ready. Please refresh.");
-        return;
-    }
-    const userDocRef = doc(db, 'users', uid);
-    try {
-        console.log(Date.now(), `fetchUserData: Attempting to get document for UID: ${uid}`);
-        const userDocSnap = await getDoc(userDocRef);
-        console.log(Date.now(), `fetchUserData: Document snapshot received. Exists: ${userDocSnap.exists()}`);
-        if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            freeGenerationsLeft = userData.freeGenerationsLeft !== undefined ? userData.freeGenerationsLeft : 0;
-            freeChatMessagesLeft = userData.freeChatMessagesLeft !== undefined ? userData.freeChatMessagesLeft : 0;
-            console.log(Date.now(), "fetchUserData: Fetched existing user data:", userData);
-            showToast(`Welcome back, ${currentUser.displayName || currentUser.email}!`, "success");
-        } else {
-            console.log(Date.now(), "fetchUserData: User document does not exist for UID:", uid, ". Initializing new user data in Firestore with default free generations/messages.");
-            await setDoc(userDocRef, {
-                freeGenerationsLeft: 3,
-                freeChatMessagesLeft: 5,
-                createdAt: serverTimestamp()
+    // Animate in
+    gsap.to(toast, {
+        opacity: 1,
+        y: 0,
+        duration: 0.3,
+        ease: "power3.out",
+        onComplete: () => {
+            // Animate out after a delay
+            gsap.to(toast, {
+                opacity: 0,
+                y: 20,
+                delay: 3,
+                duration: 0.3,
+                ease: "power3.in",
+                onComplete: () => {
+                    toast.remove();
+                    console.log(Date.now(), `showToast: Toast "${message}" removed.`);
+                }
             });
-            freeGenerationsLeft = 3;
-            freeChatMessagesLeft = 5;
-            console.log(Date.now(), "fetchUserData: New user data initialized in Firestore for UID:", uid);
-            showToast(`Welcome, ${currentUser.displayName || currentUser.email}! You have 3 image generations and 5 chat messages.`, "success");
-        }
-        localStorage.removeItem('freeGenerationsLeft');
-        localStorage.removeItem('freeChatMessagesLeft');
-        console.log(Date.now(), "fetchUserData: Removed local storage credits for authenticated user.");
-    } catch (error) {
-        console.error(Date.now(), "fetchUserData: Error fetching/initializing user data:", error);
-        throw error;
-    } finally {
-        console.log(Date.now(), "fetchUserData: Exiting fetchUserData.");
-    }
-}
-
-function updateUIForAuthStatus() {
-    console.log(Date.now(), "updateUIForAuthStatus: Updating UI for auth status. Current user:", currentUser ? currentUser.displayName || currentUser.email : "None");
-
-    if (userDisplayDesktop) {
-        if (currentUser) {
-            userDisplayDesktop.textContent = `Welcome, ${currentUser.displayName || currentUser.email}!`;
-            userDisplayDesktop.classList.remove('hidden');
-        } else {
-            userDisplayDesktop.classList.add('hidden');
-        }
-    }
-    if (signInBtnDesktop) signInBtnDesktop.classList.toggle('hidden', !!currentUser);
-    if (signOutBtnDesktop) signOutBtnDesktop.classList.toggle('hidden', !currentUser);
-
-    if (userDisplayMobile) {
-        if (currentUser) {
-            userDisplayMobile.textContent = `Welcome, ${currentUser.displayName || currentUser.email}!`;
-            userDisplayMobile.classList.remove('hidden');
-        } else {
-            userDisplayMobile.classList.add('hidden');
-        }
-    }
-    if (signInBtnMobile) signInBtnMobile.classList.toggle('hidden', !!currentUser);
-    if (signOutBtnMobile) signOutBtnMobile.classList.toggle('hidden', !currentUser);
-
-    console.log(Date.now(), "updateUIForAuthStatus: UI updated based on auth status.");
-}
-
-function populateAspectRatioRadios() {
-    console.log(Date.now(), "populateAspectRatioRadios: Populating aspect ratio radios.");
-    if (aspectRatioSelectionDiv) {
-        aspectRatioSelectionDiv.innerHTML = '';
-        ['1:1', '4:5', '9:16', '16:9'].forEach(ratio => {
-            const label = document.createElement('label');
-            label.className = 'inline-flex items-center cursor-pointer';
-            label.innerHTML = `
-                <input type="radio" name="aspectRatio" value="${ratio}" class="form-radio h-5 w-5 text-blue-600 bg-gray-700 border-gray-600 focus:ring-blue-500" ${aspectRatio === ratio ? 'checked' : ''}>
-                <span class="ml-2 text-gray-200 font-helvetica text-sm">${ratio}</span>
-            `;
-            const radioInput = label.querySelector('input');
-            if (radioInput) {
-                radioInput.addEventListener('change', (e) => {
-                    aspectRatio = e.target.value;
-                    console.log(Date.now(), "Event: Aspect ratio changed to:", aspectRatio);
-                });
-            }
-            aspectRatioSelectionDiv.appendChild(label);
-        });
-        console.log(Date.now(), "populateAspectRatioRadios: Aspect ratio radios populated.");
-    } else {
-        console.error(Date.now(), "populateAspectRatioRadios: aspectRatioSelectionDiv element not found.");
-    }
-}
-
-// --- Page Visibility Logic ---
-async function setPage(newPage) {
-    console.log(Date.now(), `setPage: Attempting to switch to page: ${newPage}. Current page: ${currentPage}`);
-    if (currentPage === newPage) {
-        console.log(Date.now(), `setPage: Already on page ${newPage}, no change needed.`);
-        return;
-    }
-
-    allPageElements.forEach(element => {
-        if (element) {
-            element.classList.add('hidden');
-            element.classList.remove('animate-fade-in-up');
         }
     });
-
-    let newPageElement;
-    if (newPage === 'home') {
-        newPageElement = homePageElement;
-    } else if (newPage === 'generator') {
-        newPageElement = generatorPageElement;
-    } else if (newPage === 'chat-ai') {
-        newPageElement = chatAIPageElement;
-        // Load chat history when navigating to chat page
-        loadChatHistory();
-    }
-
-    if (newPageElement) {
-        newPageElement.classList.remove('hidden');
-        void newPageElement.offsetWidth; // Trigger reflow for animation
-        newPageElement.classList.add('animate-fade-in-up');
-        console.log(Date.now(), `setPage: Displayed page '${newPage}' and applied animation.`);
-    } else {
-        console.error(Date.now(), `setPage: New page element for '${newPage}' not found.`);
-    }
-
-    currentPage = newPage;
-    updateUI();
-    console.log(Date.now(), `setPage: Page switched to: ${currentPage}.`);
 }
 
+/**
+ * Toggles the visibility of the sign-in modal.
+ * @param {boolean} show - True to show, false to hide.
+ */
+function toggleSignInModal(show) {
+    console.log(Date.now(), `toggleSignInModal: Setting visibility to ${show}.`);
+    if (signInModal) {
+        isSignInModalOpen = show;
+        if (show) {
+            signInModal.classList.remove('hidden');
+            gsap.to(signInModal, { opacity: 1, duration: 0.3, ease: "power2.out" });
+            gsap.fromTo(signInModal.children[0], { scale: 0.95 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.7)" });
+            console.log(Date.now(), "toggleSignInModal: Sign-in modal shown.");
+        } else {
+            gsap.to(signInModal.children[0], { scale: 0.95, opacity: 0, duration: 0.3, ease: "power2.in" });
+            gsap.to(signInModal, {
+                opacity: 0,
+                duration: 0.3,
+                ease: "power2.in",
+                onComplete: () => {
+                    signInModal.classList.add('hidden');
+                    console.log(Date.now(), "toggleSignInModal: Sign-in modal hidden.");
+                }
+            });
+        }
+    } else {
+        console.error(Date.now(), "toggleSignInModal: Sign-in modal element not found.");
+    }
+}
+
+/**
+ * Updates UI elements based on user authentication state.
+ */
 function updateUI() {
-    console.log(Date.now(), `updateUI: Updating UI for current page: ${currentPage}. Auth Ready: ${isAuthReady}`);
+    console.log(Date.now(), "updateUI: Updating user interface.");
 
-    const interactiveElements = [
-        homePageElement, generatorPageElement, chatAIPageElement, logoBtn,
-        hamburgerBtn, closeMobileMenuBtn, mobileMenuOverlay,
-        startCreatingBtn, promptInput, copyPromptBtn, clearPromptBtn, generateBtn,
-        enhanceBtn, variationBtn, useEnhancedPromptBtn, downloadBtn,
-        signInBtnDesktop, signOutBtnDesktop, signInBtnMobile, signOutBtnMobile, modalSignInBtn, closeSigninModalBtn,
-        toggleThemeBtn, toggleVoiceInputBtn, toggleVoiceOutputBtn, stopVoiceOutputBtn, clearChatBtn, chatInput, sendChatBtn
-    ];
-
-    interactiveElements.forEach(el => {
-        if (el) {
-            const isAuthButton = el.id && (el.id.includes('sign-in-btn') || el.id.includes('sign-out-btn') || el.id.includes('modal-sign-in-btn'));
-            const isGeneratorButton = el.id && (el.id === 'generate-image-btn' || el.id === 'enhance-prompt-btn' || el.id === 'generate-variation-ideas-btn');
-            const isChatButton = el.id && (el.id === 'send-chat-btn');
-            
-            if (isAuthButton) {
-                el.disabled = isSigningIn;
-                el.classList.toggle('opacity-50', isSigningIn);
-                el.classList.toggle('cursor-not-allowed', isSigningIn);
-            } else if (isGeneratorButton) {
-                const shouldDisableGenerator = !isAuthReady || (!currentUser && freeGenerationsLeft <= 0);
-                el.disabled = loading || loadingEnhancePrompt || loadingVariationIdeas || shouldDisableGenerator;
-                el.classList.toggle('opacity-50', el.disabled);
-                el.classList.toggle('cursor-not-allowed', el.disabled);
-            } else if (isChatButton) {
-                const shouldDisableChat = !isAuthReady || isChatLoading || (!currentUser && freeChatMessagesLeft <= 0);
-                el.disabled = shouldDisableChat;
-                el.classList.toggle('opacity-50', shouldDisableChat);
-                el.classList.toggle('cursor-not-allowed', shouldDisableChat);
-            }
-            else {
-                el.disabled = !isAuthReady;
-                el.classList.toggle('opacity-50', !isAuthReady);
-                el.classList.toggle('cursor-not-allowed', !isAuthReady);
-            }
+    if (currentUser) {
+        if (signInOutBtn) {
+            signInOutBtn.innerHTML = '<i class="fas fa-sign-out-alt mr-2"></i>Sign Out';
+            signInOutBtn.onclick = handleSignOut;
         }
-    });
-
-    // Update active navigation button styles
-    document.querySelectorAll('#desktop-nav button').forEach(btn => {
-        btn.classList.remove('text-blue-300');
-        btn.classList.add('text-gray-100');
-    });
-    const currentDesktopBtn = getElement(`${currentPage}-btn`);
-    if (currentDesktopBtn) {
-        currentDesktopBtn.classList.remove('text-gray-100');
-        currentDesktopBtn.classList.add('text-blue-300');
+        if (userDisplayName) userDisplayName.textContent = currentUser.displayName || "User";
+        if (userDisplayEmail) userDisplayEmail.textContent = currentUser.email || "";
+        if (userAvatarBtn) {
+            userAvatarBtn.innerHTML = `<i class="fas fa-user-circle text-light-gray"></i>`; // Change icon
+            userAvatarBtn.style.borderColor = 'var(--color-bluish-tint)'; // Bluish accent border
+        }
+        console.log(Date.now(), `updateUI: User is signed in: ${currentUser.displayName}`);
+    } else {
+        if (signInOutBtn) {
+            signInOutBtn.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Sign In';
+            signInOutBtn.onclick = () => toggleSignInModal(true);
+        }
+        if (userDisplayName) userDisplayName.textContent = "Guest";
+        if (userDisplayEmail) userDisplayEmail.textContent = "Sign in for full features";
+        if (userAvatarBtn) {
+            userAvatarBtn.innerHTML = `<i class="fas fa-user text-light-gray"></i>`; // Revert icon
+            userAvatarBtn.style.borderColor = 'var(--color-dark-gray-2)'; // Dark Gray 2 border
+        }
+        console.log(Date.now(), "updateUI: User is signed out (Guest).");
     }
 
-    document.querySelectorAll('#mobile-menu button.mobile-nav-link').forEach(btn => {
-        btn.classList.remove('text-blue-300');
-        btn.classList.add('text-gray-200');
-    });
-    const currentMobileBtn = getElement(`mobile-${currentPage}-btn`);
-    if (currentMobileBtn) {
-        currentMobileBtn.classList.remove('text-gray-200');
-        currentMobileBtn.classList.add('text-blue-300');
-    }
-
-
-    if (currentPage === 'generator') {
-        updateGeneratorPageUI();
-    } else if (currentPage === 'chat-ai') {
-        updateChatAIPageUI();
-    }
-    updateUIForAuthStatus();
-    console.log(Date.now(), "updateUI: Finished general UI update.");
+    // Update send button state based on input content
+    updateSendButtonState();
 }
 
-function updateGeneratorPageUI() {
-    console.log(Date.now(), "updateGeneratorPageUI: Updating dynamic generator UI.");
-    if (promptInput) promptInput.value = prompt;
-
-    if (freeGenerationsDisplay) {
-        if (currentUser) {
-            freeGenerationsDisplay.textContent = `You have unlimited generations!`;
-            freeGenerationsDisplay.classList.remove('text-red-400', 'text-gray-400');
-            freeGenerationsDisplay.classList.add('text-green-400');
-            console.log(Date.now(), "updateGeneratorPageUI: Displaying unlimited generations for authenticated user.");
-        } else {
-            freeGenerationsDisplay.textContent = `You have ${freeGenerationsLeft} generations left without sign in.`;
-            if (freeGenerationsLeft <= 0) {
-                freeGenerationsDisplay.classList.remove('text-green-400', 'text-gray-400');
-                freeGenerationsDisplay.classList.add('text-red-400');
-                console.log(Date.now(), "updateGeneratorPageUI: Displaying 0 generations left, red text.");
-            } else {
-                freeGenerationsDisplay.classList.remove('text-red-400', 'text-gray-400');
-                freeGenerationsDisplay.classList.add('text-green-400');
-                console.log(Date.now(), "updateGeneratorPageUI: Displaying free generations left, green text.");
-            }
-        }
+/**
+ * Applies the saved theme preference or defaults to dark mode.
+ * (Note: This app is fixed dark mode as per requirements, but function kept for completeness)
+ */
+function applySavedTheme() {
+    console.log(Date.now(), "applySavedTheme: Applying saved theme.");
+    // Force dark mode as per requirement
+    document.body.classList.remove('light-mode');
+    document.body.classList.add('dark-mode');
+    // Remove theme toggle button if it exists, as theme is fixed.
+    const themeToggleElement = document.getElementById('theme-toggle');
+    if (themeToggleElement) {
+        themeToggleElement.remove();
     }
+    console.log(Date.now(), `applySavedTheme: Theme forced to dark mode.`);
+}
 
-    populateAspectRatioRadios();
+/**
+ * Toggles between light and dark mode.
+ * (Note: This function is effectively disabled as theme is fixed dark mode)
+ */
+function toggleTheme() {
+    console.log(Date.now(), "toggleTheme: Toggling theme. (Functionality disabled as theme is fixed dark mode)");
+    showToast("Theme is fixed to dark mode.", "info");
+}
 
-    if (generateBtn) {
-        let buttonText = 'Generate Image';
-        let loadingText = 'Generating...';
+// --- Firebase Authentication Functions ---
 
-        if (!currentUser && freeGenerationsLeft <= 0) {
-            buttonText = 'Sign In to Generate More';
-        }
-
-        generateBtn.innerHTML = loading ? `
-            <span class="flex items-center justify-center">
-                <svg class="animate-spin -ml-1 mr-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-                ${loadingText}
-            </span>
-        ` : buttonText;
-
-        generateBtn.classList.toggle('bg-gray-700', loading);
-        generateBtn.classList.toggle('cursor-not-allowed', loading);
-        generateBtn.classList.toggle('bg-gradient-to-r', !loading);
-
-        generateBtn.classList.remove('from-blue-700', 'to-indigo-800', 'hover:from-blue-800', 'hover:to-indigo-900',
-                                   'from-red-600', 'to-red-700', 'hover:from-red-700', 'hover:to-red-800',
-                                   'from-gray-600', 'to-gray-700', 'hover:from-gray-700', 'hover:to-gray-800');
-
-
-        if (loading) {
-            // Handled above
-        } else if (!currentUser && freeGenerationsLeft <= 0) {
-            generateBtn.classList.add('from-red-600', 'to-red-700', 'hover:from-red-700', 'hover:to-red-800');
-            generateBtn.disabled = false;
-        } else {
-            generateBtn.classList.add('from-blue-700', 'to-indigo-800', 'hover:from-blue-800', 'hover:to-indigo-900');
-            generateBtn.disabled = false;
-        }
-        console.log(Date.now(), "updateGeneratorPageUI: Generate button state updated.");
-    }
-
-    if (errorDisplay) {
-        errorDisplay.textContent = currentError;
-        errorDisplay.classList.toggle('hidden', !currentError);
-        console.log(Date.now(), "updateGeneratorPageUI: Error display updated. Hidden:", !currentError);
-    }
-
-    if (imageDisplayContainer && generatedImageElement) {
-        if (loading) {
-            imageDisplayContainer.classList.add('hidden');
-            console.log(Date.now(), "updateGeneratorPageUI: Image container hidden (loading).");
-        } else if (imageUrl) {
-            imageDisplayContainer.classList.remove('hidden');
-            generatedImageElement.src = imageUrl;
-            generatedImageElement.alt = `AI generated image based on prompt: ${prompt}`;
-            generatedImageElement.style = getImageDisplayStyles();
-            generatedImageElement.classList.add('animate-image-reveal');
-            console.log(Date.now(), "updateGeneratorPageUI: Image container shown with new image.");
-        } else {
-            imageDisplayContainer.classList.add('hidden');
-            console.log(Date.now(), "updateGeneratorPageUI: Image container hidden (no image).");
-        }
-    }
-
-    if (enhanceBtn) {
-        enhanceBtn.innerHTML = loadingEnhancePrompt ? `
-            <span class="flex items-center justify-center">
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Enhancing...
-            </span>
-        ` : `<i class="fas fa-magic mr-2"></i> Enhance Prompt`;
-        enhanceBtn.classList.toggle('bg-gray-700', loadingEnhancePrompt);
-        enhanceBtn.classList.toggle('cursor-not-allowed', loadingEnhancePrompt);
-        enhanceBtn.classList.toggle('bg-gradient-to-r', !loadingEnhancePrompt);
-        enhanceBtn.classList.toggle('from-blue-600', !loadingEnhancePrompt);
-        enhanceBtn.classList.toggle('to-cyan-700', !loadingEnhancePrompt);
-        enhanceBtn.classList.toggle('hover:from-blue-700', !loadingEnhancePrompt);
-        enhanceBtn.classList.toggle('hover:to-cyan-800', !loadingEnhancePrompt);
-        console.log(Date.now(), "updateGeneratorPageUI: Enhance button state updated.");
-    }
-
-    if (enhancedPromptDisplay && enhancedPromptText) {
-        enhancedPromptText.textContent = enhancedPrompt;
-        enhancedPromptDisplay.classList.toggle('hidden', !enhancedPrompt);
-        console.log(Date.now(), "updateGeneratorPageUI: Enhanced prompt display updated. Hidden:", !enhancedPrompt);
-    }
-
-    if (variationBtn) {
-        variationBtn.innerHTML = loadingVariationIdeas ? `
-            <span class="flex items-center justify-center">
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Generating Ideas...
-            </span>
-        ` : `<i class="fas fa-lightbulb mr-2"></i> Get Variation Ideas`;
-        variationBtn.classList.toggle('bg-gray-700', loadingVariationIdeas);
-        variationBtn.classList.toggle('cursor-not-allowed', loadingVariationIdeas);
-        variationBtn.classList.toggle('bg-gradient-to-r', !loadingVariationIdeas);
-        variationBtn.classList.toggle('from-green-700', !loadingVariationIdeas);
-        variationBtn.classList.toggle('to-emerald-700', !loadingVariationIdeas);
-        variationBtn.classList.toggle('hover:from-green-800', !loadingVariationIdeas);
-        variationBtn.classList.toggle('hover:to-emerald-800', !loadingVariationIdeas);
-        console.log(Date.now(), "updateGeneratorPageUI: Variation ideas button state updated.");
-    }
-
-    if (variationIdeasDisplay && variationIdeasList) {
-        variationIdeasList.innerHTML = variationIdeas.map(idea => `<li>${idea}</li>`).join('');
-        variationIdeasDisplay.classList.toggle('hidden', variationIdeas.length === 0);
-        console.log(Date.now(), "updateGeneratorPageUI: Variation ideas display updated. Hidden:", variationIdeas.length === 0);
+/**
+ * Handles Google Sign-in.
+ */
+async function handleGoogleSignIn() {
+    console.log(Date.now(), "handleGoogleSignIn: Initiating Google Sign-in.");
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+        toggleSignInModal(false); // Close modal on successful sign-in
+        showToast("Signed in successfully!", 'success');
+        console.log(Date.now(), "handleGoogleSignIn: Google Sign-in successful.");
+    } catch (error) {
+        console.error(Date.now(), "handleGoogleSignIn: Google Sign-in error:", error);
+        showToast(`Sign-in failed: ${error.message}`, 'error');
     }
 }
 
-function updateChatAIPageUI() {
-    console.log(Date.now(), "updateChatAIPageUI: Updating dynamic chat AI UI.");
+/**
+ * Handles user Sign-out.
+ */
+async function handleSignOut() {
+    console.log(Date.now(), "handleSignOut: Initiating Sign-out.");
+    try {
+        await signOut(auth);
+        showToast("Signed out successfully!", 'info');
+        console.log(Date.now(), "handleSignOut: Sign-out successful.");
+        // Clear current session and load anonymous state
+        currentChatSessionId = null;
+        chatHistory = [];
+        loadChatSessionsForSidebar(); // Reload sidebar for anonymous user
+        addChatMessage("Hello! I'm GenArt Verse, your AI assistant. I can help you with text conversations and generate images. Just tell me what you need!", 'ai', false); // Add initial message back
+    } catch (error) {
+        console.error(Date.now(), "handleSignOut: Sign-out error:", error);
+        showToast(`Sign-out failed: ${error.message}`, 'error');
+    }
+}
 
-    if (chatCreditsDisplay) {
-        if (currentUser) {
-            chatCreditsDisplay.textContent = `You have unlimited messages!`;
-            chatCreditsDisplay.classList.remove('text-red-400', 'text-gray-400');
-            chatCreditsDisplay.classList.add('text-green-400');
-            console.log(Date.now(), "updateChatAIPageUI: Displaying unlimited messages for authenticated user.");
+// --- Chat UI & Logic ---
+
+/**
+ * Adds a chat message to the chat history display.
+ * @param {string} message - The message content (or prompt for image).
+ * @param {'user'|'ai'} sender - The sender of the message ('user' or 'ai').
+ * @param {boolean} [isMarkdown=false] - Whether the message content is Markdown.
+ * @param {boolean} [isImage=false] - True if this message is an image response.
+ * @param {string} [imageUrl=''] - The URL of the image if isImage is true.
+ * @param {string} [messageId=null] - Optional ID for the message (e.g., Firestore doc ID)
+ * @param {boolean} [isCode=false] - True if this message is a code response.
+ * @param {boolean} [isTypingAnimation=true] - Whether to show typing animation for AI messages.
+ */
+function addChatMessage(message, sender, isMarkdown = false, isImage = false, imageUrl = '', messageId = null, isCode = false, isTypingAnimation = true) {
+    console.log(Date.now(), `addChatMessage: Adding ${sender} message (Markdown: ${isMarkdown}, Image: ${isImage}, Code: ${isCode}, Typing: ${isTypingAnimation}).`);
+
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('chat-bubble', sender, 'relative', 'group'); // Added group for hover actions
+
+    if (sender === 'user') {
+        messageElement.classList.add('user');
+        messageElement.innerHTML = `<p>${message}</p>`; // User messages are plain text
+    } else { // AI message
+        messageElement.classList.add('ai');
+        if (isImage) {
+            // For image, add shimmer initially, then replace with image
+            messageElement.innerHTML = `
+                <div class="shimmer-wrapper">
+                    <div class="shimmer"></div>
+                </div>
+                <div class="image-actions mt-2 hidden">
+                    <button class="download-image-btn"><i class="fas fa-download mr-1"></i> Download</button>
+                    <button class="copy-prompt-btn"><i class="fas fa-copy mr-1"></i> Copy Prompt</button>
+                    <button class="regenerate-image-btn"><i class="fas fa-redo mr-1"></i> Regenerate</button>
+                </div>
+            `;
+            // Store data for later use by action buttons
+            messageElement.dataset.imageUrl = imageUrl;
+            messageElement.dataset.prompt = message; // Original prompt for regenerate/copy
+            messageElement.dataset.messageId = messageId; // For deleting from Firestore if needed
+        } else if (isCode) {
+            // For code, prepare a pre-formatted block with a copy button
+            // The content will be typed into the <code> tag
+            messageElement.innerHTML = `
+                <pre><code class="language-javascript"></code></pre>
+                <button class="copy-code-btn" title="Copy Code"><i class="fas fa-copy"></i> Copy</button>
+            `;
+            // Store original message for copying
+            messageElement.dataset.codeContent = message;
         } else {
-            chatCreditsDisplay.textContent = `You have ${freeChatMessagesLeft} messages left without sign in.`;
-            if (freeChatMessagesLeft <= 0) {
-                chatCreditsDisplay.classList.remove('text-green-400', 'text-gray-400');
-                chatCreditsDisplay.classList.add('text-red-400');
-                console.log(Date.now(), "updateChatAIPageUI: Displaying 0 messages left, red text.");
-            } else {
-                chatCreditsDisplay.classList.remove('text-red-400', 'text-gray-400');
-                chatCreditsDisplay.classList.add('text-green-400');
-                console.log(Date.now(), "updateChatAIPageUI: Displaying free messages left, green text.");
-            }
+            // For text, prepare for typing animation
+            messageElement.innerHTML = `<p></p>`;
         }
     }
 
+    chatHistoryContainer.appendChild(messageElement);
+
+    // Fade-in and slide-up animation for new messages
+    gsap.fromTo(messageElement,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }
+    );
+
+    autoScrollChat(); // Scroll to bottom
+
+    if (sender === 'ai' && isTypingAnimation && !isImage && !isCode) {
+        // Start typing animation for AI text responses
+        typeMessage(messageElement.querySelector('p'), message, isMarkdown);
+    } else if (sender === 'ai' && isTypingAnimation && isCode) {
+        // Start typing animation for AI code responses
+        typeMessage(messageElement.querySelector('code'), message, false, true); // Pass true for isCode to trigger highlight.js
+        // Attach copy button listener
+        messageElement.querySelector('.copy-code-btn')?.addEventListener('click', () => copyToClipboard(messageElement.dataset.codeContent));
+    }
+    else if (sender === 'ai' && isImage) {
+        // Load image after a short delay to show shimmer
+        const shimmerWrapper = messageElement.querySelector('.shimmer-wrapper');
+        const imageActions = messageElement.querySelector('.image-actions');
+
+        setTimeout(() => {
+            if (shimmerWrapper) shimmerWrapper.remove(); // Remove shimmer
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = message;
+            img.classList.add('image-preview-container-img'); // Add class for styling
+            messageElement.prepend(img); // Add image
+            if (imageActions) imageActions.classList.remove('hidden'); // Show actions
+
+            // Attach event listeners for image actions
+            messageElement.querySelector('.download-image-btn')?.addEventListener('click', () => downloadImage(imageUrl, message));
+            messageElement.querySelector('.copy-prompt-btn')?.addEventListener('click', () => copyToClipboard(message));
+            messageElement.querySelector('.regenerate-image-btn')?.addEventListener('click', () => sendUnifiedMessage(message)); // Resend original prompt
+
+            autoScrollChat(); // Scroll again after image loads
+            showAITypingIndicator(false); // Hide typing indicator
+            unifiedInput.disabled = false;
+            sendMessageBtn.disabled = false;
+            stopResponseBtn.classList.remove('active'); // Hide stop button
+            voiceInputBtn.disabled = false; // Re-enable voice button
+            unifiedInput.focus();
+        }, 1500); // Simulate loading time for shimmer
+    } else if (sender === 'ai' && (!isTypingAnimation || isImage || isCode)) {
+        // If no typing animation, just set the content
+        if (isCode) {
+            messageElement.querySelector('code').textContent = message;
+            hljs.highlightElement(messageElement.querySelector('code'));
+            messageElement.querySelector('.copy-code-btn')?.addEventListener('click', () => copyToClipboard(messageElement.dataset.codeContent));
+        } else if (!isImage) {
+            messageElement.querySelector('p').innerHTML = isMarkdown ? marked.parse(message) : message;
+        }
+        // For images, the logic is already handled above to show shimmer then image.
+    }
+
+
+    // Add message actions menu (copy/delete) for all bubbles on hover
+    if (sender === 'user' || (sender === 'ai' && !isImage)) { // Only for text/code bubbles
+        const actionsMenu = document.createElement('div');
+        actionsMenu.classList.add('message-actions');
+        actionsMenu.innerHTML = `
+            <button class="copy-message-btn" title="Copy"><i class="fas fa-copy"></i></button>
+            <button class="delete-message-btn" title="Delete"><i class="fas fa-trash-alt"></i></button>
+        `;
+        messageElement.appendChild(actionsMenu);
+
+        actionsMenu.querySelector('.copy-message-btn')?.addEventListener('click', () => copyToClipboard(message));
+        actionsMenu.querySelector('.delete-message-btn')?.addEventListener('click', () => deleteChatMessage(messageElement, messageId, sender));
+    }
+}
+
+/**
+ * Types out a message word by word into a given element.
+ * @param {HTMLElement} element - The DOM element to type into (usually a <p> or <code> tag).
+ * @param {string} text - The full text to type.
+ * @param {boolean} isMarkdown - Whether the text should be parsed as Markdown after typing.
+ * @param {boolean} [isCodeElement=false] - True if the target element is a <code> tag for highlighting.
+ */
+function typeMessage(element, text, isMarkdown, isCodeElement = false) {
+    const words = text.split(/\s+/); // Split by one or more spaces
+    let wordIndex = 0;
+    const speed = 70; // Typing speed in milliseconds per word (adjust for desired speed)
+
+    // Clear any existing typing interval
+    if (typingIntervalId) {
+        clearInterval(typingIntervalId);
+    }
+
+    typingIntervalId = setInterval(() => {
+        if (wordIndex < words.length) {
+            // Append word and a space. Trim later if needed.
+            element.textContent += (wordIndex > 0 ? " " : "") + words[wordIndex];
+            wordIndex++;
+            autoScrollChat(); // Scroll as text is added
+        } else {
+            clearInterval(typingIntervalId);
+            typingIntervalId = null; // Clear the stored ID
+            if (isMarkdown) {
+                element.innerHTML = marked.parse(text); // Render markdown after typing
+            }
+            if (isCodeElement) {
+                // Apply syntax highlighting after typing is complete
+                hljs.highlightElement(element);
+            }
+            console.log(Date.now(), "typeMessage: AI typing animation complete.");
+            showAITypingIndicator(false);
+            unifiedInput.disabled = false;
+            sendMessageBtn.disabled = false;
+            stopResponseBtn.classList.remove('active'); // Hide stop button
+            voiceInputBtn.disabled = false; // Re-enable voice button
+            unifiedInput.focus();
+            autoScrollChat(); // Final scroll after rendering markdown/highlighting
+        }
+    }, speed);
+}
+
+/**
+ * Stops the typing animation for a given element.
+ */
+function stopTypingAnimation() {
+    if (typingIntervalId) {
+        clearInterval(typingIntervalId);
+        typingIntervalId = null;
+        console.log(Date.now(), "stopTypingAnimation: Typing animation stopped.");
+    }
+}
+
+/**
+ * Shows or hides the AI typing indicator.
+ * @param {boolean} show - True to show, false to hide.
+ */
+function showAITypingIndicator(show) {
+    console.log(Date.now(), `showAITypingIndicator: Setting typing indicator to ${show}.`);
     if (typingIndicator) {
-        typingIndicator.classList.toggle('hidden', !isChatLoading);
-        console.log(Date.now(), "updateChatAIPageUI: Typing indicator hidden:", !isChatLoading);
-    }
-
-    if (chatInput) {
-        chatInput.disabled = isChatLoading;
-        chatInput.classList.toggle('opacity-50', isChatLoading);
-        chatInput.classList.toggle('cursor-not-allowed', isChatLoading);
-    }
-
-    if (sendChatBtn) {
-        sendChatBtn.disabled = isChatLoading || (!currentUser && freeChatMessagesLeft <= 0);
-        sendChatBtn.classList.toggle('opacity-50', sendChatBtn.disabled);
-        sendChatBtn.classList.toggle('cursor-not-allowed', sendChatBtn.disabled);
-    }
-
-    // Update voice input/output icons and button states
-    if (voiceInputIcon) {
-        voiceInputIcon.classList.toggle('fa-microphone', !isVoiceInputActive);
-        voiceInputIcon.classList.toggle('fa-microphone-slash', isVoiceInputActive);
-        toggleVoiceInputBtn.classList.toggle('bg-blue-600/70', isVoiceInputActive);
-        toggleVoiceInputBtn.classList.toggle('text-white', isVoiceInputActive);
-        toggleVoiceInputBtn.classList.toggle('bg-gray-700/50', !isVoiceInputActive);
-        toggleVoiceInputBtn.classList.toggle('text-gray-300', !isVoiceInputActive);
-    }
-    if (voiceOutputIcon) {
-        voiceOutputIcon.classList.toggle('fa-volume-up', !isVoiceOutputActive);
-        voiceOutputIcon.classList.toggle('fa-volume-mute', isVoiceOutputActive);
-        toggleVoiceOutputBtn.classList.toggle('bg-blue-600/70', isVoiceOutputActive);
-        toggleVoiceOutputBtn.classList.toggle('text-white', isVoiceOutputActive);
-        toggleVoiceOutputBtn.classList.toggle('bg-gray-700/50', !isVoiceOutputActive);
-        toggleVoiceOutputBtn.classList.toggle('text-gray-300', !isVoiceOutputActive);
-    }
-    // New: Stop Voice Output Button visibility
-    if (stopVoiceOutputBtn) {
-        const isSpeaking = speechSynthesis.speaking;
-        stopVoiceOutputBtn.classList.toggle('hidden', !isSpeaking);
-        stopVoiceOutputBtn.disabled = !isSpeaking;
-        stopVoiceOutputBtn.classList.toggle('opacity-50', !isSpeaking);
-        stopVoiceOutputBtn.classList.toggle('cursor-not-allowed', !isSpeaking);
-    }
-
-
-    renderChatMessages(); // Re-render messages to ensure latest state
-    populatePromptTemplates(); // Re-populate prompt templates
-    console.log(Date.now(), "updateChatAIPageUI: Chat UI updated.");
-}
-
-async function generateImage() {
-    console.log(Date.now(), "generateImage: Function called.");
-    clearError();
-
-    if (!IMAGEN_GEMINI_API_KEY || IMAGEN_GEMINI_API_KEY === "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE") {
-        setError('API Key is not configured for image generation. Please replace "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE" in script.js with your actual key obtained from Google Cloud Console and ensure the Imagen API is enabled.');
-        updateUI();
-        console.error(Date.now(), "generateImage: API Key not configured.");
-        showToast("API Key missing for image generation. Check console.", "error");
-        return;
-    }
-
-    if (!prompt.trim()) {
-        setError('Please enter a prompt to generate an image.');
-        updateUI();
-        console.warn(Date.now(), "generateImage: Prompt is empty.");
-        showToast("Please enter a prompt to generate an image.", "info");
-        return;
-    }
-
-    if (!currentUser) {
-        if (freeGenerationsLeft <= 0) {
-            console.log(Date.now(), "generateImage: Free generations exhausted for unauthenticated user. Showing sign-in modal.");
-            signinRequiredModal?.classList.remove('hidden');
-            updateUI();
-            showToast("You've used your free generations. Please sign in!", "info");
-            return;
+        if (show) {
+            typingIndicator.classList.remove('hidden');
+            gsap.fromTo(typingIndicator, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.3 });
+            isAITyping = true;
         } else {
-            freeGenerationsLeft--;
-            localStorage.setItem('freeGenerationsLeft', freeGenerationsLeft);
-            console.log(Date.now(), `generateImage: Unauthenticated generation. ${freeGenerationsLeft} left.`);
-            showToast(`Generating image... ${freeGenerationsLeft} free generations left.`, "info");
-        }
-    } else {
-        console.log(Date.now(), "generateImage: Authenticated user generating image (unlimited).");
-        showToast("Generating image...", "info");
-    }
-
-    loading = true;
-    imageUrl = '';
-    updateUI();
-    console.log(Date.now(), "generateImage: Starting image generation request.");
-    console.time("imageGenerationAPI");
-
-    try {
-        let finalPrompt = prompt;
-        const textKeywords = ['text', 'number', 'letter', 'font', 'word', 'digits', 'characters'];
-        const containsTextKeyword = textKeywords.some(keyword => prompt.toLowerCase().includes(keyword));
-
-        if (containsTextKeyword) {
-            finalPrompt += ", clear, legible, sharp, high-resolution text, sans-serif font, precisely rendered, not distorted, no gibberish, accurate spelling, crisp edges";
-            console.log(Date.now(), "generateImage: Added text-specific enhancements to prompt.");
-        }
-
-        let aspectRatioInstruction = '';
-        switch (aspectRatio) {
-            case '1:1': aspectRatioInstruction = ', square aspect ratio'; break;
-            case '4:5': aspectRatioInstruction = ', portrait 4:5 aspect ratio'; break;
-            case '9:16': aspectRatioInstruction = ', vertical 9:16 aspect ratio'; break;
-            case '16:9': aspectRatioInstruction = ', horizontal 16:9 aspect ratio'; break;
-        }
-        finalPrompt += aspectRatioInstruction;
-        console.log(Date.now(), "generateImage: Final prompt for API:", finalPrompt);
-
-
-        const payload = { instances: { prompt: finalPrompt }, parameters: { "sampleCount": 1 } };
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${IMAGEN_GEMINI_API_KEY}`;
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        console.log(Date.now(), "generateImage: API fetch response received.");
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
-        }
-
-        const result = await response.json();
-        console.log(Date.now(), "generateImage: API response parsed.", result);
-
-        if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-            imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-            console.log(Date.now(), "generateImage: Image URL successfully created from Base64 data.");
-            showToast("Image generated successfully!", "success");
-        } else {
-            setError('Failed to generate image. No image data received.');
-            showToast('Failed to generate image. No data data received.', "error");
-            console.error(Date.now(), 'generateImage: API response missing image data:', result);
-        }
-    } catch (e) {
-        setError(`An error occurred during image generation: ${e.message || 'Unknown error'}. Please try again.`);
-        showToast(`Image generation failed: ${e.message}`, "error");
-        console.error(Date.now(), 'generateImage: Error during image generation:', e);
-    } finally {
-        console.timeEnd("imageGenerationAPI");
-        loading = false;
-        updateUI();
-        console.log(Date.now(), "generateImage: Image generation process finished (loading state reset).");
-    }
-}
-
-function downloadImage() {
-    console.log(Date.now(), "downloadImage: Function called.");
-    if (imageUrl) {
-        const link = document.createElement('a');
-        link.href = imageUrl;
-        link.download = 'generated_image.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showToast("Image downloaded!", "success");
-        console.log(Date.now(), "downloadImage: Image download initiated.");
-    } else {
-        showToast("No image to download.", "info");
-        console.warn(Date.now(), "downloadImage: No image URL available to download.");
-    }
-}
-
-function copyToClipboard(text) {
-    console.log(Date.now(), "copyToClipboard: Attempting to copy text.");
-    if (!text) {
-        showToast("Nothing to copy!", "info");
-        return;
-    }
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.left = '-9999px';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-        const successful = document.execCommand('copy');
-        if (successful) {
-            showToast("Content copied to clipboard!", "success");
-            console.log(Date.now(), "copyToClipboard: Text successfully copied.");
-        } else {
-            throw new Error('execCommand failed');
-        }
-    } catch (err) {
-        console.error(Date.now(), 'copyToClipboard: Failed to copy text using execCommand:', err);
-        try {
-            navigator.clipboard.writeText(text).then(() => {
-                showToast("Content copied to clipboard!", "success");
-                console.log(Date.now(), "copyToClipboard: Text successfully copied using Clipboard API.");
-            }).catch(clipboardErr => {
-                console.error(Date.now(), 'copyToClipboard: Failed to copy text using Clipboard API:', clipboardErr);
-                showToast("Failed to copy text. Please try manually.", "error");
+            gsap.to(typingIndicator, {
+                opacity: 0, y: 10, duration: 0.3, onComplete: () => {
+                    typingIndicator.classList.add('hidden');
+                    isAITyping = false;
+                }
             });
-        } catch (apiErr) {
-            console.error(Date.now(), 'copyToClipboard: Clipboard API not available or failed:', apiErr);
-            showToast("Failed to copy text. Please try manually.", "error");
         }
-    }
-    document.body.removeChild(textarea);
-}
-
-async function enhancePrompt() {
-    console.log(Date.now(), "enhancePrompt: Function called.");
-    clearError();
-
-    if (!IMAGEN_GEMINI_API_KEY || IMAGEN_GEMINI_API_KEY === "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE") {
-        setError('API Key is not configured for prompt enhancement. Please replace "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE" in script.js with your actual key obtained from Google Cloud Console and ensure the Generative Language API is enabled.');
-        updateUI();
-        console.error(Date.now(), "enhancePrompt: API Key not configured.");
-        showToast("API Key missing for prompt enhancement. Check console.", "error");
-        return;
-    }
-    if (!prompt.trim()) {
-        setError('Please enter a prompt to enhance.');
-        updateUI();
-        console.warn(Date.now(), "enhancePrompt: Prompt is empty.");
-        showToast("Please enter a prompt to enhance.", "info");
-        return;
-    }
-    loadingEnhancePrompt = true;
-    enhancedPrompt = '';
-    updateUI();
-    console.log(Date.now(), "enhancePrompt: Starting prompt enhancement request.");
-    showToast("Enhancing prompt...", "info");
-    console.time("enhancePromptAPI");
-
-    try {
-        const llmPrompt = `Elaborate on the following image generation prompt to make it more descriptive and detailed, suitable for an advanced AI image generator. Add elements like lighting, mood, specific details, or artistic styles. Keep it concise, around 1-3 sentences.
-        Original prompt: "${prompt}"`;
-
-        let chatHistoryForEnhance = [];
-        chatHistoryForEnhance.push({ role: "user", parts: [{ text: llmPrompt }] });
-        const payload = { contents: chatHistoryForEnhance };
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${IMAGEN_GEMINI_API_KEY}`;
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        console.log(Date.now(), "enhancePrompt: API fetch response received.");
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
-        }
-
-        const result = await response.json();
-        console.log(Date.now(), "enhancePrompt: API response parsed.", result);
-        if (result.candidates && result.candidates.length > 0 &&
-            result.candidates[0].content && result.candidates[0].content.parts &&
-            result.candidates[0].content.parts.length > 0) {
-            enhancedPrompt = result.candidates[0].content.parts[0].text;
-            console.log(Date.now(), "enhancePrompt: Prompt successfully enhanced.");
-            showToast("Prompt enhanced!", "success");
-        } else {
-            setError("Failed to enhance prompt. Please try again.");
-            showToast("Failed to enhance prompt.", "error");
-            console.error(Date.now(), "enhancePrompt: API response missing enhanced prompt data:", result);
-        }
-    } catch (e) {
-        setError(`Error enhancing prompt: ${e.message}`);
-        showToast(`Prompt enhancement failed: ${e.message}`, "error");
-        console.error(Date.now(), "enhancePrompt: Error enhancing prompt:", e);
-    } finally {
-        console.timeEnd("enhancePromptAPI");
-        loadingEnhancePrompt = false;
-        updateUI();
-        console.log(Date.now(), "enhancePrompt: Prompt enhancement process finished (loading state reset).");
     }
 }
 
-async function generateVariationIdeas() {
-    console.log(Date.now(), "generateVariationIdeas: Function called.");
-    clearError();
-
-    if (!IMAGEN_GEMINI_API_KEY || IMAGEN_GEMINI_API_KEY === "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE") {
-        setError('API Key is not configured for variation ideas. Please replace "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE" in script.js with your actual key obtained from Google Cloud Console and ensure the Generative Language API is enabled.');
-        updateUI();
-        console.error(Date.now(), "generateVariationIdeas: API Key not configured.");
-        showToast("API Key missing for variation ideas. Check console.", "error");
-        return;
-    }
-    if (!prompt.trim()) {
-        setError('Please enter a prompt to get variation ideas.');
-        updateUI();
-        console.warn(Date.now(), "generateVariationIdeas: Prompt is empty.");
-        showToast("Please enter a prompt to get variation ideas.", "info");
-        return;
-    }
-    loadingVariationIdeas = true;
-    variationIdeas = [];
-    updateUI();
-    console.log(Date.now(), "generateVariationIdeas: Starting variation ideas request.");
-    showToast("Generating variation ideas...", "info");
-    console.time("generateVariationIdeasAPI");
-
-    try {
-        const llmPrompt = `Given the image generation prompt: "${prompt}", suggest 3-5 distinct creative variations or alternative ideas for generating similar but unique images. Focus on changing elements like setting, time of day, artistic style, or subject perspective. List each idea concisely.`;
-
-        let chatHistoryForVariations = [];
-        chatHistoryForVariations.push({ role: "user", parts: [{ text: llmPrompt }] });
-        const payload = { contents: chatHistoryForVariations };
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${IMAGEN_GEMINI_API_KEY}`;
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        console.log(Date.now(), "generateVariationIdeas: API fetch response received.");
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
-        }
-
-        const result = await response.json();
-        console.log(Date.now(), "generateVariationIdeas: API response parsed.", result);
-        if (result.candidates && result.candidates.length > 0 &&
-            result.candidates[0].content && result.candidates[0].content.parts &&
-            result.candidates[0].content.parts.length > 0) {
-            const ideasText = result.candidates[0].content.parts[0].text;
-            variationIdeas = ideasText.split('\n').filter(line => line.trim() !== '');
-            console.log(Date.now(), "generateVariationIdeas: Variation ideas successfully generated.");
-            showToast("Variation ideas generated!", "success");
-        } else {
-            setError("Failed to generate variation ideas. Please try again.");
-            showToast("Failed to generate variation ideas.", "error");
-            console.error(Date.now(), "generateVariationIdeas: API response missing variation ideas data:", result);
-        }
-    } catch (e) {
-        setError(`Error generating variation ideas: ${e.message}`);
-        showToast(`Variation ideas failed: ${e.message}`, "error");
-        console.error(Date.now(), "generateVariationIdeas: Error generating variation ideas:", e);
-    } finally {
-        console.timeEnd("generateVariationIdeasAPI");
-        loadingVariationIdeas = false;
-        updateUI();
-        console.log(Date.now(), "generateVariationIdeas: Variation ideas process finished (loading state reset).");
-    }
-}
-
-function getImageDisplayStyles() {
-    switch (aspectRatio) {
-        case '1:1': return 'width: 100%; height: auto; aspect-ratio: 1 / 1;';
-        case '4:5': return 'width: 100%; height: auto; aspect-ratio: 4 / 5;';
-        case '9:16': return 'width: 100%; height: auto; aspect-ratio: 9 / 16;';
-        case '16:9': return 'width: 100%; height: auto; aspect-ratio: 16 / 9;';
-        default: return 'width: 100%; height: auto;';
-    }
-}
-
-
-function setError(message) {
-    console.error(Date.now(), "setError: Setting error:", message);
-    currentError = message;
-}
-
-function clearError() {
-    console.log(Date.now(), "clearError: Clearing error.");
-    currentError = '';
-}
-
-// --- Chat AI Functions ---
-
-async function loadChatHistory() {
-    console.log(Date.now(), `loadChatHistory: Attempting to load chat history for userId: ${userId}`);
-    if (!db || !userId) {
-        console.warn(Date.now(), "loadChatHistory: Firestore DB or userId not ready. Cannot load chat history.");
-        return;
-    }
-
-    const chatCollectionRef = collection(db, `users/${userId}/chatHistory`);
-    const q = query(chatCollectionRef, orderBy('timestamp', 'asc'), limit(100)); // Limit to last 100 messages for performance
-
-    try {
-        const querySnapshot = await getDocs(q);
-        chatHistory = []; // Clear current history before loading
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            // Ensure message structure matches {role: 'user/model', parts: [{text: '...'}]}
-            if (data.role && data.text) { // Simple check for old format
-                chatHistory.push({ role: data.role, parts: [{ text: data.text }] });
-            } else if (data.role && data.parts) { // New, correct format
-                chatHistory.push({ role: data.role, parts: data.parts });
-            }
-        });
-        console.log(Date.now(), `loadChatHistory: Loaded ${chatHistory.length} messages.`);
-        renderChatMessages();
-        scrollToBottomChat();
-    } catch (e) {
-        console.error(Date.now(), "loadChatHistory: Error loading chat history:", e);
-        showToast("Failed to load chat history.", "error");
-    }
-}
-
-async function saveChatMessage(role, text) {
-    console.log(Date.now(), `saveChatMessage: Saving message for userId: ${userId}, role: ${role}`);
-    if (!db || !userId) {
-        console.warn(Date.now(), "saveChatMessage: Firestore DB or userId not ready. Cannot save message.");
-        return;
-    }
-
-    const chatCollectionRef = collection(db, `users/${userId}/chatHistory`);
-    try {
-        await addDoc(chatCollectionRef, {
-            role: role,
-            parts: [{ text: text }],
-            timestamp: serverTimestamp()
-        });
-        console.log(Date.now(), "saveChatMessage: Message saved to Firestore.");
-    } catch (e) {
-        console.error(Date.now(), "saveChatMessage: Error saving message to Firestore:", e);
-        showToast("Failed to save message history.", "error");
-    }
-}
-
-async function sendMessage() {
-    console.log(Date.now(), "sendMessage: Function called.");
-    const messageText = chatInput.value.trim();
-    if (!messageText) {
-        showToast("Please enter a message.", "info");
-        return;
-    }
-
-    if (!currentUser) {
-        if (freeChatMessagesLeft <= 0) {
-            showToast("You've used all your free chat messages. Please sign in for unlimited chat!", "info");
-            signinRequiredModal?.classList.remove('hidden');
-            return;
-        }
-    }
-
-    // Stop any ongoing speech before sending a new message
-    stopSpeaking();
-
-    // Add user message to history
-    chatHistory.push({ role: 'user', parts: [{ text: messageText }] });
-    saveChatMessage('user', messageText); // Save user message to Firestore
-    renderChatMessages();
-    scrollToBottomChat();
-    chatInput.value = ''; // Clear input field
-    chatInput.style.height = 'auto'; // Reset textarea height
-
-    isChatLoading = true;
-    updateUI(); // Show typing indicator
-
-    if (!currentUser) {
-        freeChatMessagesLeft--;
-        localStorage.setItem('freeChatMessagesLeft', freeChatMessagesLeft);
-    }
-
-    console.log(Date.now(), "sendMessage: Sending message to AI.");
-    console.time("geminiChatAPI");
-
-    try {
-        const payload = { contents: chatHistory }; // Send full history for context
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${IMAGEN_GEMINI_API_KEY}`;
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`AI API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
-        }
-
-        const result = await response.json();
-        let aiResponseText = "I'm sorry, I couldn't generate a response.";
-        if (result.candidates && result.candidates.length > 0 &&
-            result.candidates[0].content && result.candidates[0].content.parts &&
-            result.candidates[0].content.parts.length > 0) {
-            aiResponseText = result.candidates[0].content.parts[0].text;
-        }
-
-        chatHistory.push({ role: 'model', parts: [{ text: aiResponseText }] });
-        saveChatMessage('model', aiResponseText); // Save AI message to Firestore
-        renderChatMessages();
-        scrollToBottomChat();
-
-        if (isVoiceOutputActive) {
-            speakText(aiResponseText);
-        }
-        showToast("AI responded!", "success");
-
-    } catch (e) {
-        console.error(Date.now(), "sendMessage: Error during AI response generation:", e);
-        showToast(`AI response failed: ${e.message}`, "error");
-        chatHistory.push({ role: 'model', parts: [{ text: `Error: ${e.message}. Please try again.` }] });
-        renderChatMessages();
-        scrollToBottomChat();
-        // If an error occurs and it's an unauthenticated user, refund the credit
-        if (!currentUser) {
-            freeChatMessagesLeft++;
-            localStorage.setItem('freeChatMessagesLeft', freeChatMessagesLeft);
-            showToast(`Credit refunded due to AI error. You now have ${freeChatMessagesLeft} free messages.`, "info", 5000);
-        }
-    } finally {
-        console.timeEnd("geminiChatAPI");
-        isChatLoading = false;
-        updateUI(); // Hide typing indicator
-    }
-}
-
-function renderChatMessages() {
-    if (!chatMessagesContainer) return;
-
-    chatMessagesContainer.innerHTML = ''; // Clear existing messages
-    if (chatHistory.length === 0) {
-        chatMessagesContainer.innerHTML = `<div class="text-center text-gray-400 text-sm py-4">
-            Start a conversation! Type your message below.
-        </div>`;
-        return;
-    }
-
-    chatHistory.forEach((msg, index) => {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-bubble ${msg.role} opacity-0 transform ${msg.role === 'user' ? 'translate-x-full' : '-translate-x-full'}`;
-        
-        // Use marked.js to convert Markdown to HTML
-        messageDiv.innerHTML = marked.parse(msg.parts[0].text);
-        
-        chatMessagesContainer.appendChild(messageDiv);
-
-        // Animate message in
-        gsap.to(messageDiv, {
-            opacity: 1,
-            x: 0,
-            duration: 0.4,
-            ease: "power2.out",
-            delay: index * 0.05 // Stagger animation slightly
-        });
-    });
-}
-
-function scrollToBottomChat() {
-    if (chatMessagesContainer) {
-        gsap.to(chatMessagesContainer, {
-            scrollTop: chatMessagesContainer.scrollHeight,
-            duration: 0.8,
+/**
+ * Automatically scrolls the chat history to the bottom.
+ */
+function autoScrollChat() {
+    // Only auto-scroll if not scroll-locked (user hasn't scrolled up)
+    if (!isScrollLocked) {
+        gsap.to(chatHistoryContainer, {
+            scrollTop: chatHistoryContainer.scrollHeight,
+            duration: 0.5,
             ease: "power2.out"
         });
     }
 }
 
-async function clearChatHistory() {
-    console.log(Date.now(), "clearChatHistory: Clearing chat history.");
-    chatHistory = [];
-    renderChatMessages();
-    showToast("Chat history cleared!", "info");
+/**
+ * Toggles the sidebar visibility.
+ */
+function toggleSidebar() {
+    if (isSidebarOpen) {
+        // Collapse sidebar
+        gsap.to(sidebar, { x: '-100%', duration: 0.3, ease: "power2.in" });
+        gsap.to(chatMainArea, { marginLeft: '0', duration: 0.3, ease: "power2.in" });
+        gsap.to(mainNavbar, { left: '0', width: '100%', duration: 0.3, ease: "power2.in" }); // Navbar spans full width
+        isSidebarOpen = false;
+    } else {
+        // Expand sidebar
+        gsap.to(sidebar, { x: '0%', duration: 0.3, ease: "power2.out" });
+        // Only apply margin to chatMainArea if on desktop
+        if (window.innerWidth >= 768) {
+            gsap.to(chatMainArea, { marginLeft: '18rem', duration: 0.3, ease: "power2.out" });
+            gsap.to(mainNavbar, { left: '18rem', width: 'calc(100% - 18rem)', duration: 0.3, ease: "power2.out" }); // Navbar adjusts
+        }
+        isSidebarOpen = true;
+    }
+}
 
-    if (currentUser && db && userId) {
-        const chatCollectionRef = collection(db, `users/${userId}/chatHistory`);
+/**
+ * Updates the state of the send button (dimmed/active).
+ */
+function updateSendButtonState() {
+    if (unifiedInput.value.trim().length > 0) {
+        sendMessageBtn.classList.add('active');
+        sendMessageBtn.style.pointerEvents = 'auto';
+    } else {
+        sendMessageBtn.classList.remove('active');
+        sendMessageBtn.style.pointerEvents = 'none';
+    }
+}
+
+/**
+ * Sends a message (text or image) to the appropriate AI API.
+ * @param {string} message - The user's input message.
+ * @param {boolean} [isRegenerate=false] - True if this is a regenerate request.
+ */
+async function sendUnifiedMessage(message, isRegenerate = false) {
+    console.log(Date.now(), `sendUnifiedMessage: Processing message: "${message}" (Regenerate: ${isRegenerate}) in ${currentMode} mode.`);
+    if (!message.trim()) {
+        showToast("Please enter a message.", "info");
+        return;
+    }
+
+    // If it's a new chat session and the first message, create the session first
+    if (!currentChatSessionId && currentUser) {
         try {
-            const querySnapshot = await getDocs(chatCollectionRef);
-            const deletePromises = [];
-            querySnapshot.forEach((doc) => {
-                deletePromises.push(deleteDoc(doc.ref));
+            const chatSessionsRef = collection(db, `artifacts/${__app_id}/users/${userId}/chatSessions`);
+            const newSessionDocRef = await addDoc(chatSessionsRef, {
+                title: "New Chat", // Temporary title, will be updated by AI
+                createdAt: serverTimestamp(),
+                lastUpdated: serverTimestamp()
             });
-            await Promise.all(deletePromises);
-            console.log(Date.now(), "clearChatHistory: Chat history cleared from Firestore.");
-        } catch (e) {
-            console.error(Date.now(), "clearChatHistory: Error clearing chat history from Firestore:", e);
-            showToast("Failed to clear chat history from cloud.", "error");
-        }
-    } else if (!currentUser) {
-        // For unauthenticated users, reset free messages if they clear chat
-        freeChatMessagesLeft = 5;
-        localStorage.setItem('freeChatMessagesLeft', freeChatMessagesLeft);
-        updateUI();
-        showToast("Free chat messages reset to 5.", "info");
-    }
-}
-
-// --- Theme Toggle ---
-function toggleTheme() {
-    console.log(Date.now(), "toggleTheme: Toggling theme.");
-    document.body.classList.toggle('light-mode');
-    const isLightMode = document.body.classList.contains('light-mode');
-    localStorage.setItem('theme', isLightMode ? 'light' : 'dark');
-    if (themeIcon) {
-        themeIcon.classList.toggle('fa-sun', !isLightMode);
-        themeIcon.classList.toggle('fa-moon', isLightMode);
-        toggleThemeBtn.querySelector('span').textContent = isLightMode ? 'Dark Mode' : 'Light Mode';
-    }
-    showToast(`Switched to ${isLightMode ? 'Light' : 'Dark'} Mode`, "info");
-}
-
-function applySavedTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark
-    if (savedTheme === 'light') {
-        document.body.classList.add('light-mode');
-        if (themeIcon) {
-            themeIcon.classList.remove('fa-sun');
-            themeIcon.classList.add('fa-moon');
-            toggleThemeBtn.querySelector('span').textContent = 'Dark Mode';
-        }
-    } else {
-        document.body.classList.remove('light-mode');
-        if (themeIcon) {
-            themeIcon.classList.remove('fa-moon');
-            themeIcon.classList.add('fa-sun');
-            toggleThemeBtn.querySelector('span').textContent = 'Light Mode';
+            currentChatSessionId = newSessionDocRef.id;
+            console.log(Date.now(), `sendUnifiedMessage: New chat session created: ${currentChatSessionId}`);
+            // Reload sidebar to show the new session
+            await loadChatSessionsForSidebar();
+        } catch (error) {
+            console.error(Date.now(), "sendUnifiedMessage: Error creating new chat session:", error);
+            showToast(`Failed to start new chat session: ${error.message}`, "error");
+            // Re-enable input and buttons if session creation fails
+            unifiedInput.disabled = false;
+            sendMessageBtn.disabled = false;
+            voiceInputBtn.disabled = false;
+            return;
         }
     }
-    console.log(Date.now(), `applySavedTheme: Applied theme: ${savedTheme}`);
-}
 
-// --- Voice Input/Output ---
-function toggleVoiceInput() {
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-        if (!speechRecognition) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            speechRecognition = new SpeechRecognition();
-            speechRecognition.continuous = false; // Listen for a single utterance
-            speechRecognition.interimResults = false; // Only return final results
-            speechRecognition.lang = 'en-US'; // Set language
 
-            speechRecognition.onstart = () => {
-                isVoiceInputActive = true;
-                updateUI();
-                showToast("Voice input active. Speak now!", "info");
-                chatInput.placeholder = "Listening...";
-            };
+    if (isAITyping || isGeneratingImage) {
+        showToast("Please wait for the AI to finish its current task.", "info");
+        return;
+    }
 
-            speechRecognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                chatInput.value = transcript;
-                chatInput.style.height = 'auto'; // Reset height
-                chatInput.style.height = (chatInput.scrollHeight) + 'px'; // Adjust height
-                console.log(Date.now(), "Voice input result:", transcript);
-                // Automatically send message after speech recognition
-                sendMessage();
-            };
-
-            speechRecognition.onerror = (event) => {
-                console.error(Date.now(), "Speech recognition error:", event.error);
-                showToast(`Voice input error: ${event.error}`, "error");
-                isVoiceInputActive = false;
-                updateUI();
-                chatInput.placeholder = "Type your message here...";
-            };
-
-            speechRecognition.onend = () => {
-                isVoiceInputActive = false;
-                updateUI();
-                chatInput.placeholder = "Type your message here...";
-                console.log(Date.now(), "Voice input ended.");
-            };
+    // Add user message to UI and in-memory history
+    if (!isRegenerate) { // Don't add user message again if regenerating
+        addChatMessage(message, 'user');
+        chatHistory.push({ role: "user", parts: [{ text: message }] });
+        // Save user message to Firestore
+        if (currentUser && currentChatSessionId) {
+            await saveMessageToFirestore(currentChatSessionId, "user", message);
         }
+    }
 
-        if (isVoiceInputActive) {
-            speechRecognition.stop();
-        } else {
-            speechRecognition.start();
+    unifiedInput.value = ''; // Clear input
+    unifiedInput.style.height = 'auto'; // Reset height
+    updateSendButtonState(); // Update send button state
+    unifiedInput.disabled = true; // Disable input during AI response
+    sendMessageBtn.disabled = true; // Disable send button
+    voiceInputBtn.disabled = true; // Disable voice button
+    stopResponseBtn.classList.add('active'); // Show stop button
+
+    showAITypingIndicator(true); // Show typing indicator
+
+    // Check free message limit if not signed in
+    if (!currentUser) {
+        if (userMessageCount >= MAX_FREE_MESSAGES) {
+            toggleSignInModal(true);
+            showToast("Please sign in to continue chatting!", "info");
+            showAITypingIndicator(false); // Hide typing indicator
+            unifiedInput.disabled = false;
+            sendMessageBtn.disabled = false;
+            stopResponseBtn.classList.remove('active'); // Hide stop button
+            voiceInputBtn.disabled = false;
+            return;
         }
-    } else {
-        showToast("Voice input not supported by your browser.", "error");
-        console.warn(Date.now(), "SpeechRecognition API not available.");
-    }
-}
-
-function toggleVoiceOutput() {
-    isVoiceOutputActive = !isVoiceOutputActive;
-    updateUI();
-    showToast(`Voice output ${isVoiceOutputActive ? 'enabled' : 'disabled'}`, "info");
-    // If voice output is turned off, stop any ongoing speech
-    if (!isVoiceOutputActive) {
-        stopSpeaking();
-    }
-}
-
-function speakText(text) {
-    if (isVoiceOutputActive && speechSynthesis) {
-        stopSpeaking(); // Stop any previous speech before starting new one
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US'; // Set language
-        utterance.rate = 1.0; // Speed
-        utterance.pitch = 1.0; // Pitch
-        utterance.onend = () => {
-            updateUI(); // Update UI when speech ends (to hide stop button)
-        };
-        utterance.onstart = () => {
-            updateUI(); // Update UI when speech starts (to show stop button)
-        };
-        speechSynthesis.speak(utterance);
-        console.log(Date.now(), "Speaking text:", text);
-    }
-}
-
-function stopSpeaking() {
-    if (speechSynthesis && speechSynthesis.speaking) {
-        speechSynthesis.cancel();
-        console.log(Date.now(), "Speech synthesis stopped.");
-        updateUI(); // Update UI to hide stop button
-    }
-}
-
-// --- Prompt Templates ---
-const defaultPromptTemplates = [
-    "Explain quantum physics simply.",
-    "Write a short story about a brave knight.",
-    "Give me a recipe for chocolate chip cookies.",
-    "Summarize the plot of Hamlet.",
-    "What are the benefits of meditation?",
-    "Generate a creative writing prompt.",
-    "Tell me a joke.",
-    "How does a blockchain work?",
-    "List 5 tips for productivity.",
-    "What is the capital of France?"
-];
-
-function populatePromptTemplates() {
-    if (!promptTemplatesList) return;
-
-    promptTemplatesList.innerHTML = ''; // Clear existing templates
-    defaultPromptTemplates.forEach(templateText => {
-        const button = document.createElement('button');
-        button.className = 'px-4 py-2 rounded-full bg-blue-500/30 text-blue-200 hover:bg-blue-500/50 transition-colors duration-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500';
-        button.textContent = templateText;
-        button.addEventListener('click', () => {
-            chatInput.value = templateText;
-            chatInput.style.height = 'auto'; // Reset height
-            chatInput.style.height = (chatInput.scrollHeight) + 'px'; // Adjust height
-            sendMessage();
-        });
-        promptTemplatesList.appendChild(button);
-    });
-    console.log(Date.now(), "populatePromptTemplates: Default prompt templates populated.");
-}
-
-
-// --- Event Listeners Setup ---
-function setupEventListeners() {
-    console.log(Date.now(), "setupEventListeners: Setting up all event listeners...");
-
-    // Header Hover Effect
-    if (mainHeader) {
-        mainHeader.addEventListener('mouseenter', () => {
-            gsap.to(mainHeader, {
-                scale: 1.02, // Slightly larger
-                boxShadow: '0 15px 30px rgba(0,0,0,0.5)', // More pronounced shadow
-                duration: 0.3,
-                ease: "power2.out"
-            });
-        });
-        mainHeader.addEventListener('mouseleave', () => {
-            gsap.to(mainHeader, {
-                scale: 1, // Back to original size
-                boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)', // Original shadow (from style.css or default)
-                duration: 0.5,
-                ease: "elastic.out(1, 0.7)" // Gentle bounce back
-            });
-        });
-        console.log(Date.now(), "Event Listeners Attached: mainHeader hover effects.");
+        userMessageCount++; // Increment message count for unsigned users
+        updateUI(); // Update UI to reflect new message count
     }
 
-    // Header Navigation Buttons
-    const homeBtn = getElement('home-btn');
-    if (homeBtn) {
-        homeBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Home button clicked."); setPage('home'); });
-        console.log(Date.now(), "Event Listener Attached: home-btn");
-    }
-
-    const generatorBtn = getElement('generator-btn');
-    if (generatorBtn) {
-        generatorBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Generator button clicked."); setPage('generator'); });
-        console.log(Date.now(), "Event Listener Attached: generator-btn");
-    }
-
-    const chatAIBtn = getElement('chat-ai-btn'); // New chat AI button
-    if (chatAIBtn) {
-        chatAIBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Chat AI button clicked."); setPage('chat-ai'); });
-        console.log(Date.now(), "Event Listener Attached: chat-ai-btn");
-    }
-
-    if (logoBtn) {
-        logoBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Logo button clicked."); setPage('home'); });
-        console.log(Date.now(), "Event Listener Attached: logoBtn");
-    }
-
-    // Mobile Menu Buttons
-    if (hamburgerBtn) {
-        hamburgerBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Hamburger button clicked."); toggleMobileMenu(); });
-        console.log(Date.now(), "Event Listener Attached: hamburgerBtn");
-    }
-
-    if (closeMobileMenuBtn) {
-        closeMobileMenuBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Close Mobile Menu button clicked."); toggleMobileMenu(); });
-        console.log(Date.now(), "Event Listener Attached: closeMobileMenuBtn");
-    }
-
-    if (mobileMenuOverlay) {
-        mobileMenuOverlay.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Mobile menu overlay clicked.");
-            if (mobileMenu?.classList.contains('translate-x-0')) {
-                toggleMobileMenu();
-            }
-        });
-        console.log(Date.now(), "Event Listener Attached: mobileMenuOverlay");
-    }
-
-    mobileNavLinks.forEach(link => {
-        if (link) {
-            link.addEventListener('click', (e) => {
-                console.log(Date.now(), `Event: Mobile nav link clicked: ${e.target.id}`);
-                if (e.target.id === 'mobile-home-btn') setPage('home');
-                else if (e.target.id === 'mobile-generator-btn') setPage('generator');
-                else if (e.target.id === 'mobile-chat-ai-btn') setPage('chat-ai'); // New mobile chat AI button
-                toggleMobileMenu();
-            });
-            console.log(Date.now(), `Event Listener Attached: mobile-nav-link (${link.id})`);
-        }
-    });
-
-    // Home Page Button
-    if (startCreatingBtn) {
-        startCreatingBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Start Creating Now button clicked."); setPage('generator'); });
-        console.log(Date.now(), "Event Listener Attached: startCreatingBtn");
-    }
-
-    // Image Generator Page Controls
-    if (promptInput) {
-        promptInput.addEventListener('input', (e) => {
-            prompt = e.target.value;
-            console.log(Date.now(), "Event: Prompt input changed. Current prompt:", prompt);
-        });
-        console.log(Date.now(), "Event Listener Attached: promptInput");
-    }
-
-    if (copyPromptBtn) {
-        copyPromptBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Copy Prompt button clicked."); copyToClipboard(promptInput.value); });
-        console.log(Date.now(), "Event Listener Attached: copyPromptBtn");
-    }
-
-    if (clearPromptBtn) {
-        clearPromptBtn.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Clear Prompt button clicked.");
-            promptInput.value = '';
-            prompt = '';
-            showToast("Prompt cleared!", "info");
-            updateUI();
-        });
-        console.log(Date.now(), "Event Listener Attached: clearPromptBtn");
-    }
-
-    if (generateBtn) {
-        generateBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Generate Image button clicked."); generateImage(); });
-        console.log(Date.now(), "Event Listener Attached: generateBtn");
-    }
-    if (enhanceBtn) {
-        enhanceBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Enhance Prompt button clicked."); enhancePrompt(); });
-        console.log(Date.now(), "Event Listener Attached: enhanceBtn");
-    }
-    if (variationBtn) {
-        variationBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Get Variation Ideas button clicked."); generateVariationIdeas(); });
-        console.log(Date.now(), "Event Listener Attached: variationBtn");
-    }
-
-    if (useEnhancedPromptBtn) {
-        useEnhancedPromptBtn.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Use Enhanced Prompt button clicked.");
-            prompt = enhancedPrompt;
-            enhancedPrompt = '';
-            updateUI();
-            showToast("Enhanced prompt applied!", "success");
-        });
-        console.log(Date.now(), "Event Listener Attached: useEnhancedPromptBtn");
-    }
-
-    if (downloadBtn) {
-        downloadBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Download Image button clicked."); downloadImage(); });
-        console.log(Date.now(), "Event Listener Attached: downloadBtn");
-    }
-
-    // Auth Buttons
-    if (signInBtnDesktop) {
-        signInBtnDesktop.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Sign In button clicked."); signInWithGoogle(); });
-        console.log(Date.now(), "Event Listener Attached: signInBtnDesktop");
-    }
-    if (signOutBtnDesktop) {
-        signOutBtnDesktop.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Sign Out button clicked."); signOutUser(); });
-        console.log(Date.now(), "Event Listener Attached: signOutBtnDesktop");
-    }
-    if (signInBtnMobile) {
-        signInBtnMobile.addEventListener('click', () => { console.log(Date.now(), "Event: Mobile Sign In button clicked."); signInWithGoogle(); });
-        console.log(Date.now(), "Event Listener Attached: signInBtnMobile");
-    }
-    if (signOutBtnMobile) {
-        signOutBtnMobile.addEventListener('click', () => { console.log(Date.now(), "Event: Mobile Sign Out button clicked."); signOutUser(); });
-        console.log(Date.now(), "Event Listener Attached: signOutBtnMobile");
-    }
-    if (modalSignInBtn) {
-        modalSignInBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Modal Sign In button clicked."); signInWithGoogle(); });
-        console.log(Date.now(), "Event Listener Attached: modalSignInBtn");
-    }
-
-    if (closeSigninModalBtn) {
-        closeSigninModalBtn.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Close Sign-in Modal button clicked.");
-            signinRequiredModal?.classList.add('hidden');
-        });
-        console.log(Date.now(), "Event Listener Attached: closeSigninModalBtn");
-    }
-
-    if (closeDebugMessageBtn) {
-        closeDebugMessageBtn.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Close Debug Message button clicked.");
-            persistentDebugMessage?.classList.add('hidden');
-        });
-        console.log(Date.now(), "Event Listener Attached: closeDebugMessageBtn");
-    }
-
-    // Chat AI Specific Event Listeners
-    if (sendChatBtn) {
-        sendChatBtn.addEventListener('click', sendMessage);
-        console.log(Date.now(), "Event Listener Attached: sendChatBtn");
-    }
-    if (chatInput) {
-        chatInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // Prevent new line
-                sendMessage();
-            }
-        });
-        console.log(Date.now(), "Event Listener Attached: chatInput keydown");
-    }
-    if (clearChatBtn) {
-        clearChatBtn.addEventListener('click', clearChatHistory);
-        console.log(Date.now(), "Event Listener Attached: clearChatBtn");
-    }
-    if (toggleThemeBtn) {
-        toggleThemeBtn.addEventListener('click', toggleTheme);
-        console.log(Date.now(), "Event Listener Attached: toggleThemeBtn");
-    }
-    if (toggleVoiceInputBtn) {
-        toggleVoiceInputBtn.addEventListener('click', toggleVoiceInput);
-        console.log(Date.now(), "Event Listener Attached: toggleVoiceInputBtn");
-    }
-    if (toggleVoiceOutputBtn) {
-        toggleVoiceOutputBtn.addEventListener('click', toggleVoiceOutput);
-        console.log(Date.now(), "Event Listener Attached: toggleVoiceOutputBtn");
-    }
-    // New: Stop Voice Output Button Listener
-    if (stopVoiceOutputBtn) {
-        stopVoiceOutputBtn.addEventListener('click', stopSpeaking);
-        console.log(Date.now(), "Event Listener Attached: stopVoiceOutputBtn");
-    }
-
-
-    populateAspectRatioRadios();
-    populatePromptTemplates(); // Populate templates on load
-    console.log(Date.now(), "setupEventListeners: All event listeners setup attempted.");
-}
-
-// --- Main application initialization function ---
-function initApp() {
-    console.log(Date.now(), "initApp: Starting application initialization.");
-    console.time("AppInitialization");
+    currentAbortController = new AbortController(); // Create a new AbortController for this request
+    const signal = currentAbortController.signal;
 
     try {
-        // Initialize Firebase services first (this will handle auth state and user ID)
-        initFirebase();
+        let aiResponseContent;
+        let isImageResponse = false;
+        let isCodeResponse = false;
+        let imageUrl = '';
 
-        // Populate ALL UI Element References here, after DOM is ready
-        homePageElement = getElement('home-page-element');
-        generatorPageElement = getElement('generator-page-element');
-        chatAIPageElement = getElement('chat-ai-page-element'); // New chat AI page
-        allPageElements = [homePageElement, generatorPageElement, chatAIPageElement].filter(Boolean); // Filter out nulls
+        if (currentMode === 'image-verse') {
+            console.log(Date.now(), "sendUnifiedMessage: Routing to Image Mode.");
+            isGeneratingImage = true;
+            isImageResponse = true; // Flag for addChatMessage
+            imageUrl = await generateImage(message, signal); // Pass signal to image generation API
+            if (!imageUrl) {
+                if (!signal.aborted) {
+                    throw new Error("Image generation failed. No valid image URL received.");
+                }
+            }
+            addChatMessage(message, 'ai', false, isImageResponse, imageUrl, null, false, false); // No typing animation for images
+        } else if (currentMode === 'code') {
+            console.log(Date.now(), "sendUnifiedMessage: Routing to Code Mode.");
+            isCodeResponse = true; // Flag for addChatMessage
+            aiResponseContent = await getGeminiCodeResponse(message, signal); // Pass signal to code generation API
+            addChatMessage(aiResponseContent, 'ai', false, false, '', null, isCodeResponse); // Typing animation for code
+        } else { // Default to 'verse' mode (text)
+            console.log(Date.now(), "sendUnifiedMessage: Routing to Verse (Chat) Mode.");
+            aiResponseContent = await getGeminiTextResponse(message, signal); // Pass signal to text generation API
+            addChatMessage(aiResponseContent, 'ai', true); // Add AI text response with typing animation
+        }
 
-        persistentDebugMessage = getElement('persistent-debug-message');
-        closeDebugMessageBtn = getElement('close-debug-message-btn');
+        // Add AI response to in-memory history
+        if (aiResponseContent) {
+            chatHistory.push({ role: "ai", parts: [{ text: aiResponseContent }] });
+        } else if (isImageResponse) {
+            chatHistory.push({ role: "ai", parts: [{ text: `[Image Generated: ${message}]` }] });
+        }
 
-        promptInput = getElement('prompt-input');
-        copyPromptBtn = getElement('copy-prompt-btn');
-        clearPromptBtn = getElement('clear-prompt-btn');
-        aspectRatioSelectionDiv = getElement('aspect-ratio-selection');
-        generateBtn = getElement('generate-image-btn');
-        enhanceBtn = getElement('enhance-prompt-btn');
-        variationBtn = getElement('generate-variation-ideas-btn');
-        useEnhancedPromptBtn = getElement('use-enhanced-prompt-btn');
-        downloadBtn = getElement('download-image-btn');
-        errorDisplay = getElement('error-display');
-        imageDisplayContainer = getElement('image-display-container');
-        generatedImageElement = getElement('generated-image');
-        enhancedPromptDisplay = getElement('enhanced-prompt-display');
-        enhancedPromptText = getElement('enhanced-prompt-text');
-        variationIdeasDisplay = getElement('variation-ideas-display');
-        variationIdeasList = getElement('variation-ideas-list');
+        // Save AI message to Firestore
+        if (currentUser && currentChatSessionId) {
+            if (isImageResponse) {
+                await saveMessageToFirestore(currentChatSessionId, "ai", `[Image Generated: ${message}]`, true, imageUrl);
+            } else {
+                await saveMessageToFirestore(currentChatSessionId, "ai", aiResponseContent, false, '', isCodeResponse);
+            }
+            // Update lastUpdated timestamp for the session
+            const sessionDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/chatSessions`, currentChatSessionId);
+            await updateDoc(sessionDocRef, { lastUpdated: serverTimestamp() });
 
-        userDisplayDesktop = getElement('user-display-desktop');
-        signInBtnDesktop = getElement('sign-in-btn-desktop');
-        signOutBtnDesktop = getElement('sign-out-btn-desktop');
-        userDisplayMobile = getElement('user-display-mobile');
-        signInBtnMobile = getElement('sign-in-btn-mobile');
-        signOutBtnMobile = getElement('sign-out-btn-mobile');
-        freeGenerationsDisplay = getElement('free-generations-display');
-        signinRequiredModal = getElement('signin-required-modal');
-        modalSignInBtn = getElement('modal-sign-in-btn');
-        closeSigninModalBtn = getElement('close-signin-modal-btn');
-        startCreatingBtn = getElement('start-creating-btn');
-        logoBtn = getElement('logo-btn');
+            // If it's the first AI message in a new session, generate and save the title
+            if (chatHistory.length === 2 && currentChatSessionId) { // User message + AI message
+                await generateChatSessionTitle(currentChatSessionId, chatHistory);
+            }
+        }
 
-        hamburgerBtn = getElement('hamburger-btn');
-        hamburgerIcon = getElement('hamburger-icon');
-        mobileMenu = getElement('mobile-menu');
-        mobileMenuOverlay = getElement('mobile-menu-overlay');
-        closeMobileMenuBtn = getElement('close-mobile-menu-btn');
-        mobileNavLinks = document.querySelectorAll('#mobile-menu .mobile-nav-link'); // NodeList, not single element
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            console.warn(Date.now(), "sendUnifiedMessage: AI response stopped by user.");
+            stopTypingAnimation(); // Stop any ongoing typing animation
+            const lastAiMessageElement = chatHistoryContainer.lastElementChild;
+            if (lastAiMessageElement && lastAiMessageElement.classList.contains('ai')) {
+                const pElement = lastAiMessageElement.querySelector('p') || lastAiMessageElement.querySelector('code');
+                if (pElement && !pElement.textContent.includes("(Response Stopped)")) { // Prevent appending multiple times
+                    pElement.textContent += " (Response Stopped)";
+                }
+            }
+            showToast("AI response stopped.", "info");
+        } else {
+            console.error(Date.now(), "sendUnifiedMessage: Error during AI processing:", error);
+            addChatMessage(`Error: ${error.message}. Please try again.`, 'ai', false);
+            showToast(`Error: ${error.message}`, "error");
+        }
+    } finally {
+        isGeneratingImage = false; // Reset image generation flag
+        showAITypingIndicator(false); // Hide typing indicator
+        unifiedInput.disabled = false;
+        sendMessageBtn.disabled = false;
+        stopResponseBtn.classList.remove('active'); // Hide stop button
+        voiceInputBtn.disabled = false; // Re-enable voice button
+        unifiedInput.focus();
+        currentAbortController = null; // Clear the controller
+    }
+}
 
-        toastContainer = getElement('toast-container');
+/**
+ * Gets a text response from the Gemini API.
+ * @param {string} prompt - The user's text prompt.
+ * @param {AbortSignal} signal - The AbortSignal to cancel the request.
+ * @returns {Promise<string>} - The AI's text response.
+ */
+async function getGeminiTextResponse(prompt, signal) {
+    // Prepend the AI persona instruction to the chat history for context
+    const conversation = [AI_PERSONA_INSTRUCTION, ...chatHistory];
+    const payload = { contents: conversation };
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
 
-        // Header specific elements
-        mainHeader = getElement('header-element');
+    console.log(Date.now(), "getGeminiTextResponse: Sending text request to Gemini API with persona...");
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: signal // Pass the signal here
+    });
 
-        // Chat AI specific elements
-        chatCreditsDisplay = getElement('chat-credits-display');
-        toggleThemeBtn = getElement('toggle-theme-btn');
-        themeIcon = getElement('theme-icon');
-        toggleVoiceInputBtn = getElement('toggle-voice-input-btn');
-        voiceInputIcon = getElement('voice-input-icon');
-        toggleVoiceOutputBtn = getElement('toggle-voice-output-btn');
-        voiceOutputIcon = getElement('voice-output-icon');
-        stopVoiceOutputBtn = getElement('stop-voice-output-btn'); // New: Get reference to stop button
-        clearChatBtn = getElement('clear-chat-btn');
-        chatMessagesContainer = getElement('chat-messages-container');
-        typingIndicator = getElement('typing-indicator');
-        chatInput = getElement('chat-input');
-        sendChatBtn = getElement('send-chat-btn');
-        promptTemplatesContainer = getElement('prompt-templates-container');
-        promptTemplatesList = getElement('prompt-templates-list');
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error(Date.now(), "getGeminiTextResponse: API error response:", errorData);
+        throw new Error(`API error: ${errorData.error ? errorData.error.message : response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log(Date.now(), "getGeminiTextResponse: Gemini API response received.");
+
+    if (result.candidates && result.candidates.length > 0 &&
+        result.candidates[0].content && result.candidates[0].content.parts &&
+        result.candidates[0].content.parts.length > 0) {
+        return result.candidates[0].content.parts[0].text;
+    } else {
+        throw new Error("No valid AI text response received.");
+    }
+}
+
+/**
+ * Generates an image based on the provided prompt using the Imagen API.
+ * @param {string} prompt - The text prompt for image generation.
+ * @param {AbortSignal} signal - The AbortSignal to cancel the request.
+ * @returns {Promise<string|null>} - A promise that resolves with the image URL (base64) or null on error.
+ */
+async function generateImage(prompt, signal) {
+    const payload = { instances: { prompt: prompt }, parameters: { "sampleCount": 1 } };
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${GEMINI_API_KEY}`;
+
+    console.log(Date.now(), "generateImage: Sending image request to Imagen API...");
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: signal // Pass the signal here
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error(Date.now(), "generateImage: API error response:", errorData);
+        throw new Error(`API error: ${errorData.error ? errorData.error.message : response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log(Date.now(), "generateImage: Imagen API response received.");
+
+    if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+        return `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+    } else {
+        throw new Error("No image data received from API.");
+    }
+}
+
+/**
+ * Gets a code response from the Gemini API (acting as a programming assistant).
+ * @param {string} prompt - The user's code-related prompt.
+ * @param {AbortSignal} signal - The AbortSignal to cancel the request.
+ * @returns {Promise<string>} - The AI's code response, typically in a markdown code block.
+ */
+async function getGeminiCodeResponse(prompt, signal) {
+    // Combine the general AI persona with a specific instruction for code mode
+    const codePersonaInstruction = {
+        role: "user",
+        parts: [{
+            text: `You are GenArt Verse, an advanced, highly intelligent, and articulate AI programming assistant created by GenArt.
+            Your purpose is to provide precise, proper, and comprehensive code, explanations, and debugging advice.
+            You communicate like a knowledgeable human expert, offering clear, well-commented, and efficient code solutions.
+            Always strive for clarity, accuracy, and best practices in your code.
+            Respond with code blocks where appropriate, using markdown. Do not use emojis in your responses.
+            The user asks: ${prompt}`
+        }]
+    };
+
+    const payload = { contents: [codePersonaInstruction] }; // Only send the specific code persona for this request
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+    console.log(Date.now(), "getGeminiCodeResponse: Sending code request to Gemini API with persona...");
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: signal // Pass the signal here
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error(Date.now(), "getGeminiCodeResponse: API error response:", errorData);
+        throw new Error(`API error: ${errorData.error ? errorData.error.message : response.statusText}`);
+    }
+
+    const result = await response.json();
+    console.log(Date.now(), "getGeminiCodeResponse: Gemini Code API response received.");
+
+    if (result.candidates && result.candidates.length > 0 &&
+        result.candidates[0].content && result.candidates[0].content.parts &&
+        result.candidates[0].content.parts.length > 0) {
+        return result.candidates[0].content.parts[0].text;
+    } else {
+        throw new Error("No valid AI code response received.");
+    }
+}
 
 
-        console.log(Date.now(), "initApp: All UI element references obtained.");
+/**
+ * Downloads the generated image.
+ * @param {string} imageUrl - The base64 image URL.
+ * @param {string} prompt - The prompt used for the image, to be used in the filename.
+ */
+function downloadImage(imageUrl, prompt) {
+    console.log(Date.now(), "downloadImage: Initiating image download.");
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    const filename = `genart_${prompt.replace(/[^a-z0-9]/gi, '_').toLowerCase().substring(0, 50)}.png`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Image downloaded!", "info");
+    console.log(Date.now(), `downloadImage: Image "${filename}" downloaded.`);
+}
 
-        console.log(Date.now(), "initApp: Calling setupEventListeners().");
+/**
+ * Copies text to the clipboard.
+ * @param {string} text - The text to copy.
+ */
+function copyToClipboard(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        showToast("Copied to clipboard!", "success");
+    } catch (err) {
+        console.error(Date.now(), 'Failed to copy text: ', err);
+        showToast("Failed to copy text.", "error");
+    }
+    document.body.removeChild(textarea);
+}
+
+/**
+ * Deletes a chat message from the UI and optionally from Firestore.
+ * @param {HTMLElement} messageElement - The DOM element of the message to delete.
+ * @param {string} messageId - The Firestore document ID of the message.
+ * @param {string} sender - The sender of the message ('user' or 'ai').
+ */
+async function deleteChatMessage(messageElement, messageId, sender) {
+    // Using confirm for simplicity, can be replaced by custom modal
+    if (!confirm("Are you sure you want to delete this message?")) {
+        return;
+    }
+
+    messageElement.remove(); // Remove from UI
+
+    // Remove from in-memory chatHistory
+    // Note: This simple matching might fail for complex markdown or images.
+    // For a robust solution, each chat message object in chatHistory should have a unique ID.
+    const messageTextContent = messageElement.querySelector('p')?.textContent.trim() || messageElement.dataset.prompt?.trim() || messageElement.dataset.codeContent?.trim();
+    const indexToRemove = chatHistory.findIndex(msg => msg.role === sender && msg.parts[0].text.trim() === messageTextContent);
+    if (indexToRemove !== -1) {
+        chatHistory.splice(indexToRemove, 1);
+        console.log(Date.now(), `deleteChatMessage: Message removed from in-memory history.`);
+    }
+
+    // Optionally delete from Firestore if signed in and messageId exists
+    if (currentUser && messageId && currentChatSessionId) {
+        try {
+            const messageDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/chatSessions/${currentChatSessionId}/messages`, messageId);
+            await deleteDoc(messageDocRef);
+            showToast("Message deleted!", "success");
+            console.log(Date.now(), `deleteChatMessage: Message ${messageId} deleted from Firestore.`);
+        } catch (error) {
+            console.error(Date.now(), `deleteChatMessage: Error deleting message ${messageId} from Firestore:`, error);
+            showToast(`Failed to delete message: ${error.message}`, "error");
+        }
+    } else {
+        showToast("Message deleted from UI.", "info");
+    }
+}
+
+
+/**
+ * Saves a message to Firestore.
+ * @param {string} sessionId - The ID of the current chat session.
+ * @param {string} role - 'user' or 'ai'.
+ * @param {string} text - The message text.
+ * @param {boolean} [isImage=false] - True if the message is an image.
+ * @param {string} [imageUrl=''] - URL of the image if applicable.
+ * @param {boolean} [isCode=false] - True if the message is code.
+ */
+async function saveMessageToFirestore(sessionId, role, text, isImage = false, imageUrl = '', isCode = false) {
+    if (!currentUser || !sessionId) {
+        console.log(Date.now(), "saveMessageToFirestore: User not signed in or no session, skipping Firestore save.");
+        return;
+    }
+    try {
+        const messagesRef = collection(db, `artifacts/${__app_id}/users/${userId}/chatSessions/${sessionId}/messages`);
+        await addDoc(messagesRef, {
+            role: role,
+            text: text,
+            isImage: isImage,
+            imageUrl: imageUrl,
+            isCode: isCode, // Save code flag
+            timestamp: serverTimestamp()
+        });
+        console.log(Date.now(), `saveMessageToFirestore: ${role} message saved to session ${sessionId}.`);
+    } catch (error) {
+        console.error(Date.now(), `saveMessageToFirestore: Error saving ${role} message to session ${sessionId}:`, error);
+        showToast(`Failed to save chat history: ${error.message}`, "error");
+    }
+}
+
+/**
+ * Generates a title for a new chat session using the AI.
+ * @param {string} sessionId - The ID of the chat session to title.
+ * @param {Array} history - The current chat history to base the title on.
+ */
+async function generateChatSessionTitle(sessionId, history) {
+    if (!currentUser || !sessionId) return;
+
+    console.log(Date.now(), `generateChatSessionTitle: Generating title for session ${sessionId}.`);
+
+    try {
+        const titlePrompt = {
+            role: "user",
+            parts: [{
+                text: `Based on the following conversation, generate a concise, descriptive title (max 5-7 words). Do not include quotation marks or any conversational filler. Just the title.
+                Conversation:
+                ${history.map(msg => `${msg.role}: ${msg.parts[0].text}`).join('\n')}`
+            }]
+        };
+
+        const payload = { contents: [titlePrompt] };
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`API error generating title: ${errorData.error ? errorData.error.message : response.statusText}`);
+        }
+
+        const result = await response.json();
+        let generatedTitle = "Untitled Chat";
+        if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+            generatedTitle = result.candidates[0].content.parts[0].text.trim().replace(/^["']|["']$/g, ''); // Remove quotes
+            console.log(Date.now(), `generateChatSessionTitle: Generated title: "${generatedTitle}"`);
+        }
+
+        // Update the session document with the generated title
+        const sessionDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/chatSessions`, sessionId);
+        await updateDoc(sessionDocRef, { title: generatedTitle });
+        console.log(Date.now(), `generateChatSessionTitle: Session ${sessionId} title updated to "${generatedTitle}".`);
+
+        // Refresh sidebar to show new title
+        await loadChatSessionsForSidebar();
+
+    } catch (error) {
+        console.error(Date.now(), `generateChatSessionTitle: Error generating or saving title for session ${sessionId}:`, error);
+        showToast(`Failed to auto-title chat: ${error.message}`, "error");
+    }
+}
+
+
+/**
+ * Loads chat sessions for the sidebar.
+ */
+async function loadChatSessionsForSidebar() {
+    console.log(Date.now(), "loadChatSessionsForSidebar: Attempting to load chat sessions for sidebar.");
+    chatHistorySidebar.innerHTML = ''; // Clear current sidebar history
+
+    if (!currentUser) {
+        console.log(Date.now(), "loadChatSessionsForSidebar: User not signed in, displaying anonymous message.");
+        chatHistorySidebar.innerHTML = '<div class="text-light-gray/80 p-2 text-sm">Sign in to save and view your chat history.</div>';
+        chatSessionsList = []; // Clear in-memory list
+        return;
+    }
+
+    try {
+        const chatSessionsRef = collection(db, `artifacts/${__app_id}/users/${userId}/chatSessions`);
+        const q = query(chatSessionsRef, orderBy('lastUpdated', 'desc'), limit(10)); // Get most recent 10 sessions
+        const querySnapshot = await getDocs(q);
+
+        chatSessionsList = []; // Clear in-memory list before populating
+
+        if (querySnapshot.empty) {
+            console.log(Date.now(), "loadChatSessionsForSidebar: No chat sessions found in Firestore.");
+            chatHistorySidebar.innerHTML = '<div class="text-light-gray/80 p-2 text-sm">No recent chats. Start a new one!</div>';
+            return;
+        }
+
+        console.log(Date.now(), `loadChatSessionsForSidebar: Found ${querySnapshot.size} chat sessions.`);
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            const sessionId = doc.id;
+            chatSessionsList.push({ id: sessionId, title: data.title || "Untitled Chat" });
+
+            const sessionButton = document.createElement('button');
+            sessionButton.classList.add('w-full', 'text-left', 'py-2', 'px-3', 'rounded-md', 'truncate', 'text-light-gray/90', 'hover:bg-dark-gray-2', 'transition-colors', 'duration-150');
+            sessionButton.textContent = data.title || "Untitled Chat";
+            sessionButton.dataset.sessionId = sessionId;
+            sessionButton.addEventListener('click', () => loadSpecificChatSession(sessionId));
+            chatHistorySidebar.appendChild(sessionButton);
+        });
+
+        // Automatically load the most recent session if available and no current session is active
+        if (!currentChatSessionId && chatSessionsList.length > 0) {
+            await loadSpecificChatSession(chatSessionsList[0].id);
+        }
+
+        showToast("Chat sessions loaded!", "success");
+    } catch (error) {
+        console.error(Date.now(), "loadChatSessionsForSidebar: Error loading chat sessions:", error);
+        showToast(`Failed to load chat sessions: ${error.message}`, "error");
+        chatHistorySidebar.innerHTML = '<div class="text-red-400 p-2 text-sm">Error loading history.</div>';
+    }
+}
+
+/**
+ * Loads and displays messages for a specific chat session.
+ * @param {string} sessionId - The ID of the chat session to load.
+ */
+async function loadSpecificChatSession(sessionId) {
+    console.log(Date.now(), `loadSpecificChatSession: Loading messages for session ${sessionId}.`);
+    chatHistoryContainer.innerHTML = ''; // Clear main chat area
+    chatHistory = []; // Clear in-memory history
+    currentChatSessionId = sessionId; // Set the current active session
+
+    // Highlight the active session in the sidebar
+    document.querySelectorAll('#chat-history-sidebar button').forEach(btn => {
+        if (btn.dataset.sessionId === sessionId) {
+            btn.classList.add('bg-dark-gray-2', 'text-bluish-tint', 'font-semibold');
+        } else {
+            btn.classList.remove('bg-dark-gray-2', 'text-bluish-tint', 'font-semibold');
+        }
+    });
+
+    try {
+        const messagesRef = collection(db, `artifacts/${__app_id}/users/${userId}/chatSessions/${sessionId}/messages`);
+        const q = query(messagesRef, orderBy('timestamp', 'asc'));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            console.log(Date.now(), `loadSpecificChatSession: No messages found for session ${sessionId}.`);
+            addChatMessage("This chat is empty. Start a conversation!", 'ai', false, false, '', null, false, false);
+            return;
+        }
+
+        console.log(Date.now(), `loadSpecificChatSession: Found ${querySnapshot.size} messages for session ${sessionId}.`);
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            // Add messages without typing animation when loading from history
+            addChatMessage(data.text, data.role, true, data.isImage || false, data.imageUrl || '', doc.id, data.isCode || false, false);
+            chatHistory.push({ role: data.role, parts: [{ text: data.text }] });
+        });
+        showToast(`Loaded chat: "${chatSessionsList.find(s => s.id === sessionId)?.title || 'Untitled Chat'}"`, "info");
+        autoScrollChat();
+    } catch (error) {
+        console.error(Date.now(), `loadSpecificChatSession: Error loading messages for session ${sessionId}:`, error);
+        showToast(`Failed to load chat: ${error.message}`, "error");
+        addChatMessage("Error loading this chat. Please try again or start a new one.", 'ai', false, false, '', null, false, false);
+    }
+}
+
+
+/**
+ * Starts a new chat session.
+ */
+async function startNewChat() {
+    console.log(Date.now(), "startNewChat: Initiating new chat.");
+    // Using confirm for simplicity, can be replaced by custom modal
+    if (!confirm("Are you sure you want to start a new chat? This will clear the current conversation.")) {
+        return;
+    }
+    chatHistoryContainer.innerHTML = ''; // Clear UI
+    chatHistory = []; // Clear in-memory history
+    currentChatSessionId = null; // Mark as a new session
+    addChatMessage("Hello! I'm GenArt Verse, your AI assistant. How can I help you today?", 'ai', false);
+    showToast("New chat started!", "info");
+
+    // Deselect any active session in the sidebar
+    document.querySelectorAll('#chat-history-sidebar button').forEach(btn => {
+        btn.classList.remove('bg-dark-gray-2', 'text-bluish-tint', 'font-semibold');
+    });
+}
+
+/**
+ * Populates the prompt suggestions carousel.
+ */
+function populatePromptSuggestions() {
+    const suggestions = [
+        "Write a short story about a brave knight.",
+        "Generate an image of a futuristic city at sunset.",
+        "Explain the concept of black holes simply.",
+        "Draw a cute robot playing with a cat.",
+        "Give me a recipe for chocolate chip cookies.",
+        "Create an image of a serene forest with a hidden waterfall."
+    ];
+
+    promptSuggestionsContainer.innerHTML = ''; // Clear existing suggestions
+
+    suggestions.forEach(suggestion => {
+        const button = document.createElement('button');
+        button.classList.add('prompt-suggestion-btn');
+        button.textContent = suggestion;
+        button.addEventListener('click', () => {
+            unifiedInput.value = suggestion;
+            unifiedInput.style.height = 'auto'; // Reset height
+            unifiedInput.style.height = (unifiedInput.scrollHeight) + 'px'; // Adjust height
+            updateSendButtonState();
+            unifiedInput.focus();
+        });
+        promptSuggestionsContainer.appendChild(button);
+    });
+}
+
+/**
+ * Updates the UI to reflect the current AI mode.
+ */
+function updateModeUI() {
+    console.log(Date.now(), `updateModeUI: Setting mode to ${currentMode}.`);
+
+    // Remove active class from all dropdown mode buttons
+    document.querySelectorAll('.dropdown-mode-item').forEach(btn => {
+        btn.classList.remove('active-mode-item');
+    });
+
+    // Add active class to the current mode button
+    let activeBtn;
+    let placeholderText;
+    switch (currentMode) {
+        case 'verse':
+            activeBtn = modeVerseBtn;
+            placeholderText = "Start your conversation...";
+            break;
+        case 'image-verse':
+            activeBtn = modeImageBtn;
+            placeholderText = "Describe your image in detail...";
+            break;
+        case 'code':
+            activeBtn = modeCodeBtn;
+            placeholderText = "What do you want to build or debug?";
+            break;
+    }
+
+    if (activeBtn) {
+        activeBtn.classList.add('active-mode-item');
+    }
+
+    // Update input placeholder
+    unifiedInput.placeholder = placeholderText;
+
+    // Optional: Animate input background/border on mode switch
+    gsap.to(unifiedInput, {
+        borderColor: 'var(--color-bluish-tint)', // Flash with bluish tint
+        duration: 0.1,
+        repeat: 1,
+        yoyo: true,
+        ease: "power1.inOut",
+        onComplete: () => {
+            gsap.to(unifiedInput, { borderColor: 'rgba(255, 255, 255, 0.05)', duration: 0.1 }); // Revert
+        }
+    });
+}
+
+/**
+ * Toggles the visibility of the modes dropdown panel.
+ */
+function toggleModesDropdown() {
+    isModesDropdownOpen = !isModesDropdownOpen;
+    if (isModesDropdownOpen) {
+        modesDropdownPanel.classList.add('open');
+        modesToggleBtn.classList.add('active'); // Rotate chevron
+        gsap.fromTo(modesDropdownPanel,
+            { opacity: 0, scale: 0.95, y: 10 },
+            { opacity: 1, scale: 1, y: 0, duration: 0.2, ease: "power2.out", pointerEvents: 'auto' }
+        );
+    } else {
+        modesToggleBtn.classList.remove('active'); // Reset chevron
+        gsap.to(modesDropdownPanel,
+            { opacity: 0, scale: 0.95, y: 10, duration: 0.2, ease: "power2.in", pointerEvents: 'none' }
+        );
+    }
+}
+
+
+// --- Event Listeners ---
+
+/**
+ * Sets up all global and page-specific event listeners.
+ */
+function setupEventListeners() {
+    console.log(Date.now(), "setupEventListeners: Setting up event listeners.");
+
+    // Sidebar toggle
+    sidebarToggleBtn?.addEventListener('click', toggleSidebar);
+
+    // Sidebar action buttons (only Settings remains)
+    settingsBtn?.addEventListener('click', () => {
+        showToast("Settings page coming soon!", "info");
+        if (window.innerWidth < 768 && isSidebarOpen) {
+            toggleSidebar();
+        }
+    });
+
+    // Modes Toggle Button
+    modesToggleBtn?.addEventListener('click', (event) => {
+        event.stopPropagation(); // Prevent document click from immediately closing
+        toggleModesDropdown();
+    });
+
+    // Dropdown Mode Items
+    modeVerseBtn?.addEventListener('click', () => {
+        currentMode = 'verse';
+        updateModeUI();
+        toggleModesDropdown(); // Close dropdown after selection
+    });
+    modeImageBtn?.addEventListener('click', () => {
+        currentMode = 'image-verse';
+        updateModeUI();
+        toggleModesDropdown(); // Close dropdown after selection
+    });
+    modeCodeBtn?.addEventListener('click', () => {
+        currentMode = 'code';
+        updateModeUI();
+        toggleModesDropdown(); // Close dropdown after selection
+    });
+
+
+    // User profile/Sign-in dropdown
+    userAvatarBtn?.addEventListener('click', () => {
+        const dropdown = document.getElementById('auth-dropdown');
+        if (dropdown) {
+            if (dropdown.classList.contains('opacity-0')) {
+                gsap.to(dropdown, { opacity: 1, scale: 1, duration: 0.2, ease: "power2.out", pointerEvents: 'auto' });
+            } else {
+                gsap.to(dropdown, { opacity: 0, scale: 0.95, duration: 0.2, ease: "power2.in", pointerEvents: 'none' });
+            }
+        }
+    });
+    // Close dropdowns if clicked outside
+    document.addEventListener('click', (e) => {
+        const authDropdown = document.getElementById('auth-dropdown');
+        if (authDropdown && !userAvatarBtn.contains(e.target) && !authDropdown.contains(e.target)) {
+            gsap.to(authDropdown, { opacity: 0, scale: 0.95, duration: 0.2, ease: "power2.in", pointerEvents: 'none' });
+        }
+
+        // Close modes dropdown if clicked outside
+        if (modesDropdownPanel && !modesToggleBtn.contains(e.target) && !modesDropdownPanel.contains(e.target) && isModesDropdownOpen) {
+            toggleModesDropdown();
+        }
+    });
+
+
+    // Sign-in modal buttons
+    googleSignInBtn?.addEventListener('click', handleGoogleSignIn);
+    closeSignInModalBtn?.addEventListener('click', () => toggleSignInModal(false));
+
+    // Unified Input behavior
+    unifiedInput?.addEventListener('input', () => {
+        unifiedInput.style.height = 'auto'; // Reset height
+        unifiedInput.style.height = (unifiedInput.scrollHeight) + 'px'; // Adjust height
+        updateSendButtonState();
+    });
+
+    unifiedInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Prevent new line
+            sendUnifiedMessage(unifiedInput.value);
+        }
+    });
+
+    sendMessageBtn?.addEventListener('click', () => sendUnifiedMessage(unifiedInput.value));
+
+    // Stop button event listener
+    stopResponseBtn?.addEventListener('click', () => {
+        if (currentAbortController) {
+            currentAbortController.abort(); // Trigger cancellation
+            console.log(Date.now(), "User initiated stop: AbortController.abort() called.");
+        }
+        // UI state will be reset in the finally block of sendUnifiedMessage
+    });
+
+    // New Chat button
+    newChatBtn?.addEventListener('click', startNewChat);
+
+    // Chat scroll lock logic
+    chatHistoryContainer?.addEventListener('scroll', () => {
+        const currentScrollTop = chatHistoryContainer.scrollTop;
+        const scrollHeight = chatHistoryContainer.scrollHeight;
+        const clientHeight = chatHistoryContainer.clientHeight;
+
+        // If user is manually scrolling up
+        if (currentScrollTop < lastScrollTop && (scrollHeight - clientHeight - currentScrollTop) > 10) { // 10px buffer
+            isScrollLocked = true;
+        }
+        // If user scrolls to the very bottom, unlock scroll
+        else if ((scrollHeight - clientHeight - currentScrollTop) <= 1) {
+            isScrollLocked = false;
+        }
+        lastScrollTop = currentScrollTop;
+    });
+
+    // Persistent debug message close button
+    document.getElementById('close-debug-message')?.addEventListener('click', () => {
+        document.getElementById('persistent-debug-message')?.classList.add('hidden');
+        console.log(Date.now(), "setupEventListeners: Debug message dismissed.");
+    });
+
+    // Populate initial prompt suggestions
+    populatePromptSuggestions();
+
+    // Handle initial sidebar state based on screen size
+    if (window.innerWidth < 768) { // If mobile
+        isSidebarOpen = false; // Start collapsed
+        sidebar.classList.add('collapsed');
+        gsap.set(chatMainArea, { marginLeft: '0' }); // Ensure no margin on mobile
+        gsap.set(mainNavbar, { left: '0', width: '100%' });
+    } else {
+        isSidebarOpen = true; // Start open on desktop
+        sidebar.classList.remove('collapsed');
+        gsap.set(chatMainArea, { marginLeft: '18rem' }); // Ensure margin for open sidebar
+        gsap.set(mainNavbar, { left: '18rem', width: 'calc(100% - 18rem)' });
+    }
+
+    // Adjust sidebar/main area on window resize
+    window.addEventListener('resize', () => {
+        if (window.innerWidth < 768) {
+            // If resizing to mobile, ensure sidebar is collapsed and layout adjusts
+            if (isSidebarOpen) { // If it was open on desktop, collapse it
+                gsap.to(sidebar, { x: '-100%', duration: 0.3, ease: "power2.in" });
+                isSidebarOpen = false;
+            }
+            gsap.set(chatMainArea, { marginLeft: '0' });
+            gsap.set(mainNavbar, { left: '0', width: '100%' });
+        } else {
+            // If resizing to desktop, ensure sidebar is open and layout adjusts
+            if (!isSidebarOpen) { // If it was collapsed on mobile, open it
+                gsap.to(sidebar, { x: '0%', duration: 0.3, ease: "power2.out" });
+                isSidebarOpen = true;
+            }
+            gsap.set(chatMainArea, { marginLeft: '18rem' });
+            gsap.set(mainNavbar, { left: '18rem', width: 'calc(100% - 18rem)' });
+        }
+    });
+
+
+    console.log(Date.now(), "setupEventListeners: All event listeners set up.");
+}
+
+// --- App Initialization ---
+
+/**
+ * Initializes the Firebase app, authentication, and Firestore.
+ * Sets up the auth state listener and initial UI.
+ */
+async function initApp() {
+    console.time("AppInitialization");
+    console.log(Date.now(), "initApp: Starting application initialization.");
+
+    try {
+        // Initialize Firebase
+        console.log(Date.now(), "initApp: Initializing Firebase app.");
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        // analytics = getAnalytics(app); // Initialize analytics if you plan to use it
+        console.log(Date.now(), "initApp: Firebase app, auth, and db initialized.");
+
+        // Set up Auth State Listener
+        onAuthStateChanged(auth, async (user) => {
+            console.log(Date.now(), "onAuthStateChanged: Auth state changed. User:", user ? user.uid : "null");
+            currentUser = user;
+            // Use Firebase UID if authenticated, otherwise generate a random UUID for anonymous sessions.
+            userId = user ? user.uid : (typeof __app_id !== 'undefined' ? `${__app_id}-anonymous-${crypto.randomUUID()}` : `default-anonymous-${crypto.randomUUID()}`);
+            updateUI(); // Update UI whenever auth state changes
+            await loadChatSessionsForSidebar(); // Load chat sessions for the sidebar
+        });
+
+        // Attempt initial sign-in with custom token if available (from Canvas environment)
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            console.log(Date.now(), "initApp: Signing in with custom token.");
+            await auth.signInWithCustomToken(__initial_auth_token).catch(error => {
+                console.error(Date.now(), "initApp: Custom token sign-in failed:", error);
+                // Fallback: User remains unauthenticated if custom token fails
+            });
+        } else {
+            console.log(Date.now(), "initApp: No initial auth token. User will be unauthenticated by default.");
+        }
+        console.log(Date.now(), "initApp: Initial authentication attempt complete (or skipped anonymous sign-in).");
+
+        // Apply theme on load (fixed dark mode)
+        applySavedTheme();
+
+        // Setup all event listeners
         setupEventListeners();
-        console.log(Date.now(), "initApp: Calling setPage('home').");
-        setPage('home'); // Set initial page
-        applySavedTheme(); // Apply theme on load
-        updateUI(); // Initial UI update after all elements are ready and listeners are set up
+
+        // Set initial mode UI (for "Verse" mode)
+        updateModeUI();
 
         console.timeEnd("AppInitialization");
         console.log(Date.now(), "initApp: App initialization complete.");
 
     } catch (criticalError) {
         console.error(Date.now(), "CRITICAL ERROR: Uncaught error during initApp execution:", criticalError);
-        document.body.innerHTML = `<div style="color: white; background-color: red; padding: 20px; text-align: center;">
-            <h1>Application Failed to Load</h1>
-            <p>A critical error occurred during startup. Please check your browser's console (F12) for details.</p>
-            <p>Error: ${criticalError.message}</p>
-        </div>`;
+        const persistentDebugMessage = document.getElementById('persistent-debug-message');
         if (persistentDebugMessage) {
             persistentDebugMessage.classList.remove('hidden');
             persistentDebugMessage.querySelector('p').textContent = `A critical error occurred during startup: ${criticalError.message}. Please open your browser's Developer Console (F12) and copy all messages to the AI for debugging.`;
+        } else {
+            document.body.innerHTML = `<div style="color: var(--color-light-gray); background-color: var(--color-optional-black-tint); padding: 20px; text-align: center;">
+                <h1>Application Failed to Load</h1>
+                <p>A critical error occurred during startup. Please check your browser's console (F12) for details.</p>
+                <p>Error: ${criticalError.message}</p>
+            </div>`;
         }
     }
 }
