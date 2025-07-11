@@ -1,4 +1,4 @@
-/* Custom CSS for GenArt Verse - ChatGPT Replica Design System (V11) */
+/* Custom CSS for GenArt Verse - ChatGPT Replica Design System (V12) */
 
 /* Root variables for colors - STRICTLY following the new palette */
 :root {
@@ -126,7 +126,7 @@ html, body {
     overflow: hidden;
 }
 
-/* Top Navbar */
+/* Top Navbar - Mobile Styles (Default) */
 #main-navbar {
     background-color: rgba(24, 24, 24, 0.9); /* Dark Gray 1 with transparency for blur */
     backdrop-filter: blur(10px); /* Glassmorphism effect */
@@ -137,25 +137,26 @@ html, body {
     height: 4rem;
     display: flex;
     align-items: center;
-    padding: 0 1.5rem;
+    padding: 0 0.5rem; /* Reduced padding for mobile */
     box-sizing: border-box;
     position: fixed;
     top: 0;
-    left: 18rem; /* Default for open sidebar */
-    width: calc(100% - 18rem); /* Default for open sidebar */
+    left: 0; /* Full width on mobile */
+    width: 100%; /* Full width on mobile */
     z-index: 50;
-    border-bottom-left-radius: var(--radius-sm); /* Rounded corners for navbar */
-    border-bottom-right-radius: var(--radius-sm);
+    border-bottom-left-radius: 0; /* No radius on mobile navbar */
+    border-bottom-right-radius: 0;
 }
 
-/* Logo Image Styling */
+/* Navbar Logo Image Styling - Mobile Styles (Default) */
 #app-logo {
-    height: 2rem; /* Default height for desktop */
+    height: 1.75rem; /* Further decreased height for mobile */
     width: auto; /* Maintain aspect ratio */
     transition: height 0.3s ease; /* Smooth transition for resizing */
+    margin-left: 3.5rem; /* Space for hamburger button */
 }
 
-/* Navbar Icons/Buttons */
+/* Navbar Icons/Buttons - Mobile Styles (Default) */
 #main-navbar button {
     color: var(--color-light-gray); /* Primary text */
     transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
@@ -212,9 +213,9 @@ html, body {
 }
 
 
-/* Sidebar */
+/* Sidebar - Mobile Styles (Default) */
 #sidebar {
-    width: 18rem;
+    width: 100%; /* Full width on mobile */
     background-color: var(--color-dark-gray-1); /* Dark Gray 1 background */
     border-right: 1px solid rgba(255, 255, 255, 0.05); /* Subtle border */
     box-shadow: 0 4px 20px var(--color-optional-black-tint); /* Deeper shadow */
@@ -222,13 +223,13 @@ html, body {
     box-sizing: border-box;
     z-index: 40;
     flex-shrink: 0;
-    transform: translateX(0); /* Default to open on desktop */
+    transform: translateX(-100%); /* Hidden by default on mobile */
     transition: transform 0.3s ease-in-out;
     position: fixed;
     height: 100%;
     left: 0;
-    border-top-right-radius: var(--radius-sm); /* Rounded corners */
-    border-bottom-right-radius: var(--radius-sm);
+    border-top-right-radius: 0; /* No radius on mobile sidebar */
+    border-bottom-right-radius: 0;
     padding-bottom: 1rem;
 }
 
@@ -236,7 +237,7 @@ html, body {
     transform: translateX(-100%);
 }
 
-/* Sidebar Toggle Button (Hamburger) */
+/* Sidebar Toggle Button (Hamburger) - Always visible on mobile */
 #sidebar-toggle-btn {
     display: flex;
     align-items: center;
@@ -310,7 +311,7 @@ html, body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Subtle border */
 }
 
-/* Main Chat Area */
+/* Main Chat Area - Mobile Styles (Default) */
 #chat-main-area {
     flex-grow: 1;
     display: flex;
@@ -318,25 +319,25 @@ html, body {
     padding-bottom: 1rem;
     overflow-y: auto;
     transition: margin-left 0.3s ease-in-out;
-    margin-left: 18rem; /* Default margin for open sidebar on desktop */
+    margin-left: 0; /* No margin on mobile */
     padding-top: 4rem; /* Offset for fixed navbar */
     background-color: var(--color-dark-gray-1); /* Main background */
 }
 
-/* Chat History Container */
+/* Chat History Container - Mobile Styles (Default) */
 #chat-history {
     flex-grow: 1;
-    padding: 2rem 1rem;
+    padding: 1rem 0.75rem; /* Reduced padding for mobile */
     max-width: 100%;
     box-sizing: border-box;
-    padding-bottom: 8rem;
+    padding-bottom: 7rem; /* Adjusted for mobile input area height */
 }
 
-/* Chat Bubbles */
+/* Chat Bubbles - Mobile Styles (Default) */
 .chat-bubble {
-    padding: 1rem 1.25rem; /* More generous padding */
+    padding: 0.75rem 1rem; /* More compact padding for mobile */
     border-radius: var(--radius-lg); /* 24px radius for pill-like edges */
-    max-width: 90%;
+    max-width: 95%; /* Wider bubbles on mobile */
     word-wrap: break-word;
     margin-bottom: 1rem;
     box-shadow: 0 2px 8px var(--color-optional-black-tint); /* Subtle shadow */
@@ -429,14 +430,14 @@ html, body {
     50% { transform: scale(1.2); opacity: 1; }
 }
 
-/* Prompt Suggestions Carousel */
+/* Prompt Suggestions Carousel - Mobile Styles (Default) */
 #prompt-suggestions-container {
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.75rem; /* Reduced horizontal padding for mobile */
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
     overflow-x: auto;
     margin-bottom: 1.5rem;
-    max-width: 60rem;
+    max-width: 100%; /* Full width on mobile */
     margin-left: auto;
     margin-right: auto;
     display: flex;
@@ -447,9 +448,9 @@ html, body {
     background-color: var(--color-dark-gray-2); /* Dark Gray 2 background */
     color: var(--color-light-gray); /* Primary text */
     border: 1px solid rgba(255, 255, 255, 0.05); /* Subtle border */
-    padding: 0.75rem 1.25rem;
+    padding: 0.6rem 1rem; /* More compact padding for mobile */
     border-radius: var(--radius-full); /* Pill shape */
-    font-size: 0.9rem;
+    font-size: 0.8rem; /* Smaller font for mobile */
     transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
     cursor: pointer;
     flex-shrink: 0;
@@ -465,36 +466,36 @@ html, body {
 }
 
 
-/* Unified Message Input Area */
+/* Unified Message Input Area - Mobile Styles (Default) */
 #message-input-area {
     background-color: rgba(33, 33, 33, 0.8); /* Dark Gray 2 with transparency for glassmorphism */
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-top: 1px solid rgba(255, 255, 255, 0.05); /* Subtle border */
     box-shadow: 0 -4px 20px var(--color-optional-black-tint); /* Deeper shadow */
-    padding: 1rem 1rem 0.5rem 1rem; /* Reduced bottom padding */
+    padding: 0.75rem; /* Adjusted padding for mobile */
     box-sizing: border-box;
     display: flex;
     align-items: flex-end;
     position: sticky;
     bottom: 0;
     z-index: 30;
-    border-top-left-radius: var(--radius-lg); /* Rounded top corners */
-    border-top-right-radius: var(--radius-lg);
-    max-width: 60rem;
+    border-top-left-radius: 0; /* No rounded top corners on mobile */
+    border-top-right-radius: 0;
+    max-width: 100%; /* Full width on mobile */
     margin-left: auto;
     margin-right: auto;
     gap: 0.75rem;
 }
 
-/* Modes Toggle Button */
+/* Modes Toggle Button - Mobile Styles (Default) */
 #modes-toggle-btn {
     background-color: var(--color-dark-gray-2); /* Dark Gray 2 */
     color: var(--color-light-gray); /* Primary text */
     border: 1px solid var(--color-dark-gray-2); /* Dark Gray 2 border */
     border-radius: var(--radius-sm); /* 12px radius */
-    padding: 0.5rem 0.875rem; /* 8px 14px */
-    font-size: 0.875rem; /* text-sm */
+    padding: 0.4rem 0.6rem; /* Smaller padding for mobile */
+    font-size: 0.8rem; /* Smaller font for mobile */
     font-weight: 500; /* medium */
     transition: all 0.2s ease;
     display: flex;
@@ -505,7 +506,6 @@ html, body {
 #modes-toggle-btn:hover {
     background-color: var(--color-dark-gray-1); /* Dark Gray 1 */
     border-color: var(--color-bluish-tint); /* Bluish glow */
-    color: var(--color-bluish-tint); /* Bluish text */
     box-shadow: 0 0 0 3px rgba(107, 107, 255, 0.2); /* Soft glow */
 }
 
@@ -517,19 +517,19 @@ html, body {
     transform: rotate(180deg);
 }
 
-/* Modes Dropdown Panel */
+/* Modes Dropdown Panel - Mobile Styles (Default) */
 #modes-dropdown-panel {
     position: absolute;
     bottom: calc(100% + 0.5rem); /* Position above the button with a gap */
-    left: 0;
+    left: 0; /* Align to left of button */
     background-color: var(--color-dark-gray-1); /* Dark Gray 1 */
     border: 1px solid var(--color-dark-gray-2); /* Dark Gray 2 border */
     box-shadow: 0 4px 15px var(--color-optional-black-tint); /* Soft drop shadow */
     border-radius: var(--radius-md); /* 16px radius */
-    padding: 0.75rem 1.25rem; /* 12px vertical, 20px horizontal */
+    padding: 0.5rem 0.75rem; /* Smaller padding */
     display: flex;
     flex-direction: column;
-    min-width: 12rem; /* Ensure enough width for labels */
+    min-width: 10rem; /* Adjust as needed */
     z-index: 40; /* Above input area */
 
     opacity: 0;
@@ -544,14 +544,14 @@ html, body {
     pointer-events: auto;
 }
 
-/* Dropdown Mode Items */
+/* Dropdown Mode Items - Mobile Styles (Default) */
 .dropdown-mode-item {
     background-color: transparent;
     border: none;
     color: var(--color-light-gray); /* Primary text */
     font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    padding: 0.5rem 0.75rem; /* 8px 14px */
+    font-size: 0.85rem; /* Smaller font for mobile */
+    padding: 0.4rem 0.6rem; /* More compact padding */
     border-radius: var(--radius-sm); /* 12px radius */
     text-align: left;
     transition: background-color 0.15s ease, color 0.15s ease;
@@ -573,14 +573,14 @@ html, body {
 
 #unified-input {
     flex-grow: 1; /* Allow input to take remaining space */
-    padding: 0.75rem 1.25rem;
+    padding: 0.6rem 1rem; /* More compact padding for mobile */
     background-color: var(--color-dark-gray-1); /* Dark Gray 1 background */
     border: 1px solid rgba(255, 255, 255, 0.05); /* Subtle border */
     color: var(--color-light-gray); /* Primary text */
     border-radius: var(--radius-full); /* Full pill shape */
-    font-size: 1rem;
+    font-size: 0.9rem; /* Smaller font for mobile */
     line-height: 1.5;
-    min-height: 3rem;
+    min-height: 2.8rem; /* Smaller min-height for mobile */
     max-height: 10rem;
     overflow-y: auto;
     resize: none;
@@ -599,8 +599,8 @@ html, body {
 
 #send-message-btn, #voice-input-btn, #stop-response-btn {
     color: var(--color-light-gray); /* Primary text */
-    padding: 0.75rem;
-    border-radius: var(--radius-lg); /* Consistent radius */
+    padding: 0.6rem; /* Smaller padding for mobile */
+    border-radius: var(--radius-md); /* Consistent radius */
     box-shadow: 0 2px 8px var(--color-optional-black-tint);
     transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
     flex-shrink: 0;
@@ -609,8 +609,8 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 3rem;
-    height: 3rem;
+    width: 2.8rem; /* Smaller fixed width for mobile */
+    height: 2.8rem; /* Smaller fixed height for mobile */
     background-color: var(--color-dark-gray-2); /* Default button background */
     border: 1px solid transparent; /* Default transparent border */
 }
@@ -640,14 +640,14 @@ html, body {
     transform: translateY(0);
 }
 
-/* Stop Button */
+/* Stop Button - Mobile Styles (Default) */
 #stop-response-btn {
     background-color: #F95F62; /* Error color for stop (using old error color, as no new specific error color was given) */
     color: var(--color-light-gray); /* Primary text */
     opacity: 0;
     pointer-events: none;
-    width: auto;
-    padding: 0.75rem 1.25rem;
+    width: auto; /* Auto width for text + icon */
+    padding: 0.6rem 1rem; /* Adjusted padding for mobile */
     display: none;
     align-items: center;
     justify-content: center;
@@ -669,7 +669,7 @@ html, body {
 }
 
 
-/* Image Generation UI */
+/* Image Generation UI - Mobile Styles (Default) */
 .image-preview-container {
     display: flex;
     flex-direction: column;
@@ -695,9 +695,9 @@ html, body {
 .image-actions button {
     background-color: var(--color-dark-gray-2); /* Dark Gray 2 background */
     color: var(--color-light-gray); /* Primary text */
-    padding: 0.6rem 1rem;
+    padding: 0.4rem 0.8rem; /* More compact padding for mobile */
     border-radius: var(--radius-md); /* Consistent radius */
-    font-size: 0.85rem;
+    font-size: 0.75rem; /* Smaller font for mobile */
     border: 1px solid rgba(255, 255, 255, 0.05); /* Subtle border */
     transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
 }
@@ -711,10 +711,10 @@ html, body {
     transform: translateY(0);
 }
 
-/* Skeleton Loading Shimmer for Images */
+/* Skeleton Loading Shimmer for Images - Mobile Styles (Default) */
 .shimmer-wrapper {
     width: 100%;
-    height: 200px;
+    height: 150px; /* Smaller height for mobile shimmer */
     background: var(--color-dark-gray-2); /* Dark Gray 2 background */
     border-radius: var(--radius-lg); /* 24px radius for shimmer */
     overflow: hidden;
@@ -784,7 +784,7 @@ html, body {
 }
 
 
-/* Modals and Toasts */
+/* Modals and Toasts - Mobile Styles (Default) */
 #signin-modal, #persistent-debug-message {
     background-color: rgba(15, 15, 15, 0.85); /* Optional Black Tint with transparency */
 }
@@ -843,124 +843,109 @@ html, body {
 .toast.info { background-color: var(--color-bluish-tint); border-color: color-mix(in srgb, var(--color-bluish-tint) 50%, transparent); }
 
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
+/*
+    DESKTOP STYLES (min-width: 768px)
+    These styles will override the mobile-first defaults for larger screens.
+    This ensures the "perfect" desktop UI is maintained.
+*/
+@media (min-width: 768px) {
+    /* Navbar */
     #main-navbar {
-        left: 0;
-        width: 100%;
-        padding: 0 0.5rem;
-        border-radius: 0; /* No radius on mobile navbar */
-    }
-
-    #app-logo {
-        height: 1.75rem; /* Further decreased height for mobile */
-        margin-left: 3.5rem; /* Space for hamburger button */
-    }
-
-    #sidebar {
-        width: 100%;
-        border-radius: 0; /* No radius on mobile sidebar */
-        transform: translateX(-100%);
-    }
-    #sidebar.open {
-        transform: translateX(0);
-    }
-
-    #sidebar-toggle-btn {
-        display: flex;
-    }
-
-    #chat-main-area {
-        margin-left: 0 !important;
-        padding-top: 4rem;
-        padding-bottom: 7rem;
-    }
-
-    #chat-history {
-        padding: 1rem 0.75rem; /* Reduced padding for mobile */
-        padding-bottom: 1rem;
-    }
-
-    .chat-bubble {
-        padding: 0.75rem 1rem;
-        border-radius: var(--radius-lg); /* 24px radius for mobile bubbles */
-        max-width: 95%;
-    }
-
-    .chat-bubble.user {
+        padding: 0 1.5rem;
+        left: 18rem; /* Default for open sidebar */
+        width: calc(100% - 18rem); /* Default for open sidebar */
+        border-bottom-left-radius: var(--radius-sm); /* Rounded corners for navbar */
         border-bottom-right-radius: var(--radius-sm);
     }
 
-    .chat-bubble.ai {
-        border-bottom-left-radius: var(--radius-sm);
+    #app-logo {
+        height: 2rem; /* Default height for desktop */
+        margin-left: 0; /* No extra margin on desktop */
     }
 
+    /* Sidebar */
+    #sidebar {
+        width: 18rem;
+        transform: translateX(0); /* Always visible on desktop */
+        border-top-right-radius: var(--radius-sm); /* Rounded corners */
+        border-bottom-right-radius: var(--radius-sm);
+    }
+
+    /* Sidebar Toggle Button (Hamburger) - Hide on desktop if sidebar is always open */
+    #sidebar-toggle-btn {
+        display: none; /* Hide on desktop */
+    }
+
+    /* Main Chat Area */
+    #chat-main-area {
+        margin-left: 18rem; /* Default margin for open sidebar on desktop */
+        padding-bottom: 1rem; /* Restore original desktop padding */
+    }
+
+    /* Chat History Container */
+    #chat-history {
+        padding: 2rem 1rem; /* Restore original desktop padding */
+        padding-bottom: 8rem; /* Restore original desktop padding */
+    }
+
+    /* Chat Bubbles */
+    .chat-bubble {
+        padding: 1rem 1.25rem; /* Restore original desktop padding */
+        max-width: 90%; /* Restore original desktop width */
+    }
+
+    /* Message Input Area */
     #message-input-area {
-        padding: 0.75rem; /* Adjusted padding for mobile */
-        border-radius: 0; /* No rounded top corners on mobile */
+        padding: 1rem 1rem 0.5rem 1rem; /* Restore original desktop padding */
+        border-top-left-radius: var(--radius-lg); /* Rounded top corners */
+        border-top-right-radius: var(--radius-lg);
+        max-width: 60rem; /* Restore original desktop max-width */
     }
 
-    #unified-input {
-        padding: 0.6rem 1rem;
-        font-size: 0.9rem;
-        min-height: 2.8rem;
-        border-radius: var(--radius-full);
-    }
-
-    #send-message-btn, #voice-input-btn, #stop-response-btn {
-        padding: 0.6rem;
-        border-radius: var(--radius-md); /* Consistent radius */
-        width: 2.8rem;
-        height: 2.8rem;
-    }
-    #stop-response-btn {
-        width: auto;
-        padding: 0.6rem 1rem;
-    }
-
-    /* Modes Toggle Button (Mobile adjustments) */
+    /* Modes Toggle Button */
     #modes-toggle-btn {
-        padding: 0.4rem 0.6rem; /* Smaller padding for mobile */
-        font-size: 0.8rem;
-        border-radius: var(--radius-sm);
+        padding: 0.5rem 0.875rem; /* Restore original desktop padding */
+        font-size: 0.875rem; /* Restore original desktop font size */
     }
 
-    /* Modes Dropdown Panel (Mobile adjustments) */
+    /* Modes Dropdown Panel */
     #modes-dropdown-panel {
-        bottom: calc(100% + 0.5rem); /* Maintain position */
-        left: 0; /* Align to left of button */
-        padding: 0.5rem 0.75rem; /* Smaller padding */
-        border-radius: var(--radius-md); /* Consistent radius */
-        min-width: 10rem; /* Adjust as needed */
+        padding: 0.75rem 1.25rem; /* Restore original desktop padding */
+        min-width: 12rem; /* Restore original desktop min-width */
     }
 
+    /* Dropdown Mode Items */
     .dropdown-mode-item {
-        padding: 0.4rem 0.6rem;
-        font-size: 0.85rem;
-        border-radius: var(--radius-sm);
+        padding: 0.5rem 0.75rem; /* Restore original desktop padding */
+        font-size: 0.95rem; /* Restore original desktop font size */
     }
 
-
-    .prompt-suggestion-btn {
-        padding: 0.6rem 1rem;
-        font-size: 0.8rem;
-        border-radius: var(--radius-full);
+    /* Unified Input */
+    #unified-input {
+        padding: 0.75rem 1.25rem; /* Restore original desktop padding */
+        font-size: 1rem; /* Restore original desktop font size */
+        min-height: 3rem; /* Restore original desktop min-height */
     }
 
+    /* Send/Voice Buttons */
+    #send-message-btn, #voice-input-btn {
+        padding: 0.75rem; /* Restore original desktop padding */
+        width: 3rem; /* Restore original desktop width */
+        height: 3rem; /* Restore original desktop height */
+    }
+
+    /* Stop Button */
+    #stop-response-btn {
+        padding: 0.75rem 1.25rem; /* Restore original desktop padding */
+    }
+
+    /* Image Actions and Shimmer */
     .image-actions button {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.75rem;
+        padding: 0.6rem 1rem; /* Restore original desktop padding */
+        font-size: 0.85rem; /* Restore original desktop font size */
     }
 
     .shimmer-wrapper {
-        height: 150px;
-        border-radius: var(--radius-lg); /* 24px radius */
-    }
-
-    #signin-modal > div, #persistent-debug-message {
-        border-radius: var(--radius-lg);
-    }
-    #google-signin-btn {
-        border-radius: var(--radius-lg);
+        height: 200px; /* Restore original desktop height */
     }
 }
