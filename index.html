@@ -3,212 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GenArt Verse - AI Image & Chat Generator</title>
-    <meta name="description" content="Engage in intelligent AI conversations and generate stunning images from text prompts with GenArt Verse. A clean, modern, and responsive AI experience.">
+    <!-- SEO: Optimized Title Tag -->
+    <title>AI Image & Chat Generator | GenArt Verse - Create Stunning Art & Converse</title>
+    <!-- SEO: Optimized Meta Description for better keyword integration and CTR -->
+    <meta name="description" content="Generate stunning AI art and engage in intelligent text conversations for free with GenArt Verse! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art and chat creator.">
 
     <!-- Open Graph / Facebook / LinkedIn / Pinterest -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.gensart.space/">
-    <meta property="og:title" content="GenArt Verse - AI Image & Chat Generator">
-    <meta property="og:description" content="Engage in intelligent AI conversations and generate stunning images from text prompts with GenArt Verse. A clean, modern, and responsive AI experience.">
-    <meta property="og:image" content="https://placehold.co/1200x630/181818/C1C1C1?text=GenArt+Verse">
+    <meta property="og:title" content="AI Image & Chat Generator | GenArt Verse - Create Stunning Art & Converse">
+    <meta property="og:description" content="Generate stunning AI art and engage in intelligent text conversations for free with GenArt Verse! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art and chat creator.">
+    <meta property="og:image" content="https://placehold.co/1200x630/333333/FFFFFF">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
 
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://www.gensart.space/">
-    <meta name="twitter:title" content="GenArt Verse - AI Image & Chat Generator">
-    <meta name="twitter:description" content="Engage in intelligent AI conversations and generate stunning images from text prompts with GenArt Verse. A clean, modern, and responsive AI experience.">
-    <meta name="twitter:image" content="https://placehold.co/1200x630/181818/C1C1C1?text=GenArt+Verse">
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.gensart.space/">
+    <meta property="twitter:title" content="AI Image & Chat Generator | GenArt Verse - Create Stunning Art & Converse">
+    <meta property="twitter:description" content="Generate stunning AI art and engage in intelligent text conversations for free with GenArt Verse! Transform text prompts into unique digital paintings, illustrations, and visuals instantly. Your ultimate online AI art and chat creator.">
+    <meta property="twitter:image" content="https://placehold.co/1200x630/333333/FFFFFF">
 
     <!-- Favicon -->
-    <link rel="icon" href="https://placehold.co/32x32/181818/C1C1C1?text=GV" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="theme-color" content="#ffffff">
 
-    <!-- Google Fonts - Inter for general text, Mersad for headings -->
+    <!-- Google Fonts: Inter (for general text) & Mersad (for headings/accents) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Mersad:wght@400;700&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        inter: ['Inter', 'sans-serif'],
-                        mersad: ['Mersad', 'serif'],
-                    },
-                    colors: {
-                        // Custom colors matching CSS variables for Tailwind direct use
-                        'dark-gray-1': 'var(--color-dark-gray-1)',
-                        'dark-gray-2': 'var(--color-dark-gray-2)',
-                        'light-gray': 'var(--color-light-gray)',
-                        'bluish-tint': 'var(--color-bluish-tint)',
-                        'optional-black-tint': 'var(--color-optional-black-tint)',
-                    },
-                    borderRadius: {
-                        'xs': 'var(--radius-xs)',
-                        'sm': 'var(--radius-sm)',
-                        'md': 'var(--radius-md)',
-                        'lg': 'var(--radius-lg)',
-                        'full': 'var(--radius-full)',
-                    }
-                }
-            }
-        }
-    </script>
     <!-- Font Awesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- GSAP CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/ScrollTrigger.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.10.4/TextPlugin.min.js"></script>
-    <!-- Marked.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- Highlight.js CDN for syntax highlighting -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
+    <!-- Highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-dark-gray-1 text-light-gray font-inter overflow-hidden flex flex-col h-screen">
-
-    <!-- Ethereal Background Gradients -->
+<body class="dark-mode">
+    <!-- Ethereal Background Elements -->
     <div class="ethereal-gradient-1"></div>
     <div class="ethereal-gradient-2"></div>
     <div class="ethereal-gradient-3"></div>
-    <!-- Ethereal Pattern Overlay -->
     <div class="ethereal-pattern"></div>
 
     <!-- Main Application Container -->
-    <div id="app-container" class="relative z-10 flex flex-col h-full w-full">
+    <div id="app-container" class="flex flex-col h-screen w-screen overflow-hidden">
 
-        <!-- Sidebar Toggle Button (Hamburger) -->
-        <button id="sidebar-toggle-btn" class="p-2">
-            <i class="fas fa-bars text-xl"></i>
-        </button>
-
-        <!-- Top Navbar -->
-        <nav id="main-navbar" class="bg-dark-gray-1/90 backdrop-blur-md p-4 shadow-lg flex justify-between items-center z-50">
-            <div class="flex items-center">
-                <!-- Replaced H1 with IMG for logo -->
-                <img id="app-logo" src="https://placehold.co/150x40/181818/C1C1C1?text=GenArt+Verse+Logo" alt="GenArt Verse Logo">
+        <!-- Sidebar (Left Panel) -->
+        <aside id="sidebar" class="fixed top-0 left-0 w-full h-full bg-dark-gray-1 border-r border-gray-800 z-[999] transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:w-[250px] md:flex-shrink-0 md:border-r md:border-gray-800 md:shadow-lg md:z-auto">
+            <div class="p-4 flex items-center justify-between border-b border-gray-800 h-16 md:h-20">
+                <h2 class="text-xl font-bold text-light-gray font-mersad">GenArt Verse</h2>
+                <button id="close-sidebar-btn" class="md:hidden text-light-gray hover:text-bluish-tint transition-colors text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-            <div class="flex items-center space-x-4">
-                <!-- User Profile/Sign In -->
-                <div id="user-info" class="relative group">
-                    <button id="user-avatar-btn" class="overflow-hidden border-2 border-dark-gray-2 flex items-center justify-center font-semibold">
-                        <i class="fas fa-user text-light-gray"></i>
-                    </button>
-                    <div id="auth-dropdown" class="absolute right-0 mt-2 w-48 bg-dark-gray-2 border border-dark-gray-2 shadow-xl opacity-0 scale-95 origin-top-right transition-all duration-200 ease-out pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto rounded-md">
-                        <div class="p-4 text-center">
-                            <p id="user-display-name" class="font-semibold truncate text-light-gray">Guest</p>
-                            <p id="user-display-email" class="text-light-gray text-sm truncate"></p>
-                        </div>
-                        <ul class="border-t border-dark-gray-2 py-2">
-                            <li><button id="sign-in-out-btn" class="block w-full text-left px-4 py-2 text-light-gray hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-150 rounded-sm">Sign In</button></li>
-                        </ul>
-                    </div>
+
+            <div class="p-4 flex-grow overflow-y-auto custom-scrollbar">
+                <button id="new-chat-btn" class="w-full bg-dark-gray-2 text-light-gray py-2 px-3 rounded-md font-semibold flex items-center justify-center gap-2 hover:bg-bluish-tint hover:text-white transition-colors duration-200">
+                    <i class="fas fa-plus"></i> New Chat
+                </button>
+
+                <div id="chat-history-sidebar" class="mt-4 space-y-2">
+                    <!-- Chat session titles will be loaded here dynamically -->
+                    <div class="text-light-gray/80 p-2 text-sm">Sign in to save and view your chat history.</div>
                 </div>
             </div>
-        </nav>
 
-        <!-- Main Content Area (Sidebar + Chat) -->
-        <div class="flex flex-grow overflow-hidden">
-
-            <!-- Left Sidebar -->
-            <aside id="sidebar" class="bg-dark-gray-1 border-r border-dark-gray-2 shadow-xl z-40 flex flex-col">
-                <div class="chat-header-section p-4 border-b border-dark-gray-2 flex items-center justify-between">
-                    <button id="new-chat-btn" class="p-2 bg-dark-gray-2 text-light-gray hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-200 rounded-md border border-dark-gray-2">
-                        <i class="fas fa-plus"></i> New Chat
-                    </button>
-                </div>
-                <div id="chat-history-sidebar" class="flex-grow overflow-y-auto custom-scrollbar p-2">
-                    <!-- Recent chats will be dynamically loaded here -->
-                    <div class="text-light-gray/80 p-2">No recent chats.</div>
-                </div>
-                <div class="p-4 border-t border-dark-gray-2 space-y-2">
-                    <button id="settings-btn" class="text-light-gray hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-200 rounded-md">
-                        <i class="fas fa-cog mr-2"></i> Settings
-                    </button>
-                </div>
-            </aside>
-
-            <!-- Chat Area -->
-            <div id="chat-main-area" class="flex flex-col flex-grow relative bg-dark-gray-1">
-                <div id="chat-history" class="flex-grow overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-6">
-                    <!-- Initial welcome message -->
-                    <div class="chat-bubble ai max-w-2xl mx-auto p-4 shadow-md rounded-lg">
-                        <p class="text-light-gray/80">Hello! I'm GenArt Verse, your AI assistant. I can help you with text conversations and generate images. Just tell me what you need!</p>
-                    </div>
-                </div>
-
-                <!-- Typing indicator -->
-                <div id="typing-indicator" class="flex items-center justify-center space-x-2 py-4 hidden">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <span class="text-light-gray/80 text-sm">GenArt Verse is typing...</span>
-                </div>
-
-                <!-- Prompt Suggestions Carousel -->
-                <div id="prompt-suggestions-container" class="w-full max-w-3xl mx-auto px-4 md:px-6 mb-4 overflow-x-auto custom-scrollbar flex space-x-2">
-                    <!-- Suggestions will be dynamically loaded here -->
-                    <button class="prompt-suggestion-btn flex-shrink-0 bg-dark-gray-2 text-light-gray/80 text-sm hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-200 rounded-full border border-dark-gray-2">
-                        Suggest a story idea
-                    </button>
-                    <button class="prompt-suggestion-btn flex-shrink-0 bg-dark-gray-2 text-light-gray/80 text-sm hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-200 rounded-full border border-dark-gray-2">
-                        Generate an image of a cat
-                    </button>
-                    <button class="prompt-suggestion-btn flex-shrink-0 bg-dark-gray-2 text-light-gray/80 text-sm hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-200 rounded-full border border-dark-gray-2">
-                        Explain quantum physics
-                    </button>
-                    <button class="prompt-suggestion-btn flex-shrink-0 bg-dark-gray-2 text-light-gray/80 text-sm hover:bg-bluish-tint/10 hover:text-bluish-tint transition-colors duration-200 rounded-full border border-dark-gray-2">
-                        Draw a futuristic city
-                    </button>
-                </div>
-
-                <!-- Unified Message Input -->
-                <div id="message-input-area" class="w-full max-w-3xl mx-auto p-4 md:p-6 bg-dark-gray-2/80 backdrop-blur-md border-t border-dark-gray-2 shadow-lg flex items-end space-x-2 rounded-t-lg">
-
-                    <!-- Modes Toggle Button -->
-                    <div class="relative flex-shrink-0">
-                        <button id="modes-toggle-btn" class="bg-dark-gray-2 text-light-gray border border-dark-gray-2 rounded-md py-2 px-3 text-sm font-medium transition-all duration-200 hover:bg-dark-gray-1 hover:border-bluish-tint hover:text-bluish-tint">
-                            Modes <i class="fas fa-chevron-down ml-1 text-xs transition-transform duration-200"></i>
+            <div class="p-4 border-t border-gray-800 flex flex-col gap-2">
+                <button id="settings-btn" class="w-full text-left py-2 px-3 rounded-md text-light-gray/90 hover:bg-dark-gray-2 transition-colors flex items-center gap-2">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+                <div class="flex items-center justify-between p-2 rounded-md bg-dark-gray-2">
+                    <div class="flex items-center gap-2">
+                        <button id="user-avatar-btn" class="w-10 h-10 rounded-full bg-dark-gray-1 flex items-center justify-center text-light-gray text-xl border-2 border-dark-gray-2 hover:border-bluish-tint transition-all">
+                            <i class="fas fa-user"></i>
                         </button>
-
-                        <!-- Modes Dropdown Panel -->
-                        <div id="modes-dropdown-panel" class="absolute bottom-full left-0 mb-2 bg-dark-gray-1 border border-dark-gray-2 shadow-lg rounded-lg p-3 space-y-1 opacity-0 scale-95 origin-bottom-left pointer-events-none transition-all duration-200 ease-out">
-                            <button id="mode-verse-btn" class="dropdown-mode-item w-full text-left text-light-gray hover:bg-dark-gray-2 hover:text-bluish-tint rounded-md px-4 py-2 transition-all duration-150">Verse</button>
-                            <button id="mode-image-btn" class="dropdown-mode-item w-full text-left text-light-gray hover:bg-dark-gray-2 hover:text-bluish-tint rounded-md px-4 py-2 transition-all duration-150">Image Verse</button>
-                            <button id="mode-code-btn" class="dropdown-mode-item w-full text-left text-light-gray hover:bg-dark-gray-2 hover:text-bluish-tint rounded-md px-4 py-2 transition-all duration-150">Code</button>
+                        <div>
+                            <p id="user-display-name" class="text-sm font-semibold text-light-gray">Guest</p>
+                            <p id="user-display-email" class="text-xs text-light-gray/70">Sign in for full features</p>
                         </div>
                     </div>
+                    <button id="sign-in-out-btn" class="text-light-gray/80 text-sm px-3 py-1 rounded-md hover:bg-dark-gray-1 hover:text-bluish-tint transition-colors">
+                        <i class="fas fa-sign-in-alt mr-1"></i> Sign In
+                    </button>
+                </div>
+            </div>
+        </aside>
 
-                    <textarea id="unified-input" class="flex-grow p-3 bg-dark-gray-1 border border-dark-gray-2 text-light-gray focus:ring-2 focus:ring-bluish-tint focus:border-transparent transition-all duration-200 resize-none overflow-hidden text-base placeholder-light-gray/80 rounded-full" rows="1" placeholder="Start your conversation..."></textarea>
-                    <button id="send-message-btn" class="bg-bluish-tint text-white shadow-md flex-shrink-0 rounded-lg">
-                        <i class="fas fa-paper-plane"></i>
+        <!-- Sidebar Overlay (for mobile drawer effect) -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-[998] hidden opacity-0 transition-opacity duration-300 ease-in-out"></div>
+
+
+        <!-- Main Chat Area -->
+        <main id="chat-main-area" class="flex flex-col flex-grow w-full h-full md:ml-[250px] md:w-[calc(100%-250px)] relative">
+            <!-- Top Navbar for Mobile (Hamburger, Logo, User) -->
+            <nav id="main-navbar" class="flex items-center justify-between px-2 py-2 fixed top-0 left-0 w-full bg-dark-gray-1 border-b border-gray-800 z-50 md:hidden">
+                <button id="sidebar-toggle-btn" class="text-light-gray hover:text-bluish-tint text-2xl p-2 rounded-full">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <img id="app-logo" src="https://placehold.co/100x40/333333/FFFFFF?text=GenArt" alt="GenArt Logo" class="h-8 md:h-10">
+                <button id="mobile-user-avatar-btn" class="w-10 h-10 rounded-full bg-dark-gray-1 flex items-center justify-center text-light-gray text-xl border-2 border-dark-gray-2 hover:border-bluish-tint transition-all">
+                    <i class="fas fa-user"></i>
+                </button>
+                <!-- Auth dropdown for mobile avatar -->
+                <div id="mobile-auth-dropdown" class="absolute right-2 top-14 bg-dark-gray-2 border border-gray-800 rounded-md shadow-lg p-2 opacity-0 scale-95 pointer-events-none transition-all duration-200 origin-top-right z-[100]">
+                    <ul class="flex flex-col gap-1">
+                        <li><p class="text-sm font-semibold text-light-gray px-3 py-1">Guest</p></li>
+                        <li><p class="text-xs text-light-gray/70 px-3 py-1">Sign in for full features</p></li>
+                        <li><button id="mobile-sign-in-out-btn" class="w-full text-left py-2 px-3 rounded-md text-light-gray/90 hover:bg-dark-gray-1 hover:text-bluish-tint transition-colors">
+                            <i class="fas fa-sign-in-alt mr-1"></i> Sign In
+                        </button></li>
+                    </ul>
+                </div>
+            </nav>
+
+
+            <!-- Chat History Display Area -->
+            <div id="chat-history" class="flex-grow overflow-y-auto custom-scrollbar pt-[4rem] pb-[7rem] md:pt-[5rem] md:pb-[8rem] px-4">
+                <!-- Chat messages will be appended here -->
+                <!-- Initial AI Welcome Message -->
+                <div class="chat-bubble ai">
+                    <p>Hello! I'm GenArt Verse, your AI assistant. I can help you with text conversations and generate images. Just tell me what you need!</p>
+                </div>
+            </div>
+
+            <!-- AI Typing Indicator -->
+            <div id="typing-indicator" class="flex items-center justify-center py-2 px-4 hidden absolute bottom-[calc(7rem + 1rem)] left-1/2 -translate-x-1/2 bg-dark-gray-2 rounded-full shadow-lg z-20">
+                <span class="text-light-gray text-sm mr-2">GenArt Verse is typing</span>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+
+            <!-- Prompt Suggestions Carousel -->
+            <div id="prompt-suggestions-container" class="flex overflow-x-auto custom-scrollbar py-2 px-4 gap-3 absolute bottom-[calc(7rem + 2rem)] left-0 w-full md:bottom-[calc(8rem + 2rem)] md:max-w-3xl md:mx-auto">
+                <!-- Suggestions will be loaded here dynamically -->
+            </div>
+
+            <!-- Message Input Area -->
+            <div id="message-input-area" class="fixed bottom-0 left-0 w-full bg-dark-gray-1 border-t border-gray-800 p-3 flex flex-col items-center gap-2 md:flex-row md:max-w-3xl md:mx-auto md:p-4 md:rounded-t-xl md:shadow-lg">
+                <div class="relative w-full flex items-center gap-2">
+                    <!-- Modes Toggle Button -->
+                    <button id="modes-toggle-btn" class="flex items-center justify-center p-2 rounded-md bg-dark-gray-2 text-light-gray text-sm font-medium hover:bg-dark-gray-1 hover:text-bluish-tint transition-colors duration-200">
+                        <i class="fas fa-robot mr-1"></i> Mode <i class="fas fa-chevron-down ml-1 transition-transform duration-200"></i>
                     </button>
-                    <button id="stop-response-btn" class="bg-dark-gray-2 text-light-gray shadow-md flex-shrink-0 rounded-lg">
-                        <i class="fas fa-stop mr-1"></i> Stop
-                    </button>
-                    <button id="voice-input-btn" class="bg-dark-gray-2 text-light-gray shadow-md flex-shrink-0 rounded-lg">
+                    <!-- Modes Dropdown Panel -->
+                    <div id="modes-dropdown-panel" class="absolute bottom-full left-0 mb-2 bg-dark-gray-1 border border-gray-800 rounded-lg shadow-xl p-2 opacity-0 scale-95 pointer-events-none origin-bottom-left z-40">
+                        <button id="mode-verse-btn" class="dropdown-mode-item w-full text-left py-2 px-3 rounded-md text-light-gray/90 hover:bg-dark-gray-2 transition-colors active-mode-item">
+                            <i class="fas fa-comment-dots mr-2"></i> Verse (Chat)
+                        </button>
+                        <button id="mode-image-btn" class="dropdown-mode-item w-full text-left py-2 px-3 rounded-md text-light-gray/90 hover:bg-dark-gray-2 transition-colors">
+                            <i class="fas fa-image mr-2"></i> Image Verse
+                        </button>
+                        <button id="mode-code-btn" class="dropdown-mode-item w-full text-left py-2 px-3 rounded-md text-light-gray/90 hover:bg-dark-gray-2 transition-colors">
+                            <i class="fas fa-code mr-2"></i> Code Verse
+                        </button>
+                    </div>
+
+                    <textarea id="unified-input" rows="1" placeholder="Start your conversation..." class="flex-grow p-3 rounded-full bg-dark-gray-1 border border-gray-700 text-light-gray focus:outline-none focus:border-bluish-tint focus:ring-1 focus:ring-bluish-tint resize-none overflow-hidden min-h-[44px] max-h-[120px]"></textarea>
+                </div>
+
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button id="voice-input-btn" class="p-3 rounded-full bg-dark-gray-2 text-light-gray text-xl flex-shrink-0 hover:bg-dark-gray-1 hover:text-bluish-tint transition-colors duration-200">
                         <i class="fas fa-microphone"></i>
                     </button>
+                    <button id="send-message-btn" class="p-3 rounded-full bg-bluish-tint text-white text-xl flex-shrink-0 opacity-50 pointer-events-none transition-all duration-200">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                    <button id="stop-response-btn" class="p-3 rounded-full bg-red-500 text-white text-base flex items-center justify-center gap-1 opacity-0 pointer-events-none transition-all duration-200">
+                        <i class="fas fa-stop-circle"></i> Stop
+                    </button>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <!-- Sign-in Modal -->
-    <div id="signin-modal" class="fixed inset-0 bg-optional-black-tint/75 flex items-center justify-center z-[100] hidden opacity-0 transition-opacity duration-300">
-        <div class="bg-dark-gray-2/85 p-8 shadow-2xl text-center border border-dark-gray-2 max-w-sm w-full transform scale-95 transition-transform duration-300 rounded-lg">
-            <h3 class="text-2xl font-bold font-mersad mb-4 text-light-gray">Sign In to Unlock Full Features</h3>
-            <p class="text-light-gray mb-6">Sign in with your Google account to save your chat history and enjoy unlimited creations!</p>
-            <button id="google-signin-btn" class="w-full flex items-center justify-center px-6 py-3 text-white font-semibold text-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 rounded-lg" style="background-image: linear-gradient(to right, var(--color-bluish-tint), color-mix(in srgb, var(--color-bluish-tint) 80%, black));">
-                <i class="fab fa-google mr-3"></i> Sign In With Google
+    <div id="signin-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-[1000] hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-dark-gray-2 p-8 rounded-lg shadow-xl text-center max-w-md w-11/12 transform scale-95 opacity-0 transition-all duration-300">
+            <h3 class="text-2xl font-bold mb-4 text-light-gray">Sign In to GenArt Verse</h3>
+            <p class="text-light-gray/80 mb-6">Unlock full chat history, unlimited generations, and personalized experiences.</p>
+            <button id="google-signin-btn" class="w-full py-3 px-6 rounded-lg text-lg shadow-lg bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 transition-all duration-300 ease-in-out transform hover:scale-105">
+                <i class="fab fa-google mr-2"></i> Sign In With Google
             </button>
-            <button id="close-signin-modal-btn" class="mt-4 text-light-gray/80 hover:text-light-gray transition-colors duration-200">No Thanks</button>
+            <button id="close-signin-modal-btn" class="mt-4 text-light-gray/60 hover:text-light-gray transition-colors duration-200">No Thanks</button>
         </div>
     </div>
 
@@ -218,14 +204,19 @@
     </div>
 
     <!-- Persistent Error/Debug Message -->
-    <div id="persistent-debug-message" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-optional-black-tint/90 text-light-gray p-6 shadow-2xl z-[99] text-center max-w-md hidden border border-dark-gray-2 rounded-lg">
+    <div id="persistent-debug-message" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-900/90 text-white p-6 rounded-lg shadow-2xl z-[99] text-center max-w-md hidden border border-red-700">
         <h3 class="text-xl font-bold mb-3">App Initialization Issue</h3>
         <p class="text-sm">It seems there was a problem loading all services. Some features may not work.</p>
         <p class="text-sm mt-2 font-semibold">Please open your browser's **Developer Console (F12 on desktop)** and copy all messages to the AI for debugging.</p>
-        <button id="close-debug-message" class="mt-4 px-4 py-2 bg-white/10 hover:bg-white/20 text-sm rounded-md">Dismiss</button>
+        <button id="close-debug-message" class="mt-4 px-4 py-2 bg-red-700 hover:bg-red-600 rounded-md text-sm transition-colors">Dismiss</button>
     </div>
 
-    <!-- Custom JavaScript -->
-    <script type="module" src="script.js"></script>
+    <!-- GSAP and Marked.js CDNs (before your script.js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/TextPlugin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="script.js" type="module"></script>
 </body>
 </html>
