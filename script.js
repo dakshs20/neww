@@ -45,6 +45,7 @@ let auth;
 let db;
 // let analytics; // Declare analytics if you plan to use it in script.js
 let userId = "anonymous"; // Default to anonymous, will be updated by auth listener
+let appId; // Declare appId globally, will be initialized in initApp
 
 // Global state variables
 let currentUser = null;
@@ -591,7 +592,7 @@ async function sendUnifiedMessage(message, isRegenerate = false) {
     // If it's a new chat session and the first message, create the session first
     if (!currentChatSessionId && currentUser) {
         try {
-            const chatSessionsRef = collection(db, `artifacts/${__app_id}/users/${userId}/chatSessions`);
+            const chatSessionsRef = collection(db, `artifacts/${appId}/users/${userId}/chatSessions`); // Use appId
             const newSessionDocRef = await addDoc(chatSessionsRef, {
                 title: "New Chat", // Temporary title, will be updated by AI
                 createdAt: serverTimestamp(),
@@ -700,7 +701,7 @@ async function sendUnifiedMessage(message, isRegenerate = false) {
                 await saveMessageToFirestore(currentChatSessionId, "ai", aiResponseContent, false, '', isCodeResponse);
             }
             // Update lastUpdated timestamp for the session
-            const sessionDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/chatSessions`, currentChatSessionId);
+            const sessionDocRef = doc(db, `artifacts/${appId}/users/${userId}/chatSessions`, currentChatSessionId); // Use appId
             await updateDoc(sessionDocRef, { lastUpdated: serverTimestamp() });
 
             // If it's the first AI message in a new session, generate and save the title
@@ -924,7 +925,7 @@ async function deleteChatMessage(messageElement, messageId, sender) {
     // Optionally delete from Firestore if signed in and messageId exists
     if (currentUser && messageId && currentChatSessionId) {
         try {
-            const messageDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/chatSessions/${currentChatSessionId}/messages`, messageId);
+            const messageDocRef = doc(db, `artifacts/${appId}/users/${userId}/chatSessions/${currentChatSessionId}/messages`, messageId); // Use appId
             await deleteDoc(messageDocRef);
             showToast("Message deleted!", "success");
             console.log(Date.now(), `deleteChatMessage: Message ${messageId} deleted from Firestore.`);
@@ -953,7 +954,7 @@ async function saveMessageToFirestore(sessionId, role, text, isImage = false, im
         return;
     }
     try {
-        const messagesRef = collection(db, `artifacts/${__app_id}/users/${userId}/chatSessions/${sessionId}/messages`);
+        const messagesRef = collection(db, `artifacts/${appId}/users/${userId}/chatSessions/${sessionId}/messages`); // Use appId
         await addDoc(messagesRef, {
             role: role,
             text: text,
@@ -1011,7 +1012,7 @@ async function generateChatSessionTitle(sessionId, history) {
         }
 
         // Update the session document with the generated title
-        const sessionDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/chatSessions`, sessionId);
+        const sessionDocRef = doc(db, `artifacts/${appId}/users/${userId}/chatSessions`, sessionId); // Use appId
         await updateDoc(sessionDocRef, { title: generatedTitle });
         console.log(Date.now(), `generateChatSessionTitle: Session ${sessionId} title updated to "${generatedTitle}".`);
 
@@ -1040,7 +1041,7 @@ async function loadChatSessionsForSidebar() {
     }
 
     try {
-        const chatSessionsRef = collection(db, `artifacts/${__app_id}/users/${userId}/chatSessions`);
+        const chatSessionsRef = collection(db, `artifacts/${appId}/users/${userId}/chatSessions`); // Use appId
         const q = query(chatSessionsRef, orderBy('lastUpdated', 'desc'), limit(10)); // Get most recent 10 sessions
         const querySnapshot = await getDocs(q);
 
@@ -1099,7 +1100,7 @@ async function loadSpecificChatSession(sessionId) {
     });
 
     try {
-        const messagesRef = collection(db, `artifacts/${__app_id}/users/${userId}/chatSessions/${sessionId}/messages`);
+        const messagesRef = collection(db, `artifacts/${appId}/users/${userId}/chatSessions/${sessionId}/messages`); // Use appId
         const q = query(messagesRef, orderBy('timestamp', 'asc'));
         const querySnapshot = await getDocs(q);
 
@@ -1430,12 +1431,15 @@ async function initApp() {
         // analytics = getAnalytics(app); // Initialize analytics if you plan to use it
         console.log(Date.now(), "initApp: Firebase app, auth, and db initialized.");
 
+        // Initialize appId safely
+        appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.appId.split(':')[1]; // Fallback to projectId if __app_id is not defined
+
         // Set up Auth State Listener
         onAuthStateChanged(auth, async (user) => {
             console.log(Date.now(), "onAuthStateChanged: Auth state changed. User:", user ? user.uid : "null");
             currentUser = user;
             // Use Firebase UID if authenticated, otherwise generate a random UUID for anonymous sessions.
-            userId = user ? user.uid : (typeof __app_id !== 'undefined' ? `${__app_id}-anonymous-${crypto.randomUUID()}` : `default-anonymous-${crypto.randomUUID()}`);
+            userId = user ? user.uid : `${appId}-anonymous-${crypto.randomUUID()}`; // Use the initialized appId
             updateUI(); // Update UI whenever auth state changes
             await loadChatSessionsForSidebar(); // Load chat sessions for the sidebar
         });
