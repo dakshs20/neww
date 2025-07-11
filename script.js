@@ -45,6 +45,7 @@ let auth;
 let db;
 // let analytics; // Declare analytics if you plan to use it in script.js
 let userId = "anonymous"; // Default to anonymous, will be updated by auth listener
+let appId; // Declare appId globally, will be initialized in initApp
 
 // Global state variables
 let currentUser = null;
@@ -53,7 +54,7 @@ let isGeneratingImage = false; // To prevent multiple image generation requests
 let isAITyping = false; // To manage AI typing indicator
 let userMessageCount = 0; // For free tier limits
 const MAX_FREE_MESSAGES = 5; // Max messages for unauthenticated users
-let isSidebarOpen = true; // Track sidebar state for desktop, will be set based on screen size
+let isSidebarOpen = false; // Start collapsed for mobile-first
 let currentMode = 'verse'; // Default AI mode: 'verse', 'image-verse', or 'code'
 let isModesDropdownOpen = false; // Track state of the modes dropdown
 
@@ -99,11 +100,15 @@ const voiceInputBtn = document.getElementById('voice-input-btn'); // Voice input
 const chatHistoryContainer = document.getElementById('chat-history');
 const typingIndicator = document.getElementById('typing-indicator');
 const sidebar = document.getElementById('sidebar');
-const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn'); // Hamburger icon on mobile navbar
+const closeSidebarBtn = document.getElementById('close-sidebar-btn'); // Close button inside sidebar
+const sidebarOverlay = document.getElementById('sidebar-overlay'); // New overlay for mobile drawer
 const chatMainArea = document.getElementById('chat-main-area');
 const promptSuggestionsContainer = document.getElementById('prompt-suggestions-container');
-const userAvatarBtn = document.getElementById('user-avatar-btn');
-const signInOutBtn = document.getElementById('sign-in-out-btn');
+const userAvatarBtn = document.getElementById('user-avatar-btn'); // Desktop user avatar
+const mobileUserAvatarBtn = document.getElementById('mobile-user-avatar-btn'); // Mobile user avatar
+const signInOutBtn = document.getElementById('sign-in-out-btn'); // Desktop sign-in/out
+const mobileSignInOutBtn = document.getElementById('mobile-sign-in-out-btn'); // Mobile sign-in/out
 const userDisplayName = document.getElementById('user-display-name');
 const userDisplayEmail = document.getElementById('user-display-email');
 const signInModal = document.getElementById('signin-modal');
@@ -112,6 +117,9 @@ const closeSignInModalBtn = document.getElementById('close-signin-modal-btn');
 const newChatBtn = document.getElementById('new-chat-btn');
 const chatHistorySidebar = document.getElementById('chat-history-sidebar');
 const mainNavbar = document.getElementById('main-navbar'); // Get navbar element
+const authDropdown = document.getElementById('auth-dropdown'); // Desktop auth dropdown
+const mobileAuthDropdown = document.getElementById('mobile-auth-dropdown'); // Mobile auth dropdown
+
 
 // Sidebar action buttons (only Settings remains)
 const settingsBtn = document.getElementById('settings-btn');
@@ -225,30 +233,41 @@ function toggleSignInModal(show) {
 function updateUI() {
     console.log(Date.now(), "updateUI: Updating user interface.");
 
+    // Update desktop UI elements
     if (currentUser) {
+        if (userAvatarBtn) userAvatarBtn.innerHTML = `<img src="${currentUser.photoURL || 'https://placehold.co/40x40/333333/FFFFFF?text=U'}" alt="User Avatar" class="w-full h-full rounded-full object-cover">`;
+        if (userDisplayName) userDisplayName.textContent = currentUser.displayName || "User";
+        if (userDisplayEmail) userDisplayEmail.textContent = currentUser.email || "";
         if (signInOutBtn) {
             signInOutBtn.innerHTML = '<i class="fas fa-sign-out-alt mr-2"></i>Sign Out';
             signInOutBtn.onclick = handleSignOut;
         }
-        if (userDisplayName) userDisplayName.textContent = currentUser.displayName || "User";
-        if (userDisplayEmail) userDisplayEmail.textContent = currentUser.email || "";
-        if (userAvatarBtn) {
-            userAvatarBtn.innerHTML = `<i class="fas fa-user-circle text-light-gray"></i>`; // Change icon
-            userAvatarBtn.style.borderColor = 'var(--color-bluish-tint)'; // Bluish accent border
-        }
-        console.log(Date.now(), `updateUI: User is signed in: ${currentUser.displayName}`);
     } else {
+        if (userAvatarBtn) userAvatarBtn.innerHTML = `<i class="fas fa-user text-light-gray"></i>`;
+        if (userDisplayName) userDisplayName.textContent = "Guest";
+        if (userDisplayEmail) userDisplayEmail.textContent = "Sign in for full features";
         if (signInOutBtn) {
             signInOutBtn.innerHTML = '<i class="fas fa-sign-in-alt mr-2"></i>Sign In';
             signInOutBtn.onclick = () => toggleSignInModal(true);
         }
-        if (userDisplayName) userDisplayName.textContent = "Guest";
-        if (userDisplayEmail) userDisplayEmail.textContent = "Sign in for full features";
-        if (userAvatarBtn) {
-            userAvatarBtn.innerHTML = `<i class="fas fa-user text-light-gray"></i>`; // Revert icon
-            userAvatarBtn.style.borderColor = 'var(--color-dark-gray-2)'; // Dark Gray 2 border
+    }
+
+    // Update mobile UI elements (mirroring desktop for simplicity, could be separate)
+    if (mobileUserAvatarBtn) {
+        if (currentUser) {
+            mobileUserAvatarBtn.innerHTML = `<img src="${currentUser.photoURL || 'https://placehold.co/40x40/333333/FFFFFF?text=U'}" alt="User Avatar" class="w-full h-full rounded-full object-cover">`;
+        } else {
+            mobileUserAvatarBtn.innerHTML = `<i class="fas fa-user text-light-gray"></i>`;
         }
-        console.log(Date.now(), "updateUI: User is signed out (Guest).");
+    }
+    if (mobileSignInOutBtn) {
+        if (currentUser) {
+            mobileSignInOutBtn.innerHTML = '<i class="fas fa-sign-out-alt mr-1"></i> Sign Out';
+            mobileSignInOutBtn.onclick = handleSignOut;
+        } else {
+            mobileSignInOutBtn.innerHTML = '<i class="fas fa-sign-in-alt mr-1"></i> Sign In';
+            mobileSignInOutBtn.onclick = () => toggleSignInModal(true);
+        }
     }
 
     // Update send button state based on input content
@@ -545,21 +564,27 @@ function autoScrollChat() {
  * Toggles the sidebar visibility.
  */
 function toggleSidebar() {
+    isSidebarOpen = !isSidebarOpen;
     if (isSidebarOpen) {
-        // Collapse sidebar
-        gsap.to(sidebar, { x: '-100%', duration: 0.3, ease: "power2.in" });
-        gsap.to(chatMainArea, { marginLeft: '0', duration: 0.3, ease: "power2.in" });
-        gsap.to(mainNavbar, { left: '0', width: '100%', duration: 0.3, ease: "power2.in" }); // Navbar spans full width
-        isSidebarOpen = false;
-    } else {
-        // Expand sidebar
+        // Open sidebar
         gsap.to(sidebar, { x: '0%', duration: 0.3, ease: "power2.out" });
-        // Only apply margin to chatMainArea if on desktop
-        if (window.innerWidth >= 768) {
-            gsap.to(chatMainArea, { marginLeft: '18rem', duration: 0.3, ease: "power2.out" });
-            gsap.to(mainNavbar, { left: '18rem', width: 'calc(100% - 18rem)', duration: 0.3, ease: "power2.out" }); // Navbar adjusts
+        // Show overlay only on mobile
+        if (window.innerWidth < 768) {
+            sidebarOverlay.classList.remove('hidden');
+            gsap.to(sidebarOverlay, { opacity: 1, duration: 0.3, ease: "power2.out" });
         }
-        isSidebarOpen = true;
+    } else {
+        // Close sidebar
+        gsap.to(sidebar, { x: '-100%', duration: 0.3, ease: "power2.in" });
+        // Hide overlay only on mobile
+        if (window.innerWidth < 768) {
+            gsap.to(sidebarOverlay, {
+                opacity: 0,
+                duration: 0.3,
+                ease: "power2.in",
+                onComplete: () => sidebarOverlay.classList.add('hidden')
+            });
+        }
     }
 }
 
@@ -591,7 +616,7 @@ async function sendUnifiedMessage(message, isRegenerate = false) {
     // If it's a new chat session and the first message, create the session first
     if (!currentChatSessionId && currentUser) {
         try {
-            const chatSessionsRef = collection(db, `artifacts/${__app_id}/users/${userId}/chatSessions`);
+            const chatSessionsRef = collection(db, `artifacts/${appId}/users/${userId}/chatSessions`); // Use appId
             const newSessionDocRef = await addDoc(chatSessionsRef, {
                 title: "New Chat", // Temporary title, will be updated by AI
                 createdAt: serverTimestamp(),
@@ -700,7 +725,7 @@ async function sendUnifiedMessage(message, isRegenerate = false) {
                 await saveMessageToFirestore(currentChatSessionId, "ai", aiResponseContent, false, '', isCodeResponse);
             }
             // Update lastUpdated timestamp for the session
-            const sessionDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/chatSessions`, currentChatSessionId);
+            const sessionDocRef = doc(db, `artifacts/${appId}/users/${userId}/chatSessions`, currentChatSessionId); // Use appId
             await updateDoc(sessionDocRef, { lastUpdated: serverTimestamp() });
 
             // If it's the first AI message in a new session, generate and save the title
@@ -924,7 +949,7 @@ async function deleteChatMessage(messageElement, messageId, sender) {
     // Optionally delete from Firestore if signed in and messageId exists
     if (currentUser && messageId && currentChatSessionId) {
         try {
-            const messageDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/chatSessions/${currentChatSessionId}/messages`, messageId);
+            const messageDocRef = doc(db, `artifacts/${appId}/users/${userId}/chatSessions/${currentChatSessionId}/messages`, messageId); // Use appId
             await deleteDoc(messageDocRef);
             showToast("Message deleted!", "success");
             console.log(Date.now(), `deleteChatMessage: Message ${messageId} deleted from Firestore.`);
@@ -953,7 +978,7 @@ async function saveMessageToFirestore(sessionId, role, text, isImage = false, im
         return;
     }
     try {
-        const messagesRef = collection(db, `artifacts/${__app_id}/users/${userId}/chatSessions/${sessionId}/messages`);
+        const messagesRef = collection(db, `artifacts/${appId}/users/${userId}/chatSessions/${sessionId}/messages`); // Use appId
         await addDoc(messagesRef, {
             role: role,
             text: text,
@@ -1011,7 +1036,7 @@ async function generateChatSessionTitle(sessionId, history) {
         }
 
         // Update the session document with the generated title
-        const sessionDocRef = doc(db, `artifacts/${__app_id}/users/${userId}/chatSessions`, sessionId);
+        const sessionDocRef = doc(db, `artifacts/${appId}/users/${userId}/chatSessions`, sessionId); // Use appId
         await updateDoc(sessionDocRef, { title: generatedTitle });
         console.log(Date.now(), `generateChatSessionTitle: Session ${sessionId} title updated to "${generatedTitle}".`);
 
@@ -1040,7 +1065,7 @@ async function loadChatSessionsForSidebar() {
     }
 
     try {
-        const chatSessionsRef = collection(db, `artifacts/${__app_id}/users/${userId}/chatSessions`);
+        const chatSessionsRef = collection(db, `artifacts/${appId}/users/${userId}/chatSessions`); // Use appId
         const q = query(chatSessionsRef, orderBy('lastUpdated', 'desc'), limit(10)); // Get most recent 10 sessions
         const querySnapshot = await getDocs(q);
 
@@ -1062,7 +1087,12 @@ async function loadChatSessionsForSidebar() {
             sessionButton.classList.add('w-full', 'text-left', 'py-2', 'px-3', 'rounded-md', 'truncate', 'text-light-gray/90', 'hover:bg-dark-gray-2', 'transition-colors', 'duration-150');
             sessionButton.textContent = data.title || "Untitled Chat";
             sessionButton.dataset.sessionId = sessionId;
-            sessionButton.addEventListener('click', () => loadSpecificChatSession(sessionId));
+            sessionButton.addEventListener('click', () => {
+                loadSpecificChatSession(sessionId);
+                if (window.innerWidth < 768) { // Close sidebar on mobile after selecting chat
+                    toggleSidebar();
+                }
+            });
             chatHistorySidebar.appendChild(sessionButton);
         });
 
@@ -1099,7 +1129,7 @@ async function loadSpecificChatSession(sessionId) {
     });
 
     try {
-        const messagesRef = collection(db, `artifacts/${__app_id}/users/${userId}/chatSessions/${sessionId}/messages`);
+        const messagesRef = collection(db, `artifacts/${appId}/users/${userId}/chatSessions/${sessionId}/messages`); // Use appId
         const q = query(messagesRef, orderBy('timestamp', 'asc'));
         const querySnapshot = await getDocs(q);
 
@@ -1145,6 +1175,7 @@ async function startNewChat() {
     document.querySelectorAll('#chat-history-sidebar button').forEach(btn => {
         btn.classList.remove('bg-dark-gray-2', 'text-bluish-tint', 'font-semibold');
     });
+    unifiedInput.focus();
 }
 
 /**
@@ -1255,14 +1286,16 @@ function toggleModesDropdown() {
 function setupEventListeners() {
     console.log(Date.now(), "setupEventListeners: Setting up event listeners.");
 
-    // Sidebar toggle
+    // Sidebar toggle (hamburger) and close button
     sidebarToggleBtn?.addEventListener('click', toggleSidebar);
+    closeSidebarBtn?.addEventListener('click', toggleSidebar); // Close button inside sidebar
+    sidebarOverlay?.addEventListener('click', toggleSidebar); // Close sidebar when clicking overlay
 
     // Sidebar action buttons (only Settings remains)
     settingsBtn?.addEventListener('click', () => {
         showToast("Settings page coming soon!", "info");
         if (window.innerWidth < 768 && isSidebarOpen) {
-            toggleSidebar();
+            toggleSidebar(); // Close sidebar on mobile after clicking settings
         }
     });
 
@@ -1290,26 +1323,41 @@ function setupEventListeners() {
     });
 
 
-    // User profile/Sign-in dropdown
+    // User profile/Sign-in dropdown (Desktop)
     userAvatarBtn?.addEventListener('click', () => {
-        const dropdown = document.getElementById('auth-dropdown');
-        if (dropdown) {
-            if (dropdown.classList.contains('opacity-0')) {
-                gsap.to(dropdown, { opacity: 1, scale: 1, duration: 0.2, ease: "power2.out", pointerEvents: 'auto' });
+        if (authDropdown) {
+            if (authDropdown.classList.contains('opacity-0')) {
+                gsap.to(authDropdown, { opacity: 1, scale: 1, duration: 0.2, ease: "power2.out", pointerEvents: 'auto' });
             } else {
-                gsap.to(dropdown, { opacity: 0, scale: 0.95, duration: 0.2, ease: "power2.in", pointerEvents: 'none' });
+                gsap.to(authDropdown, { opacity: 0, scale: 0.95, duration: 0.2, ease: "power2.in", pointerEvents: 'none' });
             }
         }
     });
+
+    // User profile/Sign-in dropdown (Mobile)
+    mobileUserAvatarBtn?.addEventListener('click', () => {
+        if (mobileAuthDropdown) {
+            if (mobileAuthDropdown.classList.contains('opacity-0')) {
+                gsap.to(mobileAuthDropdown, { opacity: 1, scale: 1, duration: 0.2, ease: "power2.out", pointerEvents: 'auto' });
+            } else {
+                gsap.to(mobileAuthDropdown, { opacity: 0, scale: 0.95, duration: 0.2, ease: "power2.in", pointerEvents: 'none' });
+            }
+        }
+    });
+
     // Close dropdowns if clicked outside
     document.addEventListener('click', (e) => {
-        const authDropdown = document.getElementById('auth-dropdown');
-        if (authDropdown && !userAvatarBtn.contains(e.target) && !authDropdown.contains(e.target)) {
+        // Desktop auth dropdown
+        if (authDropdown && userAvatarBtn && !userAvatarBtn.contains(e.target) && !authDropdown.contains(e.target)) {
             gsap.to(authDropdown, { opacity: 0, scale: 0.95, duration: 0.2, ease: "power2.in", pointerEvents: 'none' });
+        }
+        // Mobile auth dropdown
+        if (mobileAuthDropdown && mobileUserAvatarBtn && !mobileUserAvatarBtn.contains(e.target) && !mobileAuthDropdown.contains(e.target)) {
+            gsap.to(mobileAuthDropdown, { opacity: 0, scale: 0.95, duration: 0.2, ease: "power2.in", pointerEvents: 'none' });
         }
 
         // Close modes dropdown if clicked outside
-        if (modesDropdownPanel && !modesToggleBtn.contains(e.target) && !modesDropdownPanel.contains(e.target) && isModesDropdownOpen) {
+        if (modesDropdownPanel && modesToggleBtn && !modesToggleBtn.contains(e.target) && !modesDropdownPanel.contains(e.target) && isModesDropdownOpen) {
             toggleModesDropdown();
         }
     });
@@ -1374,34 +1422,31 @@ function setupEventListeners() {
     populatePromptSuggestions();
 
     // Handle initial sidebar state based on screen size
-    if (window.innerWidth < 768) { // If mobile
-        isSidebarOpen = false; // Start collapsed
-        sidebar.classList.add('collapsed');
-        // Removed gsap.set calls here, will rely on CSS defaults
-    } else {
-        isSidebarOpen = true; // Start open on desktop
-        sidebar.classList.remove('collapsed');
-        // Removed gsap.set calls here, will rely on CSS defaults
-    }
-
-    // Adjust sidebar/main area on window resize
-    window.addEventListener('resize', () => {
-        if (window.innerWidth < 768) {
-            // If resizing to mobile, ensure sidebar is collapsed and layout adjusts
-            if (isSidebarOpen) { // If it was open on desktop, collapse it
-                gsap.to(sidebar, { x: '-100%', duration: 0.3, ease: "power2.in" });
-                isSidebarOpen = false;
-            }
-            // Removed gsap.set calls here, will rely on CSS defaults
-        } else {
-            // If resizing to desktop, ensure sidebar is open and layout adjusts
-            if (!isSidebarOpen) { // If it was collapsed on mobile, open it
-                gsap.to(sidebar, { x: '0%', duration: 0.3, ease: "power2.out" });
+    function adjustLayoutOnResize() {
+        if (window.innerWidth >= 768) { // Desktop view
+            if (!isSidebarOpen) { // If sidebar was closed (e.g., from mobile), open it
+                gsap.to(sidebar, { x: '0%', duration: 0 }); // Instantly snap open
                 isSidebarOpen = true;
             }
-            // Removed gsap.set calls here, will rely on CSS defaults
+            // Ensure desktop-specific margins are applied
+            gsap.set(chatMainArea, { marginLeft: '15.625rem' }); // 250px
+            gsap.set(mainNavbar, { left: '15.625rem', width: 'calc(100vw - 15.625rem)' });
+            sidebarOverlay.classList.add('hidden'); // Ensure overlay is hidden on desktop
+            gsap.set(sidebarOverlay, { opacity: 0 });
+        } else { // Mobile view
+            if (isSidebarOpen) { // If sidebar was open (e.g., from desktop), close it
+                gsap.to(sidebar, { x: '-100%', duration: 0 }); // Instantly snap closed
+                isSidebarOpen = false;
+            }
+            // Ensure mobile-specific margins are applied
+            gsap.set(chatMainArea, { marginLeft: '0' });
+            gsap.set(mainNavbar, { left: '0', width: '100vw' });
         }
-    });
+    }
+
+    // Adjust layout on initial load and resize
+    adjustLayoutOnResize();
+    window.addEventListener('resize', adjustLayoutOnResize);
 
 
     console.log(Date.now(), "setupEventListeners: All event listeners set up.");
@@ -1426,12 +1471,19 @@ async function initApp() {
         // analytics = getAnalytics(app); // Initialize analytics if you plan to use it
         console.log(Date.now(), "initApp: Firebase app, auth, and db initialized.");
 
+        // Initialize appId safely
+        // The appId from firebaseConfig.appId is typically in the format "1:senderId:web:appIdHash"
+        // We need the projectId part, which is usually the second segment of the appId string
+        const firebaseAppIdParts = firebaseConfig.appId.split(':');
+        appId = typeof __app_id !== 'undefined' ? __app_id : (firebaseAppIdParts.length > 1 ? firebaseAppIdParts[1] : 'default-app-id');
+
+
         // Set up Auth State Listener
         onAuthStateChanged(auth, async (user) => {
             console.log(Date.now(), "onAuthStateChanged: Auth state changed. User:", user ? user.uid : "null");
             currentUser = user;
             // Use Firebase UID if authenticated, otherwise generate a random UUID for anonymous sessions.
-            userId = user ? user.uid : (typeof __app_id !== 'undefined' ? `${__app_id}-anonymous-${crypto.randomUUID()}` : `default-anonymous-${crypto.randomUUID()}`);
+            userId = user ? user.uid : `${appId}-anonymous-${crypto.randomUUID()}`; // Use the initialized appId
             updateUI(); // Update UI whenever auth state changes
             await loadChatSessionsForSidebar(); // Load chat sessions for the sidebar
         });
