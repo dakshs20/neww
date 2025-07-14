@@ -804,18 +804,19 @@ async function synthesizeImagePromptWithGemini(textPrompt, imageBase64) {
 
     try {
         const geminiInstruction = `
-            You are an expert AI image generation prompt engineer.
-            I will provide you with an image and a text description.
-            Your task is to generate a single, highly detailed, and creative text prompt that combines the visual elements and style of the provided image with the concepts and modifications from the text description.
-            The goal is to create a new image that is a transformation or reimagining of the uploaded image, guided by the text prompt.
-            Focus on describing:
-            - The main subject(s) from the image, modified by the text.
-            - The overall artistic style, lighting, and mood suggested by both the image and the text.
-            - Specific details, textures, and environmental elements that blend both inputs.
-            - Ensure the generated prompt is suitable for a state-of-the-art text-to-image model.
-            - Do not include any conversational text, just the refined image generation prompt.
+            You are an advanced AI image generation prompt engineer specializing in image-to-image transformations.
+            I will provide you with a BASE IMAGE and a TEXT PROMPT.
+            Your goal is to create a single, comprehensive, and highly effective text prompt for a cutting-edge image generation model (like Imagen 3.0).
+            This prompt must instruct the model to:
+            1.  **Analyze the BASE IMAGE:** Understand its core subjects, composition, dominant colors, lighting, and general aesthetic/style.
+            2.  **Integrate the TEXT PROMPT:** Apply the instructions and concepts from the TEXT PROMPT as modifications, additions, or stylistic changes *to the content and style derived from the BASE IMAGE*.
+            3.  **Focus on Transformation:** The output image should be a clear transformation or reimagining of the BASE IMAGE, not a completely new image. The TEXT PROMPT guides this transformation.
+            4.  **Be Descriptive:** Include rich details about subjects, environment, lighting, textures, and specific artistic styles (e.g., "photorealistic," "oil painting," "cyberpunk," "dreamy").
+            5.  **Maintain Cohesion:** Ensure the final prompt creates a coherent vision that blends both visual and textual inputs.
 
-            Text description: "${textPrompt}"
+            DO NOT output any conversational text, only the final, optimized image generation prompt.
+
+            TEXT PROMPT: "${textPrompt}"
         `;
 
         const payload = {
