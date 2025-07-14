@@ -1078,14 +1078,25 @@ async function generateImage() {
             console.log(Date.now(), "generateImage: Added text-specific enhancements to prompt.");
         }
 
+        // --- ENHANCED ASPECT RATIO PROMPT ENGINEERING ---
         let aspectRatioInstruction = '';
         switch (aspectRatio) {
-            case '1:1': aspectRatioInstruction = ', square aspect ratio'; break;
-            case '4:5': aspectRatioInstruction = ', portrait 4:5 aspect ratio'; break;
-            case '9:16': aspectRatioInstruction = ', vertical 9:16 aspect ratio'; break;
-            case '16:9': aspectRatioInstruction = ', horizontal 16:9 aspect ratio'; break;
+            case '1:1': 
+                aspectRatioInstruction = ', square format, 1:1 aspect ratio, balanced composition'; 
+                break;
+            case '4:5': 
+                aspectRatioInstruction = ', portrait orientation, 4:5 aspect ratio, tall and narrow composition, vertical format'; 
+                break;
+            case '9:16': 
+                aspectRatioInstruction = ', ultra-portrait orientation, 9:16 aspect ratio, extremely tall and narrow composition, vertical smartphone screen format'; 
+                break;
+            case '16:9': 
+                aspectRatioInstruction = ', landscape orientation, 16:9 aspect ratio, wide and cinematic composition, horizontal widescreen format'; 
+                break;
         }
         finalPromptForImagen += aspectRatioInstruction;
+        // --- END ENHANCED ASPECT RATIO PROMPT ENGINEERING ---
+
         console.log(Date.now(), "generateImage: Final prompt for Imagen API:", finalPromptForImagen);
 
 
