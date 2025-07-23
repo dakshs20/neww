@@ -39,15 +39,12 @@ let isSigningIn = false; // New state for sign-in loading
 let isAuthReady = false; // Flag to indicate if Firebase Auth state has been checked and services initialized
 
 let aspectRatio = '1:1'; // Default aspect ratio
+let selectedStyle = 'None'; // New: Default style
 
 let enhancedPrompt = '';
 let loadingEnhancePrompt = false; // For Gemini prompt enhancement
 let variationIdeas = [];
-let loadingVariationIdeas = false; // For Gemini variation ideas
-
-// New loading states for tool buttons
-let loadingThumbnail = false;
-let loadingLogo = false;
+let loadingVariationIdeas = false;
 
 
 // IMPORTANT: Your Google Cloud API Key for Imagen/Gemini (Declared at top level)
@@ -69,6 +66,7 @@ let promptInput;
 let negativePromptInput;
 let copyPromptBtn;
 let clearPromptBtn;
+let styleSelectionDiv; // New: Style selection container
 let aspectRatioSelectionDiv;
 let generateBtn;
 let enhanceBtn;
@@ -79,6 +77,7 @@ let errorDisplay;
 let imageDisplayContainer;
 let generatedImageElement;
 let generatedImageWrapper;
+
 
 let enhancedPromptDisplay;
 let enhancedPromptText;
@@ -106,12 +105,6 @@ let closeMobileMenuBtn;
 let mobileNavLinks; // This will be a NodeList, not a single element
 
 let toastContainer;
-
-// New UI element references for tool buttons and dropdown
-let toolsDropdownBtn; // New: for the dropdown button
-let toolsDropdownMenu; // New: for the dropdown menu container
-let generateThumbnailBtn;
-let generateLogoBtn;
 
 
 // --- Helper function to get elements and log if not found (Declared at top level) ---
@@ -452,6 +445,46 @@ function populateAspectRatioRadios() {
     }
 }
 
+// --- New: Function to dynamically populate style selection buttons ---
+function populateStyleButtons() {
+    console.log(Date.now(), "populateStyleButtons: Populating style buttons.");
+    if (styleSelectionDiv) {
+        styleSelectionDiv.innerHTML = ''; // Clear existing buttons
+
+        const styles = [
+            { name: 'None', promptAddon: '' },
+            { name: 'Realistic', promptAddon: 'photorealistic, hyperrealistic, cinematic lighting, ultra-detailed, 8k, sharp focus' },
+            { name: 'Anime', promptAddon: 'anime style, vibrant colors, large expressive eyes, cel-shaded, Japanese animation, dynamic pose' },
+            { name: 'Oil Painting', promptAddon: 'oil painting, impasto, visible brushstrokes, rich texture, classic art style, masterwork, canvas art' },
+            { name: 'Cyberpunk', promptAddon: 'cyberpunk style, neon lights, futuristic city, rainy streets, high-tech, dystopian, synthwave aesthetic' },
+            { name: 'Abstract', promptAddon: 'abstract art, non-representational, vibrant colors, fluid shapes, geometric patterns, expressive brushwork' }
+        ];
+
+        styles.forEach(style => {
+            const button = document.createElement('button');
+            button.type = 'button'; // Important for buttons inside forms
+            button.dataset.style = style.name; // Store style name for easy access
+            button.className = `
+                px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ease-in-out
+                ${selectedStyle === style.name ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/70 hover:text-white'}
+            `;
+            button.textContent = style.name;
+
+            button.addEventListener('click', () => {
+                console.log(Date.now(), "Event: Style button clicked:", style.name);
+                selectedStyle = style.name;
+                populateStyleButtons(); // Re-render to update active state
+                updateUI(); // Update UI to reflect any disabled states
+            });
+            styleSelectionDiv.appendChild(button);
+        });
+        console.log(Date.now(), "populateStyleButtons: Style buttons populated.");
+    } else {
+        console.error(Date.now(), "populateStyleButtons: styleSelectionDiv element not found. Cannot populate styles.");
+    }
+}
+
+
 // --- Page Visibility Logic (Declared at top level) ---
 async function setPage(newPage) {
     console.log(Date.now(), `setPage: Attempting to switch to page: ${newPage}. Current page: ${currentPage}`);
@@ -475,6 +508,7 @@ async function setPage(newPage) {
     } else if (newPage === 'generator') {
         newPageElement = generatorPageElement;
         updateImageWrapperAspectRatio(); // Ensure correct aspect ratio when navigating to generator page
+        populateStyleButtons(); // New: Populate styles when going to generator page
     }
 
     if (newPageElement) {
@@ -492,24 +526,8 @@ async function setPage(newPage) {
     console.log(Date.now(), `setPage: Page switched to: ${currentPage}.`);
 }
 
-/**
- * Toggles the visibility of the AI Creation Tools dropdown menu.
- */
-function toggleToolsDropdown() {
-    console.log(Date.now(), "toggleToolsDropdown: Function called.");
-    if (toolsDropdownMenu && toolsDropdownBtn) {
-        const isHidden = toolsDropdownMenu.classList.contains('hidden');
-        toolsDropdownMenu.classList.toggle('hidden', !isHidden);
-        toolsDropdownBtn.setAttribute('aria-expanded', !isHidden);
-        console.log(Date.now(), `toggleToolsDropdown: Dropdown toggled. Now hidden: ${!isHidden}`);
-    } else {
-        console.warn(Date.now(), "toggleToolsDropdown: Tools dropdown menu or button not found. Cannot toggle.");
-    }
-}
-
-
 function updateUI() {
-    console.log(Date.now(), `updateUI: Updating UI for current page: ${currentPage}. Auth Ready: ${isAuthReady}. Loading: ${loading}. Enhance Loading: ${loadingEnhancePrompt}. Variation Loading: ${loadingVariationIdeas}. Thumbnail Loading: ${loadingThumbnail}. Logo Loading: ${loadingLogo}. Prompt empty: ${!promptInput?.value.trim()}`);
+    console.log(Date.now(), `updateUI: Updating UI for current page: ${currentPage}. Auth Ready: ${isAuthReady}. Loading: ${loading}. Enhance Loading: ${loadingEnhancePrompt}. Variation Loading: ${loadingVariationIdeas}. Prompt empty: ${!promptInput?.value.trim()}`);
 
     // Collect all interactive elements that might need their disabled state managed
     const interactiveElements = [
@@ -519,9 +537,7 @@ function updateUI() {
         enhanceBtn, variationBtn, useEnhancedPromptBtn,
         downloadBtn, signInBtnDesktop, signOutBtnDesktop,
         signInBtnMobile, signOutBtnMobile, modalSignInBtn,
-        closeSigninModalBtn, persistentDebugMessage, closeDebugMessageBtn,
-        toolsDropdownBtn, // Added the dropdown button itself
-        generateThumbnailBtn, generateLogoBtn // Added new tool buttons
+        closeSigninModalBtn, persistentDebugMessage, closeDebugMessageBtn
     ];
 
     interactiveElements.forEach(el => {
@@ -529,8 +545,6 @@ function updateUI() {
             const isAuthButton = el.id && (el.id.includes('sign-in-btn') || el.id.includes('sign-out-btn') || el.id.includes('modal-sign-in-btn'));
             const isGeneratorButton = el.id && (el.id === 'generate-image-btn');
             const isEnhanceOrVariationButton = el.id && (el.id === 'enhance-prompt-btn' || el.id === 'generate-variation-ideas-btn');
-            const isToolButton = el.id && (el.id === 'generate-thumbnail-btn' || el.id === 'generate-logo-btn');
-            const isToolsDropdownButton = el.id === 'tools-dropdown-btn'; // New condition for the dropdown toggle button
             
             // Default state: disabled if auth is not ready
             let shouldBeDisabled = !isAuthReady;
@@ -541,39 +555,30 @@ function updateUI() {
                 // Generate button disabled if auth not ready OR (not logged in AND no free generations)
                 // OR any other generation/processing is active
                 const noFreeGenerations = (!currentUser && freeGenerationsLeft <= 0);
-                shouldBeDisabled = !isAuthReady || noFreeGenerations || loading || loadingEnhancePrompt || loadingVariationIdeas || loadingThumbnail || loadingLogo;
+                shouldBeDisabled = !isAuthReady || noFreeGenerations || loading || loadingEnhancePrompt || loadingVariationIdeas;
             } else if (isEnhanceOrVariationButton) {
                 // Enhance/Variation buttons disabled if auth not ready OR loading OR prompt is empty
                 // OR any other generation/processing is active
-                shouldBeDisabled = !isAuthReady || !promptInput?.value.trim() || loading || loadingEnhancePrompt || loadingVariationIdeas || loadingThumbnail || loadingLogo;
-            } else if (isToolButton) {
-                // Tool buttons (inside dropdown) disabled if auth not ready OR (not logged in AND no free generations) OR prompt is empty
-                // OR any other generation/processing is active
-                const noFreeGenerations = (!currentUser && freeGenerationsLeft <= 0);
-                shouldBeDisabled = !isAuthReady || noFreeGenerations || !promptInput?.value.trim() || loading || loadingEnhancePrompt || loadingVariationIdeas || loadingThumbnail || loadingLogo;
-            } else if (isToolsDropdownButton) { // The dropdown toggle button itself
-                const noFreeGenerations = (!currentUser && freeGenerationsLeft <= 0);
-                shouldBeDisabled = !isAuthReady || noFreeGenerations || !promptInput?.value.trim() || loading || loadingEnhancePrompt || loadingVariationIdeas || loadingThumbnail || loadingLogo;
-            }
-            else if (el.id === 'use-enhanced-prompt-btn') {
+                shouldBeDisabled = !isAuthReady || !promptInput?.value.trim() || loading || loadingEnhancePrompt || loadingVariationIdeas;
+            } else if (el.id === 'use-enhanced-prompt-btn') {
                 // Use Enhanced Prompt button is disabled if no enhanced prompt is available or any loading is active
-                shouldBeDisabled = !isAuthReady || !enhancedPrompt || loading || loadingEnhancePrompt || loadingVariationIdeas || loadingThumbnail || loadingLogo;
+                shouldBeDisabled = !isAuthReady || !enhancedPrompt || loading || loadingEnhancePrompt || loadingVariationIdeas;
             } else if (el.id === 'download-image-btn') {
                 // Download button is disabled if no image is generated or any loading is active
-                shouldBeDisabled = !isAuthReady || !imageUrl || loading || loadingEnhancePrompt || loadingVariationIdeas || loadingThumbnail || loadingLogo;
+                shouldBeDisabled = !isAuthReady || !imageUrl || loading || loadingEnhancePrompt || loadingVariationIdeas;
             } else if (el.id === 'copy-prompt-btn') {
                 // Copy button is disabled if prompt input is empty or any loading is active
-                shouldBeDisabled = !isAuthReady || !promptInput?.value.trim() || loading || loadingEnhancePrompt || loadingVariationIdeas || loadingThumbnail || loadingLogo;
+                shouldBeDisabled = !isAuthReady || !promptInput?.value.trim() || loading || loadingEnhancePrompt || loadingVariationIdeas;
             } else if (el.id === 'clear-prompt-btn') {
                 // Clear button is disabled if prompt input and negative prompt input are both empty or any loading is active
-                shouldBeDisabled = !isAuthReady || (!promptInput?.value.trim() && !negativePromptInput?.value.trim()) || loading || loadingEnhancePrompt || loadingVariationIdeas || loadingThumbnail || loadingLogo;
+                shouldBeDisabled = !isAuthReady || (!promptInput?.value.trim() && !negativePromptInput?.value.trim()) || loading || loadingEnhancePrompt || loadingVariationIdeas;
             } else if (el.id === 'close-debug-message-btn') {
                 // The dismiss button for the persistent error message should always be enabled if visible
                 shouldBeDisabled = false; // Always enable dismiss button
             }
             // For other general buttons (like navigation), they are enabled if isAuthReady is true and no loading is active
-            if (!isAuthButton && !isGeneratorButton && !isEnhanceOrVariationButton && !isToolButton && !isToolsDropdownButton && el.id !== 'close-debug-message-btn') {
-                shouldBeDisabled = !isAuthReady || loading || loadingEnhancePrompt || loadingVariationIdeas || loadingThumbnail || loadingLogo;
+            if (!isAuthButton && !isGeneratorButton && !isEnhanceOrVariationButton && el.id !== 'close-debug-message-btn') {
+                shouldBeDisabled = !isAuthReady || loading || loadingEnhancePrompt || loadingVariationIdeas;
             }
 
 
@@ -628,6 +633,7 @@ function updateGeneratorPageUI() {
     }
 
     populateAspectRatioRadios(); // Ensure aspect ratio radios are always up-to-date
+    populateStyleButtons(); // New: Ensure style buttons are always up-to-date
 
     // Update Generate Image button
     if (generateBtn) {
@@ -668,36 +674,6 @@ function updateGeneratorPageUI() {
         console.log(Date.now(), "updateGeneratorPageUI: Generate button state updated.");
     }
 
-    // Update Thumbnail button (inside dropdown)
-    if (generateThumbnailBtn) {
-        generateThumbnailBtn.innerHTML = loadingThumbnail ? `
-            <span class="flex items-center justify-center">
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Generating...
-            </span>
-        ` : `<i class="fas fa-image mr-2"></i> Generate Thumbnail (1280x720)`;
-        // Note: Styling for buttons inside dropdown is handled by their parent li and specific classes
-        console.log(Date.now(), "updateGeneratorPageUI: Thumbnail button state updated.");
-    }
-
-    // Update Logo button (inside dropdown)
-    if (generateLogoBtn) {
-        generateLogoBtn.innerHTML = loadingLogo ? `
-            <span class="flex items-center justify-center">
-                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Generating...
-            </span>
-        ` : `<i class="fas fa-gem mr-2"></i> Create Logo (500x500)`;
-        // Note: Styling for buttons inside dropdown is handled by their parent li and specific classes
-        console.log(Date.now(), "updateGeneratorPageUI: Logo button state updated.");
-    }
-
 
     if (errorDisplay) {
         errorDisplay.textContent = currentError;
@@ -705,38 +681,34 @@ function updateGeneratorPageUI() {
         console.log(Date.now(), "updateGeneratorPageUI: Error display updated. Hidden:", !currentError);
     }
 
+    // --- Image Display Logic ---
     if (imageDisplayContainer && generatedImageElement) {
-        if (loading || loadingThumbnail || loadingLogo) { // Check all loading states
-            imageDisplayContainer.classList.add('hidden');
-            // Show loading spinner
-            const loadingSpinner = getElement('loading-spinner');
-            if (loadingSpinner) loadingSpinner.classList.remove('hidden');
-            console.log(Date.now(), "updateGeneratorPageUI: Image container hidden (loading), spinner shown.");
-        } else if (imageUrl) {
-            imageDisplayContainer.classList.remove('hidden');
-            generatedImageElement.src = imageUrl;
-            generatedImageElement.alt = `AI generated image based on prompt: ${prompt}`;
-            generatedImageElement.style = getImageDisplayStyles(); // Apply aspect ratio styles
-            generatedImageElement.classList.add('animate-image-reveal'); // Re-apply animation on new image
-            // Hide loading spinner
-            const loadingSpinner = getElement('loading-spinner');
-            if (loadingSpinner) loadingSpinner.classList.add('hidden');
-            // Hide placeholder
-            const noImagePlaceholder = getElement('no-image-placeholder');
-            if (noImagePlaceholder) noImagePlaceholder.classList.add('hidden');
+        console.log(Date.now(), `updateGeneratorPageUI: Image state check - loading: ${loading}, imageUrl: ${!!imageUrl}`);
 
+        if (loading) { // If any generation is active
+            imageDisplayContainer.classList.add('hidden'); // Hide the image container
+            console.log(Date.now(), "updateGeneratorPageUI: Image container hidden (loading).");
+        } else if (imageUrl) { // If an image URL is present and not loading
+            imageDisplayContainer.classList.remove('hidden'); // Show the image container
+            generatedImageElement.src = imageUrl; // Set the image source
+            generatedImageElement.alt = `AI generated image based on prompt: ${prompt}`; // Update alt text for SEO
+            
+            // Reset opacity and then set it to 1 after image loads
+            generatedImageElement.style.opacity = '0'; // Start hidden for fade-in
+            // The onload listener will set opacity to 1 after the image is fully loaded.
+            
             console.log(Date.now(), "updateGeneratorPageUI: Image container shown with new image.");
-        } else {
-            imageDisplayContainer.classList.add('hidden');
-            // Show placeholder if no image and not loading
-            const noImagePlaceholder = getElement('no-image-placeholder');
-            const loadingSpinner = getElement('loading-spinner');
-            if (noImagePlaceholder && loadingSpinner && loadingSpinner.classList.contains('hidden')) {
-                noImagePlaceholder.classList.remove('hidden');
-            }
-            console.log(Date.now(), "updateGeneratorPageUI: Image container hidden (no image), placeholder shown.");
+            console.log(Date.now(), "DEBUG: generatedImageElement.outerHTML:", generatedImageElement.outerHTML);
+            console.log(Date.now(), "DEBUG: imageDisplayContainer.outerHTML:", imageDisplayContainer.outerHTML);
+        } else { // No image URL and not loading (initial state or error/clear)
+            imageDisplayContainer.classList.add('hidden'); // Ensure image container is hidden
+            console.log(Date.now(), "updateGeneratorPageUI: Image container hidden (no image).");
         }
+    } else {
+        console.error(Date.now(), "updateGeneratorPageUI: One or more image display elements (imageDisplayContainer, generatedImageElement) not found. Image display may not work correctly.");
     }
+    // --- End Image Display Logic ---
+
 
     if (enhanceBtn) {
         enhanceBtn.innerHTML = loadingEnhancePrompt ? `
@@ -800,20 +772,18 @@ function updateGeneratorPageUI() {
  * This creates a container that holds the image without stretching it.
  */
 function updateImageWrapperAspectRatio() {
-    if (!generatedImageWrapper) {
-        console.warn(Date.now(), "updateImageWrapperAspectRatio: generatedImageWrapper not found. Cannot update aspect ratio.");
+    if (!generatedImageWrapper || !generatedImageElement) {
+        console.warn(Date.now(), "updateImageWrapperAspectRatio: generatedImageWrapper or generatedImageElement not found. Cannot update aspect ratio.");
         return;
     }
 
-    // Remove previous inline styles that might interfere with object-fit
-    if (generatedImageElement) {
-        generatedImageElement.style.width = '';
-        generatedImageElement.style.height = '';
-        generatedImageElement.style.objectFit = '';
-        generatedImageElement.style.position = '';
-        generatedImageElement.style.top = '';
-        generatedImageElement.style.left = '';
-    }
+    // Reset image styles to allow object-fit to work properly
+    generatedImageElement.style.width = '100%';
+    generatedImageElement.style.height = '100%';
+    generatedImageElement.style.objectFit = 'contain';
+    generatedImageElement.style.position = 'absolute';
+    generatedImageElement.style.top = '0';
+    generatedImageElement.style.left = '0';
 
     let paddingBottomPercentage;
     switch (aspectRatio) {
@@ -830,15 +800,7 @@ function updateImageWrapperAspectRatio() {
     generatedImageWrapper.style.paddingBottom = paddingBottomPercentage;
     generatedImageWrapper.style.height = '0'; // Crucial for padding-bottom hack
 
-    // Ensure the image inside is absolutely positioned to fill this new container
-    if (generatedImageElement) {
-        generatedImageElement.style.position = 'absolute';
-        generatedImageElement.style.top = '0';
-        generatedImageElement.style.left = '0';
-        generatedImageElement.style.width = '100%';
-        generatedImageElement.style.height = '100%';
-        generatedImageElement.style.objectFit = 'contain'; // This is key: image fits without stretching
-    }
+
     console.log(Date.now(), `updateImageWrapperAspectRatio: Wrapper aspect ratio set to ${aspectRatio} (${paddingBottomPercentage}).`);
 }
 
@@ -1054,8 +1016,25 @@ async function generateImage() {
     console.time("imageGenerationAPI");
 
     try {
-        let finalPrompt = promptInput.value.trim();
+        let finalPrompt = promptInput.value.trim(); // Get current value from input
         
+        // --- Apply Style-specific prompt engineering ---
+        const stylePromptAddons = {
+            'Realistic': 'photorealistic, hyperrealistic, cinematic lighting, ultra-detailed, 8k, sharp focus',
+            'Anime': 'anime style, vibrant colors, large expressive eyes, cel-shaded, Japanese animation, dynamic pose',
+            'Oil Painting': 'oil painting, impasto, visible brushstrokes, rich texture, classic art style, masterwork, canvas art',
+            'Cyberpunk': 'cyberpunk style, neon lights, futuristic city, rainy streets, high-tech, dystopian, synthwave aesthetic',
+            'Abstract': 'abstract art, non-representational, vibrant colors, fluid shapes, geometric patterns, expressive brushwork',
+            'None': '' // No addon for 'None' style
+        };
+
+        if (selectedStyle && stylePromptAddons[selectedStyle]) {
+            finalPrompt += `, ${stylePromptAddons[selectedStyle]}`;
+            console.log(Date.now(), `generateImage: Applied style addon for "${selectedStyle}".`);
+        }
+        // --- End Style-specific prompt engineering ---
+
+
         const textKeywords = ['text', 'number', 'letter', 'font', 'word', 'digits', 'characters'];
         const containsTextKeyword = textKeywords.some(keyword => finalPrompt.toLowerCase().includes(keyword));
 
@@ -1109,7 +1088,7 @@ async function generateImage() {
         }
 
         const result = await response.json();
-        console.log(Date.now(), "generateImage: Imagen API response parsed.", result);
+        console.log(Date.now(), "generateImage: Imagen API response parsed:", result);
 
         if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
             imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
@@ -1129,202 +1108,6 @@ async function generateImage() {
         loading = false;
         updateUI(); // Update UI to reflect end of loading and show image
         console.log(Date.now(), "generateImage: Image generation process finished (loading state reset).");
-    }
-}
-
-/**
- * Generates a thumbnail image using the Imagen API with specific dimensions and prompt enhancements.
- */
-async function generateThumbnail() {
-    console.log(Date.now(), "generateThumbnail: Function called.");
-    clearError();
-
-    if (!IMAGEN_GEMINI_API_KEY || IMAGEN_GEMINI_API_KEY === "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE") {
-        console.error(Date.now(), "generateThumbnail: API Key not configured. Prompting user.");
-        setError('API Key is not configured for image generation. Please replace "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE" in script.js with your actual key obtained from Google Cloud Console and ensure the Imagen API is enabled.');
-        updateUI();
-        showToast("API Key missing for image generation. Check console.", "error");
-        return; // Exit early
-    }
-
-    if (!promptInput || !promptInput.value.trim()) {
-        console.warn(Date.now(), "generateThumbnail: Prompt is empty. Prompting user.");
-        setError('Please enter a prompt to generate a thumbnail.');
-        updateUI();
-        showToast("Please enter a prompt to generate a thumbnail.", "info");
-        return; // Exit early
-    }
-
-    // Check free generations/authentication
-    if (!currentUser) {
-        if (freeGenerationsLeft <= 0) {
-            console.log(Date.now(), "generateThumbnail: Free generations exhausted for unauthenticated user. Showing sign-in modal.");
-            signinRequiredModal?.classList.remove('hidden');
-            updateUI();
-            showToast("You've used your free generations. Please sign in!", "info");
-            return; // Exit early
-        } else {
-            freeGenerationsLeft--;
-            localStorage.setItem('freeGenerationsLeft', freeGenerationsLeft);
-            console.log(Date.now(), `generateThumbnail: Unauthenticated generation. ${freeGenerationsLeft} left.`);
-            showToast(`Generating thumbnail... ${freeGenerationsLeft} free generations left.`, "info");
-        }
-    } else {
-        console.log(Date.now(), "generateThumbnail: Authenticated user generating thumbnail (unlimited).");
-        showToast("Generating thumbnail...", "info");
-    }
-
-    loadingThumbnail = true; // Set specific loading flag
-    imageUrl = ''; // Clear previous image
-    updateUI(); // Update UI to show loading state
-    console.log(Date.now(), "generateThumbnail: Starting thumbnail generation request.");
-    console.time("thumbnailGenerationAPI");
-
-    try {
-        let finalPrompt = promptInput.value.trim();
-        // Add specific instructions for thumbnail
-        finalPrompt += ", professional, eye-catching thumbnail, 1280x720 pixels, 16:9 aspect ratio, suitable for video preview, clear, concise, high contrast, vibrant colors, impactful composition";
-        
-        if (negativePromptInput && negativePromptInput.value.trim()) {
-            finalPrompt += ` --no ${negativePromptInput.value.trim()}`;
-        }
-
-        console.log(Date.now(), "generateThumbnail: Final prompt for Imagen API:", finalPrompt);
-
-        const payload = { instances: { prompt: finalPrompt }, parameters: { "sampleCount": 1 } };
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${IMAGEN_GEMINI_API_KEY}`;
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        console.log(Date.now(), "generateThumbnail: Imagen API fetch response received.");
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Imagen API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
-        }
-
-        const result = await response.json();
-        console.log(Date.now(), "generateThumbnail: Imagen API response parsed.", result);
-
-        if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-            imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-            console.log(Date.now(), "generateThumbnail: Image URL successfully created from Base64 data.");
-            showToast("Thumbnail generated successfully!", "success");
-        } else {
-            setError('Failed to generate thumbnail. No image data received.');
-            showToast('Failed to generate thumbnail. No data received.', "error");
-            console.error(Date.now(), 'generateThumbnail: API response missing image data:', result);
-        }
-    } catch (e) {
-        setError(`An error occurred during thumbnail generation: ${e.message || 'Unknown error'}. Please try again.`);
-        showToast(`Thumbnail generation failed: ${e.message}`, "error");
-        console.error(Date.now(), 'generateThumbnail: Error during thumbnail generation:', e);
-    } finally {
-        console.timeEnd("thumbnailGenerationAPI");
-        loadingThumbnail = false; // Reset specific loading flag
-        updateUI(); // Update UI to reflect end of loading and show image
-        console.log(Date.now(), "generateThumbnail: Thumbnail generation process finished (loading state reset).");
-    }
-}
-
-/**
- * Generates a logo image using the Imagen API with specific dimensions and prompt enhancements.
- */
-async function generateLogo() {
-    console.log(Date.now(), "generateLogo: Function called.");
-    clearError();
-
-    if (!IMAGEN_GEMINI_API_KEY || IMAGEN_GEMINI_API_KEY === "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE") {
-        console.error(Date.now(), "generateLogo: API Key not configured. Prompting user.");
-        setError('API Key is not configured for image generation. Please replace "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE" in script.js with your actual key obtained from Google Cloud Console and ensure the Imagen API is enabled.');
-        updateUI();
-        showToast("API Key missing for image generation. Check console.", "error");
-        return; // Exit early
-    }
-
-    if (!promptInput || !promptInput.value.trim()) {
-        console.warn(Date.now(), "generateLogo: Prompt is empty. Prompting user.");
-        setError('Please enter a prompt to generate a logo.');
-        updateUI();
-        showToast("Please enter a prompt to generate a logo.", "info");
-        return; // Exit early
-    }
-
-    // Check free generations/authentication
-    if (!currentUser) {
-        if (freeGenerationsLeft <= 0) {
-            console.log(Date.now(), "generateLogo: Free generations exhausted for unauthenticated user. Showing sign-in modal.");
-            signinRequiredModal?.classList.remove('hidden');
-            updateUI();
-            showToast("You've used your free generations. Please sign in!", "info");
-            return; // Exit early
-        } else {
-            freeGenerationsLeft--;
-            localStorage.setItem('freeGenerationsLeft', freeGenerationsLeft);
-            console.log(Date.now(), `generateLogo: Unauthenticated generation. ${freeGenerationsLeft} left.`);
-            showToast(`Generating logo... ${freeGenerationsLeft} free generations left.`, "info");
-        }
-    } else {
-        console.log(Date.now(), "generateLogo: Authenticated user generating logo (unlimited).");
-        showToast("Generating logo...", "info");
-    }
-
-    loadingLogo = true; // Set specific loading flag
-    imageUrl = ''; // Clear previous image
-    updateUI(); // Update UI to show loading state
-    console.log(Date.now(), "generateLogo: Starting logo generation request.");
-    console.time("logoGenerationAPI");
-
-    try {
-        let finalPrompt = promptInput.value.trim();
-        // Add specific instructions for logo
-        finalPrompt += ", minimalist logo design, 500x500 pixels, 1:1 aspect ratio, clean lines, vector art, iconic, scalable, modern, simple, professional, abstract or symbolic, brand identity";
-        
-        if (negativePromptInput && negativePromptInput.value.trim()) {
-            finalPrompt += ` --no ${negativePromptInput.value.trim()}`;
-        }
-
-        console.log(Date.now(), "generateLogo: Final prompt for Imagen API:", finalPrompt);
-
-        const payload = { instances: { prompt: finalPrompt }, parameters: { "sampleCount": 1 } };
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${IMAGEN_GEMINI_API_KEY}`;
-
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        console.log(Date.now(), "generateLogo: Imagen API fetch response received.");
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`Imagen API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
-        }
-
-        const result = await response.json();
-        console.log(Date.now(), "generateLogo: Imagen API response parsed.", result);
-
-        if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-            imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-            console.log(Date.now(), "generateLogo: Image URL successfully created from Base64 data.");
-            showToast("Logo generated successfully!", "success");
-        } else {
-            setError('Failed to generate logo. No image data received.');
-            showToast('Failed to generate logo. No data received.', "error");
-            console.error(Date.now(), 'generateLogo: API response missing image data:', result);
-        }
-    } catch (e) {
-        setError(`An error occurred during logo generation: ${e.message || 'Unknown error'}. Please try again.`);
-        showToast(`Logo generation failed: ${e.message}`, "error");
-        console.error(Date.now(), 'generateLogo: Error during logo generation:', e);
-    } finally {
-        console.timeEnd("logoGenerationAPI");
-        loadingLogo = false; // Reset specific loading flag
-        updateUI(); // Update UI to reflect end of loading and show image
-        console.log(Date.now(), "generateLogo: Logo generation process finished (loading state reset).");
     }
 }
 
@@ -1394,18 +1177,6 @@ function clearError() {
     console.log(Date.now(), "clearError: Clearing error.");
     currentError = '';
 }
-
-function getImageDisplayStyles() {
-    // This function is now responsible for returning the inline style string
-    // for the generated image element to ensure proper aspect ratio display.
-    let styleString = 'width: 100%; height: 100%; object-fit: contain;'; // Default for image element itself
-
-    // The wrapper handles the aspect ratio container, so the image just needs to fill it
-    // The wrapper's padding-bottom hack sets the container's aspect ratio.
-    // The image itself should just fill its container.
-    return styleString;
-}
-
 
 // --- Event Listeners Setup (Declared at top level, called in initApp) ---
 function setupEventListeners() {
@@ -1507,6 +1278,8 @@ function setupEventListeners() {
             negativePrompt = ''; // Clear negative prompt state
             enhancedPrompt = ''; // Clear enhanced prompt too
             variationIdeas = []; // Clear variation ideas too
+            imageUrl = ''; // Clear image preview as well
+            selectedStyle = 'None'; // New: Reset style selection
             showToast("Prompt cleared!", "info");
             updateUI(); // Update UI to reflect cleared state
         });
@@ -1525,52 +1298,6 @@ function setupEventListeners() {
         variationBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Get Variation Ideas button clicked."); generateVariationIdeas(); });
         console.log(Date.now(), "Event Listener Attached: variationBtn");
     }
-
-    // New: Tools Dropdown Button Listener
-    if (toolsDropdownBtn) {
-        toolsDropdownBtn.addEventListener('click', (event) => {
-            console.log(Date.now(), "Event: Tools Dropdown button clicked.");
-            event.stopPropagation(); // Prevent document click from immediately closing it
-            toggleToolsDropdown();
-        });
-        console.log(Date.now(), "Event Listener Attached: tools-dropdown-btn");
-    }
-
-    // New: Global click listener to close dropdown when clicking outside
-    document.addEventListener('click', (event) => {
-        if (toolsDropdownMenu && !toolsDropdownMenu.classList.contains('hidden')) {
-            // Check if the click was outside the dropdown button and the dropdown menu itself
-            if (!toolsDropdownBtn.contains(event.target) && !toolsDropdownMenu.contains(event.target)) {
-                console.log(Date.now(), "Event: Click outside dropdown. Closing dropdown.");
-                toolsDropdownMenu.classList.add('hidden');
-                toolsDropdownBtn.setAttribute('aria-expanded', 'false');
-            }
-        }
-    });
-
-
-    // New tool button event listeners (inside dropdown)
-    if (generateThumbnailBtn) {
-        generateThumbnailBtn.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Generate Thumbnail button clicked.");
-            generateThumbnail();
-            if (toolsDropdownMenu) toolsDropdownMenu.classList.add('hidden'); // Close dropdown after click
-        });
-        console.log(Date.now(), "Event Listener Attached: generateThumbnailBtn");
-    } else {
-        console.warn(Date.now(), "setupEventListeners: generateThumbnailBtn not found. Thumbnail generation will not work.");
-    }
-    if (generateLogoBtn) {
-        generateLogoBtn.addEventListener('click', () => {
-            console.log(Date.now(), "Event: Create Logo button clicked.");
-            generateLogo();
-            if (toolsDropdownMenu) toolsDropdownMenu.classList.add('hidden'); // Close dropdown after click
-        });
-        console.log(Date.now(), "Event Listener Attached: generateLogoBtn");
-    } else {
-        console.warn(Date.now(), "setupEventListeners: generateLogoBtn not found. Logo generation will not work.");
-    }
-
 
     if (useEnhancedPromptBtn) {
         useEnhancedPromptBtn.addEventListener('click', () => {
@@ -1627,7 +1354,28 @@ function setupEventListeners() {
         console.log(Date.now(), "Event Listener Attached: closeDebugMessageBtn");
     }
 
+    // Listener for image loading to trigger fade-in
+    if (generatedImageElement) {
+        generatedImageElement.onload = () => {
+            console.log(Date.now(), "Event: generatedImageElement loaded successfully. Setting opacity to 1.");
+            generatedImageElement.style.opacity = '1'; // Make it visible after loading
+            generatedImageElement.classList.add('animate-image-reveal'); // Re-apply animation
+        };
+        generatedImageElement.onerror = () => {
+            console.error(Date.now(), "Event: generatedImageElement failed to load. Displaying placeholder.");
+            // Fallback handled by onerror attribute in HTML, but can add more logic here if needed
+            setError("Failed to load image preview. The generated image data might be invalid or corrupted.");
+            showToast("Image preview failed to load.", "error");
+            if (imageDisplayContainer) imageDisplayContainer.classList.add('hidden');
+        };
+        console.log(Date.now(), "Event Listener Attached: generatedImageElement onload/onerror.");
+    } else {
+        console.warn(Date.now(), "setupEventListeners: generatedImageElement not found. Image preview onload/onerror will not work.");
+    }
+
+
     populateAspectRatioRadios(); // Populate radios after the div is found
+    populateStyleButtons(); // New: Populate style buttons initially
     console.log(Date.now(), "setupEventListeners: All event listeners setup attempted.");
 }
 
@@ -1654,16 +1402,18 @@ function initApp() {
         negativePromptInput = getElement('negative-prompt-input'); // Ensure this is referenced
         copyPromptBtn = getElement('copy-prompt-btn');
         clearPromptBtn = getElement('clear-prompt-btn');
+        styleSelectionDiv = getElement('style-selection'); // New: Get reference to style selection div
         aspectRatioSelectionDiv = getElement('aspect-ratio-selection');
         generateBtn = getElement('generate-image-btn');
         enhanceBtn = getElement('enhance-prompt-btn');
         variationBtn = getElement('generate-variation-ideas-btn');
         useEnhancedPromptBtn = getElement('use-enhanced-prompt-btn');
         downloadBtn = getElement('download-image-btn');
+        errorDisplay = getElement('error-display');
         imageDisplayContainer = getElement('image-display-container');
         generatedImageElement = getElement('generated-image');
         generatedImageWrapper = getElement('generated-image-wrapper'); // Ensure this is referenced
-        errorDisplay = getElement('error-display'); // Moved errorDisplay reference after image elements
+
 
         enhancedPromptDisplay = getElement('enhanced-prompt-display');
         enhancedPromptText = getElement('enhanced-prompt-text');
@@ -1692,13 +1442,6 @@ function initApp() {
         mobileNavLinks = document.querySelectorAll('#mobile-menu .mobile-nav-link'); 
 
         toastContainer = getElement('toast-container');
-
-        // New tool button references and dropdown references
-        toolsDropdownBtn = getElement('tools-dropdown-btn'); // Get the dropdown toggle button
-        toolsDropdownMenu = getElement('tools-dropdown-menu'); // Get the dropdown menu container
-        generateThumbnailBtn = getElement('generate-thumbnail-btn');
-        generateLogoBtn = getElement('generate-logo-btn');
-
 
         console.log(Date.now(), "initApp: All UI element references obtained.");
 
