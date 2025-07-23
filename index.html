@@ -261,7 +261,7 @@
                     rows="4"
                     placeholder="e.g., A vibrant cyberpunk city street at night, neon lights, rainy, highly detailed, 8k, cinematic"
                 ></textarea>
-                <!-- Separate space for Copy and Clear buttons - FIXED UI OVERLAY -->
+                <!-- Separate space for Copy and Clear buttons -->
                 <div class="flex justify-end space-x-2 mt-2">
                     <button id="copy-prompt-btn" class="px-4 py-2 text-gray-400 hover:text-blue-300 transition-colors duration-200 rounded-full bg-gray-700/50 hover:bg-gray-600/70 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold" title="Copy Prompt">
                         <i class="fas fa-copy mr-1"></i> Copy
@@ -269,6 +269,16 @@
                     <button id="clear-prompt-btn" class="px-4 py-2 text-gray-400 hover:text-red-300 transition-colors duration-200 rounded-full bg-gray-700/50 hover:bg-gray-600/70 focus:outline-none focus:ring-2 focus:ring-red-500 text-sm font-semibold" title="Clear Prompt">
                         <i class="fas fa-times-circle mr-1"></i> Clear
                     </button>
+                </div>
+            </div>
+
+            <!-- New: Style Selection -->
+            <div class="mb-6">
+                <label class="block text-gray-300 text-base font-semibold mb-2 font-helvetica">
+                    Choose an Art Style:
+                </label>
+                <div id="style-selection" class="flex flex-wrap gap-2 sm:gap-3 justify-center">
+                    <!-- Style buttons will be inserted here by JS -->
                 </div>
             </div>
 
@@ -286,35 +296,6 @@
                 Generate Image
             </button>
 
-            <!-- AI Creation Tools Section - Now with a Dropdown -->
-            <div class="mt-6 pt-6 border-t border-gray-700 relative">
-                <h2 class="text-xl sm:text-2xl font-mersad text-purple-300 mb-4 text-center">
-                    AI Creation Tools
-                </h2>
-                <div class="relative w-full">
-                    <button id="tools-dropdown-btn" class="w-full py-3 px-4 rounded-xl text-white font-bold text-md shadow-lg bg-gradient-to-r from-purple-600 to-pink-700 hover:from-purple-700 hover:to-pink-800 transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-400 font-helvetica text-sm sm:text-base flex items-center justify-center">
-                        <i class="fas fa-tools mr-2"></i> Select a Tool <i class="fas fa-chevron-down ml-2"></i>
-                    </button>
-
-                    <!-- Dropdown Menu -->
-                    <div id="tools-dropdown-menu" class="absolute top-full left-0 mt-2 w-full bg-gray-800 border border-gray-700 rounded-xl shadow-lg z-10 hidden animate-fade-in-down">
-                        <ul class="py-2">
-                            <li>
-                                <button id="generate-thumbnail-btn" class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700 hover:text-blue-300 transition-colors duration-200 rounded-lg text-sm sm:text-base">
-                                    <i class="fas fa-image mr-2"></i> Generate Thumbnail (1280x720)
-                                </button>
-                            </li>
-                            <li>
-                                <button id="generate-logo-btn" class="w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-700 hover:text-blue-300 transition-colors duration-200 rounded-lg text-sm sm:text-base">
-                                    <i class="fas fa-gem mr-2"></i> Create Logo (500x500)
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <!-- End AI Creation Tools Section -->
-
             <div id="error-display" class="mt-6 p-4 bg-red-800/70 border border-red-600 text-red-200 rounded-lg text-sm text-center shadow-md animate-fade-in font-helvetica hidden"></div>
 
             <!-- Image Output Display Container -->
@@ -325,7 +306,7 @@
                         id="generated-image"
                         src=""
                         alt="AI generated image based on your prompt" <!-- SEO: This alt text will be dynamically updated by script.js for better SEO -->
-                        class="w-full h-auto object-cover rounded-lg transform transition-transform duration-500 group-hover:scale-105"
+                        class="w-full h-auto object-cover rounded-lg transform transition-transform duration-500 group-hover:scale-105 opacity-0"
                         onerror="this.onerror=null;this.src='https://placehold.co/600x400/333333/FFFFFF?text=Image+Load+Error';"
                     />
                     <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-opacity duration-300 flex items-center justify-center">
