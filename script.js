@@ -34,17 +34,21 @@ let negativePrompt = ''; // For negative prompt
 let imageUrl = ''; // For generated image
 let loading = false; // For image generation (Imagen API call)
 let currentError = ''; // Error message for display
-let currentPage = 'home'; // 'home', 'generator'
+let currentPage = 'home'; // 'home', 'generator', 'chat' (NEW)
 let isSigningIn = false; // New state for sign-in loading
 let isAuthReady = false; // Flag to indicate if Firebase Auth state has been checked and services initialized
 
 let aspectRatio = '1:1'; // Default aspect ratio
-let selectedStyle = 'None'; // New: Default style
+let selectedStyle = 'realistic'; // Default style for image generation
 
 let enhancedPrompt = '';
 let loadingEnhancePrompt = false; // For Gemini prompt enhancement
 let variationIdeas = [];
 let loadingVariationIdeas = false;
+
+// NEW: Chat AI state variables
+let chatHistory = [{ role: "model", parts: [{ text: "Hello! How can I assist you today?" }] }]; // Initial message from AI
+let loadingChat = false;
 
 
 // IMPORTANT: Your Google Cloud API Key for Imagen/Gemini (Declared at top level)
@@ -57,6 +61,7 @@ console.log(Date.now(), "script.js: IMAGEN_GEMINI_API_KEY value set at top level
 // Declared as `let` so they can be assigned later in initApp
 let homePageElement;
 let generatorPageElement;
+let chatPageElement; // NEW: Chat page element
 let allPageElements = []; // Group for easy iteration
 
 let persistentDebugMessage;
@@ -66,7 +71,7 @@ let promptInput;
 let negativePromptInput;
 let copyPromptBtn;
 let clearPromptBtn;
-let styleSelectionDiv; // New: Style selection container
+let styleSelectionDiv;
 let aspectRatioSelectionDiv;
 let generateBtn;
 let enhanceBtn;
@@ -105,6 +110,15 @@ let closeMobileMenuBtn;
 let mobileNavLinks; // This will be a NodeList, not a single element
 
 let toastContainer;
+
+// NEW: Chat UI element references
+let chatBtnDesktop;
+let chatBtnMobile;
+let chatMessagesContainer;
+let chatInput;
+let sendChatBtn;
+let clearChatBtn;
+let chatLoadingSpinner;
 
 
 // --- Helper function to get elements and log if not found (Declared at top level) ---
@@ -445,42 +459,40 @@ function populateAspectRatioRadios() {
     }
 }
 
-// --- New: Function to dynamically populate style selection buttons ---
-function populateStyleButtons() {
-    console.log(Date.now(), "populateStyleButtons: Populating style buttons.");
+// --- Function to dynamically populate style radio buttons ---
+function populateStyleRadios() {
+    console.log(Date.now(), "populateStyleRadios: Populating style radios.");
     if (styleSelectionDiv) {
-        styleSelectionDiv.innerHTML = ''; // Clear existing buttons
-
+        styleSelectionDiv.innerHTML = ''; // Clear existing radios
+        // Define available styles and their display names
         const styles = [
-            { name: 'None', promptAddon: '' },
-            { name: 'Realistic', promptAddon: 'photorealistic, hyperrealistic, cinematic lighting, ultra-detailed, 8k, sharp focus' },
-            { name: 'Anime', promptAddon: 'anime style, vibrant colors, large expressive eyes, cel-shaded, Japanese animation, dynamic pose' },
-            { name: 'Oil Painting', promptAddon: 'oil painting, impasto, visible brushstrokes, rich texture, classic art style, masterwork, canvas art' },
-            { name: 'Cyberpunk', promptAddon: 'cyberpunk style, neon lights, futuristic city, rainy streets, high-tech, dystopian, synthwave aesthetic' },
-            { name: 'Abstract', promptAddon: 'abstract art, non-representational, vibrant colors, fluid shapes, geometric patterns, expressive brushwork' }
+            { value: 'realistic', display: 'Realistic' },
+            { value: 'anime', display: 'Anime' },
+            { value: 'oil_painting', display: 'Oil Painting' },
+            { value: 'cyberpunk', display: 'Cyberpunk' },
+            { value: 'abstract', display: 'Abstract' }
         ];
 
         styles.forEach(style => {
-            const button = document.createElement('button');
-            button.type = 'button'; // Important for buttons inside forms
-            button.dataset.style = style.name; // Store style name for easy access
-            button.className = `
-                px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ease-in-out
-                ${selectedStyle === style.name ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/70 hover:text-white'}
+            const label = document.createElement('label');
+            label.className = 'inline-flex items-center cursor-pointer';
+            label.innerHTML = `
+                <input type="radio" name="imageStyle" value="${style.value}" class="form-radio h-5 w-5 text-purple-600 bg-gray-700 border-gray-600 focus:ring-purple-500" ${selectedStyle === style.value ? 'checked' : ''}>
+                <span class="ml-2 text-gray-200 font-helvetica text-sm">${style.display}</span>
             `;
-            button.textContent = style.name;
-
-            button.addEventListener('click', () => {
-                console.log(Date.now(), "Event: Style button clicked:", style.name);
-                selectedStyle = style.name;
-                populateStyleButtons(); // Re-render to update active state
-                updateUI(); // Update UI to reflect any disabled states
-            });
-            styleSelectionDiv.appendChild(button);
+            const radioInput = label.querySelector('input');
+            if (radioInput) {
+                // Add event listener to update the 'selectedStyle' state variable
+                radioInput.addEventListener('change', (e) => {
+                    selectedStyle = e.target.value;
+                    console.log(Date.now(), "Event: Style changed to:", selectedStyle);
+                });
+            }
+            styleSelectionDiv.appendChild(label);
         });
-        console.log(Date.now(), "populateStyleButtons: Style buttons populated.");
+        console.log(Date.now(), "populateStyleRadios: Style radios populated.");
     } else {
-        console.error(Date.now(), "populateStyleButtons: styleSelectionDiv element not found. Cannot populate styles.");
+        console.error(Date.now(), "populateStyleRadios: styleSelectionDiv element not found. Cannot populate radios.");
     }
 }
 
@@ -508,7 +520,12 @@ async function setPage(newPage) {
     } else if (newPage === 'generator') {
         newPageElement = generatorPageElement;
         updateImageWrapperAspectRatio(); // Ensure correct aspect ratio when navigating to generator page
-        populateStyleButtons(); // New: Populate styles when going to generator page
+    } else if (newPage === 'chat') { // NEW: Handle chat page
+        newPageElement = chatPageElement;
+        renderChatMessages(); // Render chat history when navigating to chat page
+        if (chatMessagesContainer) {
+            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight; // Scroll to bottom
+        }
     }
 
     if (newPageElement) {
@@ -527,17 +544,18 @@ async function setPage(newPage) {
 }
 
 function updateUI() {
-    console.log(Date.now(), `updateUI: Updating UI for current page: ${currentPage}. Auth Ready: ${isAuthReady}. Loading: ${loading}. Enhance Loading: ${loadingEnhancePrompt}. Variation Loading: ${loadingVariationIdeas}. Prompt empty: ${!promptInput?.value.trim()}`);
+    console.log(Date.now(), `updateUI: Updating UI for current page: ${currentPage}. Auth Ready: ${isAuthReady}. Loading: ${loading}. Enhance Loading: ${loadingEnhancePrompt}. Variation Loading: ${loadingVariationIdeas}. Chat Loading: ${loadingChat}. Prompt empty: ${!promptInput?.value.trim()}`);
 
     // Collect all interactive elements that might need their disabled state managed
     const interactiveElements = [
-        homePageElement, generatorPageElement, logoBtn,
+        homePageElement, generatorPageElement, chatPageElement, logoBtn, // Added chatPageElement
         hamburgerBtn, closeMobileMenuBtn, mobileMenuOverlay,
         startCreatingBtn, promptInput, negativePromptInput, copyPromptBtn, clearPromptBtn, generateBtn,
         enhanceBtn, variationBtn, useEnhancedPromptBtn,
         downloadBtn, signInBtnDesktop, signOutBtnDesktop,
         signInBtnMobile, signOutBtnMobile, modalSignInBtn,
-        closeSigninModalBtn, persistentDebugMessage, closeDebugMessageBtn
+        closeSigninModalBtn, persistentDebugMessage, closeDebugMessageBtn,
+        chatInput, sendChatBtn, clearChatBtn // Added chat elements
     ];
 
     interactiveElements.forEach(el => {
@@ -545,7 +563,8 @@ function updateUI() {
             const isAuthButton = el.id && (el.id.includes('sign-in-btn') || el.id.includes('sign-out-btn') || el.id.includes('modal-sign-in-btn'));
             const isGeneratorButton = el.id && (el.id === 'generate-image-btn');
             const isEnhanceOrVariationButton = el.id && (el.id === 'enhance-prompt-btn' || el.id === 'generate-variation-ideas-btn');
-            
+            const isChatInputOrButton = el.id && (el.id === 'chat-input' || el.id === 'send-chat-btn' || el.id === 'clear-chat-btn'); // NEW
+
             // Default state: disabled if auth is not ready
             let shouldBeDisabled = !isAuthReady;
 
@@ -575,10 +594,18 @@ function updateUI() {
             } else if (el.id === 'close-debug-message-btn') {
                 // The dismiss button for the persistent error message should always be enabled if visible
                 shouldBeDisabled = false; // Always enable dismiss button
+            } else if (isChatInputOrButton) { // NEW: Chat specific disabling
+                shouldBeDisabled = !isAuthReady || loadingChat;
+                if (el.id === 'send-chat-btn' && chatInput && !chatInput.value.trim()) {
+                    shouldBeDisabled = true; // Disable send button if input is empty
+                }
+                if (el.id === 'clear-chat-btn' && chatHistory.length <= 1) { // Only initial AI message
+                    shouldBeDisabled = true; // Disable clear button if chat is almost empty
+                }
             }
             // For other general buttons (like navigation), they are enabled if isAuthReady is true and no loading is active
-            if (!isAuthButton && !isGeneratorButton && !isEnhanceOrVariationButton && el.id !== 'close-debug-message-btn') {
-                shouldBeDisabled = !isAuthReady || loading || loadingEnhancePrompt || loadingVariationIdeas;
+            if (!isAuthButton && !isGeneratorButton && !isEnhanceOrVariationButton && !isChatInputOrButton && el.id !== 'close-debug-message-btn') {
+                shouldBeDisabled = !isAuthReady || loading || loadingEnhancePrompt || loadingVariationIdeas || loadingChat; // Added loadingChat
             }
 
 
@@ -597,10 +624,17 @@ function updateUI() {
     generatorPageElement?.classList.toggle('bg-white/10', currentPage === 'generator');
     generatorPageElement?.classList.toggle('text-blue-100', currentPage === 'generator');
     generatorPageElement?.classList.toggle('text-gray-300', currentPage !== 'generator');
+
+    chatPageElement?.classList.toggle('bg-white/10', currentPage === 'chat'); // NEW
+    chatPageElement?.classList.toggle('text-blue-100', currentPage === 'chat'); // NEW
+    chatPageElement?.classList.toggle('text-gray-300', currentPage !== 'chat'); // NEW
+
     console.log(Date.now(), "updateUI: Header button styles updated.");
 
     if (currentPage === 'generator') {
         updateGeneratorPageUI(); // Call specific UI updates for generator page
+    } else if (currentPage === 'chat') { // NEW
+        updateChatPageUI();
     }
     updateUIForAuthStatus(); // Update user display and sign-in/out buttons
     console.log(Date.now(), "updateUI: Finished general UI update.");
@@ -632,8 +666,8 @@ function updateGeneratorPageUI() {
         }
     }
 
+    populateStyleRadios(); // Populate style radios
     populateAspectRatioRadios(); // Ensure aspect ratio radios are always up-to-date
-    populateStyleButtons(); // New: Ensure style buttons are always up-to-date
 
     // Update Generate Image button
     if (generateBtn) {
@@ -765,6 +799,16 @@ function updateGeneratorPageUI() {
         variationIdeasDisplay.classList.toggle('hidden', variationIdeas.length === 0);
         console.log(Date.now(), "updateGeneratorPageUI: Variation ideas display updated. Hidden:", variationIdeas.length === 0);
     }
+}
+
+// NEW: Update UI specifically for the chat page
+function updateChatPageUI() {
+    console.log(Date.now(), "updateChatPageUI: Updating dynamic chat UI.");
+    if (chatLoadingSpinner) {
+        chatLoadingSpinner.classList.toggle('hidden', !loadingChat);
+    }
+    // The renderChatMessages function handles the actual message display
+    renderChatMessages();
 }
 
 /**
@@ -1018,21 +1062,28 @@ async function generateImage() {
     try {
         let finalPrompt = promptInput.value.trim(); // Get current value from input
         
-        // --- Apply Style-specific prompt engineering ---
-        const stylePromptAddons = {
-            'Realistic': 'photorealistic, hyperrealistic, cinematic lighting, ultra-detailed, 8k, sharp focus',
-            'Anime': 'anime style, vibrant colors, large expressive eyes, cel-shaded, Japanese animation, dynamic pose',
-            'Oil Painting': 'oil painting, impasto, visible brushstrokes, rich texture, classic art style, masterwork, canvas art',
-            'Cyberpunk': 'cyberpunk style, neon lights, futuristic city, rainy streets, high-tech, dystopian, synthwave aesthetic',
-            'Abstract': 'abstract art, non-representational, vibrant colors, fluid shapes, geometric patterns, expressive brushwork',
-            'None': '' // No addon for 'None' style
-        };
-
-        if (selectedStyle && stylePromptAddons[selectedStyle]) {
-            finalPrompt += `, ${stylePromptAddons[selectedStyle]}`;
-            console.log(Date.now(), `generateImage: Applied style addon for "${selectedStyle}".`);
+        // --- Apply selected style to the prompt ---
+        switch (selectedStyle) {
+            case 'realistic':
+                finalPrompt += ', photorealistic, ultra-detailed, cinematic lighting, hyper-realistic, 8k, award-winning photography';
+                break;
+            case 'anime':
+                finalPrompt += ', anime style, vibrant colors, dynamic pose, cel-shaded, manga art, detailed eyes, expressive, high quality anime illustration';
+                break;
+            case 'oil_painting':
+                finalPrompt += ', oil painting, impasto, visible brushstrokes, rich textures, classic art, master painting, gallery quality';
+                break;
+            case 'cyberpunk':
+                finalPrompt += ', cyberpunk style, neon lights, futuristic city, dystopian, glowing wires, high-tech, dark atmosphere, intricate details, sci-fi';
+                break;
+            case 'abstract':
+                finalPrompt += ', abstract art, non-representational, vibrant colors, fluid shapes, conceptual, modern art, expressive brushwork, unique composition';
+                break;
+            // No default case needed if 'realistic' is the default and adds keywords.
+            // If 'none' was a style, it would have an empty string.
         }
-        // --- End Style-specific prompt engineering ---
+        console.log(Date.now(), `generateImage: Applied style "${selectedStyle}". Prompt now: "${finalPrompt}"`);
+        // --- END Apply selected style ---
 
 
         const textKeywords = ['text', 'number', 'letter', 'font', 'word', 'digits', 'characters'];
@@ -1178,6 +1229,114 @@ function clearError() {
     currentError = '';
 }
 
+// NEW: Chat AI functions
+function renderChatMessages() {
+    if (!chatMessagesContainer) {
+        console.warn(Date.now(), "renderChatMessages: Chat messages container not found. Cannot render messages.");
+        return;
+    }
+    chatMessagesContainer.innerHTML = ''; // Clear existing messages
+    chatHistory.forEach(message => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`;
+        
+        // Sanitize text content to prevent XSS
+        const safeText = message.parts[0].text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+        messageDiv.innerHTML = `
+            <div class="p-3 rounded-xl max-w-[80%] shadow-md animate-fade-in-up ${message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-100'}">
+                <span class="font-bold ${message.role === 'user' ? 'text-blue-200' : 'text-blue-300'} text-xs block mb-1">
+                    ${message.role === 'user' ? (currentUser ? currentUser.displayName || currentUser.email : 'You') : 'GenArt AI'}
+                </span>
+                ${safeText.replace(/\n/g, '<br>')}
+            </div>
+        `;
+        chatMessagesContainer.appendChild(messageDiv);
+    });
+    // Auto-scroll to the bottom
+    chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+    console.log(Date.now(), "renderChatMessages: Chat messages rendered and scrolled to bottom.");
+}
+
+async function sendChatMessage() {
+    console.log(Date.now(), "sendChatMessage: Function called.");
+    clearError();
+
+    if (!chatInput || !chatInput.value.trim()) {
+        showToast("Please enter a message to chat.", "info");
+        console.warn(Date.now(), "sendChatMessage: Chat input is empty. Cannot send message.");
+        return;
+    }
+
+    const userMessage = chatInput.value.trim();
+    chatInput.value = ''; // Clear input immediately
+
+    chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+    renderChatMessages(); // Display user message immediately
+
+    loadingChat = true;
+    updateUI(); // Show loading spinner and disable input
+    console.time("chatAPIResponse");
+
+    try {
+        const payload = { contents: chatHistory };
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${IMAGEN_GEMINI_API_KEY}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        console.log(Date.now(), "sendChatMessage: Gemini API fetch response received.");
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Gemini API error: ${response.status} - ${errorData.error.message || 'Unknown error'}`);
+        }
+
+        const result = await response.json();
+        console.log(Date.now(), "sendChatMessage: Gemini API response parsed:", result);
+
+        if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+            const aiResponse = result.candidates[0].content.parts[0].text.trim();
+            chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
+            showToast("AI responded!", "success");
+            console.log(Date.now(), "sendChatMessage: AI response received:", aiResponse);
+        } else {
+            const errorMessage = 'Failed to get AI response. No content received.';
+            chatHistory.push({ role: "model", parts: [{ text: errorMessage }] });
+            setError(errorMessage);
+            showToast(errorMessage, "error");
+            console.error(Date.now(), 'sendChatMessage: AI response missing content:', result);
+        }
+    } catch (e) {
+        const errorMessage = `Error communicating with AI: ${e.message || 'Unknown error'}.`;
+        chatHistory.push({ role: "model", parts: [{ text: errorMessage }] });
+        setError(errorMessage);
+        showToast(errorMessage, "error");
+        console.error(Date.now(), 'sendChatMessage: Error during chat API call:', e);
+    } finally {
+        console.timeEnd("chatAPIResponse");
+        loadingChat = false;
+        updateUI(); // Hide loading spinner and re-enable input
+        renderChatMessages(); // Re-render to show AI response
+    }
+}
+
+function clearChat() {
+    console.log(Date.now(), "clearChat: Clearing chat history.");
+    chatHistory = [{ role: "model", parts: [{ text: "Hello! How can I assist you today?" }] }]; // Reset to initial message
+    renderChatMessages();
+    showToast("Chat history cleared!", "info");
+    updateUI(); // Update button state
+}
+
+
 // --- Event Listeners Setup (Declared at top level, called in initApp) ---
 function setupEventListeners() {
     console.log(Date.now(), "setupEventListeners: Setting up all event listeners...");
@@ -1193,6 +1352,12 @@ function setupEventListeners() {
     if (generatorBtn) {
         generatorBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Generator button clicked."); setPage('generator'); });
         console.log(Date.now(), "Event Listener Attached: generator-btn");
+    }
+
+    chatBtnDesktop = getElement('chat-btn'); // NEW
+    if (chatBtnDesktop) {
+        chatBtnDesktop.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Chat button clicked."); setPage('chat'); });
+        console.log(Date.now(), "Event Listener Attached: chat-btn");
     }
 
     if (logoBtn) {
@@ -1228,6 +1393,7 @@ function setupEventListeners() {
                     console.log(Date.now(), `Event: Mobile nav link clicked: ${e.target.id}`);
                     if (e.target.id === 'mobile-home-btn') setPage('home');
                     else if (e.target.id === 'mobile-generator-btn') setPage('generator');
+                    else if (e.target.id === 'mobile-chat-btn') setPage('chat'); // NEW
                     toggleMobileMenu();
                 });
                 console.log(Date.now(), `Event Listener Attached: mobile-nav-link (${link.id})`);
@@ -1279,7 +1445,6 @@ function setupEventListeners() {
             enhancedPrompt = ''; // Clear enhanced prompt too
             variationIdeas = []; // Clear variation ideas too
             imageUrl = ''; // Clear image preview as well
-            selectedStyle = 'None'; // New: Reset style selection
             showToast("Prompt cleared!", "info");
             updateUI(); // Update UI to reflect cleared state
         });
@@ -1373,9 +1538,35 @@ function setupEventListeners() {
         console.warn(Date.now(), "setupEventListeners: generatedImageElement not found. Image preview onload/onerror will not work.");
     }
 
+    // NEW: Chat AI Event Listeners
+    if (sendChatBtn) {
+        sendChatBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Send Chat button clicked."); sendChatMessage(); });
+        console.log(Date.now(), "Event Listener Attached: sendChatBtn");
+    }
+    if (chatInput) {
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { // Send on Enter, allow Shift+Enter for new line
+                e.preventDefault(); // Prevent default new line
+                console.log(Date.now(), "Event: Chat input Enter key pressed.");
+                sendChatMessage();
+            }
+        });
+        // Auto-resize textarea based on content
+        chatInput.addEventListener('input', () => {
+            chatInput.style.height = 'auto';
+            chatInput.style.height = chatInput.scrollHeight + 'px';
+            updateUI(); // Update send button state
+        });
+        console.log(Date.now(), "Event Listener Attached: chatInput keydown/input");
+    }
+    if (clearChatBtn) {
+        clearChatBtn.addEventListener('click', () => { console.log(Date.now(), "Event: Clear Chat button clicked."); clearChat(); });
+        console.log(Date.now(), "Event Listener Attached: clearChatBtn");
+    }
 
+
+    populateStyleRadios(); // Call to populate style radios
     populateAspectRatioRadios(); // Populate radios after the div is found
-    populateStyleButtons(); // New: Populate style buttons initially
     console.log(Date.now(), "setupEventListeners: All event listeners setup attempted.");
 }
 
@@ -1393,7 +1584,8 @@ function initApp() {
         // It's crucial that these are correctly assigned before event listeners are set up
         homePageElement = getElement('home-page-element');
         generatorPageElement = getElement('generator-page-element');
-        allPageElements = [homePageElement, generatorPageElement].filter(Boolean); // Filter out nulls
+        chatPageElement = getElement('chat-page-element'); // NEW
+        allPageElements = [homePageElement, generatorPageElement, chatPageElement].filter(Boolean); // Filter out nulls
 
         persistentDebugMessage = getElement('persistent-debug-message');
         closeDebugMessageBtn = getElement('close-debug-message-btn');
@@ -1402,7 +1594,7 @@ function initApp() {
         negativePromptInput = getElement('negative-prompt-input'); // Ensure this is referenced
         copyPromptBtn = getElement('copy-prompt-btn');
         clearPromptBtn = getElement('clear-prompt-btn');
-        styleSelectionDiv = getElement('style-selection'); // New: Get reference to style selection div
+        styleSelectionDiv = getElement('style-selection');
         aspectRatioSelectionDiv = getElement('aspect-ratio-selection');
         generateBtn = getElement('generate-image-btn');
         enhanceBtn = getElement('enhance-prompt-btn');
@@ -1412,7 +1604,7 @@ function initApp() {
         errorDisplay = getElement('error-display');
         imageDisplayContainer = getElement('image-display-container');
         generatedImageElement = getElement('generated-image');
-        generatedImageWrapper = getElement('generated-image-wrapper'); // Ensure this is referenced
+        generatedImageWrapper = getElement('generated-image-wrapper');
 
 
         enhancedPromptDisplay = getElement('enhanced-prompt-display');
@@ -1442,6 +1634,16 @@ function initApp() {
         mobileNavLinks = document.querySelectorAll('#mobile-menu .mobile-nav-link'); 
 
         toastContainer = getElement('toast-container');
+
+        // NEW: Get chat UI element references
+        chatBtnDesktop = getElement('chat-btn');
+        chatBtnMobile = getElement('mobile-chat-btn');
+        chatMessagesContainer = getElement('chat-messages-container');
+        chatInput = getElement('chat-input');
+        sendChatBtn = getElement('send-chat-btn');
+        clearChatBtn = getElement('clear-chat-btn');
+        chatLoadingSpinner = getElement('chat-loading-spinner');
+
 
         console.log(Date.now(), "initApp: All UI element references obtained.");
 
