@@ -34,7 +34,7 @@ let negativePrompt = ''; // For negative prompt
 let imageUrl = ''; // For generated image
 let loading = false; // For image generation (Imagen API call)
 let currentError = ''; // Error message for display
-let currentPage = 'home'; // 'home', 'generator', 'chat' (NEW)
+let currentPage = 'home'; // 'home', 'generator', 'chat'
 let isSigningIn = false; // New state for sign-in loading
 let isAuthReady = false; // Flag to indicate if Firebase Auth state has been checked and services initialized
 
@@ -47,8 +47,11 @@ let variationIdeas = [];
 let loadingVariationIdeas = false;
 
 // NEW: Chat AI state variables
-let chatHistory = [{ role: "model", parts: [{ text: "Hello! How can I assist you today?" }] }]; // Initial message from AI
+// Initial message from AI. This will be the starting point if no history is loaded.
+// Changed initial message to reflect "Verse" as the AI's name.
+let chatHistory = [{ role: "model", parts: [{ text: "Hello! I am Verse. How can I assist you today?" }] }];
 let loadingChat = false;
+let typingAnimationElement = null; // Reference to the typing animation div
 
 
 // IMPORTANT: Your Google Cloud API Key for Imagen/Gemini (Declared at top level)
@@ -61,7 +64,7 @@ console.log(Date.now(), "script.js: IMAGEN_GEMINI_API_KEY value set at top level
 // Declared as `let` so they can be assigned later in initApp
 let homePageElement;
 let generatorPageElement;
-let chatPageElement; // NEW: Chat page element
+let chatPageElement;
 let allPageElements = []; // Group for easy iteration
 
 let persistentDebugMessage;
@@ -141,25 +144,24 @@ function initFirebase() {
         db = getFirestore(firebaseApp);
         googleProvider = new GoogleAuthProvider();
         console.log(Date.now(), "initFirebase: Firebase services initialized successfully.");
-        // isAuthReady remains false initially. It will be set to true by onAuthStateChanged
-        // after the *initial* authentication state check is complete.
         
         // Firebase Auth State Listener - Crucial for determining user status and enabling/disabling UI
         onAuthStateChanged(auth, async (user) => {
             console.log(Date.now(), "onAuthStateChanged: Auth state change detected. User:", user ? user.uid : "null");
             currentUser = user;
             if (user) {
-                console.log(Date.now(), "onAuthStateChanged: User logged in. Attempting to fetch user data from Firestore.");
-                console.time("fetchUserData"); // Start timer for data fetch
+                console.log(Date.now(), "onAuthStateChanged: User logged in. Attempting to fetch user data and chat history from Firestore.");
+                console.time("fetchUserDataAndChat"); // Start timer for data fetch
                 try {
                     await fetchUserData(user.uid); // Fetch user data from Firestore
-                    console.log(Date.now(), "onAuthStateChanged: User data fetch completed successfully.");
+                    await loadUserChatHistory(user.uid); // NEW: Load chat history for authenticated user
+                    console.log(Date.now(), "onAuthStateChanged: User data and chat history fetch completed successfully.");
                 } catch (dataFetchError) {
-                    console.error(Date.now(), "onAuthStateChanged: Error fetching user data:", dataFetchError);
-                    setError(`Failed to load user data: ${dataFetchError.message}. Some features may be limited.`);
-                    showToast(`Failed to load user data: ${dataFetchError.message}`, "error", 5000);
+                    console.error(Date.now(), "onAuthStateChanged: Error fetching user data or chat history:", dataFetchError);
+                    setError(`Failed to load user data/chat history: ${dataFetchError.message}. Some features may be limited.`);
+                    showToast(`Failed to load user data/chat history: ${dataFetchError.message}`, "error", 5000);
                 } finally {
-                    console.timeEnd("fetchUserData"); // End timer for data fetch
+                    console.timeEnd("fetchUserDataAndChat"); // End timer for data fetch
                 }
             } else {
                 console.log(Date.now(), "onAuthStateChanged: User logged out or no user detected. Checking local storage for free generations.");
@@ -173,6 +175,9 @@ function initFirebase() {
                     freeGenerationsLeft = parseInt(localStorage.getItem('freeGenerationsLeft'));
                     console.log(Date.now(), "onAuthStateChanged: Loaded freeGenerationsLeft from local storage:", freeGenerationsLeft);
                 }
+                // Reset chat history for unauthenticated users, and update initial message
+                chatHistory = [{ role: "model", parts: [{ text: "Hello! I am Verse. How can I assist you today?" }] }];
+                renderChatMessages(); // Re-render chat for unauthenticated state
             }
             isAuthReady = true; // Set to true only after the initial auth state has been processed
             console.log(Date.now(), "onAuthStateChanged: isAuthReady set to true. Calling updateUI().");
@@ -520,11 +525,14 @@ async function setPage(newPage) {
     } else if (newPage === 'generator') {
         newPageElement = generatorPageElement;
         updateImageWrapperAspectRatio(); // Ensure correct aspect ratio when navigating to generator page
-    } else if (newPage === 'chat') { // NEW: Handle chat page
+    } else if (newPage === 'chat') {
         newPageElement = chatPageElement;
         renderChatMessages(); // Render chat history when navigating to chat page
         if (chatMessagesContainer) {
-            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight; // Scroll to bottom
+            // Scroll to bottom after a slight delay to ensure content is rendered
+            setTimeout(() => {
+                chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+            }, 100); 
         }
     }
 
@@ -548,14 +556,14 @@ function updateUI() {
 
     // Collect all interactive elements that might need their disabled state managed
     const interactiveElements = [
-        homePageElement, generatorPageElement, chatPageElement, logoBtn, // Added chatPageElement
+        homePageElement, generatorPageElement, chatPageElement, logoBtn,
         hamburgerBtn, closeMobileMenuBtn, mobileMenuOverlay,
         startCreatingBtn, promptInput, negativePromptInput, copyPromptBtn, clearPromptBtn, generateBtn,
         enhanceBtn, variationBtn, useEnhancedPromptBtn,
         downloadBtn, signInBtnDesktop, signOutBtnDesktop,
         signInBtnMobile, signOutBtnMobile, modalSignInBtn,
         closeSigninModalBtn, persistentDebugMessage, closeDebugMessageBtn,
-        chatInput, sendChatBtn, clearChatBtn // Added chat elements
+        chatInput, sendChatBtn, clearChatBtn
     ];
 
     interactiveElements.forEach(el => {
@@ -563,7 +571,7 @@ function updateUI() {
             const isAuthButton = el.id && (el.id.includes('sign-in-btn') || el.id.includes('sign-out-btn') || el.id.includes('modal-sign-in-btn'));
             const isGeneratorButton = el.id && (el.id === 'generate-image-btn');
             const isEnhanceOrVariationButton = el.id && (el.id === 'enhance-prompt-btn' || el.id === 'generate-variation-ideas-btn');
-            const isChatInputOrButton = el.id && (el.id === 'chat-input' || el.id === 'send-chat-btn' || el.id === 'clear-chat-btn'); // NEW
+            const isChatInputOrButton = el.id && (el.id === 'chat-input' || el.id === 'send-chat-btn' || el.id === 'clear-chat-btn');
 
             // Default state: disabled if auth is not ready
             let shouldBeDisabled = !isAuthReady;
@@ -594,7 +602,7 @@ function updateUI() {
             } else if (el.id === 'close-debug-message-btn') {
                 // The dismiss button for the persistent error message should always be enabled if visible
                 shouldBeDisabled = false; // Always enable dismiss button
-            } else if (isChatInputOrButton) { // NEW: Chat specific disabling
+            } else if (isChatInputOrButton) {
                 shouldBeDisabled = !isAuthReady || loadingChat;
                 if (el.id === 'send-chat-btn' && chatInput && !chatInput.value.trim()) {
                     shouldBeDisabled = true; // Disable send button if input is empty
@@ -605,7 +613,7 @@ function updateUI() {
             }
             // For other general buttons (like navigation), they are enabled if isAuthReady is true and no loading is active
             if (!isAuthButton && !isGeneratorButton && !isEnhanceOrVariationButton && !isChatInputOrButton && el.id !== 'close-debug-message-btn') {
-                shouldBeDisabled = !isAuthReady || loading || loadingEnhancePrompt || loadingVariationIdeas || loadingChat; // Added loadingChat
+                shouldBeDisabled = !isAuthReady || loading || loadingEnhancePrompt || loadingVariationIdeas || loadingChat;
             }
 
 
@@ -625,15 +633,15 @@ function updateUI() {
     generatorPageElement?.classList.toggle('text-blue-100', currentPage === 'generator');
     generatorPageElement?.classList.toggle('text-gray-300', currentPage !== 'generator');
 
-    chatPageElement?.classList.toggle('bg-white/10', currentPage === 'chat'); // NEW
-    chatPageElement?.classList.toggle('text-blue-100', currentPage === 'chat'); // NEW
-    chatPageElement?.classList.toggle('text-gray-300', currentPage !== 'chat'); // NEW
+    chatPageElement?.classList.toggle('bg-white/10', currentPage === 'chat');
+    chatPageElement?.classList.toggle('text-blue-100', currentPage === 'chat');
+    chatPageElement?.classList.toggle('text-gray-300', currentPage !== 'chat');
 
     console.log(Date.now(), "updateUI: Header button styles updated.");
 
     if (currentPage === 'generator') {
         updateGeneratorPageUI(); // Call specific UI updates for generator page
-    } else if (currentPage === 'chat') { // NEW
+    } else if (currentPage === 'chat') {
         updateChatPageUI();
     }
     updateUIForAuthStatus(); // Update user display and sign-in/out buttons
@@ -808,7 +816,9 @@ function updateChatPageUI() {
         chatLoadingSpinner.classList.toggle('hidden', !loadingChat);
     }
     // The renderChatMessages function handles the actual message display
-    renderChatMessages();
+    // and will now be responsible for adding/removing the typing indicator.
+    // No direct call to renderChatMessages here, as it's called on page load
+    // and by sendChatMessage/clearChat.
 }
 
 /**
@@ -1060,7 +1070,7 @@ async function generateImage() {
     console.time("imageGenerationAPI");
 
     try {
-        let finalPrompt = promptInput.value.trim(); // Get current value from input
+        let finalPrompt = promptInput.value.trim(); 
         
         // --- Apply selected style to the prompt ---
         switch (selectedStyle) {
@@ -1229,6 +1239,33 @@ function clearError() {
     currentError = '';
 }
 
+// Helper function to convert basic Markdown to HTML
+function markdownToHtml(markdownText) {
+    // Escape HTML characters first to prevent XSS
+    let html = markdownText
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+    // Convert bold (**text**)
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Convert italics (*text*)
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    // Convert headlines (simple h3 for ##)
+    html = html.replace(/^##\s*(.*)$/gm, '<h3>$1</h3>');
+    // Convert unordered lists (- item)
+    html = html.replace(/^- (.*)$/gm, '<li>$1</li>');
+    if (html.includes('<li>')) { // Wrap list items in <ul> if any exist
+        html = `<ul>${html}</ul>`;
+    }
+    // Convert newlines to <br> for line breaks
+    html = html.replace(/\n/g, '<br>');
+
+    return html;
+}
+
 // NEW: Chat AI functions
 function renderChatMessages() {
     if (!chatMessagesContainer) {
@@ -1240,24 +1277,41 @@ function renderChatMessages() {
         const messageDiv = document.createElement('div');
         messageDiv.className = `flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`;
         
-        // Sanitize text content to prevent XSS
-        const safeText = message.parts[0].text
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        // Apply Markdown to HTML conversion for AI messages
+        const messageContentHtml = message.role === 'model' ? markdownToHtml(message.parts[0].text) : message.parts[0].text;
 
         messageDiv.innerHTML = `
             <div class="p-3 rounded-xl max-w-[80%] shadow-md animate-fade-in-up ${message.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-100'}">
                 <span class="font-bold ${message.role === 'user' ? 'text-blue-200' : 'text-blue-300'} text-xs block mb-1">
-                    ${message.role === 'user' ? (currentUser ? currentUser.displayName || currentUser.email : 'You') : 'GenArt AI'}
+                    ${message.role === 'user' ? (currentUser ? currentUser.displayName || currentUser.email : 'You') : 'Verse'}
                 </span>
-                ${safeText.replace(/\n/g, '<br>')}
+                ${messageContentHtml}
             </div>
         `;
         chatMessagesContainer.appendChild(messageDiv);
     });
+
+    // Add typing animation if loadingChat is true
+    if (loadingChat) {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'flex justify-start';
+        // MODIFIED: Added "Verse typing..." text
+        typingDiv.innerHTML = `
+            <div class="p-3 rounded-xl max-w-[80%] shadow-md bg-gray-700 text-gray-100 animate-fade-in-up">
+                <span class="font-bold text-blue-300 text-xs block mb-1">Verse</span>
+                <span class="text-sm italic mr-2">typing...</span><span class="typing-indicator"><span></span><span></span><span></span></span>
+            </div>
+        `;
+        chatMessagesContainer.appendChild(typingDiv);
+        typingAnimationElement = typingDiv; // Store reference to remove later
+        console.log(Date.now(), "renderChatMessages: Added typing animation with 'Verse typing...' text.");
+    } else if (typingAnimationElement) {
+        // If not loading and typing element exists, remove it
+        typingAnimationElement.remove();
+        typingAnimationElement = null;
+        console.log(Date.now(), "renderChatMessages: Removed typing animation.");
+    }
+
     // Auto-scroll to the bottom
     chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
     console.log(Date.now(), "renderChatMessages: Chat messages rendered and scrolled to bottom.");
@@ -1275,6 +1329,24 @@ async function sendChatMessage() {
 
     const userMessage = chatInput.value.trim();
     chatInput.value = ''; // Clear input immediately
+    chatInput.style.height = 'auto'; // Reset textarea height
+
+    // NEW: Self-referential identity check for "Verse"
+    const lowerCaseMessage = userMessage.toLowerCase();
+    const identityKeywords = ["who created you", "who made you", "your creator", "who built you", "your origin", "what are you", "who are you"];
+    const isIdentityQuestion = identityKeywords.some(keyword => lowerCaseMessage.includes(keyword));
+
+    if (isIdentityQuestion) {
+        const identityResponse = "**GenArt** created me. I am **Verse**, a large language model designed to assist you with image generation and other creative tasks.";
+        chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
+        chatHistory.push({ role: "model", parts: [{ text: identityResponse }] });
+        renderChatMessages(); // Display user message and hardcoded AI response
+        if (currentUser) {
+            await saveUserChatHistory(currentUser.uid); // Save history
+        }
+        showToast("Answered about my origin!", "info");
+        return; // Exit function, no API call needed
+    }
 
     chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
     renderChatMessages(); // Display user message immediately
@@ -1284,7 +1356,15 @@ async function sendChatMessage() {
     console.time("chatAPIResponse");
 
     try {
-        const payload = { contents: chatHistory };
+        // NEW: Instruct the AI to format its response using Markdown
+        const formattedPrompt = `
+            Please answer the following question. Format your response using Markdown (e.g., **bold**, *italics*, ## headlines, - lists) for clarity and organization. Ensure the answer is comprehensive and professional.
+
+            User question: "${userMessage}"
+        `;
+
+        // For the API call, we send the full history including the new formatted prompt.
+        const payload = { contents: [...chatHistory.slice(0, -1), { role: "user", parts: [{ text: formattedPrompt }] }] }; // Replace last user message with formatted one for API
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${IMAGEN_GEMINI_API_KEY}`;
 
         const response = await fetch(apiUrl, {
@@ -1305,17 +1385,17 @@ async function sendChatMessage() {
         if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
             const aiResponse = result.candidates[0].content.parts[0].text.trim();
             chatHistory.push({ role: "model", parts: [{ text: aiResponse }] });
-            showToast("AI responded!", "success");
+            showToast("Verse responded!", "success"); // Toast message updated
             console.log(Date.now(), "sendChatMessage: AI response received:", aiResponse);
         } else {
-            const errorMessage = 'Failed to get AI response. No content received.';
+            const errorMessage = 'Failed to get Verse\'s response. No content received.'; // Error message updated
             chatHistory.push({ role: "model", parts: [{ text: errorMessage }] });
             setError(errorMessage);
             showToast(errorMessage, "error");
             console.error(Date.now(), 'sendChatMessage: AI response missing content:', result);
         }
     } catch (e) {
-        const errorMessage = `Error communicating with AI: ${e.message || 'Unknown error'}.`;
+        const errorMessage = `Error communicating with Verse: ${e.message || 'Unknown error'}.`; // Error message updated
         chatHistory.push({ role: "model", parts: [{ text: errorMessage }] });
         setError(errorMessage);
         showToast(errorMessage, "error");
@@ -1323,17 +1403,83 @@ async function sendChatMessage() {
     } finally {
         console.timeEnd("chatAPIResponse");
         loadingChat = false;
+        renderChatMessages(); // Re-render to remove typing indicator and show AI response
         updateUI(); // Hide loading spinner and re-enable input
-        renderChatMessages(); // Re-render to show AI response
+        if (currentUser) {
+            await saveUserChatHistory(currentUser.uid); // Save history after interaction
+        }
     }
 }
 
 function clearChat() {
     console.log(Date.now(), "clearChat: Clearing chat history.");
-    chatHistory = [{ role: "model", parts: [{ text: "Hello! How can I assist you today?" }] }]; // Reset to initial message
+    chatHistory = [{ role: "model", parts: [{ text: "Hello! I am Verse. How can I assist you today?" }] }]; // Reset to initial message
     renderChatMessages();
     showToast("Chat history cleared!", "info");
     updateUI(); // Update button state
+    if (currentUser) {
+        saveUserChatHistory(currentUser.uid); // Persist cleared state
+    }
+}
+
+// NEW: Firestore functions for chat history
+async function loadUserChatHistory(uid) {
+    console.log(Date.now(), `loadUserChatHistory: Loading chat history for UID: ${uid}`);
+    if (!db) {
+        console.error(Date.now(), "loadUserChatHistory: Firestore DB not initialized. Cannot load chat history.");
+        return;
+    }
+    const chatDocRef = doc(db, `users/${uid}/chat_histories/main_chat_history`);
+    try {
+        const chatDocSnap = await getDoc(chatDocRef);
+        if (chatDocSnap.exists()) {
+            const data = chatDocSnap.data();
+            // Ensure data.history is an array and contains valid message objects
+            if (Array.isArray(data.history) && data.history.every(item => item.role && item.parts && Array.isArray(item.parts) && item.parts.every(part => typeof part.text === 'string'))) {
+                chatHistory = data.history;
+                console.log(Date.now(), "loadUserChatHistory: Chat history loaded from Firestore.", chatHistory);
+            } else {
+                console.warn(Date.now(), "loadUserChatHistory: Invalid chat history format in Firestore. Initializing default.");
+                chatHistory = [{ role: "model", parts: [{ text: "Hello! I am Verse. How can I assist you today?" }] }];
+                await saveUserChatHistory(uid); // Save default if format is bad
+            }
+        } else {
+            console.log(Date.now(), "loadUserChatHistory: No chat history found for user. Initializing default.");
+            chatHistory = [{ role: "model", parts: [{ text: "Hello! I am Verse. How can I assist you today?" }] }];
+            await saveUserChatHistory(uid); // Save default history for new user
+        }
+    } catch (error) {
+        console.error(Date.now(), "loadUserChatHistory: Error loading chat history:", error);
+        showToast("Error loading chat history. Starting fresh.", "error");
+        chatHistory = [{ role: "model", parts: [{ text: "Hello! I am Verse. How can I assist you today?" }] }]; // Fallback to default
+    } finally {
+        renderChatMessages(); // Always render messages after load attempt
+    }
+}
+
+async function saveUserChatHistory(uid) {
+    console.log(Date.now(), `saveUserChatHistory: Saving chat history for UID: ${uid}`);
+    if (!db) {
+        console.error(Date.now(), "saveUserChatHistory: Firestore DB not initialized. Cannot save chat history.");
+        return;
+    }
+    const chatDocRef = doc(db, `users/${uid}/chat_histories/main_chat_history`);
+    try {
+        // Store only the necessary parts of the chatHistory array
+        const historyToSave = chatHistory.map(msg => ({
+            role: msg.role,
+            parts: msg.parts.map(part => ({ text: part.text }))
+        }));
+
+        await setDoc(chatDocRef, {
+            history: historyToSave,
+            lastUpdated: serverTimestamp()
+        }, { merge: true }); // Use merge to avoid overwriting other potential fields
+        console.log(Date.now(), "saveUserChatHistory: Chat history saved successfully.");
+    } catch (error) {
+        console.error(Date.now(), "saveUserChatHistory: Error saving chat history:", error);
+        showToast("Error saving chat history.", "error");
+    }
 }
 
 
@@ -1354,7 +1500,7 @@ function setupEventListeners() {
         console.log(Date.now(), "Event Listener Attached: generator-btn");
     }
 
-    chatBtnDesktop = getElement('chat-btn'); // NEW
+    chatBtnDesktop = getElement('chat-btn');
     if (chatBtnDesktop) {
         chatBtnDesktop.addEventListener('click', () => { console.log(Date.now(), "Event: Desktop Chat button clicked."); setPage('chat'); });
         console.log(Date.now(), "Event Listener Attached: chat-btn");
@@ -1393,7 +1539,7 @@ function setupEventListeners() {
                     console.log(Date.now(), `Event: Mobile nav link clicked: ${e.target.id}`);
                     if (e.target.id === 'mobile-home-btn') setPage('home');
                     else if (e.target.id === 'mobile-generator-btn') setPage('generator');
-                    else if (e.target.id === 'mobile-chat-btn') setPage('chat'); // NEW
+                    else if (e.target.id === 'mobile-chat-btn') setPage('chat');
                     toggleMobileMenu();
                 });
                 console.log(Date.now(), `Event Listener Attached: mobile-nav-link (${link.id})`);
@@ -1584,14 +1730,14 @@ function initApp() {
         // It's crucial that these are correctly assigned before event listeners are set up
         homePageElement = getElement('home-page-element');
         generatorPageElement = getElement('generator-page-element');
-        chatPageElement = getElement('chat-page-element'); // NEW
+        chatPageElement = getElement('chat-page-element');
         allPageElements = [homePageElement, generatorPageElement, chatPageElement].filter(Boolean); // Filter out nulls
 
         persistentDebugMessage = getElement('persistent-debug-message');
         closeDebugMessageBtn = getElement('close-debug-message-btn');
 
         promptInput = getElement('prompt-input');
-        negativePromptInput = getElement('negative-prompt-input'); // Ensure this is referenced
+        negativePromptInput = getElement('negative-prompt-input');
         copyPromptBtn = getElement('copy-prompt-btn');
         clearPromptBtn = getElement('clear-prompt-btn');
         styleSelectionDiv = getElement('style-selection');
