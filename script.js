@@ -48,7 +48,7 @@ let loadingVariationIdeas = false;
 
 // IMPORTANT: Your Google Cloud API Key for Imagen/Gemini (Declared at top level)
 // REPLACE "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE" WITH THE KEY YOU OBTAINED FROM GOOGLE CLOUD CONSOLE
-const IMAGEN_GEMINI_API_KEY = "AIzaSyBZxXWl9s2AeSCrMrfoEfnYWpGyfvP7jqs"; // Ensure this is your actual key
+const IMAGEN_GEMINI_API_KEY = "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE"; // <--- **UPDATE THIS LINE**
 console.log(Date.now(), "script.js: IMAGEN_GEMINI_API_KEY value set at top level.");
 
 
@@ -247,7 +247,7 @@ async function signInWithGoogle() {
     updateSignInButtons(true); // Show loading state on buttons
     
     // Basic popup blocker check
-    const testWindow = window.open('', '_blank', 'width=1,height=1,left=0,top=0');
+    const testWindow = window.open('', '_blank', 'width=1,height=1,left=0,top=0);
     if (testWindow) {
         testWindow.close();
         console.log(Date.now(), "signInWithGoogle: Popup blocker check passed.");
