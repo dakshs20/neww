@@ -25,12 +25,14 @@ const userProfileSectionDesktop = document.getElementById('user-profile-section-
 const userCreditsSpanDesktop = document.getElementById('user-credits-desktop');
 const userAvatarImgDesktop = document.getElementById('user-avatar-desktop');
 const signOutBtnDesktop = document.getElementById('sign-out-btn-desktop');
+const welcomeMessageDesktop = document.getElementById('welcome-message-desktop');
 
 const getStartedBtnMobile = document.getElementById('get-started-btn-mobile');
 const userProfileSectionMobile = document.getElementById('user-profile-section-mobile');
 const userCreditsSpanMobile = document.getElementById('user-credits-mobile');
 const userAvatarImgMobile = document.getElementById('user-avatar-mobile');
 const signOutBtnMobile = document.getElementById('sign-out-btn-mobile');
+const welcomeMessageMobile = document.getElementById('welcome-message-mobile');
 
 const menuBtn = document.getElementById('menu-btn');
 const closeMenuBtn = document.getElementById('close-menu-btn');
@@ -55,6 +57,7 @@ const modalCloseBtn = document.getElementById('modal-close-btn');
 let isGenerating = false;
 let isEnhancing = false;
 let currentUserCredits = 0;
+let guestGenerations = 3;
 
 // --- AUTHENTICATION & MODAL ---
 const openSignInModal = () => signInModal.classList.remove('hidden');
@@ -70,7 +73,7 @@ onAuthStateChanged(auth, async (user) => {
         setPromptAreaEnabled(true);
     } else {
         updateUIAfterLogout();
-        setPromptAreaEnabled(false);
+        setPromptAreaEnabled(guestGenerations > 0);
     }
 });
 
@@ -91,6 +94,7 @@ const getUserProfile = async (user) => {
             credits: 5, createdAt: new Date()
         };
         await setDoc(userDocRef, newUserProfile);
+        localStorage.removeItem('guestGenerations'); // Clear guest count on first sign-in
         return newUserProfile;
     }
 };
@@ -103,21 +107,29 @@ const updateUIAfterLogin = (user, profile) => {
     userProfileSectionDesktop.classList.add('flex');
     userAvatarImgDesktop.src = user.photoURL;
     userCreditsSpanDesktop.textContent = profile.credits;
+    welcomeMessageDesktop.textContent = `Welcome, ${user.displayName.split(' ')[0]}`;
     // Mobile
     getStartedBtnMobile.classList.add('hidden');
     userProfileSectionMobile.classList.remove('hidden');
     userAvatarImgMobile.src = user.photoURL;
     userCreditsSpanMobile.textContent = profile.credits;
+    welcomeMessageMobile.textContent = `Welcome, ${user.displayName.split(' ')[0]}`;
 };
 const updateUIAfterLogout = () => {
-     // Desktop
+    const storedGuestGens = localStorage.getItem('guestGenerations');
+    guestGenerations = storedGuestGens ? parseInt(storedGuestGens) : 3;
+
+    // Desktop
     getStartedBtnDesktop.classList.remove('hidden');
     userProfileSectionDesktop.classList.add('hidden');
     userProfileSectionDesktop.classList.remove('flex');
-     // Mobile
+    userCreditsSpanDesktop.textContent = guestGenerations;
+    welcomeMessageDesktop.textContent = 'Free Generations:';
+    // Mobile
     getStartedBtnMobile.classList.remove('hidden');
     userProfileSectionMobile.classList.add('hidden');
-    currentUserCredits = 0;
+    userCreditsSpanMobile.textContent = guestGenerations;
+    welcomeMessageMobile.textContent = 'Free Generations:';
 };
 
 const setPromptAreaEnabled = (isEnabled) => {
@@ -126,7 +138,7 @@ const setPromptAreaEnabled = (isEnabled) => {
     enhanceBtn.disabled = !isEnabled;
     copyBtn.disabled = !isEnabled;
     clearBtn.disabled = !isEnabled;
-    promptInput.placeholder = isEnabled ? "Describe your idea" : "Sign in to start creating...";
+    promptInput.placeholder = isEnabled ? "Describe your idea..." : "You have free generations remaining...";
 };
 
 // --- CORE APP LOGIC ---
@@ -171,7 +183,7 @@ async function callAPI(model, payload, retries = 2) {
 const handleEnhancePrompt = async () => {
     if (isEnhancing || isGenerating) return;
     const user = auth.currentUser;
-    if (!user) {
+    if (!user && guestGenerations <= 0) {
         openSignInModal();
         return;
     }
@@ -204,14 +216,16 @@ const handleEnhancePrompt = async () => {
 const handleGenerateImage = async () => {
     if (isGenerating || isEnhancing) return;
     const user = auth.currentUser;
-    if (!user) {
+
+    if (!user && guestGenerations <= 0) {
         openSignInModal();
         return;
     }
-    if (currentUserCredits <= 0) {
-        showMessage("You are out of credits.", 'error');
+    if (user && currentUserCredits <= 0) {
+        showMessage("You are out of credits. Please sign up for more.", 'error');
         return;
     }
+
     const prompt = promptInput.value.trim();
     if (!prompt) {
         showMessage("Please describe an idea to generate an image.", 'error');
@@ -226,12 +240,21 @@ const handleGenerateImage = async () => {
         const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
         addImageToGallery(prompt, imageUrl);
         
-        currentUserCredits--;
-        const userDocRef = doc(db, "users", auth.currentUser.uid);
-        await updateDoc(userDocRef, { credits: currentUserCredits });
-        // Update UI immediately
-        userCreditsSpanDesktop.textContent = currentUserCredits;
-        userCreditsSpanMobile.textContent = currentUserCredits;
+        if (user) {
+            currentUserCredits--;
+            const userDocRef = doc(db, "users", auth.currentUser.uid);
+            await updateDoc(userDocRef, { credits: currentUserCredits });
+            userCreditsSpanDesktop.textContent = currentUserCredits;
+            userCreditsSpanMobile.textContent = currentUserCredits;
+        } else {
+            guestGenerations--;
+            localStorage.setItem('guestGenerations', guestGenerations);
+            updateUIAfterLogout();
+            if (guestGenerations <= 0) {
+                setPromptAreaEnabled(false);
+                promptInput.placeholder = "Sign in to continue creating...";
+            }
+        }
     } else {
         showMessage("Could not generate image. The AI may have refused the prompt. Please try rephrasing your idea.", 'error');
     }
@@ -273,7 +296,7 @@ const showMessage = (message, type = 'success') => {
         messageBox.classList.add('bg-green-100', 'text-green-700', 'border', 'border-green-300');
     }
     messageBox.classList.remove('hidden');
-    setTimeout(() => messageBox.classList.add('hidden'), 4000); // Increased timeout for better readability
+    setTimeout(() => messageBox.classList.add('hidden'), 4000);
 };
         
 const copyPrompt = () => {
@@ -312,7 +335,6 @@ const populateSuggestionChips = () => {
 
 // --- EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
-    setPromptAreaEnabled(false); // Initially disable prompt area
     populateSuggestionChips();
     getStartedBtnDesktop.addEventListener('click', signInWithGoogleRedirect);
     getStartedBtnMobile.addEventListener('click', signInWithGoogleRedirect);
