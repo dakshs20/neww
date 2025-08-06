@@ -131,7 +131,7 @@ const setPromptAreaEnabled = (isEnabled) => {
 
 // --- CORE APP LOGIC ---
 async function callAPI(model, payload, retries = 2) {
-    const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs"; // YOUR API KEY IS NOW HERE
+    const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs"; // YOUR API KEY
     const apiUrl = model.startsWith('imagen') 
         ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${apiKey}`
         : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -145,22 +145,18 @@ async function callAPI(model, payload, retries = 2) {
             
             const result = await response.json();
             
-            // Success condition for Imagen
             if (model.startsWith('imagen') && result.predictions?.[0]?.bytesBase64Encoded) {
                 return result;
             }
-            // Success condition for Gemini
             if (!model.startsWith('imagen') && result.candidates?.[0]?.content?.parts?.[0]?.text) {
                 return result;
             }
             
-            // If response is valid but empty, it might be a temporary issue or safety block
             console.warn(`API call attempt ${i + 1} returned an empty or invalid response. Retrying...`, result);
             if (i === retries) {
-                 // If all retries fail, it's likely a safety block
                  throw new Error("Prompt may have been refused by the AI after multiple attempts.");
             }
-            await new Promise(res => setTimeout(res, 1000)); // Wait 1s before retrying
+            await new Promise(res => setTimeout(res, 1000));
 
         } catch (error) {
             console.error(`Error on attempt ${i + 1} calling ${model}:`, error);
