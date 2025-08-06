@@ -55,40 +55,34 @@ const modalCloseBtn = document.getElementById('modal-close-btn');
 let isGenerating = false;
 let isEnhancing = false;
 let currentUserCredits = 0;
+let guestGenerations = 3;
 
 // --- AUTHENTICATION & MODAL ---
 const openSignInModal = () => signInModal.classList.remove('hidden');
 const closeSignInModal = () => signInModal.classList.add('hidden');
-const signInWithGoogleRedirect = () => signInWithRedirect(auth, provider);
+const signInWithGoogleRedirect = () => {
+    localStorage.setItem('signInRedirect', 'true');
+    signInWithRedirect(auth, provider);
+};
 const signOutUser = () => signOut(auth);
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        // User is signed in.
         const userProfile = await getUserProfile(user);
         currentUserCredits = userProfile.credits;
         updateUIAfterLogin(user, userProfile);
         setPromptAreaEnabled(true);
     } else {
-        // User is signed out or the page has just loaded.
         updateUIAfterLogout();
-        setPromptAreaEnabled(false);
+        // Allow prompt area for guests with remaining generations
+        setPromptAreaEnabled(guestGenerations > 0);
     }
 });
 
-// Handle the result of the redirect sign-in
-getRedirectResult(auth)
-    .then((result) => {
-        if (result) {
-            // This will trigger the onAuthStateChanged listener again with the user object.
-            // No need to do anything here as the listener will handle the UI update.
-        }
-    })
-    .catch((error) => {
-        console.error("Redirect Sign-In Error:", error);
-        showMessage("Could not sign in. Please try again.", "error");
-    });
-
+getRedirectResult(auth).catch((error) => {
+    console.error("Redirect Sign-In Error:", error);
+    showMessage("Could not sign in. Please try again.", "error");
+});
 
 const getUserProfile = async (user) => {
     const userDocRef = doc(db, "users", user.uid);
@@ -101,6 +95,8 @@ const getUserProfile = async (user) => {
             credits: 5, createdAt: new Date()
         };
         await setDoc(userDocRef, newUserProfile);
+        // Clear guest generations after first sign-in
+        localStorage.removeItem('guestGenerations');
         return newUserProfile;
     }
 };
@@ -119,15 +115,20 @@ const updateUIAfterLogin = (user, profile) => {
     userAvatarImgMobile.src = user.photoURL;
     userCreditsSpanMobile.textContent = profile.credits;
 };
+
 const updateUIAfterLogout = () => {
-     // Desktop
+    const storedGuestGens = localStorage.getItem('guestGenerations');
+    guestGenerations = storedGuestGens ? parseInt(storedGuestGens) : 3;
+
+    // Desktop
     getStartedBtnDesktop.classList.remove('hidden');
     userProfileSectionDesktop.classList.add('hidden');
     userProfileSectionDesktop.classList.remove('flex');
-     // Mobile
+    userCreditsSpanDesktop.textContent = guestGenerations;
+    // Mobile
     getStartedBtnMobile.classList.remove('hidden');
     userProfileSectionMobile.classList.add('hidden');
-    currentUserCredits = 0;
+    userCreditsSpanMobile.textContent = guestGenerations;
 };
 
 const setPromptAreaEnabled = (isEnabled) => {
@@ -161,7 +162,7 @@ async function callAPI(model, payload) {
 const handleEnhancePrompt = async () => {
     if (isEnhancing || isGenerating) return;
     const user = auth.currentUser;
-    if (!user) {
+    if (!user && guestGenerations <= 0) {
         openSignInModal();
         return;
     }
@@ -194,14 +195,16 @@ const handleEnhancePrompt = async () => {
 const handleGenerateImage = async () => {
     if (isGenerating || isEnhancing) return;
     const user = auth.currentUser;
-    if (!user) {
+
+    if (!user && guestGenerations <= 0) {
         openSignInModal();
         return;
     }
-    if (currentUserCredits <= 0) {
-        showMessage("You are out of credits.", 'error');
+    if (user && currentUserCredits <= 0) {
+        showMessage("You are out of credits. Please sign up for more.", 'error');
         return;
     }
+
     const prompt = promptInput.value.trim();
     if (!prompt) {
         showMessage("Please describe an idea to generate an image.", 'error');
@@ -216,12 +219,17 @@ const handleGenerateImage = async () => {
         const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
         addImageToGallery(prompt, imageUrl);
         
-        currentUserCredits--;
-        const userDocRef = doc(db, "users", auth.currentUser.uid);
-        await updateDoc(userDocRef, { credits: currentUserCredits });
-        // Update UI immediately
-        userCreditsSpanDesktop.textContent = currentUserCredits;
-        userCreditsSpanMobile.textContent = currentUserCredits;
+        if (user) {
+            currentUserCredits--;
+            const userDocRef = doc(db, "users", auth.currentUser.uid);
+            await updateDoc(userDocRef, { credits: currentUserCredits });
+            userCreditsSpanDesktop.textContent = currentUserCredits;
+            userCreditsSpanMobile.textContent = currentUserCredits;
+        } else {
+            guestGenerations--;
+            localStorage.setItem('guestGenerations', guestGenerations);
+            updateUIAfterLogout(); // To update the guest credit counter
+        }
     } else {
         showMessage("Could not generate image. The AI may have refused the prompt.", 'error');
     }
@@ -302,7 +310,6 @@ const populateSuggestionChips = () => {
 
 // --- EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
-    setPromptAreaEnabled(false); // Initially disable prompt area
     populateSuggestionChips();
     getStartedBtnDesktop.addEventListener('click', signInWithGoogleRedirect);
     getStartedBtnMobile.addEventListener('click', signInWithGoogleRedirect);
