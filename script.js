@@ -55,15 +55,11 @@ const modalCloseBtn = document.getElementById('modal-close-btn');
 let isGenerating = false;
 let isEnhancing = false;
 let currentUserCredits = 0;
-let guestGenerations = 3;
 
 // --- AUTHENTICATION & MODAL ---
 const openSignInModal = () => signInModal.classList.remove('hidden');
 const closeSignInModal = () => signInModal.classList.add('hidden');
-const signInWithGoogleRedirect = () => {
-    localStorage.setItem('signInRedirect', 'true');
-    signInWithRedirect(auth, provider);
-};
+const signInWithGoogleRedirect = () => signInWithRedirect(auth, provider);
 const signOutUser = () => signOut(auth);
 
 onAuthStateChanged(auth, async (user) => {
@@ -74,8 +70,7 @@ onAuthStateChanged(auth, async (user) => {
         setPromptAreaEnabled(true);
     } else {
         updateUIAfterLogout();
-        // Allow prompt area for guests with remaining generations
-        setPromptAreaEnabled(guestGenerations > 0);
+        setPromptAreaEnabled(false);
     }
 });
 
@@ -83,6 +78,7 @@ getRedirectResult(auth).catch((error) => {
     console.error("Redirect Sign-In Error:", error);
     showMessage("Could not sign in. Please try again.", "error");
 });
+
 
 const getUserProfile = async (user) => {
     const userDocRef = doc(db, "users", user.uid);
@@ -95,8 +91,6 @@ const getUserProfile = async (user) => {
             credits: 5, createdAt: new Date()
         };
         await setDoc(userDocRef, newUserProfile);
-        // Clear guest generations after first sign-in
-        localStorage.removeItem('guestGenerations');
         return newUserProfile;
     }
 };
@@ -115,20 +109,15 @@ const updateUIAfterLogin = (user, profile) => {
     userAvatarImgMobile.src = user.photoURL;
     userCreditsSpanMobile.textContent = profile.credits;
 };
-
 const updateUIAfterLogout = () => {
-    const storedGuestGens = localStorage.getItem('guestGenerations');
-    guestGenerations = storedGuestGens ? parseInt(storedGuestGens) : 3;
-
-    // Desktop
+     // Desktop
     getStartedBtnDesktop.classList.remove('hidden');
     userProfileSectionDesktop.classList.add('hidden');
     userProfileSectionDesktop.classList.remove('flex');
-    userCreditsSpanDesktop.textContent = guestGenerations;
-    // Mobile
+     // Mobile
     getStartedBtnMobile.classList.remove('hidden');
     userProfileSectionMobile.classList.add('hidden');
-    userCreditsSpanMobile.textContent = guestGenerations;
+    currentUserCredits = 0;
 };
 
 const setPromptAreaEnabled = (isEnabled) => {
@@ -141,28 +130,52 @@ const setPromptAreaEnabled = (isEnabled) => {
 };
 
 // --- CORE APP LOGIC ---
-async function callAPI(model, payload) {
-    const apiKey = ""; // Handled by environment
+async function callAPI(model, payload, retries = 2) {
+    const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs"; // YOUR API KEY IS NOW HERE
     const apiUrl = model.startsWith('imagen') 
         ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${apiKey}`
         : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    try {
-        const response = await fetch(apiUrl, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-        });
-        if (!response.ok) throw new Error(`API Error: ${response.status}`);
-        return await response.json();
-    } catch (error) {
-        console.error(`Error calling ${model}:`, error);
-        showMessage("An error occurred with the AI network.", 'error');
-        return null;
+    
+    for (let i = 0; i <= retries; i++) {
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            });
+            if (!response.ok) throw new Error(`API Error: ${response.status}`);
+            
+            const result = await response.json();
+            
+            // Success condition for Imagen
+            if (model.startsWith('imagen') && result.predictions?.[0]?.bytesBase64Encoded) {
+                return result;
+            }
+            // Success condition for Gemini
+            if (!model.startsWith('imagen') && result.candidates?.[0]?.content?.parts?.[0]?.text) {
+                return result;
+            }
+            
+            // If response is valid but empty, it might be a temporary issue or safety block
+            console.warn(`API call attempt ${i + 1} returned an empty or invalid response. Retrying...`, result);
+            if (i === retries) {
+                 // If all retries fail, it's likely a safety block
+                 throw new Error("Prompt may have been refused by the AI after multiple attempts.");
+            }
+            await new Promise(res => setTimeout(res, 1000)); // Wait 1s before retrying
+
+        } catch (error) {
+            console.error(`Error on attempt ${i + 1} calling ${model}:`, error);
+            if (i === retries) {
+                showMessage("An error occurred with the AI network. Please try again later.", 'error');
+                return null;
+            }
+        }
     }
 }
 
 const handleEnhancePrompt = async () => {
     if (isEnhancing || isGenerating) return;
     const user = auth.currentUser;
-    if (!user && guestGenerations <= 0) {
+    if (!user) {
         openSignInModal();
         return;
     }
@@ -180,11 +193,11 @@ const handleEnhancePrompt = async () => {
     const payload = { contents: [{ role: "user", parts: [{ text: systemPrompt }] }] };
     const result = await callAPI('gemini-2.5-flash-preview-05-20', payload);
 
-    if (result && result.candidates?.[0]?.content?.parts?.[0]?.text) {
+    if (result) {
         promptInput.value = result.candidates[0].content.parts[0].text.trim();
         showMessage('Prompt enhanced!');
     } else {
-        showMessage('Could not enhance the prompt.', 'error');
+        showMessage('Could not enhance the prompt. Please try rephrasing.', 'error');
     }
 
     isEnhancing = false;
@@ -195,16 +208,14 @@ const handleEnhancePrompt = async () => {
 const handleGenerateImage = async () => {
     if (isGenerating || isEnhancing) return;
     const user = auth.currentUser;
-
-    if (!user && guestGenerations <= 0) {
+    if (!user) {
         openSignInModal();
         return;
     }
-    if (user && currentUserCredits <= 0) {
-        showMessage("You are out of credits. Please sign up for more.", 'error');
+    if (currentUserCredits <= 0) {
+        showMessage("You are out of credits.", 'error');
         return;
     }
-
     const prompt = promptInput.value.trim();
     if (!prompt) {
         showMessage("Please describe an idea to generate an image.", 'error');
@@ -215,23 +226,18 @@ const handleGenerateImage = async () => {
     const payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
     const result = await callAPI('imagen-3.0-generate-002', payload);
 
-    if (result && result.predictions?.[0]?.bytesBase64Encoded) {
+    if (result) {
         const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
         addImageToGallery(prompt, imageUrl);
         
-        if (user) {
-            currentUserCredits--;
-            const userDocRef = doc(db, "users", auth.currentUser.uid);
-            await updateDoc(userDocRef, { credits: currentUserCredits });
-            userCreditsSpanDesktop.textContent = currentUserCredits;
-            userCreditsSpanMobile.textContent = currentUserCredits;
-        } else {
-            guestGenerations--;
-            localStorage.setItem('guestGenerations', guestGenerations);
-            updateUIAfterLogout(); // To update the guest credit counter
-        }
+        currentUserCredits--;
+        const userDocRef = doc(db, "users", auth.currentUser.uid);
+        await updateDoc(userDocRef, { credits: currentUserCredits });
+        // Update UI immediately
+        userCreditsSpanDesktop.textContent = currentUserCredits;
+        userCreditsSpanMobile.textContent = currentUserCredits;
     } else {
-        showMessage("Could not generate image. The AI may have refused the prompt.", 'error');
+        showMessage("Could not generate image. The AI may have refused the prompt. Please try rephrasing your idea.", 'error');
     }
     setLoadingState(false);
 };
@@ -271,9 +277,9 @@ const showMessage = (message, type = 'success') => {
         messageBox.classList.add('bg-green-100', 'text-green-700', 'border', 'border-green-300');
     }
     messageBox.classList.remove('hidden');
-    setTimeout(() => messageBox.classList.add('hidden'), 3000);
+    setTimeout(() => messageBox.classList.add('hidden'), 4000); // Increased timeout for better readability
 };
-
+        
 const copyPrompt = () => {
     if (!promptInput.value) { showMessage('Nothing to copy.', 'error'); return; }
     const textArea = document.createElement("textarea");
@@ -310,6 +316,7 @@ const populateSuggestionChips = () => {
 
 // --- EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
+    setPromptAreaEnabled(false); // Initially disable prompt area
     populateSuggestionChips();
     getStartedBtnDesktop.addEventListener('click', signInWithGoogleRedirect);
     getStartedBtnMobile.addEventListener('click', signInWithGoogleRedirect);
