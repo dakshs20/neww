@@ -135,7 +135,7 @@ function initFirebase() {
                     // This means the user has just successfully signed in via redirect.
                     console.log(Date.now(), "initFirebase (getRedirectResult): User signed in via redirect.", result.user.uid);
                     signinRequiredModal?.classList.add('hidden'); // Hide modal just in case
-                    showToast("Signed in successfully!", "success");
+                    showToast(`Welcome, ${result.user.displayName || 'friend'}!`, "success");
                     // The onAuthStateChanged listener below will handle fetching user data and updating the UI.
                 } else {
                      console.log(Date.now(), "initFirebase (getRedirectResult): No redirect result found. This is a normal page load.");
@@ -151,7 +151,7 @@ function initFirebase() {
                 updateSignInButtons(false);
             });
         // --- END OF ADDED SECTION ---
-
+        
         // Firebase Auth State Listener - This is still crucial for session management.
         onAuthStateChanged(auth, async (user) => {
             console.log(Date.now(), "onAuthStateChanged: Auth state change detected. User:", user ? user.uid : "null");
