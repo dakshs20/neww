@@ -139,7 +139,6 @@
             console.log("GenArt App: Firebase config parsed successfully.");
         } catch (e) {
             console.error("GenArt App: Error parsing __firebase_config:", e);
-            // Fallback to a minimal config if parsing fails, to avoid halting the script
             firebaseConfig = {
                 apiKey: "YOUR_FALLBACK_API_KEY", // This will be replaced by the Canvas environment anyway
                 authDomain: "your-fallback-auth-domain.firebaseapp.com",
@@ -185,7 +184,6 @@
                 }
             } catch (error) {
                 console.error("GenArt App: Initial sign-in error:", error);
-                // Fallback to anonymous if custom token fails, or just proceed if already signed in
                 if (auth && error.code !== 'auth/already-initialized' && error.code !== 'auth/already-signed-in') {
                      await signInAnonymously(auth);
                      console.log("GenArt App: Fallback to anonymous sign-in successful.");
@@ -356,7 +354,7 @@
                 console.log("Function: updateGenerationCounter called.");
                 if (auth.currentUser && !auth.currentUser.isAnonymous) {
                     console.log("Counter: User is signed in, counter skipped.");
-                    return; // If signed in, no need for counter
+                    return;
                 }
                 const count = getGenerationCount();
                 const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
@@ -446,7 +444,8 @@
                 for (let attempt = 0; attempt < maxRetries; attempt++) {
                     try {
                         const payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
-                        const apiKey = ""; // Canvas environment injects this
+                        // Using the provided API key here
+                        const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs"; 
                         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
                         console.log(`API Call: Attempt ${attempt + 1} for prompt: "${prompt}" to URL: ${apiUrl}`);
                         const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
