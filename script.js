@@ -1,13 +1,13 @@
+// Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged, getRedirectResult } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
     authDomain: "genart-a693a.firebaseapp.com",
     projectId: "genart-a693a",
-    storageBucket: "genart-a693a.firebasestorage.app",
+    storageBucket: "genart-a693a.appspot.com",
     messagingSenderId: "96958671615",
     appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
     measurementId: "G-EDCW8VYXY6"
@@ -16,347 +16,249 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// --- DOM Elements ---
-const getStartedBtnDesktop = document.getElementById('get-started-btn-desktop');
-const userProfileSectionDesktop = document.getElementById('user-profile-section-desktop');
-const userCreditsSpanDesktop = document.getElementById('user-credits-desktop');
-const userAvatarImgDesktop = document.getElementById('user-avatar-desktop');
-const signOutBtnDesktop = document.getElementById('sign-out-btn-desktop');
-const welcomeMessageDesktop = document.getElementById('welcome-message-desktop');
-
-const getStartedBtnMobile = document.getElementById('get-started-btn-mobile');
-const userProfileSectionMobile = document.getElementById('user-profile-section-mobile');
-const userCreditsSpanMobile = document.getElementById('user-credits-mobile');
-const userAvatarImgMobile = document.getElementById('user-avatar-mobile');
-const signOutBtnMobile = document.getElementById('sign-out-btn-mobile');
-const welcomeMessageMobile = document.getElementById('welcome-message-mobile');
-
-const menuBtn = document.getElementById('menu-btn');
-const closeMenuBtn = document.getElementById('close-menu-btn');
-const drawerMenu = document.getElementById('drawer-menu');
-
+// --- DOM Element References ---
 const promptInput = document.getElementById('prompt-input');
 const generateBtn = document.getElementById('generate-btn');
-const generateArrow = document.getElementById('generate-arrow');
-const generateSpinner = document.getElementById('generate-spinner');
-const enhanceBtn = document.getElementById('enhance-btn');
-const copyBtn = document.getElementById('copy-btn');
-const clearBtn = document.getElementById('clear-btn');
-const suggestionChipsContainer = document.getElementById('suggestion-chips-container');
-const galleryContainer = document.getElementById('gallery-container');
-const gallery = document.getElementById('gallery');
+const resultContainer = document.getElementById('result-container');
+const loadingIndicator = document.getElementById('loading-indicator');
+const imageGrid = document.getElementById('image-grid');
+const timerEl = document.getElementById('timer');
+const progressBar = document.getElementById('progress-bar');
 const messageBox = document.getElementById('message-box');
-const messageText = document.getElementById('message-text');
-const signInModal = document.getElementById('signin-modal');
-const modalSignInBtn = document.getElementById('modal-signin-google-btn');
-const modalCloseBtn = document.getElementById('modal-close-btn');
+const examplePrompts = document.querySelectorAll('.example-prompt');
+const generatorUI = document.getElementById('generator-ui');
 
-let isGenerating = false;
-let isEnhancing = false;
-let currentUserCredits = 0;
-let guestGenerations = 3;
+// Auth Buttons
+const authBtn = document.getElementById('auth-btn');
+const mobileAuthBtn = document.getElementById('mobile-auth-btn');
 
-// --- AUTHENTICATION & MODAL ---
-const openSignInModal = () => signInModal.classList.remove('hidden');
-const closeSignInModal = () => signInModal.classList.add('hidden');
-const signInWithGoogleRedirect = () => signInWithRedirect(auth, provider);
-const signOutUser = () => signOut(auth);
+// Counters
+const generationCounterEl = document.getElementById('generation-counter');
+const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
 
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        const userProfile = await getUserProfile(user);
-        currentUserCredits = userProfile.credits;
-        updateUIAfterLogin(user, userProfile);
-        setPromptAreaEnabled(true);
-    } else {
-        updateUIAfterLogout();
-        setPromptAreaEnabled(guestGenerations > 0);
+// Modal
+const authModal = document.getElementById('auth-modal');
+const googleSignInBtn = document.getElementById('google-signin-btn');
+const closeModalBtn = document.getElementById('close-modal-btn');
+
+// Mobile Menu
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const mobileMenu = document.getElementById('mobile-menu');
+
+let timerInterval;
+const FREE_GENERATION_LIMIT = 3;
+
+// --- Mobile Menu Logic ---
+mobileMenuBtn.addEventListener('click', () => {
+    mobileMenu.classList.toggle('hidden');
+});
+
+// Close menu if clicking outside
+document.addEventListener('click', (event) => {
+    if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+        mobileMenu.classList.add('hidden');
     }
+});
+
+// --- Auth Logic ---
+onAuthStateChanged(auth, user => {
+    updateUIForAuthState(user);
 });
 
 getRedirectResult(auth).catch((error) => {
-    console.error("Redirect Sign-In Error:", error);
-    showMessage("Could not sign in. Please try again.", "error");
+    console.error("Auth Redirect Error:", error);
 });
 
+authBtn.addEventListener('click', handleAuthAction);
+mobileAuthBtn.addEventListener('click', handleAuthAction);
+googleSignInBtn.addEventListener('click', signInWithGoogle);
+closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
 
-const getUserProfile = async (user) => {
-    const userDocRef = doc(db, "users", user.uid);
-    const userDocSnap = await getDoc(userDocRef);
-    if (userDocSnap.exists()) {
-        return userDocSnap.data();
+function handleAuthAction() {
+    if (auth.currentUser) {
+        signOut(auth);
     } else {
-        const newUserProfile = {
-            displayName: user.displayName, email: user.email, photoURL: user.photoURL,
-            credits: 5, createdAt: new Date()
-        };
-        await setDoc(userDocRef, newUserProfile);
-        localStorage.removeItem('guestGenerations'); // Clear guest count on first sign-in
-        return newUserProfile;
+        signInWithGoogle();
     }
-};
+}
 
-// --- UI UPDATES ---
-const updateUIAfterLogin = (user, profile) => {
-    // Desktop
-    getStartedBtnDesktop.classList.add('hidden');
-    userProfileSectionDesktop.classList.remove('hidden');
-    userProfileSectionDesktop.classList.add('flex');
-    userAvatarImgDesktop.src = user.photoURL;
-    userCreditsSpanDesktop.textContent = profile.credits;
-    welcomeMessageDesktop.textContent = `Welcome, ${user.displayName.split(' ')[0]}`;
-    // Mobile
-    getStartedBtnMobile.classList.add('hidden');
-    userProfileSectionMobile.classList.remove('hidden');
-    userAvatarImgMobile.src = user.photoURL;
-    userCreditsSpanMobile.textContent = profile.credits;
-    welcomeMessageMobile.textContent = `Welcome, ${user.displayName.split(' ')[0]}`;
-};
-const updateUIAfterLogout = () => {
-    const storedGuestGens = localStorage.getItem('guestGenerations');
-    guestGenerations = storedGuestGens ? parseInt(storedGuestGens) : 3;
+function signInWithGoogle() {
+    signInWithRedirect(auth, provider);
+}
 
-    // Desktop
-    getStartedBtnDesktop.classList.remove('hidden');
-    userProfileSectionDesktop.classList.add('hidden');
-    userProfileSectionDesktop.classList.remove('flex');
-    userCreditsSpanDesktop.textContent = guestGenerations;
-    welcomeMessageDesktop.textContent = 'Free Generations:';
-    // Mobile
-    getStartedBtnMobile.classList.remove('hidden');
-    userProfileSectionMobile.classList.add('hidden');
-    userCreditsSpanMobile.textContent = guestGenerations;
-    welcomeMessageMobile.textContent = 'Free Generations:';
-};
+function updateUIForAuthState(user) {
+    if (user) {
+        authBtn.textContent = 'Sign Out';
+        mobileAuthBtn.textContent = 'Sign Out';
+        generationCounterEl.textContent = 'Unlimited Generations';
+        mobileGenerationCounterEl.textContent = 'Unlimited Generations';
+        authModal.setAttribute('aria-hidden', 'true');
+    } else {
+        authBtn.textContent = 'Sign In';
+        mobileAuthBtn.textContent = 'Sign In';
+        updateGenerationCounter();
+    }
+}
 
-const setPromptAreaEnabled = (isEnabled) => {
-    promptInput.disabled = !isEnabled;
-    generateBtn.disabled = !isEnabled;
-    enhanceBtn.disabled = !isEnabled;
-    copyBtn.disabled = !isEnabled;
-    clearBtn.disabled = !isEnabled;
-    promptInput.placeholder = isEnabled ? "Describe your idea..." : "You have free generations remaining...";
-};
+// --- Generation Counter Logic ---
+function getGenerationCount() {
+    return parseInt(localStorage.getItem('generationCount') || '0');
+}
 
-// --- CORE APP LOGIC ---
-async function callAPI(model, payload, retries = 2) {
-    const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs"; // YOUR API KEY
-    const apiUrl = model.startsWith('imagen') 
-        ? `https://generativelanguage.googleapis.com/v1beta/models/${model}:predict?key=${apiKey}`
-        : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+function incrementGenerationCount() {
+    const newCount = getGenerationCount() + 1;
+    localStorage.setItem('generationCount', newCount);
+    updateGenerationCounter();
+    return newCount;
+}
+
+function updateGenerationCounter() {
+    if (auth.currentUser) return;
+    const count = getGenerationCount();
+    const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
+    const text = `${remaining} free generations left`;
+    generationCounterEl.textContent = text;
+    mobileGenerationCounterEl.textContent = text;
+}
+
+
+// --- UI Interaction Logic ---
+examplePrompts.forEach(button => {
+    button.addEventListener('click', () => {
+        promptInput.value = button.innerText.trim();
+        promptInput.focus();
+    });
+});
+
+promptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        generateImage();
+    }
+});
+
+generateBtn.addEventListener('click', generateImage);
+
+// --- Core Image Generation Logic ---
+async function generateImage() {
+    const prompt = promptInput.value.trim();
+    if (!prompt) {
+        showMessage('Please describe the image you want to create.', 'error');
+        return;
+    }
+
+    if (!auth.currentUser && getGenerationCount() >= FREE_GENERATION_LIMIT) {
+        authModal.setAttribute('aria-hidden', 'false');
+        return;
+    }
+
+    imageGrid.innerHTML = '';
+    messageBox.innerHTML = '';
+    resultContainer.classList.remove('hidden');
+    loadingIndicator.classList.remove('hidden');
+    generatorUI.classList.add('hidden');
     
-    for (let i = 0; i <= retries; i++) {
-        try {
-            const response = await fetch(apiUrl, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
-            });
-            if (!response.ok) throw new Error(`API Error: ${response.status}`);
-            
-            const result = await response.json();
-            
-            if (model.startsWith('imagen') && result.predictions?.[0]?.bytesBase64Encoded) {
-                return result;
-            }
-            if (!model.startsWith('imagen') && result.candidates?.[0]?.content?.parts?.[0]?.text) {
-                return result;
-            }
-            
-            console.warn(`API call attempt ${i + 1} returned an empty or invalid response. Retrying...`, result);
-            if (i === retries) {
-                 throw new Error("Prompt may have been refused by the AI after multiple attempts.");
-            }
-            await new Promise(res => setTimeout(res, 1000));
+    startTimer();
 
+    try {
+        const imageUrl = await generateImageWithRetry(prompt);
+        displayImage(imageUrl, prompt);
+        if (!auth.currentUser) {
+            incrementGenerationCount();
+        }
+    } catch (error) {
+        console.error('Image generation failed after multiple retries:', error);
+        showMessage(`Sorry, we couldn't generate the image. Please try again.`, 'error');
+    } finally {
+        stopTimer();
+        loadingIndicator.classList.add('hidden');
+        addBackButton();
+    }
+}
+
+async function generateImageWithRetry(prompt, maxRetries = 3) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
+            // The API key is intentionally left empty. The Canvas environment will inject it at runtime.
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+            const result = await response.json();
+            if (result.predictions?.[0]?.bytesBase64Encoded) return `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+            else throw new Error("No image data received from API.");
         } catch (error) {
-            console.error(`Error on attempt ${i + 1} calling ${model}:`, error);
-            if (i === retries) {
-                showMessage("An error occurred with the AI network. Please try again later.", 'error');
-                return null;
-            }
+            if (attempt >= maxRetries - 1) throw error;
+            // Exponential backoff
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         }
     }
 }
 
-const handleEnhancePrompt = async () => {
-    if (isEnhancing || isGenerating) return;
-    const user = auth.currentUser;
-    if (!user && guestGenerations <= 0) {
-        openSignInModal();
-        return;
-    }
-    const currentPrompt = promptInput.value.trim();
-    if (!currentPrompt) {
-        showMessage("Please enter an idea to enhance.", 'error');
-        return;
-    }
+// --- Helper Functions ---
+function displayImage(imageUrl, prompt) {
+    const imgContainer = document.createElement('div');
+    imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.alt = prompt;
+    img.className = 'w-full h-auto object-contain';
+    const downloadButton = document.createElement('button');
+    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
+    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+    downloadButton.ariaLabel = "Download Image";
+    downloadButton.onclick = () => {
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = 'genart-image.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+    imgContainer.appendChild(img);
+    imgContainer.appendChild(downloadButton);
+    imageGrid.appendChild(imgContainer);
+}
 
-    isEnhancing = true;
-    enhanceBtn.textContent = 'Enhancing...';
-    enhanceBtn.disabled = true;
+function showMessage(text, type = 'info') {
+    const messageEl = document.createElement('div');
+    messageEl.className = `p-2 rounded-lg ${type === 'error' ? 'text-red-600' : 'text-gray-600'} fade-in-slide-up`;
+    messageEl.textContent = text;
+    messageBox.innerHTML = '';
+    messageBox.appendChild(messageEl);
+}
 
-    const systemPrompt = `You are an expert prompt engineer for an AI image generator. Take the user's idea and expand it into a rich, detailed, cinematic, and artistic prompt. Focus on visual details like lighting, composition, and style. Return only the enhanced prompt itself, without any introductory text. User idea: "${currentPrompt}"`;
-    const payload = { contents: [{ role: "user", parts: [{ text: systemPrompt }] }] };
-    const result = await callAPI('gemini-2.5-flash-preview-05-20', payload);
+function addBackButton() {
+    const backButton = document.createElement('button');
+    backButton.textContent = '← Create another';
+    backButton.className = 'mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
+    backButton.onclick = () => {
+        generatorUI.classList.remove('hidden');
+        resultContainer.classList.add('hidden');
+        imageGrid.innerHTML = '';
+        messageBox.innerHTML = '';
+        promptInput.value = '';
+    };
+    messageBox.prepend(backButton);
+}
 
-    if (result) {
-        promptInput.value = result.candidates[0].content.parts[0].text.trim();
-        showMessage('Prompt enhanced!');
-    } else {
-        showMessage('Could not enhance the prompt. Please try rephrasing.', 'error');
-    }
+function startTimer() {
+    let startTime = Date.now();
+    const maxTime = 17 * 1000;
+    progressBar.style.width = '0%';
+    timerInterval = setInterval(() => {
+        const elapsedTime = Date.now() - startTime;
+        const progress = Math.min(elapsedTime / maxTime, 1);
+        progressBar.style.width = `${progress * 100}%`;
+        timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
+        if (elapsedTime >= maxTime) timerEl.textContent = `17.0s / ~17s`;
+    }, 100);
+}
 
-    isEnhancing = false;
-    enhanceBtn.textContent = '✨ Enhance';
-    enhanceBtn.disabled = false;
-};
-
-const handleGenerateImage = async () => {
-    if (isGenerating || isEnhancing) return;
-    const user = auth.currentUser;
-
-    if (!user && guestGenerations <= 0) {
-        openSignInModal();
-        return;
-    }
-    if (user && currentUserCredits <= 0) {
-        showMessage("You are out of credits. Please sign up for more.", 'error');
-        return;
-    }
-
-    const prompt = promptInput.value.trim();
-    if (!prompt) {
-        showMessage("Please describe an idea to generate an image.", 'error');
-        return;
-    }
-
-    setLoadingState(true);
-    const payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
-    const result = await callAPI('imagen-3.0-generate-002', payload);
-
-    if (result) {
-        const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-        addImageToGallery(prompt, imageUrl);
-        
-        if (user) {
-            currentUserCredits--;
-            const userDocRef = doc(db, "users", auth.currentUser.uid);
-            await updateDoc(userDocRef, { credits: currentUserCredits });
-            userCreditsSpanDesktop.textContent = currentUserCredits;
-            userCreditsSpanMobile.textContent = currentUserCredits;
-        } else {
-            guestGenerations--;
-            localStorage.setItem('guestGenerations', guestGenerations);
-            updateUIAfterLogout();
-            if (guestGenerations <= 0) {
-                setPromptAreaEnabled(false);
-                promptInput.placeholder = "Sign in to continue creating...";
-            }
-        }
-    } else {
-        showMessage("Could not generate image. The AI may have refused the prompt. Please try rephrasing your idea.", 'error');
-    }
-    setLoadingState(false);
-};
-
-const addImageToGallery = (prompt, imageUrl) => {
-    gallery.innerHTML = '';
-    galleryContainer.classList.remove('hidden');
-    const item = document.createElement('div');
-    item.className = 'gallery-item';
-    const filename = prompt.substring(0, 30).replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.png';
-    item.innerHTML = `
-        <img src="${imageUrl}" alt="${prompt}" class="w-full h-auto object-contain bg-gray-100">
-        <div class="p-4 bg-white flex justify-between items-center">
-            <p class="text-sm text-gray-600 truncate pr-4">${prompt}</p>
-            <a href="${imageUrl}" download="${filename}" class="download-button flex-shrink-0">Download</a>
-        </div>`;
-    gallery.appendChild(item);
-};
-
-const setLoadingState = (loading) => {
-    isGenerating = loading;
-    generateBtn.disabled = loading;
-    promptInput.disabled = loading;
-    copyBtn.disabled = loading;
-    clearBtn.disabled = loading;
-    enhanceBtn.disabled = loading;
-    generateArrow.classList.toggle('hidden', loading);
-    generateSpinner.classList.toggle('hidden', !loading);
-};
-
-const showMessage = (message, type = 'success') => {
-    messageText.textContent = message;
-    messageBox.className = 'hidden fixed top-5 right-5 px-6 py-3 rounded-lg shadow-lg z-50';
-    if (type === 'error') {
-        messageBox.classList.add('bg-red-100', 'text-red-700', 'border', 'border-red-300');
-    } else {
-        messageBox.classList.add('bg-green-100', 'text-green-700', 'border', 'border-green-300');
-    }
-    messageBox.classList.remove('hidden');
-    setTimeout(() => messageBox.classList.add('hidden'), 4000);
-};
-        
-const copyPrompt = () => {
-    if (!promptInput.value) { showMessage('Nothing to copy.', 'error'); return; }
-    const textArea = document.createElement("textarea");
-    textArea.value = promptInput.value;
-    document.body.appendChild(textArea);
-    textArea.select();
-    try {
-        document.execCommand('copy');
-        showMessage('Prompt copied to clipboard!');
-    } catch (err) {
-        showMessage('Failed to copy text.', 'error');
-    }
-    document.body.removeChild(textArea);
-};
-
-const populateSuggestionChips = () => {
-    const suggestions = [
-        "A lone astronaut",
-        "Enchanted forest",
-        "Cyberpunk city",
-        "Steampunk inventor",
-    ];
-    suggestionChipsContainer.innerHTML = '';
-    suggestions.forEach(text => {
-        const button = document.createElement('button');
-        button.className = 'suggestion-chip';
-        button.textContent = text;
-        button.onclick = () => {
-            promptInput.value = text;
-        };
-        suggestionChipsContainer.appendChild(button);
-    });
-};
-
-// --- EVENT LISTENERS ---
-document.addEventListener('DOMContentLoaded', () => {
-    populateSuggestionChips();
-    getStartedBtnDesktop.addEventListener('click', signInWithGoogleRedirect);
-    getStartedBtnMobile.addEventListener('click', signInWithGoogleRedirect);
-    signOutBtnDesktop.addEventListener('click', signOutUser);
-    signOutBtnMobile.addEventListener('click', signOutUser);
-    generateBtn.addEventListener('click', handleGenerateImage);
-    enhanceBtn.addEventListener('click', handleEnhancePrompt);
-    copyBtn.addEventListener('click', copyPrompt);
-    clearBtn.addEventListener('click', () => { promptInput.value = ''; });
-    modalSignInBtn.addEventListener('click', signInWithGoogleRedirect);
-    modalCloseBtn.addEventListener('click', closeSignInModal);
-    signInModal.addEventListener('click', (e) => { if (e.target === signInModal) closeSignInModal(); });
-    
-    promptInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleGenerateImage(); }
-    });
-
-    // Drawer Menu Logic
-    menuBtn.addEventListener('click', () => {
-        drawerMenu.classList.remove('translate-x-full');
-    });
-    closeMenuBtn.addEventListener('click', () => {
-        drawerMenu.classList.add('translate-x-full');
-    });
-});
+function stopTimer() {
+    clearInterval(timerInterval);
+    progressBar.style.width = '100%';
+}
