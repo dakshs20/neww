@@ -55,7 +55,6 @@ const modalCloseBtn = document.getElementById('modal-close-btn');
 let isGenerating = false;
 let isEnhancing = false;
 let currentUserCredits = 0;
-let isAuthReady = false;
 
 // --- AUTHENTICATION & MODAL ---
 const openSignInModal = () => signInModal.classList.remove('hidden');
@@ -64,25 +63,32 @@ const signInWithGoogleRedirect = () => signInWithRedirect(auth, provider);
 const signOutUser = () => signOut(auth);
 
 onAuthStateChanged(auth, async (user) => {
-    try {
-        if (user) {
-            const userProfile = await getUserProfile(user);
-            currentUserCredits = userProfile.credits;
-            updateUIAfterLogin(user, userProfile);
-        } else {
-            await getRedirectResult(auth); // Check for redirect result
-            updateUIAfterLogout();
-        }
-    } catch (error) {
-        console.error("Authentication Error:", error);
-        if (error.code !== 'auth/redirect-cancelled-by-user') {
-           showMessage("Could not sign in. Please try again.", "error");
-        }
+    if (user) {
+        // User is signed in.
+        const userProfile = await getUserProfile(user);
+        currentUserCredits = userProfile.credits;
+        updateUIAfterLogin(user, userProfile);
+        setPromptAreaEnabled(true);
+    } else {
+        // User is signed out or the page has just loaded.
         updateUIAfterLogout();
-    } finally {
-        setPromptAreaEnabled(!!auth.currentUser);
+        setPromptAreaEnabled(false);
     }
 });
+
+// Handle the result of the redirect sign-in
+getRedirectResult(auth)
+    .then((result) => {
+        if (result) {
+            // This will trigger the onAuthStateChanged listener again with the user object.
+            // No need to do anything here as the listener will handle the UI update.
+        }
+    })
+    .catch((error) => {
+        console.error("Redirect Sign-In Error:", error);
+        showMessage("Could not sign in. Please try again.", "error");
+    });
+
 
 const getUserProfile = async (user) => {
     const userDocRef = doc(db, "users", user.uid);
