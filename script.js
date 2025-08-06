@@ -1,21 +1,19 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged, getRedirectResult } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged, getRedirectResult, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+// Firestore is not directly used for this app's data persistence, but imported for completeness if needed later.
+import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
-    authDomain: "genart-a693a.firebaseapp.com",
-    projectId: "genart-a693a",
-    storageBucket: "genart-a693a.appspot.com",
-    messagingSenderId: "96958671615",
-    appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
-    measurementId: "G-EDCW8VYXY6"
-};
+
+// --- Firebase Configuration and Initialization ---
+// MANDATORY: Use __app_id and __firebase_config provided by the Canvas environment.
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app); // Initialize Firestore, though not used for this app's current features
 const provider = new GoogleAuthProvider();
 
 // --- DOM Element References ---
@@ -50,6 +48,30 @@ const mobileMenu = document.getElementById('mobile-menu');
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 
+// --- Initial Authentication on Load ---
+// This ensures the user is signed in either via custom token or anonymously
+// when the app loads, which is crucial for Canvas environment.
+async function initializeAuth() {
+    try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+            console.log("Signed in with custom token.");
+        } else {
+            await signInAnonymously(auth);
+            console.log("Signed in anonymously.");
+        }
+    } catch (error) {
+        console.error("Firebase initial sign-in error:", error);
+        // Fallback to anonymous if custom token fails, or just proceed if already signed in
+        if (error.code !== 'auth/already-initialized' && error.code !== 'auth/already-signed-in') {
+             await signInAnonymously(auth);
+        }
+    }
+}
+
+// Call initial authentication function
+initializeAuth();
+
 // --- Mobile Menu Logic ---
 mobileMenuBtn.addEventListener('click', () => {
     mobileMenu.classList.toggle('hidden');
@@ -69,6 +91,7 @@ onAuthStateChanged(auth, user => {
 
 getRedirectResult(auth).catch((error) => {
     console.error("Auth Redirect Error:", error);
+    showMessage(`Authentication failed: ${error.message}`, 'error');
 });
 
 authBtn.addEventListener('click', handleAuthAction);
@@ -77,7 +100,7 @@ googleSignInBtn.addEventListener('click', signInWithGoogle);
 closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
 
 function handleAuthAction() {
-    if (auth.currentUser) {
+    if (auth.currentUser && !auth.currentUser.isAnonymous) { // Check if it's a signed-in user, not anonymous
         signOut(auth);
     } else {
         signInWithGoogle();
@@ -89,13 +112,13 @@ function signInWithGoogle() {
 }
 
 function updateUIForAuthState(user) {
-    if (user) {
+    if (user && !user.isAnonymous) { // User is signed in with a real account
         authBtn.textContent = 'Sign Out';
         mobileAuthBtn.textContent = 'Sign Out';
         generationCounterEl.textContent = 'Unlimited Generations';
         mobileGenerationCounterEl.textContent = 'Unlimited Generations';
         authModal.setAttribute('aria-hidden', 'true');
-    } else {
+    } else { // User is anonymous or signed out
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
         updateGenerationCounter();
@@ -115,7 +138,7 @@ function incrementGenerationCount() {
 }
 
 function updateGenerationCounter() {
-    if (auth.currentUser) return;
+    if (auth.currentUser && !auth.currentUser.isAnonymous) return; // If signed in, no need for counter
     const count = getGenerationCount();
     const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
     const text = `${remaining} free generations left`;
@@ -149,7 +172,8 @@ async function generateImage() {
         return;
     }
 
-    if (!auth.currentUser && getGenerationCount() >= FREE_GENERATION_LIMIT) {
+    // Check free generation limit only if user is anonymous
+    if (auth.currentUser && auth.currentUser.isAnonymous && getGenerationCount() >= FREE_GENERATION_LIMIT) {
         authModal.setAttribute('aria-hidden', 'false');
         return;
     }
@@ -165,12 +189,13 @@ async function generateImage() {
     try {
         const imageUrl = await generateImageWithRetry(prompt);
         displayImage(imageUrl, prompt);
-        if (!auth.currentUser) {
+        // Increment count only if user is anonymous
+        if (auth.currentUser && auth.currentUser.isAnonymous) {
             incrementGenerationCount();
         }
     } catch (error) {
         console.error('Image generation failed after multiple retries:', error);
-        showMessage(`Sorry, we couldn't generate the image. Please try again.`, 'error');
+        showMessage(`Sorry, we couldn't generate the image. Please try again. Error: ${error.message}`, 'error');
     } finally {
         stopTimer();
         loadingIndicator.classList.add('hidden');
@@ -183,14 +208,20 @@ async function generateImageWithRetry(prompt, maxRetries = 3) {
         try {
             const payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
             // The API key is intentionally left empty. The Canvas environment will inject it at runtime.
-            const apiKey = ""; 
+            const apiKey = "";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
             const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`API Error ${response.status}: ${errorData.error.message || response.statusText}`);
+            }
+            
             const result = await response.json();
             if (result.predictions?.[0]?.bytesBase64Encoded) return `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
             else throw new Error("No image data received from API.");
         } catch (error) {
+            console.warn(`Attempt ${attempt + 1} failed: ${error.message}. Retrying...`);
             if (attempt >= maxRetries - 1) throw error;
             // Exponential backoff
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
@@ -225,7 +256,7 @@ function displayImage(imageUrl, prompt) {
 
 function showMessage(text, type = 'info') {
     const messageEl = document.createElement('div');
-    messageEl.className = `p-2 rounded-lg ${type === 'error' ? 'text-red-600' : 'text-gray-600'} fade-in-slide-up`;
+    messageEl.className = `p-2 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-gray-600'} fade-in-slide-up`;
     messageEl.textContent = text;
     messageBox.innerHTML = '';
     messageBox.appendChild(messageEl);
