@@ -23,7 +23,7 @@
             <!-- Desktop Menu -->
             <div class="hidden md:flex items-center gap-6">
                 <div id="user-auth-section-desktop">
-                    <button id="get-started-btn-desktop" class="px-4 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50">Get Started</button>
+                    <button id="get-started-btn-desktop" class="px-4 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50">Sign In</button>
                     <div id="user-profile-section-desktop" class="hidden items-center gap-4">
                         <div class="flex items-center gap-2">
                             <span id="welcome-message-desktop" class="text-sm font-medium"></span>
@@ -57,7 +57,7 @@
             </button>
             <div class="mt-12 space-y-4">
                 <div id="user-auth-section-mobile">
-                    <button id="get-started-btn-mobile" class="w-full text-left px-4 py-2 text-lg font-medium border border-gray-300 rounded-md hover:bg-gray-50">Get Started</button>
+                    <button id="get-started-btn-mobile" class="w-full text-left px-4 py-2 text-lg font-medium border border-gray-300 rounded-md hover:bg-gray-50">Sign In</button>
                     <div id="user-profile-section-mobile" class="hidden space-y-4">
                         <div class="flex items-center gap-3">
                             <img id="user-avatar-mobile" class="user-avatar" src="https://placehold.co/32x32/E5E7EB/1F2937?text=G" alt="User Avatar">
@@ -102,11 +102,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Generated Image Gallery -->
-        <div id="gallery-container" class="mt-12 hidden">
-            <div id="gallery" class="grid grid-cols-1 gap-6"></div>
         </div>
 
         <!-- Intelligence Section -->
@@ -160,6 +155,9 @@
             </p>
         </section>
 
+        <div id="gallery-container" class="mt-12 hidden">
+            <div id="gallery" class="grid grid-cols-1 gap-6"></div>
+        </div>
         <div id="message-box" class="hidden fixed top-5 right-5 px-6 py-3 rounded-lg shadow-lg z-50">
             <p id="message-text"></p>
         </div>
