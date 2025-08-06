@@ -262,7 +262,7 @@
             // --- Auth Logic ---
             if (auth) { // Only attach if Firebase auth is initialized
                 onAuthStateChanged(auth, user => {
-                    console.log("GenArt App: Auth state changed. User:", user ? user.uid : "None (anonymous or signed out)");
+                    console.log("GenArt App: Auth state changed. User:", user ? user.uid : "None", "Is anonymous:", user ? user.isAnonymous : "N/A");
                     updateUIForAuthState(user);
                 });
 
@@ -321,7 +321,7 @@
             }
 
             function updateUIForAuthState(user) {
-                console.log("Function: updateUIForAuthState called with user:", user ? user.uid : "null");
+                console.log("Function: updateUIForAuthState called with user:", user ? user.uid : "null", "Is anonymous:", user ? user.isAnonymous : "N/A");
                 if (user && !user.isAnonymous) { // User is signed in with a real account (e.g., Google)
                     if (authBtn) authBtn.textContent = 'Sign Out';
                     if (mobileAuthBtn) mobileAuthBtn.textContent = 'Sign Out';
@@ -340,15 +340,16 @@
             // --- Generation Counter Logic ---
             function getGenerationCount() {
                 const count = parseInt(localStorage.getItem('generationCount') || '0');
-                console.log("Function: getGenerationCount - current count:", count);
+                console.log("Function: getGenerationCount - current count from localStorage:", count);
                 return count;
             }
 
             function incrementGenerationCount() {
-                const newCount = getGenerationCount() + 1;
+                let currentCount = getGenerationCount();
+                const newCount = currentCount + 1;
                 localStorage.setItem('generationCount', newCount);
-                updateGenerationCounter();
-                console.log("Function: incrementGenerationCount - new count:", newCount);
+                console.log("Function: incrementGenerationCount - Old count:", currentCount, "New count:", newCount);
+                updateGenerationCounter(); // Update UI immediately after incrementing
                 return newCount;
             }
 
@@ -359,7 +360,7 @@
                     console.log("Counter: User is signed in, counter display skipped.");
                     return; 
                 }
-                const count = getGenerationCount();
+                const count = getGenerationCount(); // Get the latest count
                 const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
                 const text = `${remaining} free generations left`;
                 if (generationCounterEl) generationCounterEl.textContent = text;
@@ -410,10 +411,15 @@
                 }
 
                 // Check free generation limit ONLY if user is currently anonymous
-                if (auth.currentUser && auth.currentUser.isAnonymous && getGenerationCount() >= FREE_GENERATION_LIMIT) {
-                    if (authModal) authModal.setAttribute('aria-hidden', 'false');
-                    console.log("Validation: Free generation limit reached for anonymous user. Showing auth modal.");
-                    return;
+                // This check happens BEFORE attempting generation
+                if (auth.currentUser && auth.currentUser.isAnonymous) {
+                    const currentGenCount = getGenerationCount();
+                    console.log("Pre-generation check: Anonymous user. Current count:", currentGenCount, "Limit:", FREE_GENERATION_LIMIT);
+                    if (currentGenCount >= FREE_GENERATION_LIMIT) {
+                        if (authModal) authModal.setAttribute('aria-hidden', 'false');
+                        console.log("Validation: Free generation limit reached for anonymous user. Showing auth modal.");
+                        return; // Stop execution if limit reached
+                    }
                 }
 
                 // Reset UI for new generation
@@ -431,7 +437,10 @@
                     displayImage(imageUrl, prompt);
                     // Increment count ONLY if user is anonymous AFTER successful generation
                     if (auth.currentUser && auth.currentUser.isAnonymous) {
-                        incrementGenerationCount();
+                        incrementGenerationCount(); // This will also call updateGenerationCounter()
+                        console.log("Counter: Generation count incremented for anonymous user.");
+                    } else {
+                        console.log("Counter: User is signed in, generation count not incremented.");
                     }
                     console.log("Image generated and displayed successfully.");
                 } catch (error) {
