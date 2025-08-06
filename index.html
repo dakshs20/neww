@@ -80,6 +80,7 @@
       gtag('config', 'G-NT62SVB6D7');
     </script>
 
+<script defer src="https://speed-insights.vercel.app/script.js"></script>
     <!-- script.js is now loaded as a module -->
 </head>
 <body class="min-h-screen relative bg-gradient-to-br from-gray-950 to-gray-800 flex flex-col items-center p-4 text-gray-100 overflow-x-hidden">
@@ -133,6 +134,10 @@
                     <button id="sign-in-btn-desktop" class="px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-md">Sign In</button>
                     <button id="sign-out-btn-desktop" class="px-4 py-2 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 transition-colors duration-200 shadow-md hidden">Sign Out</button>
                 </div>
+                <!-- Instagram Button for Desktop -->
+                <a href="https://www.instagram.com/genartlabs/" target="_blank" aria-label="Follow us on Instagram" class="text-gray-300 hover:text-pink-500 transition-colors duration-200 ml-4">
+                    <i class="fab fa-instagram text-2xl"></i> <!-- Using Font Awesome for Instagram -->
+                </a>
             </nav>
 
             <!-- Hamburger Menu Button (visible only on small screens) -->
@@ -162,6 +167,10 @@
                 <span id="user-display-mobile" class="text-sm text-gray-300 hidden"></span>
                 <button id="sign-in-btn-mobile" class="w-full py-2 bg-blue-600 text-white rounded-full text-sm font-semibold hover:bg-blue-700 transition-colors duration-200 shadow-md text-left">Sign In</button>
                 <button id="sign-out-btn-mobile" class="w-full py-2 bg-red-600 text-white rounded-full text-sm font-semibold hover:bg-red-700 transition-colors duration-200 shadow-md text-left hidden">Sign Out</button>
+                <!-- Instagram Button for Mobile Menu -->
+                <a href="https://www.instagram.com/genartlabs/" target="_blank" aria-label="Follow us on Instagram" class="w-full py-2 text-gray-300 hover:text-pink-500 transition-colors duration-200 text-left font-semibold flex items-center">
+                    <i class="fab fa-instagram text-xl mr-2"></i> Instagram
+                </a>
             </div>
         </div>
     </nav>
@@ -272,15 +281,7 @@
                 </div>
             </div>
 
-            <!-- Aspect Ratio Selection -->
-            <div class="mb-6">
-                <label class="block text-gray-300 text-base font-semibold mb-2 font-helvetica">
-                    Choose Aspect Ratio:
-                </label>
-                <div id="aspect-ratio-selection" class="flex flex-wrap gap-2 sm:gap-3 justify-center">
-                    <!-- Radio buttons will be inserted here by JS -->
-                </div>
-            </div>
+            <!-- Aspect Ratio Selection - REMOVED -->
 
             <button id="generate-image-btn" class="w-full py-3 sm:py-4 px-6 rounded-xl text-white font-bold text-lg shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 font-helvetica">
                 Generate Image
