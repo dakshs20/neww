@@ -81,8 +81,8 @@
             </div>
             <div class="mt-10">
                 <div id="prompt-container" class="relative">
-                    <textarea id="prompt-input" rows="4" placeholder="Describe your idea" class="prompt-textarea w-full p-4 pr-32 focus:outline-none"></textarea>
-                    <button id="generate-btn" class="generate-button text-sm font-medium">
+                    <textarea id="prompt-input" rows="4" placeholder="Sign in to start creating..." class="prompt-textarea w-full p-4 pr-32 focus:outline-none" disabled></textarea>
+                    <button id="generate-btn" class="generate-button text-sm font-medium" disabled>
                         <svg id="generate-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
                         </svg>
@@ -94,9 +94,9 @@
                         <!-- Suggestion chips will be injected here -->
                     </div>
                     <div class="flex items-center gap-4 self-end sm:self-center">
-                        <button id="enhance-btn" class="utility-button">✨ Enhance</button>
-                        <button id="copy-btn" class="utility-button">Copy</button>
-                        <button id="clear-btn" class="utility-button">Clear</button>
+                        <button id="enhance-btn" class="utility-button" disabled>✨ Enhance</button>
+                        <button id="copy-btn" class="utility-button" disabled>Copy</button>
+                        <button id="clear-btn" class="utility-button" disabled>Clear</button>
                     </div>
                 </div>
             </div>
