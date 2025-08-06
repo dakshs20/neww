@@ -19,7 +19,18 @@ const firebaseConfig = {
     measurementId: "G-EDCW8VYXY6"
 };
 console.log(Date.now(), "script.js: Firebase config defined at top level.");
+getRedirectResult(auth)
+  .then((result) => {
+    if (result && result.user) {
+      // User just signed in via redirect — you can inspect token/credential if needed
+      console.log("Redirect completed, user:", result.user);
+    }
+  })
+  .catch((error) => {
+    console.error("getRedirectResult error:", error);
+  });
 
+  onAuthStateChanged(auth, user => { /* … */ });
 // --- Firebase App and Service Variables (Declared at top level, initialized later) ---
 let firebaseApp;
 let auth;
@@ -267,7 +278,7 @@ async function signInWithGoogle() {
             return;
         }
         console.log(Date.now(), "signInWithGoogle:  Redirecting to Google sign-in…");
-        const result = await signInWithRedirect(auth, googleProvider);
+        await signInWithRedirect(auth, googleProvider);
         console.log(Date.now(), "signInWithGoogle: signInWithPopup successful. User:", result.user.uid, result.user.displayName || result.user.email);
         signinRequiredModal?.classList.add('hidden'); // Hide modal on successful sign-in
         showToast("Signed in successfully!", "success");
