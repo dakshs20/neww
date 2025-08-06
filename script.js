@@ -3,7 +3,7 @@ console.log(Date.now(), "script.js: File started parsing.");
 
 // Import Firebase functions directly as a module
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, query, orderBy, limit, addDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 console.log(Date.now(), "script.js: Firebase imports attempted.");
@@ -19,6 +19,18 @@ const firebaseConfig = {
     measurementId: "G-EDCW8VYXY6"
 };
 console.log(Date.now(), "script.js: Firebase config defined at top level.");
+
+firebase.auth().getRedirectResult()
+  .then((result) => {
+    if (result.user) {
+      // ✅ Redirect the user or update UI
+      console.log("User Info:", result.user);
+      window.location.href = "/dashboard.html"; // or your homepage
+    }
+  })
+  .catch((error) => {
+    console.error("Redirect login error:", error);
+  });
 
 // --- Firebase App and Service Variables (Declared at top level, initialized later) ---
 let firebaseApp;
@@ -38,7 +50,7 @@ let currentPage = 'home'; // 'home', 'generator'
 let isSigningIn = false; // New state for sign-in loading
 let isAuthReady = false; // Flag to indicate if Firebase Auth state has been checked and services initialized
 
-let aspectRatio = '1:1'; // Default aspect ratio - This variable holds the selected ratio
+let aspectRatio = '1:1'; // Default aspect ratio
 
 let enhancedPrompt = '';
 let loadingEnhancePrompt = false; // For Gemini prompt enhancement
@@ -48,7 +60,7 @@ let loadingVariationIdeas = false;
 
 // IMPORTANT: Your Google Cloud API Key for Imagen/Gemini (Declared at top level)
 // REPLACE "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE" WITH THE KEY YOU OBTAINED FROM GOOGLE CLOUD CONSOLE
-const IMAGEN_GEMINI_API_KEY = "YOUR_ACTUAL_GENERATED_API_KEY_HERE_PASTE_YOUR_KEY_HERE"; // <--- **UPDATE THIS LINE**
+const IMAGEN_GEMINI_API_KEY = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs"; // Ensure this is your actual key
 console.log(Date.now(), "script.js: IMAGEN_GEMINI_API_KEY value set at top level.");
 
 
@@ -247,7 +259,7 @@ async function signInWithGoogle() {
     updateSignInButtons(true); // Show loading state on buttons
     
     // Basic popup blocker check
-    const testWindow = window.open('', '_blank', 'width=1,height=1,left=0,top=0);
+    const testWindow = window.open('', '_blank', 'width=1,height=1,left=0,top=0');
     if (testWindow) {
         testWindow.close();
         console.log(Date.now(), "signInWithGoogle: Popup blocker check passed.");
@@ -259,16 +271,16 @@ async function signInWithGoogle() {
         return;
     }
 
-    console.time("signInWithPopup");
+    console.time("signInWithRedirect");
     try {
         if (!auth || !googleProvider) {
             console.error(Date.now(), "signInWithGoogle: Firebase Auth or Google Provider not initialized. Cannot sign in.");
             setError("Firebase services not ready. Please refresh and try again.");
             return;
         }
-        console.log(Date.now(), "signInWithGoogle: Attempting signInWithPopup call...");
-        const result = await signInWithPopup(auth, googleProvider);
-        console.log(Date.now(), "signInWithGoogle: signInWithPopup successful. User:", result.user.uid, result.user.displayName || result.user.email);
+        console.log(Date.now(), "signInWithGoogle: Attempting signInWithRedirect call...");
+        const result = await signInWithRedirect(auth, googleProvider);
+        console.log(Date.now(), "signInWithGoogle: signInWithRedirect successful. User:", result.user.uid, result.user.displayName || result.user.email);
         signinRequiredModal?.classList.add('hidden'); // Hide modal on successful sign-in
         showToast("Signed in successfully!", "success");
     } catch (error) {
@@ -291,7 +303,7 @@ async function signInWithGoogle() {
         }
         showToast(`Sign-in failed: ${error.message}`, "error");
     } finally {
-        console.timeEnd("signInWithPopup");
+        console.timeEnd("signInWithRedirect");
         isSigningIn = false;
         updateSignInButtons(false); // Reset loading state on buttons
         updateUI(); // Ensure UI reflects final auth state
@@ -972,7 +984,7 @@ async function generateImage() {
     console.time("imageGenerationAPI");
 
     try {
-        let finalPrompt = promptInput.value.trim();
+        let finalPrompt = promptInput.value.trim(); // Get current value from input
         
         const textKeywords = ['text', 'number', 'letter', 'font', 'word', 'digits', 'characters'];
         const containsTextKeyword = textKeywords.some(keyword => finalPrompt.toLowerCase().includes(keyword));
@@ -981,6 +993,25 @@ async function generateImage() {
             finalPrompt += ", clear, legible, sharp, high-resolution text, sans-serif font, precisely rendered, not distorted, no gibberish, accurate spelling, crisp edges";
             console.log(Date.now(), "generateImage: Added text-specific enhancements to prompt.");
         }
+
+        // --- ENHANCED ASPECT RATIO PROMPT ENGINEERING ---
+        let aspectRatioInstruction = '';
+        switch (aspectRatio) {
+            case '1:1': 
+                aspectRatioInstruction = ', square format, 1:1 aspect ratio, balanced composition, perfect square, symmetrical frame'; 
+                break;
+            case '4:5': 
+                aspectRatioInstruction = ', portrait orientation, 4:5 aspect ratio, tall and narrow composition, vertical format, ideal for social media portrait posts'; 
+                break;
+            case '9:16': 
+                aspectRatioInstruction = ', ultra-portrait orientation, 9:16 aspect ratio, extremely tall and narrow composition, vertical smartphone screen format, full-screen mobile display'; 
+                break;
+            case '16:9': 
+                aspectRatioInstruction = ', landscape orientation, 16:9 aspect ratio, wide and cinematic composition, horizontal widescreen format, film aspect ratio'; 
+                break;
+        }
+        finalPrompt += aspectRatioInstruction;
+        // --- END ENHANCED ASPECT RATIO PROMPT ENGINEERING ---
 
         // --- ADD NEGATIVE PROMPT ---
         if (negativePromptInput && negativePromptInput.value.trim()) {
@@ -992,19 +1023,8 @@ async function generateImage() {
         console.log(Date.now(), "generateImage: Final prompt for Imagen API:", finalPrompt);
 
 
-        // --- START ASPECT RATIO FIX ---
-        // The API endpoint for Imagen models (like imagen-3.0-generate-002) uses ":predict"
+        const payload = { instances: { prompt: finalPrompt }, parameters: { "sampleCount": 1 } };
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${IMAGEN_GEMINI_API_KEY}`;
-
-        const payload = { 
-            instances: { prompt: finalPrompt }, 
-            parameters: { 
-                "sampleCount": 1,
-                "aspectRatio": aspectRatio // THIS IS THE KEY CHANGE: Pass the selected aspect ratio directly
-                                           // The 'aspectRatio' variable is updated by the radio button change event.
-            } 
-        };
-        // --- END ASPECT RATIO FIX ---
 
         const response = await fetch(apiUrl, {
             method: 'POST',
