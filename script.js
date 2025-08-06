@@ -55,6 +55,7 @@ const modalCloseBtn = document.getElementById('modal-close-btn');
 let isGenerating = false;
 let isEnhancing = false;
 let currentUserCredits = 0;
+let isAuthReady = false;
 
 // --- AUTHENTICATION & MODAL ---
 const openSignInModal = () => signInModal.classList.remove('hidden');
@@ -74,6 +75,8 @@ onAuthStateChanged(auth, async (user) => {
         });
         updateUIAfterLogout();
     }
+    isAuthReady = true;
+    setPromptAreaEnabled(!!user);
 });
 
 const getUserProfile = async (user) => {
@@ -114,6 +117,14 @@ const updateUIAfterLogout = () => {
     getStartedBtnMobile.classList.remove('hidden');
     userProfileSectionMobile.classList.add('hidden');
     currentUserCredits = 0;
+};
+
+const setPromptAreaEnabled = (isEnabled) => {
+    promptInput.disabled = !isEnabled;
+    generateBtn.disabled = !isEnabled;
+    enhanceBtn.disabled = !isEnabled;
+    copyBtn.disabled = !isEnabled;
+    clearBtn.disabled = !isEnabled;
 };
 
 // --- CORE APP LOGIC ---
@@ -169,7 +180,7 @@ const handleEnhancePrompt = async () => {
 };
 
 const handleGenerateImage = async () => {
-    if (isGenerating || isEnhancing) return;
+    if (isGenerating || isEnhancing || !isAuthReady) return;
     const user = auth.currentUser;
     if (!user) {
         openSignInModal();
@@ -279,6 +290,7 @@ const populateSuggestionChips = () => {
 
 // --- EVENT LISTENERS ---
 document.addEventListener('DOMContentLoaded', () => {
+    setPromptAreaEnabled(false); // Initially disable prompt area
     populateSuggestionChips();
     getStartedBtnDesktop.addEventListener('click', signInWithGoogleRedirect);
     getStartedBtnMobile.addEventListener('click', signInWithGoogleRedirect);
