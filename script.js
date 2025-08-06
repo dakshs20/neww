@@ -64,19 +64,24 @@ const signInWithGoogleRedirect = () => signInWithRedirect(auth, provider);
 const signOutUser = () => signOut(auth);
 
 onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        const userProfile = await getUserProfile(user);
-        currentUserCredits = userProfile.credits;
-        updateUIAfterLogin(user, userProfile);
-    } else {
-        getRedirectResult(auth).catch((error) => {
-            console.error("Redirect Sign-In Error:", error);
-            showMessage("Could not sign in. Please try again.", "error");
-        });
+    try {
+        if (user) {
+            const userProfile = await getUserProfile(user);
+            currentUserCredits = userProfile.credits;
+            updateUIAfterLogin(user, userProfile);
+        } else {
+            await getRedirectResult(auth); // Check for redirect result
+            updateUIAfterLogout();
+        }
+    } catch (error) {
+        console.error("Authentication Error:", error);
+        if (error.code !== 'auth/redirect-cancelled-by-user') {
+           showMessage("Could not sign in. Please try again.", "error");
+        }
         updateUIAfterLogout();
+    } finally {
+        setPromptAreaEnabled(!!auth.currentUser);
     }
-    isAuthReady = true;
-    setPromptAreaEnabled(!!user);
 });
 
 const getUserProfile = async (user) => {
@@ -125,6 +130,7 @@ const setPromptAreaEnabled = (isEnabled) => {
     enhanceBtn.disabled = !isEnabled;
     copyBtn.disabled = !isEnabled;
     clearBtn.disabled = !isEnabled;
+    promptInput.placeholder = isEnabled ? "Describe your idea" : "Sign in to start creating...";
 };
 
 // --- CORE APP LOGIC ---
@@ -180,7 +186,7 @@ const handleEnhancePrompt = async () => {
 };
 
 const handleGenerateImage = async () => {
-    if (isGenerating || isEnhancing || !isAuthReady) return;
+    if (isGenerating || isEnhancing) return;
     const user = auth.currentUser;
     if (!user) {
         openSignInModal();
