@@ -23,9 +23,10 @@
             <!-- Desktop Menu -->
             <div class="hidden md:flex items-center gap-6">
                 <div id="user-auth-section-desktop">
-                    <button id="get-started-btn-desktop" class="px-4 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50">Get Started</button>
+                    <button id="get-started-btn-desktop" class="px-4 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50">Sign In</button>
                     <div id="user-profile-section-desktop" class="hidden items-center gap-4">
                         <div class="flex items-center gap-2">
+                            <span id="welcome-message-desktop" class="text-sm font-medium"></span>
                             <span class="font-semibold text-sm">Credits:</span>
                             <span id="user-credits-desktop" class="font-bold text-sm">0</span>
                         </div>
@@ -56,11 +57,12 @@
             </button>
             <div class="mt-12 space-y-4">
                 <div id="user-auth-section-mobile">
-                    <button id="get-started-btn-mobile" class="w-full text-left px-4 py-2 text-lg font-medium border border-gray-300 rounded-md hover:bg-gray-50">Get Started</button>
+                    <button id="get-started-btn-mobile" class="w-full text-left px-4 py-2 text-lg font-medium border border-gray-300 rounded-md hover:bg-gray-50">Sign In</button>
                     <div id="user-profile-section-mobile" class="hidden space-y-4">
                         <div class="flex items-center gap-3">
                             <img id="user-avatar-mobile" class="user-avatar" src="https://placehold.co/32x32/E5E7EB/1F2937?text=G" alt="User Avatar">
                             <div>
+                                <p id="welcome-message-mobile" class="font-semibold text-sm"></p>
                                 <p class="font-semibold text-sm">Credits: <span id="user-credits-mobile" class="font-bold">0</span></p>
                             </div>
                         </div>
@@ -81,8 +83,8 @@
             </div>
             <div class="mt-10">
                 <div id="prompt-container" class="relative">
-                    <textarea id="prompt-input" rows="4" placeholder="Sign in to start creating..." class="prompt-textarea w-full p-4 pr-32 focus:outline-none" disabled></textarea>
-                    <button id="generate-btn" class="generate-button text-sm font-medium" disabled>
+                    <textarea id="prompt-input" rows="4" placeholder="Describe your idea..." class="prompt-textarea w-full p-4 pr-32 focus:outline-none"></textarea>
+                    <button id="generate-btn" class="generate-button text-sm font-medium">
                         <svg id="generate-arrow" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
                         </svg>
@@ -94,64 +96,13 @@
                         <!-- Suggestion chips will be injected here -->
                     </div>
                     <div class="flex items-center gap-4 self-end sm:self-center">
-                        <button id="enhance-btn" class="utility-button" disabled>✨ Enhance</button>
-                        <button id="copy-btn" class="utility-button" disabled>Copy</button>
-                        <button id="clear-btn" class="utility-button" disabled>Clear</button>
+                        <button id="enhance-btn" class="utility-button">✨ Enhance</button>
+                        <button id="copy-btn" class="utility-button">Copy</button>
+                        <button id="clear-btn" class="utility-button">Clear</button>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Intelligence Section -->
-        <section class="intelligence-section mt-12 p-8 text-white">
-            <div class="grid-background"></div>
-            <div class="relative z-10 text-center">
-                 <h2 class="text-3xl font-bold glow-text mb-4">GenArt Intelligence</h2>
-                 <p class="text-gray-400 mb-6 max-w-2xl mx-auto">Our model is optimized for speed and quality, delivering stunning visuals from complex prompts in record time.</p>
-                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                     <div class="metric-item p-4 rounded-lg">
-                         <p class="text-2xl font-bold text-white">9s</p>
-                         <p class="text-sm text-gray-400">Avg. Generation</p>
-                     </div>
-                     <div class="metric-item p-4 rounded-lg">
-                         <p class="text-2xl font-bold text-white">4K</p>
-                         <p class="text-sm text-gray-400">Upscaling</p>
-                     </div>
-                     <div class="metric-item p-4 rounded-lg">
-                         <p class="text-2xl font-bold text-white">Dynamic</p>
-                         <p class="text-sm text-gray-400">Styles API</p>
-                     </div>
-                 </div>
-            </div>
-        </section>
-
-        <!-- Gen-0 Section -->
-        <section class="gen0-section mt-12 p-8 text-white">
-            <div class="grid-background"></div>
-            <div class="relative z-10 text-center">
-                <h3 class="text-sm font-semibold tracking-widest uppercase text-purple-400">COMING SOON</h3>
-                <h2 class="text-2xl sm:text-4xl font-bold mt-4">The Next Leap in Creation. <span class="gen0-highlight">Gen-0</span> is Coming.</h2>
-                <p class="mt-4 max-w-2xl mx-auto text-gray-300">Prepare for a new era of generative AI. Our next foundational model will redefine speed and realism, empowering you to create at the true speed of thought.</p>
-                <div class="mt-8 flex justify-center gap-8">
-                    <div class="text-center">
-                        <p class="text-3xl font-bold gen0-highlight">&lt;5s</p>
-                        <p class="text-sm text-gray-400">Generation Time</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-3xl font-bold gen0-highlight">True</p>
-                        <p class="text-sm text-gray-400">Hyper-Realistic Quality</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Technology Section -->
-        <section class="mt-12 text-center">
-            <h2 class="text-2xl font-bold text-gray-800">Technology for creating anything.</h2>
-            <p class="mt-4 max-w-2xl mx-auto text-gray-600">
-                GenArt is a pioneering AI creative studio, developing foundational models and intuitive tools that empower anyone to bring their imagination to life. We build the bridges between human ideas and digital creation.
-            </p>
-        </section>
 
         <div id="gallery-container" class="mt-12 hidden">
             <div id="gallery" class="grid grid-cols-1 gap-6"></div>
@@ -184,8 +135,8 @@
             <button id="modal-close-btn" class="text-gray-400 hover:text-gray-600 absolute top-4 right-4">
                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-            <h2 class="text-2xl font-bold mb-2">Sign In Required</h2>
-            <p class="text-gray-600 mb-6">Create an account to generate images and get 5 free credits.</p>
+            <h2 class="text-2xl font-bold mb-2">Sign In to Continue</h2>
+            <p class="text-gray-600 mb-6">You've used your free generations. Sign in to get 5 more credits and continue creating.</p>
             <button id="modal-signin-google-btn" class="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-3">
                 <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#fbc02d" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12	s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20	s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#e53935" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039	l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4caf50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36	c-5.222,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1565c0" d="M43.611,20.083L43.595,20L42,20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574	l6.19,5.238C39.978,36.62,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
                 Sign In with Google
