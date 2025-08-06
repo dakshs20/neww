@@ -26,6 +26,10 @@ body {
     border-color: #A5B4FC;
     box-shadow: 0 0 0 3px rgba(199, 210, 254, 0.5);
 }
+.prompt-textarea:disabled {
+    background-color: #F9FAFB;
+    cursor: not-allowed;
+}
 
 /* Generate Button */
 .generate-button {
@@ -73,6 +77,10 @@ body {
 }
 .utility-button:hover {
     color: #111827;
+}
+.utility-button:disabled {
+    color: #D1D5DB;
+    cursor: not-allowed;
 }
 
 /* User Avatar */
