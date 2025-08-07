@@ -213,7 +213,7 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
             const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs";
 
             if (imageData) {
-                // **CORRECTED API LOGIC FOR IMAGE EDITING**
+                // API LOGIC FOR IMAGE EDITING
                 apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
                 payload = {
                     "contents": [{
@@ -228,7 +228,8 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
                         ]
                     }],
                     "generationConfig": {
-                        "responseModalities": ["IMAGE"]
+                        // **THE FIX IS HERE: The API requires both IMAGE and TEXT for this model**
+                        "responseModalities": ["IMAGE", "TEXT"]
                     }
                 };
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
