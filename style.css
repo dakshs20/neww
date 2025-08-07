@@ -149,7 +149,6 @@ textarea::-webkit-scrollbar-thumb:hover {
     to { transform: translateX(-100%); }
 }
 
-/* This is the parent container that creates the fade effect */
 #gallery-section {
     -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
     mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
@@ -157,7 +156,7 @@ textarea::-webkit-scrollbar-thumb:hover {
 
 .marquee {
     display: flex;
-    width: max-content; /* Allow the content to determine the width */
+    width: max-content;
 }
 
 .marquee-content {
@@ -185,14 +184,59 @@ textarea::-webkit-scrollbar-thumb:hover {
     box-shadow: 0 15px 30px rgba(0,0,0,0.2);
 }
 
-/* --- Mobile Responsiveness for Gallery --- */
+/* --- Gen-0 Section Styles --- */
+#gen0-section {
+    background-color: #000;
+    position: relative;
+}
+
+#gen0-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px);
+    background-size: 4rem 4rem;
+    animation: pan-grid 30s linear infinite;
+    opacity: 0.2;
+    z-index: 1;
+}
+
+#gen0-section::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0) 60%);
+    animation: pulse-glow 5s infinite ease-in-out;
+    z-index: 1;
+}
+
+@keyframes pan-grid {
+    0% { background-position: 0 0; }
+    100% { background-position: 4rem 4rem; }
+}
+
+@keyframes pulse-glow {
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.2); opacity: 0.4; }
+}
+
+
+/* --- Mobile Responsiveness --- */
 @media (max-width: 768px) {
     .gallery-image {
-        height: 240px; /* Make images smaller on mobile */
+        height: 240px;
         margin: 0 0.5rem;
     }
 
     .marquee-content {
-        animation-duration: 45s; /* Scroll a bit faster on smaller screens */
+        animation-duration: 45s;
     }
 }
