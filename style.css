@@ -186,10 +186,11 @@ textarea::-webkit-scrollbar-thumb:hover {
 
 /* --- Gen-0 Section Styles --- */
 #gen0-section {
-    background: linear-gradient(45deg, #020024, #0c0a18, #1b2735);
+    background: linear-gradient(-45deg, #020024, #0c0a18, #1b2735, #3b82f6);
     background-size: 400% 400%;
-    animation: gradient-animation 20s ease infinite;
+    animation: gradient-animation 15s ease infinite;
     position: relative;
+    overflow: hidden;
 }
 
 #gen0-section::before {
@@ -226,14 +227,15 @@ textarea::-webkit-scrollbar-thumb:hover {
 }
 
 @keyframes pulse-glow {
-    0%, 100% { transform: scale(1); opacity: 0.3; }
-    50% { transform: scale(1.2); opacity: 0.4; }
+    0%, 100% { transform: scale(1); opacity: 0.2; }
+    50% { transform: scale(1.3); opacity: 0.35; }
 }
 
+/* UPDATED DYNAMIC ANIMATION */
 @keyframes gradient-animation {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
 }
 
 
