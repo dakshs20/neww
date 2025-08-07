@@ -228,7 +228,6 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
                         ]
                     }],
                     "generationConfig": {
-                        // **THE FIX IS HERE: The API requires both IMAGE and TEXT for this model**
                         "responseModalities": ["IMAGE", "TEXT"]
                     }
                 };
@@ -309,15 +308,17 @@ function addBackButton() {
 
 function startTimer() {
     let startTime = Date.now();
-    const maxTime = 9 * 1000; // Updated to 9 seconds
+    // **UPDATED TIMER DURATION**
+    const maxTime = 17 * 1000; 
     progressBar.style.width = '0%';
     timerInterval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
         const progress = Math.min(elapsedTime / maxTime, 1);
         progressBar.style.width = `${progress * 100}%`;
-        timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~9s`;
+        // **UPDATED TIMER TEXT**
+        timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
         if (elapsedTime >= maxTime) {
-            timerEl.textContent = `9.0s / ~9s`;
+            timerEl.textContent = `17.0s / ~17s`;
         }
     }, 100);
 }
