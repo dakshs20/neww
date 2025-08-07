@@ -186,7 +186,9 @@ textarea::-webkit-scrollbar-thumb:hover {
 
 /* --- Gen-0 Section Styles --- */
 #gen0-section {
-    background-color: #000;
+    background: linear-gradient(45deg, #020024, #0c0a18, #1b2735);
+    background-size: 400% 400%;
+    animation: gradient-animation 20s ease infinite;
     position: relative;
 }
 
@@ -226,6 +228,12 @@ textarea::-webkit-scrollbar-thumb:hover {
 @keyframes pulse-glow {
     0%, 100% { transform: scale(1); opacity: 0.3; }
     50% { transform: scale(1.2); opacity: 0.4; }
+}
+
+@keyframes gradient-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 
