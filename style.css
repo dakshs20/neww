@@ -68,18 +68,18 @@ textarea::-webkit-scrollbar-thumb:hover {
 
 /* --- Mobile Menu Fix --- */
 #mobile-menu {
-    background-color: #3b82f6 !important; /* Blue background for readability */
-    border-color: #2563eb !important;
+    background-color: #4F7ABB; /* User's requested blue background */
+    z-index: 50; /* Ensures menu is on top of other content */
 }
 #mobile-menu #mobile-generation-counter {
-    color: #dbeafe !important; /* Lighter blue/white text */
+    color: #e0e8f9; /* Lighter text for contrast */
 }
 #mobile-menu #mobile-auth-btn {
-    color: white !important;
+    color: white;
     font-weight: 600;
 }
 #mobile-menu #mobile-auth-btn:hover {
-    background-color: #2563eb !important; /* Darker blue on hover */
+    background-color: #436aac; /* A slightly darker blue for hover */
 }
 
 
