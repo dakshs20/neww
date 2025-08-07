@@ -29,12 +29,15 @@ const progressBar = document.getElementById('progress-bar');
 const messageBox = document.getElementById('message-box');
 const examplePrompts = document.querySelectorAll('.example-prompt');
 const generatorUI = document.getElementById('generator-ui');
+const imageUploadBtn = document.getElementById('image-upload-btn');
+const imageUploadInput = document.getElementById('image-upload-input');
+const imagePreviewContainer = document.getElementById('image-preview-container');
+const imagePreview = document.getElementById('image-preview');
+const removeImageBtn = document.getElementById('remove-image-btn');
 
-// Auth Buttons
+// Auth Buttons & Counters
 const authBtn = document.getElementById('auth-btn');
 const mobileAuthBtn = document.getElementById('mobile-auth-btn');
-
-// Counters
 const generationCounterEl = document.getElementById('generation-counter');
 const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
 
@@ -49,20 +52,16 @@ const mobileMenu = document.getElementById('mobile-menu');
 
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
+let uploadedImageData = null; // To store the base64 image data
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
-    // This listener is the single source of truth for the user's auth state.
-    // It reliably fires after the page loads and after any sign-in/sign-out events.
     onAuthStateChanged(auth, user => {
         updateUIForAuthState(user);
     });
 
     // --- Event Listeners ---
-    mobileMenuBtn.addEventListener('click', () => {
-        mobileMenu.classList.toggle('hidden');
-    });
-
+    mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
     document.addEventListener('click', (event) => {
         if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
             mobileMenu.classList.add('hidden');
@@ -71,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     authBtn.addEventListener('click', handleAuthAction);
     mobileAuthBtn.addEventListener('click', handleAuthAction);
-    googleSignInBtn.addEventListener('click', signInWithGoogle); // Attach to modal button
+    googleSignInBtn.addEventListener('click', signInWithGoogle);
     closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
 
     examplePrompts.forEach(button => {
@@ -89,36 +88,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     generateBtn.addEventListener('click', generateImage);
-});
 
+    // --- Image Upload Listeners ---
+    imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
+    imageUploadInput.addEventListener('change', handleImageUpload);
+    removeImageBtn.addEventListener('click', removeUploadedImage);
+});
 
 // --- Auth Functions ---
 function handleAuthAction() {
-    if (auth.currentUser) {
-        signOut(auth);
-    } else {
-        signInWithGoogle();
-    }
+    if (auth.currentUser) signOut(auth);
+    else signInWithGoogle();
 }
 
 function signInWithGoogle() {
-    // Using signInWithPopup now
     signInWithPopup(auth, provider)
-        .then((result) => {
-            // This gives us the user directly and reliably.
-            const user = result.user;
-            // The onAuthStateChanged listener will also fire, but this ensures
-            // the UI updates immediately after the popup closes.
-            updateUIForAuthState(user);
-        }).catch((error) => {
-            // Handle Errors here, such as user closing the popup.
-            console.error("Authentication Error:", error);
-        });
+        .then(result => updateUIForAuthState(result.user))
+        .catch(error => console.error("Authentication Error:", error));
 }
 
 function updateUIForAuthState(user) {
     if (user) {
-        // User is signed in.
         const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
         authBtn.textContent = 'Sign Out';
         mobileAuthBtn.textContent = 'Sign Out';
@@ -126,7 +116,6 @@ function updateUIForAuthState(user) {
         mobileGenerationCounterEl.textContent = welcomeText;
         authModal.setAttribute('aria-hidden', 'true');
     } else {
-        // User is signed out.
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
         updateGenerationCounter();
@@ -145,7 +134,7 @@ function incrementGenerationCount() {
 }
 
 function updateGenerationCounter() {
-    if (auth.currentUser) return; // Don't show counter if signed in
+    if (auth.currentUser) return;
     const count = getGenerationCount();
     const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
     const text = `${remaining} free generation${remaining !== 1 ? 's' : ''} left`;
@@ -153,21 +142,46 @@ function updateGenerationCounter() {
     mobileGenerationCounterEl.textContent = text;
 }
 
+// --- Image Handling Functions ---
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        uploadedImageData = {
+            mimeType: file.type,
+            data: reader.result.split(',')[1]
+        };
+        imagePreview.src = reader.result;
+        imagePreviewContainer.classList.remove('hidden');
+        promptInput.placeholder = "Describe the edits you want to make...";
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeUploadedImage() {
+    uploadedImageData = null;
+    imageUploadInput.value = '';
+    imagePreviewContainer.classList.add('hidden');
+    imagePreview.src = '';
+    promptInput.placeholder = "An oil painting of a futuristic city skyline at dusk...";
+}
 
 // --- Core Image Generation Logic ---
 async function generateImage() {
     const prompt = promptInput.value.trim();
     if (!prompt) {
-        showMessage('Please describe the image you want to create.', 'error');
+        showMessage('Please describe what you want to create or edit.', 'error');
         return;
     }
 
-    // This is the critical check
     if (!auth.currentUser && getGenerationCount() >= FREE_GENERATION_LIMIT) {
         authModal.setAttribute('aria-hidden', 'false');
         return;
     }
 
+    // UI Reset
     imageGrid.innerHTML = '';
     messageBox.innerHTML = '';
     resultContainer.classList.remove('hidden');
@@ -177,15 +191,14 @@ async function generateImage() {
     startTimer();
 
     try {
-        const imageUrl = await generateImageWithRetry(prompt);
+        const imageUrl = await generateImageWithRetry(prompt, uploadedImageData);
         displayImage(imageUrl, prompt);
-        // Only increment the counter if the user is NOT signed in.
         if (!auth.currentUser) {
             incrementGenerationCount();
         }
     } catch (error) {
-        console.error('Image generation failed after multiple retries:', error);
-        showMessage(`Sorry, we couldn't generate the image. Please try again.`, 'error');
+        console.error('Image generation failed:', error);
+        showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
     } finally {
         stopTimer();
         loadingIndicator.classList.add('hidden');
@@ -193,17 +206,42 @@ async function generateImage() {
     }
 }
 
-async function generateImageWithRetry(prompt, maxRetries = 3) {
+async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-            const payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
+            let apiUrl, payload;
             const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
-            const result = await response.json();
-            if (result.predictions?.[0]?.bytesBase64Encoded) return `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-            else throw new Error("No image data received from API.");
+
+            if (imageData) {
+                // **CORRECTED: Using the powerful gemini-2.5-flash model for image editing**
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                payload = {
+                    contents: [{
+                        parts: [
+                            { text: prompt },
+                            { inlineData: { mimeType: imageData.mimeType, data: imageData.data } }
+                        ]
+                    }],
+                    // **Important: Requesting an image response**
+                    generationConfig: { responseMimeType: "image/png" } 
+                };
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                const result = await response.json();
+                const base64Data = result.candidates[0].content.parts[0].inlineData.data;
+                if (!base64Data) throw new Error("No image data received from API.");
+                return `data:image/png;base64,${base64Data}`;
+
+            } else {
+                // Text-to-Image generation (using Imagen for best quality)
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+                payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                const result = await response.json();
+                if (result.predictions?.[0]?.bytesBase64Encoded) return `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                else throw new Error("No image data received from API.");
+            }
         } catch (error) {
             if (attempt >= maxRetries - 1) throw error;
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
@@ -254,20 +292,23 @@ function addBackButton() {
         imageGrid.innerHTML = '';
         messageBox.innerHTML = '';
         promptInput.value = '';
+        removeUploadedImage(); // Also clear the image when going back
     };
     messageBox.prepend(backButton);
 }
 
 function startTimer() {
     let startTime = Date.now();
-    const maxTime = 17 * 1000;
+    const maxTime = 9 * 1000; // Updated to 9 seconds
     progressBar.style.width = '0%';
     timerInterval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
         const progress = Math.min(elapsedTime / maxTime, 1);
         progressBar.style.width = `${progress * 100}%`;
-        timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
-        if (elapsedTime >= maxTime) timerEl.textContent = `17.0s / ~17s`;
+        timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~9s`;
+        if (elapsedTime >= maxTime) {
+            timerEl.textContent = `9.0s / ~9s`;
+        }
     }, 100);
 }
 
