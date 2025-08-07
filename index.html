@@ -169,12 +169,10 @@
             console.log("GenArt App: Attempting initial authentication...");
             try {
                 if (auth) {
-                    // Use __initial_auth_token provided by the Canvas environment for initial sign-in
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         await signInWithCustomToken(auth, __initial_auth_token);
                         console.log("GenArt App: Signed in with custom token.");
                     } else {
-                        // Fallback to anonymous sign-in if no custom token (e.g., local testing)
                         await signInAnonymously(auth);
                         console.log("GenArt App: Signed in anonymously.");
                     }
@@ -183,7 +181,6 @@
                 }
             } catch (error) {
                 console.error("GenArt App: Initial sign-in error:", error);
-                // If there's an error with custom token, try anonymous sign-in if not already signed in
                 if (auth && error.code !== 'auth/already-initialized' && error.code !== 'auth/already-signed-in') {
                      await signInAnonymously(auth);
                      console.log("GenArt App: Fallback to anonymous sign-in successful.");
