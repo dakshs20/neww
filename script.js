@@ -1,6 +1,6 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged, getRedirectResult } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -54,21 +54,11 @@ const FREE_GENERATION_LIMIT = 3;
 document.addEventListener('DOMContentLoaded', () => {
     
     // --- Auth Initialization ---
-    // This is the core logic that handles user state changes.
+    // This listener is the single source of truth for the user's auth state.
+    // It reliably fires after the page loads and after any sign-in/sign-out/redirect events.
     onAuthStateChanged(auth, user => {
         updateUIForAuthState(user);
     });
-
-    // This handles the result from a redirect sign-in.
-    getRedirectResult(auth)
-        .then((result) => {
-            if (result && result.user) {
-                updateUIForAuthState(result.user);
-            }
-        })
-        .catch((error) => {
-            console.error("Auth Redirect Error:", error);
-        });
 
     // --- Event Listeners ---
     mobileMenuBtn.addEventListener('click', () => {
@@ -118,8 +108,8 @@ function signInWithGoogle() {
 }
 
 function updateUIForAuthState(user) {
-    if (user && user.displayName) {
-        // User is signed in
+    if (user) {
+        // User is signed in.
         const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
         authBtn.textContent = 'Sign Out';
         mobileAuthBtn.textContent = 'Sign Out';
@@ -127,7 +117,7 @@ function updateUIForAuthState(user) {
         mobileGenerationCounterEl.textContent = welcomeText;
         authModal.setAttribute('aria-hidden', 'true');
     } else {
-        // User is signed out or name is not available yet
+        // User is signed out.
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
         updateGenerationCounter();
@@ -146,7 +136,7 @@ function incrementGenerationCount() {
 }
 
 function updateGenerationCounter() {
-    if (auth.currentUser) return;
+    if (auth.currentUser) return; // Don't show counter if signed in
     const count = getGenerationCount();
     const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
     const text = `${remaining} free generation${remaining !== 1 ? 's' : ''} left`;
