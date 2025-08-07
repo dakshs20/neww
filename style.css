@@ -149,12 +149,15 @@ textarea::-webkit-scrollbar-thumb:hover {
     to { transform: translateX(-100%); }
 }
 
+/* This is the parent container that creates the fade effect */
+#gallery-section {
+    -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
 .marquee {
     display: flex;
     width: max-content; /* Allow the content to determine the width */
-    /* Add a fade effect on the sides */
-    -webkit-mask-image: linear-gradient(to right, hsl(0 0% 0% / 0), hsl(0 0% 0% / 1) 10%, hsl(0 0% 0% / 1) 90%, hsl(0 0% 0% / 0));
-    mask-image: linear-gradient(to right, hsl(0 0% 0% / 0), hsl(0 0% 0% / 1) 10%, hsl(0 0% 0% / 1) 90%, hsl(0 0% 0% / 0));
 }
 
 .marquee-content {
