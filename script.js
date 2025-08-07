@@ -1,6 +1,6 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -52,10 +52,8 @@ const FREE_GENERATION_LIMIT = 3;
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // --- Auth Initialization ---
     // This listener is the single source of truth for the user's auth state.
-    // It reliably fires after the page loads and after any sign-in/sign-out/redirect events.
+    // It reliably fires after the page loads and after any sign-in/sign-out events.
     onAuthStateChanged(auth, user => {
         updateUIForAuthState(user);
     });
@@ -73,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     authBtn.addEventListener('click', handleAuthAction);
     mobileAuthBtn.addEventListener('click', handleAuthAction);
-    googleSignInBtn.addEventListener('click', signInWithGoogle);
+    googleSignInBtn.addEventListener('click', signInWithGoogle); // Attach to modal button
     closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
 
     examplePrompts.forEach(button => {
@@ -104,7 +102,18 @@ function handleAuthAction() {
 }
 
 function signInWithGoogle() {
-    signInWithRedirect(auth, provider);
+    // Using signInWithPopup now
+    signInWithPopup(auth, provider)
+        .then((result) => {
+            // This gives us the user directly and reliably.
+            const user = result.user;
+            // The onAuthStateChanged listener will also fire, but this ensures
+            // the UI updates immediately after the popup closes.
+            updateUIForAuthState(user);
+        }).catch((error) => {
+            // Handle Errors here, such as user closing the popup.
+            console.error("Authentication Error:", error);
+        });
 }
 
 function updateUIForAuthState(user) {
@@ -153,6 +162,7 @@ async function generateImage() {
         return;
     }
 
+    // This is the critical check
     if (!auth.currentUser && getGenerationCount() >= FREE_GENERATION_LIMIT) {
         authModal.setAttribute('aria-hidden', 'false');
         return;
@@ -169,6 +179,7 @@ async function generateImage() {
     try {
         const imageUrl = await generateImageWithRetry(prompt);
         displayImage(imageUrl, prompt);
+        // Only increment the counter if the user is NOT signed in.
         if (!auth.currentUser) {
             incrementGenerationCount();
         }
