@@ -66,7 +66,7 @@ textarea::-webkit-scrollbar-thumb:hover {
     visibility: visible; 
 }
 
-/* --- New Cinematic Section Styles --- */
+/* --- Cinematic Section Styles --- */
 #cinematic-section {
     background-color: #0c0a18;
     background-image: radial-gradient(ellipse at top, #1b2735 0%, #090a0f 100%);
@@ -141,4 +141,41 @@ textarea::-webkit-scrollbar-thumb:hover {
     background-repeat: repeat;
     background-size: 400px 400px;
     animation: move-twink-back 100s linear infinite;
+}
+
+/* --- New Gallery Section Styles --- */
+@keyframes scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
+}
+
+.marquee {
+    display: flex;
+    width: 100%;
+}
+
+.marquee-content {
+    display: flex;
+    justify-content: space-around;
+    flex-shrink: 0;
+    animation: scroll 60s linear infinite;
+    min-width: 100%;
+}
+
+.marquee:hover .marquee-content {
+    animation-play-state: paused;
+}
+
+.gallery-image {
+    width: auto;
+    height: 300px; /* Adjust height as needed */
+    margin: 0 1rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gallery-image:hover {
+    transform: scale(1.05);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
 }
