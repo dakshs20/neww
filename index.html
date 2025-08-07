@@ -194,13 +194,24 @@
         });
 
         // --- Auth Logic ---
-        onAuthStateChanged(auth, user => {
-            updateUIForAuthState(user);
-        });
+        async function initializeAuth() {
+            try {
+                const result = await getRedirectResult(auth);
+                if (result) {
+                    // This is the signed-in user from the redirect.
+                    updateUIForAuthState(result.user);
+                }
+            } catch (error) {
+                console.error("Auth Redirect Error:", error);
+            }
 
-        getRedirectResult(auth).catch((error) => {
-            console.error("Auth Redirect Error:", error);
-        });
+            onAuthStateChanged(auth, user => {
+                updateUIForAuthState(user);
+            });
+        }
+        
+        initializeAuth();
+
 
         authBtn.addEventListener('click', handleAuthAction);
         mobileAuthBtn.addEventListener('click', handleAuthAction);
