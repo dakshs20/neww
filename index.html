@@ -8,8 +8,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- Inline CSS -->
     <style>
         /* A more refined, classic, and aesthetic UI style */
         body {
@@ -25,8 +23,8 @@
         }
 
         #prompt-container:focus-within {
-            border-color: #d1d5db;
-            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03), 0 0 0 4px rgba(59, 130, 246, 0.15);
+             border-color: #d1d5db;
+             box-shadow: 0 1px 2px 0 rgba(0,0,0,0.03), 0 0 0 4px rgba(59, 130, 246, 0.15);
         }
 
         textarea::-webkit-scrollbar { width: 6px; }
@@ -114,451 +112,283 @@
         <!-- Footer Section -->
         <footer class="text-center py-8 mt-auto border-t border-gray-200 fade-in-slide-up" style="animation-delay: 200ms;">
             <div class="flex justify-center items-center space-x-6 mb-4">
-                <a href="https://www.instagram.com/genartlabs/" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 012.153 2.153c.247.636.416 1.363.465 2.427.048 1.024.06 1.378.06 3.808s-.012 2.784-.06 3.808c-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-2.153 2.153c-.636.247-1.363.416-2.427.465-1.024.048-1.378.06-3.808.06s-2.784-.013-3.808-.06c-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-2.153-2.153c-.247-.636-.416-1.363-.465-2.427-.048-1.024-.06-1.378-.06-3.808s.012-2.784.06-3.808c.049-1.064.218-1.791.465-2.427a4.902 4.902 0 012.153-2.153c.636-.247 1.363.416 2.427.465C9.53 2.013 9.884 2 12.315 2zm0 1.62c-2.403 0-2.741.01-3.701.058-1.009.046-1.594.208-2.039.384a3.278 3.278 0 00-1.48 1.48c-.176.445-.338 1.03-.384 2.039-.049.96-.058 1.299-.058 3.701s.01 2.741.058 3.701c.046 1.009.208 1.594.384 2.039a3.278 3.278 0 001.48 1.48c.445.176 1.03.338 2.039.384.96.049 1.299.058 3.701.058s2.741-.01 3.701-.058c1.009-.046 1.594-.208 2.039-.384a3.278 3.278 0 001.48-1.48c-.176-.445-.338-1.03-.384-2.039.049-.96.058-1.299.058-3.701s-.01-2.741-.058-3.701c-.046-1.009-.208-1.594-.384-2.039a3.278 3.278 0 00-1.48-1.48c-.445-.176-1.03-.338-2.039-.384C15.056 3.63 14.717 3.62 12.315 3.62zM12 7.18c-2.649 0-4.795 2.146-4.795 4.795s2.146 4.795 4.795 4.795 4.795-2.146 4.795-4.795S14.649 7.18 12 7.18zm0 7.96c-1.742 0-3.165-1.423-3.165-3.165S10.258 8.81 12 8.81s3.165 1.423 3.165 3.165S13.742 15.14 12 15.14zM18.81 5.99a1.38 1.38 0 100 2.76 1.38 1.38 0 000-2.76z" clip-rule="evenodd" /></svg><span class="sr-only">Instagram</span></a>
+                <a href="https://www.instagram.com/genartlabs/" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 012.153 2.153c.247.636.416 1.363.465 2.427.048 1.024.06 1.378.06 3.808s-.012 2.784-.06 3.808c-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-2.153 2.153c-.636.247-1.363.416-2.427.465-1.024.048-1.378.06-3.808.06s-2.784-.013-3.808-.06c-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-2.153-2.153c-.247-.636-.416-1.363-.465-2.427-.048-1.024-.06-1.378-.06-3.808s.012-2.784.06-3.808c.049-1.064.218-1.791.465-2.427a4.902 4.902 0 012.153-2.153c.636-.247 1.363.416 2.427.465C9.53 2.013 9.884 2 12.315 2zm0 1.62c-2.403 0-2.741.01-3.701.058-1.009.046-1.594.208-2.039.384a3.278 3.278 0 00-1.48 1.48c-.176.445-.338 1.03-.384 2.039-.049.96-.058 1.299-.058 3.701s.01 2.741.058 3.701c.046 1.009.208 1.594.384 2.039a3.278 3.278 0 001.48 1.48c.445.176 1.03.338 2.039.384.96.049 1.299.058 3.701.058s2.741-.01 3.701-.058c1.009-.046 1.594-.208 2.039-.384a3.278 3.278 0 001.48-1.48c.176-.445.338-1.03.384-2.039.049-.96.058-1.299.058-3.701s-.01-2.741-.058-3.701c-.046-1.009-.208-1.594-.384-2.039a3.278 3.278 0 00-1.48-1.48c-.445-.176-1.03-.338-2.039-.384C15.056 3.63 14.717 3.62 12.315 3.62zM12 7.18c-2.649 0-4.795 2.146-4.795 4.795s2.146 4.795 4.795 4.795 4.795-2.146 4.795-4.795S14.649 7.18 12 7.18zm0 7.96c-1.742 0-3.165-1.423-3.165-3.165S10.258 8.81 12 8.81s3.165 1.423 3.165 3.165S13.742 15.14 12 15.14zM18.81 5.99a1.38 1.38 0 100 2.76 1.38 1.38 0 000-2.76z" clip-rule="evenodd" /></svg><span class="sr-only">Instagram</span></a>
                 <a href="https://x.com/GenArtai_" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span class="sr-only">X</span></a>
             </div>
             <p class="text-xs text-gray-500">&copy; 2024 GenArt. All rights reserved.</p>
         </footer>
     </div>
 
-    <!-- Inline JavaScript -->
+    <!-- Auth Modal -->
+    <div id="auth-modal" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center fade-in-slide-up">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Free Generations Used</h2>
+            <p class="text-gray-500 mb-6">Please sign in to continue with unlimited generations.</p>
+            <button id="google-signin-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center space-x-2"><svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.571l6.19,5.238C41.38,36.16,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg><span>Sign In with Google</span></button>
+            <button id="close-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Maybe later</button>
+        </div>
+    </div>
+
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged, getRedirectResult, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, onAuthStateChanged, getRedirectResult } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        console.log("GenArt App: Script started loading.");
-
-        // --- Firebase Configuration and Initialization ---
-        // Using the Firebase config you provided
+        // Your web app's Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y", 
+            apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
             authDomain: "genart-a693a.firebaseapp.com",
             projectId: "genart-a693a",
-            storageBucket: "genart-a693a.firebasestorage.app",
+            storageBucket: "genart-a693a.appspot.com",
             messagingSenderId: "96958671615",
             appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
             measurementId: "G-EDCW8VYXY6"
         };
-        console.log(Date.now(), "GenArt App: Firebase config defined at top level.");
 
-        let app, auth, db, provider;
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
 
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            provider = new GoogleAuthProvider();
-            console.log("GenArt App: Firebase services initialized.");
-        } catch (e) {
-            console.error("GenArt App: Error initializing Firebase app or services:", e);
-        }
+        // --- DOM Element References ---
+        const promptInput = document.getElementById('prompt-input');
+        const generateBtn = document.getElementById('generate-btn');
+        const resultContainer = document.getElementById('result-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const imageGrid = document.getElementById('image-grid');
+        const timerEl = document.getElementById('timer');
+        const progressBar = document.getElementById('progress-bar');
+        const messageBox = document.getElementById('message-box');
+        const examplePrompts = document.querySelectorAll('.example-prompt');
+        const generatorUI = document.getElementById('generator-ui');
+        
+        // Auth Buttons
+        const authBtn = document.getElementById('auth-btn');
+        const mobileAuthBtn = document.getElementById('mobile-auth-btn');
+        
+        // Counters
+        const generationCounterEl = document.getElementById('generation-counter');
+        const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
+        
+        // Modal
+        const authModal = document.getElementById('auth-modal');
+        const googleSignInBtn = document.getElementById('google-signin-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
 
-        // --- DOM Element References (declared globally to be accessible after DOMContentLoaded) ---
-        let promptInput, generateBtn, resultContainer, loadingIndicator, imageGrid, timerEl, progressBar, messageBox, examplePrompts, generatorUI;
-        let authBtn, mobileAuthBtn, generationCounterEl, mobileGenerationCounterEl;
-        let authModal, googleSignInBtn, closeModalBtn;
-        let mobileMenuBtn, mobileMenu;
+        // Mobile Menu
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
 
         let timerInterval;
-        const FREE_GENERATION_LIMIT = 3; // Set the free generation limit
+        const FREE_GENERATION_LIMIT = 3;
 
-        // --- Initial Authentication on Load ---
-        async function initializeAuth() {
-            console.log("GenArt App: Attempting initial authentication...");
+        // --- Mobile Menu Logic ---
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+        
+        document.addEventListener('click', (event) => {
+            if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+
+        // --- Auth Logic ---
+        onAuthStateChanged(auth, user => {
+            updateUIForAuthState(user);
+        });
+
+        getRedirectResult(auth).catch((error) => {
+            console.error("Auth Redirect Error:", error);
+        });
+
+        authBtn.addEventListener('click', handleAuthAction);
+        mobileAuthBtn.addEventListener('click', handleAuthAction);
+        googleSignInBtn.addEventListener('click', signInWithGoogle);
+        closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
+
+        function handleAuthAction() {
+            if (auth.currentUser) {
+                signOut(auth);
+            } else {
+                signInWithGoogle();
+            }
+        }
+
+        function signInWithGoogle() {
+            signInWithRedirect(auth, provider);
+        }
+
+        function updateUIForAuthState(user) {
+            if (user) {
+                authBtn.textContent = 'Sign Out';
+                mobileAuthBtn.textContent = 'Sign Out';
+                generationCounterEl.textContent = 'Unlimited Generations';
+                mobileGenerationCounterEl.textContent = 'Unlimited Generations';
+                authModal.setAttribute('aria-hidden', 'true');
+            } else {
+                authBtn.textContent = 'Sign In';
+                mobileAuthBtn.textContent = 'Sign In';
+                updateGenerationCounter();
+            }
+        }
+
+        // --- Generation Counter Logic ---
+        function getGenerationCount() {
+            return parseInt(localStorage.getItem('generationCount') || '0');
+        }
+
+        function incrementGenerationCount() {
+            if (auth.currentUser) return; // Don't increment for signed-in users
+            const newCount = getGenerationCount() + 1;
+            localStorage.setItem('generationCount', newCount);
+            updateGenerationCounter();
+        }
+
+        function updateGenerationCounter() {
+            if (auth.currentUser) return;
+            const count = getGenerationCount();
+            const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
+            const text = `${remaining} free generation${remaining !== 1 ? 's' : ''} left`;
+            generationCounterEl.textContent = text;
+            mobileGenerationCounterEl.textContent = text;
+        }
+
+
+        // --- UI Interaction Logic ---
+        examplePrompts.forEach(button => {
+            button.addEventListener('click', () => {
+                promptInput.value = button.innerText.trim();
+                promptInput.focus();
+            });
+        });
+        
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generateImage();
+            }
+        });
+
+        generateBtn.addEventListener('click', generateImage);
+
+        // --- Core Image Generation Logic ---
+        async function generateImage() {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                showMessage('Please describe the image you want to create.', 'error');
+                return;
+            }
+
+            if (!auth.currentUser && getGenerationCount() >= FREE_GENERATION_LIMIT) {
+                authModal.setAttribute('aria-hidden', 'false');
+                return;
+            }
+
+            imageGrid.innerHTML = '';
+            messageBox.innerHTML = '';
+            resultContainer.classList.remove('hidden');
+            loadingIndicator.classList.remove('hidden');
+            generatorUI.classList.add('hidden');
+            
+            startTimer();
+
             try {
-                if (auth) {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                        console.log("GenArt App: Signed in with custom token.");
-                    } else {
-                        await signInAnonymously(auth);
-                        console.log("GenArt App: Signed in anonymously.");
-                    }
-                } else {
-                    console.error("GenArt App: Auth object is not initialized, cannot perform initial sign-in.");
-                }
+                const imageUrl = await generateImageWithRetry(prompt);
+                displayImage(imageUrl, prompt);
+                incrementGenerationCount(); // Increment after successful generation
             } catch (error) {
-                console.error("GenArt App: Initial sign-in error:", error);
-                if (auth && error.code !== 'auth/already-initialized' && error.code !== 'auth/already-signed-in') {
-                     await signInAnonymously(auth);
-                     console.log("GenArt App: Fallback to anonymous sign-in successful.");
+                console.error('Image generation failed after multiple retries:', error);
+                showMessage(`Sorry, we couldn't generate the image. Please try again.`, 'error');
+            } finally {
+                stopTimer();
+                loadingIndicator.classList.add('hidden');
+                addBackButton();
+            }
+        }
+        
+        async function generateImageWithRetry(prompt, maxRetries = 3) {
+            for (let attempt = 0; attempt < maxRetries; attempt++) {
+                try {
+                    const payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
+                    const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+                    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                    const result = await response.json();
+                    if (result.predictions?.[0]?.bytesBase64Encoded) return `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                    else throw new Error("No image data received from API.");
+                } catch (error) {
+                    if (attempt >= maxRetries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
                 }
             }
         }
 
-        // --- Main Application Logic (runs after DOM is fully loaded) ---
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log("GenArt App: DOM Content Loaded. Starting element selection and event listeners setup.");
+        // --- Helper Functions ---
+        function displayImage(imageUrl, prompt) {
+            const imgContainer = document.createElement('div');
+            imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = prompt;
+            img.className = 'w-full h-auto object-contain';
+            const downloadButton = document.createElement('button');
+            downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
+            downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+            downloadButton.ariaLabel = "Download Image";
+            downloadButton.onclick = () => {
+                const a = document.createElement('a');
+                a.href = imageUrl;
+                a.download = 'genart-image.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+            imgContainer.appendChild(img);
+            imgContainer.appendChild(downloadButton);
+            imageGrid.appendChild(imgContainer);
+        }
 
-            // Assign DOM Element References inside DOMContentLoaded
-            promptInput = document.getElementById('prompt-input');
-            console.log("Element: promptInput", promptInput ? "found" : "NOT found");
-            generateBtn = document.getElementById('generate-btn');
-            console.log("Element: generateBtn", generateBtn ? "found" : "NOT found");
-            resultContainer = document.getElementById('result-container');
-            console.log("Element: resultContainer", resultContainer ? "found" : "NOT found");
-            loadingIndicator = document.getElementById('loading-indicator');
-            console.log("Element: loadingIndicator", loadingIndicator ? "found" : "NOT found");
-            imageGrid = document.getElementById('image-grid');
-            console.log("Element: imageGrid", imageGrid ? "found" : "NOT found");
-            timerEl = document.getElementById('timer');
-            console.log("Element: timerEl", timerEl ? "found" : "NOT found");
-            progressBar = document.getElementById('progress-bar');
-            console.log("Element: progressBar", progressBar ? "found" : "NOT found");
-            messageBox = document.getElementById('message-box');
-            console.log("Element: messageBox", messageBox ? "found" : "NOT found");
-            examplePrompts = document.querySelectorAll('.example-prompt');
-            console.log("Elements: examplePrompts (count)", examplePrompts.length);
-            generatorUI = document.getElementById('generator-ui');
-            console.log("Element: generatorUI", generatorUI ? "found" : "NOT found");
-            
-            authBtn = document.getElementById('auth-btn');
-            console.log("Element: authBtn", authBtn ? "found" : "NOT found");
-            mobileAuthBtn = document.getElementById('mobile-auth-btn');
-            console.log("Element: mobileAuthBtn", mobileAuthBtn ? "found" : "NOT found");
-            generationCounterEl = document.getElementById('generation-counter');
-            console.log("Element: generationCounterEl", generationCounterEl ? "found" : "NOT found");
-            mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
-            console.log("Element: mobileGenerationCounterEl", mobileGenerationCounterEl ? "found" : "NOT found");
-            
-            authModal = document.getElementById('auth-modal');
-            console.log("Element: authModal", authModal ? "found" : "NOT found");
-            googleSignInBtn = document.getElementById('google-signin-btn');
-            console.log("Element: googleSignInBtn", googleSignInBtn ? "found" : "NOT found");
-            closeModalBtn = document.getElementById('close-modal-btn');
-            console.log("Element: closeModalBtn", closeModalBtn ? "found" : "NOT found");
+        function showMessage(text, type = 'info') {
+            const messageEl = document.createElement('div');
+            messageEl.className = `p-2 rounded-lg ${type === 'error' ? 'text-red-600' : 'text-gray-600'} fade-in-slide-up`;
+            messageEl.textContent = text;
+            messageBox.innerHTML = ''; 
+            messageBox.appendChild(messageEl);
+        }
 
-            mobileMenuBtn = document.getElementById('mobile-menu-btn');
-            console.log("Element: mobileMenuBtn", mobileMenuBtn ? "found" : "NOT found");
-            mobileMenu = document.getElementById('mobile-menu');
-            console.log("Element: mobileMenu", mobileMenu ? "found" : "NOT found");
+        function addBackButton() {
+            const backButton = document.createElement('button');
+            backButton.textContent = '← Create another';
+            backButton.className = 'mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
+            backButton.onclick = () => {
+                generatorUI.classList.remove('hidden');
+                resultContainer.classList.add('hidden');
+                imageGrid.innerHTML = '';
+                messageBox.innerHTML = '';
+                promptInput.value = '';
+            };
+            messageBox.prepend(backButton);
+        }
 
-            // Call initial authentication function
-            initializeAuth();
+        function startTimer() {
+            let startTime = Date.now();
+            const maxTime = 17 * 1000;
+            progressBar.style.width = '0%';
+            timerInterval = setInterval(() => {
+                const elapsedTime = Date.now() - startTime;
+                const progress = Math.min(elapsedTime / maxTime, 1);
+                progressBar.style.width = `${progress * 100}%`;
+                timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
+                if (elapsedTime >= maxTime) timerEl.textContent = `17.0s / ~17s`;
+            }, 100);
+        }
 
-            // --- Mobile Menu Logic ---
-            if (mobileMenuBtn) {
-                mobileMenuBtn.addEventListener('click', () => {
-                    if (mobileMenu) mobileMenu.classList.toggle('hidden');
-                    console.log("Event: Mobile menu toggled.");
-                });
-            } else {
-                console.warn("Mobile menu button not found, cannot attach listener.");
-            }
-            
-            // Close menu if clicking outside
-            document.addEventListener('click', (event) => {
-                if (mobileMenu && mobileMenuBtn && !mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
-                    mobileMenu.classList.add('hidden');
-                    console.log("Event: Mobile menu closed by outside click.");
-                }
-            });
-
-            // --- Auth Logic ---
-            if (auth) { // Only attach if Firebase auth is initialized
-                onAuthStateChanged(auth, user => {
-                    console.log("GenArt App: Auth state changed. User:", user ? user.uid : "None", "Is anonymous:", user ? user.isAnonymous : "N/A");
-                    updateUIForAuthState(user);
-                });
-
-                getRedirectResult(auth).catch((error) => {
-                    console.error("GenArt App: Auth Redirect Error:", error);
-                    showMessage(`Authentication failed: ${error.message}`, 'error');
-                });
-            } else {
-                console.error("GenArt App: Firebase Auth not initialized, cannot set up auth state listener or redirect result.");
-            }
-
-            if (authBtn) {
-                authBtn.addEventListener('click', handleAuthAction);
-                console.log("Event Listener: authBtn click attached.");
-            } else { console.warn("Auth button not found, cannot attach listener."); }
-
-            if (mobileAuthBtn) {
-                mobileAuthBtn.addEventListener('click', handleAuthAction);
-                console.log("Event Listener: mobileAuthBtn click attached.");
-            } else { console.warn("Mobile auth button not found, cannot attach listener."); }
-
-            if (googleSignInBtn) {
-                googleSignInBtn.addEventListener('click', signInWithGoogle);
-                console.log("Event Listener: googleSignInBtn click attached.");
-            } else { console.warn("Google Sign-In button not found, cannot attach listener."); }
-
-            if (closeModalBtn) {
-                closeModalBtn.addEventListener('click', () => {
-                    if (authModal) authModal.setAttribute('aria-hidden', 'true');
-                    console.log("Event: Close modal button clicked.");
-                });
-            } else { console.warn("Close modal button not found, cannot attach listener."); }
-
-
-            function handleAuthAction() {
-                console.log("Function: handleAuthAction called.");
-                // If user is signed in with Google, clicking "Sign Out" button will sign them out
-                if (auth.currentUser && !auth.currentUser.isAnonymous) { 
-                    console.log("GenArt App: Signing out user.");
-                    signOut(auth);
-                } else {
-                    // If user is anonymous or signed out, clicking "Sign In" will initiate Google Sign-In
-                    console.log("GenArt App: Initiating Google sign-in redirect.");
-                    signInWithGoogle();
-                }
-            }
-
-            function signInWithGoogle() {
-                console.log("Function: signInWithGoogle called.");
-                if (auth && provider) { // Ensure auth and provider are initialized
-                    signInWithRedirect(auth, provider); // Using signInWithRedirect as requested
-                } else {
-                    console.error("GenArt App: Auth or Provider not initialized for Google Sign-In.");
-                    showMessage("Sign-in service not available. Please try again later.", "error");
-                }
-            }
-
-            function updateUIForAuthState(user) {
-                console.log("Function: updateUIForAuthState called with user:", user ? user.uid : "null", "Is anonymous:", user ? user.isAnonymous : "N/A");
-                if (user && !user.isAnonymous) { // User is signed in with a real account (e.g., Google)
-                    if (authBtn) authBtn.textContent = 'Sign Out';
-                    if (mobileAuthBtn) mobileAuthBtn.textContent = 'Sign Out';
-                    if (generationCounterEl) generationCounterEl.textContent = 'Unlimited Generations';
-                    if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = 'Unlimited Generations';
-                    if (authModal) authModal.setAttribute('aria-hidden', 'true'); // Hide modal if user signs in
-                    console.log("UI Updated: User signed in with Google (unlimited generations).");
-                } else { // User is anonymous or signed out
-                    if (authBtn) authBtn.textContent = 'Sign In';
-                    if (mobileAuthBtn) mobileAuthBtn.textContent = 'Sign In';
-                    updateGenerationCounter(); // Update counter for anonymous users
-                    console.log("UI Updated: User signed out or anonymous (limited free generations).");
-                }
-            }
-
-            // --- Generation Counter Logic ---
-            function getGenerationCount() {
-                const count = parseInt(localStorage.getItem('generationCount') || '0');
-                console.log("Function: getGenerationCount - current count from localStorage:", count);
-                return count;
-            }
-
-            function incrementGenerationCount() {
-                let currentCount = getGenerationCount();
-                const newCount = currentCount + 1;
-                localStorage.setItem('generationCount', newCount);
-                console.log("Function: incrementGenerationCount - Old count:", currentCount, "New count:", newCount);
-                updateGenerationCounter(); // Update UI immediately after incrementing
-                return newCount;
-            }
-
-            function updateGenerationCounter() {
-                console.log("Function: updateGenerationCounter called.");
-                // Only update counter display if the user is anonymous
-                if (auth.currentUser && !auth.currentUser.isAnonymous) {
-                    console.log("Counter: User is signed in, counter display skipped.");
-                    return; 
-                }
-                const count = getGenerationCount(); // Get the latest count
-                const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
-                const text = `${remaining} free generations left`;
-                if (generationCounterEl) generationCounterEl.textContent = text;
-                if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = text;
-                console.log("Counter: Displayed text:", text);
-            }
-
-
-            // --- UI Interaction Logic ---
-            examplePrompts.forEach(button => {
-                button.addEventListener('click', () => {
-                    if (promptInput) promptInput.value = button.innerText.trim();
-                    if (promptInput) promptInput.focus();
-                    console.log("Event: Example prompt button clicked:", button.innerText.trim());
-                });
-                console.log("Event Listener: Example prompt button attached.");
-            });
-            
-            if (promptInput) {
-                promptInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        generateImage();
-                        console.log("Event: Enter key pressed in prompt input.");
-                    }
-                });
-                console.log("Event Listener: promptInput keydown attached.");
-            } else { console.warn("Prompt input not found, cannot attach keydown listener."); }
-
-            if (generateBtn) {
-                generateBtn.addEventListener('click', generateImage);
-                console.log("Event Listener: generateBtn click attached.");
-            } else { console.error("Generate button not found, cannot attach listener!"); }
-
-            // --- Core Image Generation Logic ---
-            async function generateImage() {
-                console.log("Function: generateImage called.");
-                if (!promptInput) {
-                    console.error("Prompt input element not found. Cannot generate image.");
-                    showMessage('Internal error: Prompt input not available.', 'error');
-                    return;
-                }
-                const prompt = promptInput.value.trim();
-                if (!prompt) {
-                    showMessage('Please describe the image you want to create.', 'error');
-                    console.log("Validation: Prompt is empty.");
-                    return;
-                }
-
-                // Check free generation limit ONLY if user is currently anonymous
-                // This check happens BEFORE attempting generation
-                if (auth.currentUser && auth.currentUser.isAnonymous) {
-                    const currentGenCount = getGenerationCount();
-                    console.log("Pre-generation check: Anonymous user. Current count:", currentGenCount, "Limit:", FREE_GENERATION_LIMIT);
-                    if (currentGenCount >= FREE_GENERATION_LIMIT) {
-                        if (authModal) authModal.setAttribute('aria-hidden', 'false');
-                        console.log("Validation: Free generation limit reached for anonymous user. Showing auth modal.");
-                        return; // Stop execution if limit reached
-                    }
-                }
-
-                // Reset UI for new generation
-                if (imageGrid) imageGrid.innerHTML = '';
-                if (messageBox) messageBox.innerHTML = '';
-                if (resultContainer) resultContainer.classList.remove('hidden');
-                if (loadingIndicator) loadingIndicator.classList.remove('hidden');
-                if (generatorUI) generatorUI.classList.add('hidden');
-                
-                startTimer();
-                console.log("Image generation started for prompt:", prompt);
-
-                try {
-                    const imageUrl = await generateImageWithRetry(prompt);
-                    displayImage(imageUrl, prompt);
-                    // Increment count ONLY if user is anonymous AFTER successful generation
-                    if (auth.currentUser && auth.currentUser.isAnonymous) {
-                        incrementGenerationCount(); // This will also call updateGenerationCounter()
-                        console.log("Counter: Generation count incremented for anonymous user.");
-                    } else {
-                        console.log("Counter: User is signed in, generation count not incremented.");
-                    }
-                    console.log("Image generated and displayed successfully.");
-                } catch (error) {
-                    console.error('Image generation failed after multiple retries:', error);
-                    showMessage(`Sorry, we couldn't generate the image. Please try again. Error: ${error.message}`, 'error');
-                } finally {
-                    stopTimer();
-                    if (loadingIndicator) loadingIndicator.classList.add('hidden');
-                    addBackButton();
-                    console.log("Image generation process finished.");
-                }
-            }
-
-            async function generateImageWithRetry(prompt, maxRetries = 3) {
-                console.log("Function: generateImageWithRetry called.");
-                for (let attempt = 0; attempt < maxRetries; attempt++) {
-                    try {
-                        const payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
-                        // Using the provided API key for image generation
-                        const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs"; 
-                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-                        console.log(`API Call: Attempt ${attempt + 1} for prompt: "${prompt}" to URL: ${apiUrl}`);
-                        const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                        
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(`API Error ${response.status}: ${errorData.error.message || response.statusText}`);
-                        }
-                        
-                        const result = await response.json();
-                        if (result.predictions?.[0]?.bytesBase64Encoded) {
-                            console.log("API Call: Image data received successfully.");
-                            return `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-                        }
-                        else throw new Error("No image data received from API.");
-                    } catch (error) {
-                        console.warn(`API Call: Attempt ${attempt + 1} failed: ${error.message}. Retrying...`);
-                        if (attempt >= maxRetries - 1) throw error;
-                        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-                    }
-                }
-            }
-
-            // --- Helper Functions ---
-            function displayImage(imageUrl, prompt) {
-                console.log("Function: displayImage called with imageUrl (truncated):", imageUrl.substring(0, 50) + "...");
-                const imgContainer = document.createElement('div');
-                imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
-                const img = document.createElement('img');
-                img.src = imageUrl;
-                img.alt = prompt;
-                img.className = 'w-full h-auto object-contain';
-                const downloadButton = document.createElement('button');
-                downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
-                downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-                downloadButton.ariaLabel = "Download Image";
-                downloadButton.onclick = () => {
-                    console.log("Event: Download button clicked.");
-                    const a = document.createElement('a');
-                    a.href = imageUrl;
-                    a.download = 'genart-image.png';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                };
-                imgContainer.appendChild(img);
-                imgContainer.appendChild(downloadButton);
-                if (imageGrid) imageGrid.appendChild(imgContainer);
-                else console.warn("Image grid not found, cannot display image.");
-            }
-
-            function showMessage(text, type = 'info') {
-                console.log(`Function: showMessage called. Type: ${type}, Text: "${text}"`);
-                const messageEl = document.createElement('div');
-                messageEl.className = `p-2 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-gray-600'} fade-in-slide-up`;
-                messageEl.textContent = text;
-                if (messageBox) {
-                    messageBox.innerHTML = '';
-                    messageBox.appendChild(messageEl);
-                } else {
-                    console.warn("Message box not found, cannot display message.");
-                }
-            }
-
-            function addBackButton() {
-                console.log("Function: addBackButton called.");
-                const backButton = document.createElement('button');
-                backButton.textContent = '← Create another';
-                backButton.className = 'mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
-                backButton.onclick = () => {
-                    console.log("Event: Back button clicked. Resetting UI.");
-                    if (generatorUI) generatorUI.classList.remove('hidden');
-                    if (resultContainer) resultContainer.classList.add('hidden');
-                    if (imageGrid) imageGrid.innerHTML = '';
-                    if (messageBox) messageBox.innerHTML = '';
-                    if (promptInput) promptInput.value = '';
-                };
-                if (messageBox) messageBox.prepend(backButton);
-                else console.warn("Message box not found, cannot add back button.");
-            }
-
-            function startTimer() {
-                console.log("Function: startTimer called.");
-                let startTime = Date.now();
-                const maxTime = 17 * 1000;
-                if (progressBar) progressBar.style.width = '0%';
-                timerInterval = setInterval(() => {
-                    const elapsedTime = Date.now() - startTime;
-                    const progress = Math.min(elapsedTime / maxTime, 1);
-                    if (progressBar) progressBar.style.width = `${progress * 100}%`;
-                    if (timerEl) timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
-                    if (elapsedTime >= maxTime && timerEl) timerEl.textContent = `17.0s / ~17s`;
-                }, 100);
-            }
-
-            function stopTimer() {
-                console.log("Function: stopTimer called.");
-                clearInterval(timerInterval);
-                if (progressBar) progressBar.style.width = '100%';
-            }
-        }); // End of DOMContentLoaded
+        function stopTimer() {
+            clearInterval(timerInterval);
+            progressBar.style.width = '100%';
+        }
     </script>
 </body>
 </html>
