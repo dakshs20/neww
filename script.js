@@ -213,22 +213,30 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
             const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs";
 
             if (imageData) {
-                // **CORRECTED: Using the correct model for image editing**
+                // **CORRECTED API LOGIC FOR IMAGE EDITING**
                 apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
                 payload = {
-                    contents: [{
-                        parts: [
-                            { text: prompt },
-                            { inlineData: { mimeType: imageData.mimeType, data: imageData.data } }
+                    "contents": [{
+                        "parts": [
+                            { "text": prompt },
+                            {
+                                "inlineData": {
+                                    "mimeType": imageData.mimeType,
+                                    "data": imageData.data
+                                }
+                            }
                         ]
                     }],
-                    // **CORRECTED: Using the correct generation config for this model**
-                    generationConfig: { responseModalities: ['IMAGE'] }
+                    "generationConfig": {
+                        "responseModalities": ["IMAGE"]
+                    }
                 };
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API Error: ${response.statusText} - ${errorText}`);
+                }
                 const result = await response.json();
-                // Safer parsing of the response
                 const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
                 if (!base64Data) throw new Error("No image data received from API.");
                 return `data:image/png;base64,${base64Data}`;
