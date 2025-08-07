@@ -240,7 +240,6 @@
         }
 
         function incrementGenerationCount() {
-            if (auth.currentUser) return; // Don't increment for signed-in users
             const newCount = getGenerationCount() + 1;
             localStorage.setItem('generationCount', newCount);
             updateGenerationCounter();
@@ -297,7 +296,9 @@
             try {
                 const imageUrl = await generateImageWithRetry(prompt);
                 displayImage(imageUrl, prompt);
-                incrementGenerationCount(); // Increment after successful generation
+                if (!auth.currentUser) {
+                    incrementGenerationCount();
+                }
             } catch (error) {
                 console.error('Image generation failed after multiple retries:', error);
                 showMessage(`Sorry, we couldn't generate the image. Please try again.`, 'error');
