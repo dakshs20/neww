@@ -221,10 +221,11 @@
 
         function updateUIForAuthState(user) {
             if (user) {
+                const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
                 authBtn.textContent = 'Sign Out';
                 mobileAuthBtn.textContent = 'Sign Out';
-                generationCounterEl.textContent = 'Unlimited Generations';
-                mobileGenerationCounterEl.textContent = 'Unlimited Generations';
+                generationCounterEl.textContent = welcomeText;
+                mobileGenerationCounterEl.textContent = welcomeText;
                 authModal.setAttribute('aria-hidden', 'true');
             } else {
                 authBtn.textContent = 'Sign In';
