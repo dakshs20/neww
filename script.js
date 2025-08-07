@@ -213,8 +213,8 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
             const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs";
 
             if (imageData) {
-                // **CORRECTED: Using the powerful gemini-2.5-flash model for image editing**
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                // **CORRECTED: Using the correct model for image editing**
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
                 payload = {
                     contents: [{
                         parts: [
@@ -222,13 +222,14 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
                             { inlineData: { mimeType: imageData.mimeType, data: imageData.data } }
                         ]
                     }],
-                    // **Important: Requesting an image response**
-                    generationConfig: { responseMimeType: "image/png" } 
+                    // **CORRECTED: Using the correct generation config for this model**
+                    generationConfig: { responseModalities: ['IMAGE'] }
                 };
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
                 const result = await response.json();
-                const base64Data = result.candidates[0].content.parts[0].inlineData.data;
+                // Safer parsing of the response
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
                 if (!base64Data) throw new Error("No image data received from API.");
                 return `data:image/png;base64,${base64Data}`;
 
