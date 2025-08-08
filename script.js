@@ -98,22 +98,21 @@ document.addEventListener('DOMContentLoaded', () => {
     imageUploadInput.addEventListener('change', handleImageUpload);
     removeImageBtn.addEventListener('click', removeUploadedImage);
 
-    // --- REBUILT Music Player Listener ---
+    // --- CORRECTED Music Player Listener ---
     musicBtn.addEventListener('click', () => {
-        // Check if the audio is currently paused or has not started
-        if (lofiMusic.paused) {
-            // Attempt to play the audio
+        // Use the class on the button as the source of truth for the state
+        const isPlaying = musicBtn.classList.contains('playing');
+
+        if (isPlaying) {
+            // If it's playing, pause it
+            lofiMusic.pause();
+            musicBtn.classList.remove('playing');
+        } else {
+            // If it's paused, play it
             lofiMusic.play().catch(error => {
-                // Log any errors, e.g., browser blocking autoplay
                 console.error("Audio playback failed:", error);
             });
-            // Add 'playing' class to the button for styling
             musicBtn.classList.add('playing');
-        } else {
-            // Pause the audio
-            lofiMusic.pause();
-            // Remove 'playing' class
-            musicBtn.classList.remove('playing');
         }
     });
 });
