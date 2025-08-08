@@ -150,22 +150,18 @@
         </footer>
     </div>
 
-    <!-- NEW Sticky Music Player -->
-    <div id="music-player-container">
+    <!-- REBUILT Sticky Music Player -->
+    <div id="music-player">
         <audio id="lofi-music" loop src="https://www.chosic.com/wp-content/uploads/2022/01/Purrple-Cat-Calm-Down.mp3"></audio>
-        <button id="music-btn" class="music-btn" title="Play Music">
-            <div class="icon-wrapper">
-                <div class="icon-play">
-                    <svg fill="currentColor" viewBox="0 0 24 24"><path d="M9.5,8.3L15.2,12L9.5,15.7V8.3M8,5V19L19,12L8,5Z" /></svg>
-                </div>
-                <div class="icon-pause">
-                    <svg fill="currentColor" viewBox="0 0 24 24"><path d="M14,19H18V5H14M6,19H10V5H6V19Z" /></svg>
-                </div>
+        <button id="music-btn" title="Play/Pause Music">
+            <div class="icon-container">
+                <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5.14v14l11-7-11-7z"/></svg>
+                <svg class="icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
             </div>
-            <div class="waves">
-                <span class="wave"></span>
-                <span class="wave"></span>
-                <span class="wave"></span>
+            <div class="waves-container">
+                <div class="wave"></div>
+                <div class="wave"></div>
+                <div class="wave"></div>
             </div>
         </button>
     </div>
