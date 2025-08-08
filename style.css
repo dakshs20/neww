@@ -237,113 +237,112 @@ textarea::-webkit-scrollbar-thumb:hover {
     100% { background-position: 0% 0%; }
 }
 
-/* --- NEW Sticky Music Player --- */
-#music-player-container {
+/* --- REBUILT Sticky Music Player --- */
+#music-player {
     position: fixed;
     bottom: 2rem;
     right: 2rem;
     z-index: 1000;
 }
 
-.music-btn {
-    width: 60px;
-    height: 60px;
-    background: #fff;
+#music-btn {
+    width: 64px;
+    height: 64px;
+    background: #ffffff;
+    border: none;
     border-radius: 50%;
+    cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    cursor: pointer;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border: none;
-    padding: 0;
-}
-
-.music-btn:hover {
-    transform: scale(1.1);
-}
-
-.music-btn .icon-wrapper {
+    outline: none;
     position: relative;
-    width: 24px;
-    height: 24px;
-    transition: transform 0.4s ease;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
-.music-btn .icon-play,
-.music-btn .icon-pause {
+#music-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+}
+
+.icon-container {
+    width: 28px;
+    height: 28px;
+    position: relative;
+    color: #333;
+}
+
+.icon-play, .icon-pause {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    color: #333;
+    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), opacity 0.4s ease;
 }
 
-.music-btn .icon-pause {
+.icon-pause {
     opacity: 0;
-    transform: scale(0.8) rotate(-30deg);
+    transform: scale(0.7) rotate(-45deg);
 }
 
-.music-btn.playing .icon-play {
+#music-btn.playing .icon-play {
+    transform: scale(0.7) rotate(45deg);
     opacity: 0;
-    transform: scale(0.8) rotate(30deg);
 }
 
-.music-btn.playing .icon-pause {
+#music-btn.playing .icon-pause {
+    transform: scale(1);
     opacity: 1;
-    transform: scale(1) rotate(0);
 }
 
-.music-btn .waves {
+.waves-container {
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    transition: opacity 0.3s ease;
-    opacity: 0;
-}
-
-.music-btn.playing .waves {
-    opacity: 1;
+    border-radius: 50%;
+    pointer-events: none;
 }
 
 .wave {
     position: absolute;
-    width: 3px;
-    height: 2px;
-    background-color: #42669C;
-    border-radius: 2px;
-    bottom: 22px;
-    left: 45px;
-    transform-origin: bottom;
-    animation: animate-waves 0.8s linear infinite;
-    transform: scaleY(0);
-}
-
-.music-btn.playing .wave {
-    transform: scaleY(1);
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 2px solid #42669C;
+    opacity: 0;
+    animation: wave-animation 2s ease-out infinite;
+    transform-origin: center;
 }
 
 .wave:nth-child(2) {
-    left: 51px;
-    animation-delay: 0.2s;
+    animation-delay: 0.5s;
 }
-
 .wave:nth-child(3) {
-    left: 57px;
-    animation-delay: 0.4s;
+    animation-delay: 1s;
 }
 
-@keyframes animate-waves {
-    0% { transform: scaleY(1); }
-    25% { transform: scaleY(3); }
-    50% { transform: scaleY(8); }
-    75% { transform: scaleY(4); }
-    100% { transform: scaleY(1); }
+@keyframes wave-animation {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+}
+
+/* Hide waves by default */
+.wave {
+    display: none;
+}
+/* Show waves only when playing */
+#music-btn.playing .wave {
+    display: block;
 }
 
 
@@ -358,13 +357,13 @@ textarea::-webkit-scrollbar-thumb:hover {
         animation-duration: 45s;
     }
 
-    #music-player-container {
+    #music-player {
         bottom: 1.5rem;
         right: 1.5rem;
     }
 
-    .music-btn {
-        width: 52px;
-        height: 52px;
+    #music-btn {
+        width: 56px;
+        height: 56px;
     }
 }
