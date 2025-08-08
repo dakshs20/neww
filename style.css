@@ -9,6 +9,39 @@ body {
     color: #2d2d2d;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    cursor: none; /* Hide the default cursor */
+}
+
+/* --- Custom Cursor --- */
+.cursor-dot,
+.cursor-outline {
+    pointer-events: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out, transform 0.2s ease-in-out;
+    z-index: 9999;
+}
+
+.cursor-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #42669C;
+}
+
+.cursor-outline {
+    width: 40px;
+    height: 40px;
+    background-color: rgba(66, 102, 156, 0.2);
+    transition-duration: 0.3s;
+}
+
+/* Cursor hover effect */
+.cursor-hover {
+    transform: translate(-50%, -50%) scale(1.5);
 }
 
 #prompt-container:focus-within {
