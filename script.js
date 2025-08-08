@@ -50,6 +50,10 @@ const closeModalBtn = document.getElementById('close-modal-btn');
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mobileMenu = document.getElementById('mobile-menu');
 
+// Music Player
+const musicBtn = document.getElementById('music-btn');
+const lofiMusic = document.getElementById('lofi-music');
+
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null; // To store the base64 image data
@@ -93,6 +97,19 @@ document.addEventListener('DOMContentLoaded', () => {
     imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
     imageUploadInput.addEventListener('change', handleImageUpload);
     removeImageBtn.addEventListener('click', removeUploadedImage);
+
+    // --- Music Player Listener ---
+    musicBtn.addEventListener('click', () => {
+        if (lofiMusic.paused) {
+            lofiMusic.play().catch(e => console.error("Audio play failed:", e));
+            musicBtn.classList.add('music-playing');
+            musicBtn.title = "Pause Music";
+        } else {
+            lofiMusic.pause();
+            musicBtn.classList.remove('music-playing');
+            musicBtn.title = "Play Music";
+        }
+    });
 });
 
 // --- Auth Functions ---
