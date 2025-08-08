@@ -50,7 +50,7 @@ const closeModalBtn = document.getElementById('close-modal-btn');
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mobileMenu = document.getElementById('mobile-menu');
 
-// Music Player
+// --- REBUILT Music Player ---
 const musicBtn = document.getElementById('music-btn');
 const lofiMusic = document.getElementById('lofi-music');
 
@@ -98,16 +98,22 @@ document.addEventListener('DOMContentLoaded', () => {
     imageUploadInput.addEventListener('change', handleImageUpload);
     removeImageBtn.addEventListener('click', removeUploadedImage);
 
-    // --- Music Player Listener ---
+    // --- REBUILT Music Player Listener ---
     musicBtn.addEventListener('click', () => {
+        // Check if the audio is currently paused or has not started
         if (lofiMusic.paused) {
-            lofiMusic.play().catch(e => console.error("Audio play failed:", e));
-            musicBtn.classList.add('music-playing');
-            musicBtn.title = "Pause Music";
+            // Attempt to play the audio
+            lofiMusic.play().catch(error => {
+                // Log any errors, e.g., browser blocking autoplay
+                console.error("Audio playback failed:", error);
+            });
+            // Add 'playing' class to the button for styling
+            musicBtn.classList.add('playing');
         } else {
+            // Pause the audio
             lofiMusic.pause();
-            musicBtn.classList.remove('music-playing');
-            musicBtn.title = "Play Music";
+            // Remove 'playing' class
+            musicBtn.classList.remove('playing');
         }
     });
 });
