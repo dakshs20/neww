@@ -12,17 +12,15 @@ body {
     cursor: none; /* Hide the default cursor */
 }
 
-/* --- Custom Cursor --- */
+/* --- REBUILT Custom Cursor --- */
 .cursor-dot,
 .cursor-outline {
     pointer-events: none;
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    top: 0;
+    left: 0;
     border-radius: 50%;
     opacity: 1;
-    transition: opacity 0.3s ease-in-out, transform 0.2s ease-in-out;
     z-index: 9999;
 }
 
@@ -30,19 +28,23 @@ body {
     width: 8px;
     height: 8px;
     background-color: #42669C;
+    transform: translate(-50%, -50%);
 }
 
 .cursor-outline {
     width: 40px;
     height: 40px;
     background-color: rgba(66, 102, 156, 0.2);
-    transition-duration: 0.3s;
+    transform: translate(-50%, -50%);
+    transition: transform 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 /* Cursor hover effect */
-.cursor-hover {
+.cursor-outline.cursor-hover {
     transform: translate(-50%, -50%) scale(1.5);
+    background-color: rgba(66, 102, 156, 0.3);
 }
+
 
 #prompt-container:focus-within {
      border-color: #d1d5db;
