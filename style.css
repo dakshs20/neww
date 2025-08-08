@@ -238,6 +238,17 @@ textarea::-webkit-scrollbar-thumb:hover {
     100% { background-position: 0% 0%; }
 }
 
+/* Music Player Styles */
+@keyframes pulse-music {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+.music-playing {
+    color: #42669C; /* Match the theme color */
+    animation: pulse-music 1.5s infinite ease-in-out;
+}
+
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 768px) {
