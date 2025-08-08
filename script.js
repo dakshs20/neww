@@ -54,7 +54,7 @@ const mobileMenu = document.getElementById('mobile-menu');
 const musicBtn = document.getElementById('music-btn');
 const lofiMusic = document.getElementById('lofi-music');
 
-// --- Custom Cursor ---
+// --- REBUILT Custom Cursor ---
 const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
 
@@ -105,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- CORRECTED Music Player Listener ---
     musicBtn.addEventListener('click', () => {
         const isPlaying = musicBtn.classList.contains('playing');
-
         if (isPlaying) {
             lofiMusic.pause();
         } else {
@@ -114,14 +113,29 @@ document.addEventListener('DOMContentLoaded', () => {
         musicBtn.classList.toggle('playing');
     });
 
-    // --- Custom Cursor Logic ---
+    // --- REBUILT Custom Cursor Logic ---
+    let mouseX = 0, mouseY = 0;
+    let outlineX = 0, outlineY = 0;
+
     window.addEventListener('mousemove', (e) => {
-        const { clientX: posX, clientY: posY } = e;
-        cursorDot.style.left = `${posX}px`;
-        cursorDot.style.top = `${posY}px`;
-        cursorOutline.style.left = `${posX}px`;
-        cursorOutline.style.top = `${posY}px`;
+        mouseX = e.clientX;
+        mouseY = e.clientY;
     });
+
+    const animateCursor = () => {
+        // Move dot instantly
+        cursorDot.style.left = `${mouseX}px`;
+        cursorDot.style.top = `${mouseY}px`;
+
+        // Animate outline with a delay (easing)
+        const ease = 0.15;
+        outlineX += (mouseX - outlineX) * ease;
+        outlineY += (mouseY - outlineY) * ease;
+        cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+        
+        requestAnimationFrame(animateCursor);
+    };
+    requestAnimationFrame(animateCursor);
 
     const interactiveElements = document.querySelectorAll('a, button, textarea, input[type="file"]');
     interactiveElements.forEach(el => {
