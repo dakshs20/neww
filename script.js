@@ -54,6 +54,10 @@ const mobileMenu = document.getElementById('mobile-menu');
 const musicBtn = document.getElementById('music-btn');
 const lofiMusic = document.getElementById('lofi-music');
 
+// --- Custom Cursor ---
+const cursorDot = document.querySelector('.cursor-dot');
+const cursorOutline = document.querySelector('.cursor-outline');
+
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null; // To store the base64 image data
@@ -100,20 +104,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CORRECTED Music Player Listener ---
     musicBtn.addEventListener('click', () => {
-        // Use the class on the button as the source of truth for the state
         const isPlaying = musicBtn.classList.contains('playing');
 
         if (isPlaying) {
-            // If it's playing, pause it
             lofiMusic.pause();
-            musicBtn.classList.remove('playing');
         } else {
-            // If it's paused, play it
-            lofiMusic.play().catch(error => {
-                console.error("Audio playback failed:", error);
-            });
-            musicBtn.classList.add('playing');
+            lofiMusic.play().catch(error => console.error("Audio playback failed:", error));
         }
+        musicBtn.classList.toggle('playing');
+    });
+
+    // --- Custom Cursor Logic ---
+    window.addEventListener('mousemove', (e) => {
+        const { clientX: posX, clientY: posY } = e;
+        cursorDot.style.left = `${posX}px`;
+        cursorDot.style.top = `${posY}px`;
+        cursorOutline.style.left = `${posX}px`;
+        cursorOutline.style.top = `${posY}px`;
+    });
+
+    const interactiveElements = document.querySelectorAll('a, button, textarea, input[type="file"]');
+    interactiveElements.forEach(el => {
+        el.addEventListener('mouseover', () => {
+            cursorOutline.classList.add('cursor-hover');
+        });
+        el.addEventListener('mouseout', () => {
+            cursorOutline.classList.remove('cursor-hover');
+        });
     });
 });
 
