@@ -352,11 +352,15 @@ async function generateAvatar() {
     generateAvatarBtn.disabled = true;
 
     try {
-        const prompt = "A cool, stylized AI avatar of the person in the image. Modern, digital art style.";
+        // --- IMPROVED PROMPT ---
+        const prompt = "Create a high-quality, artistic digital painting of the person in the image. Preserve their facial features and likeness, but render it in a smooth, modern, stylized avatar aesthetic. The background should be simple and complementary.";
         const imageUrl = await generateImageWithRetry(prompt, avatarImageData);
+        
         avatarResultImage.src = imageUrl;
         avatarResultImage.classList.remove('hidden');
+        avatarResultImage.classList.add('reveal'); // Add class for animation
         avatarDownloadBtn.classList.remove('hidden');
+        
         if (!auth.currentUser) {
             incrementGenerationCount();
         }
