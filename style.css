@@ -272,6 +272,55 @@ textarea::-webkit-scrollbar-thumb:hover {
     100% { background-position: 0% 0%; }
 }
 
+/* --- NEW Dynamic AI Avatar Section --- */
+#avatar-section .bg-white {
+    background: linear-gradient(135deg, #ffffff 0%, #f7f9fc 100%);
+}
+
+@keyframes pulse-border {
+    0%, 100% { border-color: #d1d5db; }
+    50% { border-color: #42669C; }
+}
+
+#avatar-upload-area {
+    border-style: dashed;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+#avatar-upload-area:hover {
+    border-color: #42669C;
+    background-color: #f7f9fc;
+}
+
+#avatar-upload-prompt svg {
+    animation: pulse-icon 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes pulse-icon {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+@keyframes reveal {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+#avatar-result-image.reveal {
+    animation: reveal 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+#generate-avatar-btn {
+    background: linear-gradient(45deg, #42669C, #3b82f6);
+    background-size: 200% 200%;
+    transition: background-position 0.5s ease;
+}
+
+#generate-avatar-btn:hover:not(:disabled) {
+    background-position: 100% 0;
+}
+
+
 /* --- REBUILT Sticky Music Player --- */
 #music-player {
     position: fixed;
