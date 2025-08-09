@@ -58,6 +58,19 @@ const lofiMusic = document.getElementById('lofi-music');
 const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
 
+// --- NEW AI Avatar ---
+const avatarUploadInput = document.getElementById('avatar-upload-input');
+const avatarUploadArea = document.getElementById('avatar-upload-area');
+const avatarPreview = document.getElementById('avatar-preview');
+const avatarUploadPrompt = document.getElementById('avatar-upload-prompt');
+const generateAvatarBtn = document.getElementById('generate-avatar-btn');
+const avatarResultContainer = document.getElementById('avatar-result-container');
+const avatarLoading = document.getElementById('avatar-loading');
+const avatarResultImage = document.getElementById('avatar-result-image');
+const avatarDownloadBtn = document.getElementById('avatar-download-btn');
+const avatarPlaceholder = document.getElementById('avatar-placeholder');
+let avatarImageData = null;
+
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null; // To store the base64 image data
@@ -123,29 +136,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const animateCursor = () => {
-        // Move dot instantly
         cursorDot.style.left = `${mouseX}px`;
         cursorDot.style.top = `${mouseY}px`;
-
-        // Animate outline with a delay (easing)
         const ease = 0.15;
         outlineX += (mouseX - outlineX) * ease;
         outlineY += (mouseY - outlineY) * ease;
         cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
-        
         requestAnimationFrame(animateCursor);
     };
     requestAnimationFrame(animateCursor);
 
-    const interactiveElements = document.querySelectorAll('a, button, textarea, input[type="file"]');
+    const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
     interactiveElements.forEach(el => {
-        el.addEventListener('mouseover', () => {
-            cursorOutline.classList.add('cursor-hover');
-        });
-        el.addEventListener('mouseout', () => {
-            cursorOutline.classList.remove('cursor-hover');
-        });
+        el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
+        el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
     });
+
+    // --- NEW AI Avatar Listeners ---
+    avatarUploadInput.addEventListener('change', handleAvatarUpload);
+    generateAvatarBtn.addEventListener('click', generateAvatar);
+    avatarDownloadBtn.addEventListener('click', downloadAvatar);
 });
 
 // --- Auth Functions ---
@@ -266,50 +276,109 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
             const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs";
 
             if (imageData) {
-                // API LOGIC FOR IMAGE EDITING
                 apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
                 payload = {
                     "contents": [{
                         "parts": [
                             { "text": prompt },
-                            {
-                                "inlineData": {
-                                    "mimeType": imageData.mimeType,
-                                    "data": imageData.data
-                                }
-                            }
+                            { "inlineData": { "mimeType": imageData.mimeType, "data": imageData.data } }
                         ]
                     }],
-                    "generationConfig": {
-                        "responseModalities": ["IMAGE", "TEXT"]
-                    }
+                    "generationConfig": { "responseModalities": ["IMAGE", "TEXT"] }
                 };
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`API Error: ${response.statusText} - ${errorText}`);
-                }
-                const result = await response.json();
-                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-                if (!base64Data) throw new Error("No image data received from API.");
-                return `data:image/png;base64,${base64Data}`;
-
             } else {
-                // Text-to-Image generation (using Imagen for best quality)
                 apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
                 payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
-                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
-                const result = await response.json();
-                if (result.predictions?.[0]?.bytesBase64Encoded) return `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
-                else throw new Error("No image data received from API.");
             }
+
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`API Error: ${response.status} - ${errorText}`);
+            }
+
+            const result = await response.json();
+            let base64Data;
+            if (imageData) {
+                base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+            } else {
+                base64Data = result.predictions?.[0]?.bytesBase64Encoded;
+            }
+
+            if (!base64Data) throw new Error("No image data received from API.");
+            return `data:image/png;base64,${base64Data}`;
+
         } catch (error) {
             if (attempt >= maxRetries - 1) throw error;
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         }
     }
 }
+
+// --- NEW Avatar Functions ---
+function handleAvatarUpload(event) {
+    const file = event.target.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        avatarImageData = {
+            mimeType: file.type,
+            data: reader.result.split(',')[1]
+        };
+        avatarPreview.src = reader.result;
+        avatarPreview.classList.remove('hidden');
+        avatarUploadPrompt.classList.add('hidden');
+        generateAvatarBtn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+}
+
+async function generateAvatar() {
+    if (!avatarImageData) {
+        alert("Please upload an image first.");
+        return;
+    }
+    if (!auth.currentUser && getGenerationCount() >= FREE_GENERATION_LIMIT) {
+        authModal.setAttribute('aria-hidden', 'false');
+        return;
+    }
+
+    // Reset UI
+    avatarLoading.classList.remove('hidden');
+    avatarResultImage.classList.add('hidden');
+    avatarDownloadBtn.classList.add('hidden');
+    avatarPlaceholder.classList.add('hidden');
+    generateAvatarBtn.disabled = true;
+
+    try {
+        const prompt = "A cool, stylized AI avatar of the person in the image. Modern, digital art style.";
+        const imageUrl = await generateImageWithRetry(prompt, avatarImageData);
+        avatarResultImage.src = imageUrl;
+        avatarResultImage.classList.remove('hidden');
+        avatarDownloadBtn.classList.remove('hidden');
+        if (!auth.currentUser) {
+            incrementGenerationCount();
+        }
+    } catch (error) {
+        console.error("Avatar generation failed:", error);
+        avatarPlaceholder.textContent = "Sorry, couldn't create avatar.";
+        avatarPlaceholder.classList.remove('hidden');
+    } finally {
+        avatarLoading.classList.add('hidden');
+        generateAvatarBtn.disabled = false;
+    }
+}
+
+function downloadAvatar() {
+    const a = document.createElement('a');
+    a.href = avatarResultImage.src;
+    a.download = 'genart-avatar.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
 
 // --- Helper Functions ---
 function displayImage(imageUrl, prompt) {
