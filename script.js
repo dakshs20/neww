@@ -1,6 +1,7 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -16,9 +17,16 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // --- DOM Element References ---
+const mainGeneratorPage = document.getElementById('main-generator-page');
+const myMediaPage = document.getElementById('my-media-page');
+const homeLink = document.getElementById('home-link');
+const myMediaBtn = document.getElementById('my-media-btn');
+const mobileMyMediaBtn = document.getElementById('mobile-my-media-btn');
+
 const promptInput = document.getElementById('prompt-input');
 const generateBtn = document.getElementById('generate-btn');
 const resultContainer = document.getElementById('result-container');
@@ -58,22 +66,15 @@ const lofiMusic = document.getElementById('lofi-music');
 const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
 
-// --- NEW AI Avatar ---
-const avatarUploadInput = document.getElementById('avatar-upload-input');
-const avatarUploadArea = document.getElementById('avatar-upload-area');
-const avatarPreview = document.getElementById('avatar-preview');
-const avatarUploadPrompt = document.getElementById('avatar-upload-prompt');
-const generateAvatarBtn = document.getElementById('generate-avatar-btn');
-const avatarResultContainer = document.getElementById('avatar-result-container');
-const avatarLoading = document.getElementById('avatar-loading');
-const avatarResultImage = document.getElementById('avatar-result-image');
-const avatarDownloadBtn = document.getElementById('avatar-download-btn');
-const avatarPlaceholder = document.getElementById('avatar-placeholder');
-let avatarImageData = null;
+// --- My Media Page ---
+const mediaGrid = document.getElementById('media-grid');
+const mediaPlaceholder = document.getElementById('media-placeholder');
+const mediaGridLoader = document.getElementById('media-grid-loader');
 
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null; // To store the base64 image data
+let unsubscribeHistory = null; // To stop listening to Firestore changes on logout
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -152,11 +153,25 @@ document.addEventListener('DOMContentLoaded', () => {
         el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
     });
 
-    // --- NEW AI Avatar Listeners ---
-    avatarUploadInput.addEventListener('change', handleAvatarUpload);
-    generateAvatarBtn.addEventListener('click', generateAvatar);
-    avatarDownloadBtn.addEventListener('click', downloadAvatar);
+    // --- Page Navigation ---
+    homeLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo('main');
+    });
+    myMediaBtn.addEventListener('click', () => navigateTo('media'));
+    mobileMyMediaBtn.addEventListener('click', () => navigateTo('media'));
 });
+
+// --- Page Navigation Function ---
+function navigateTo(page) {
+    if (page === 'main') {
+        mainGeneratorPage.classList.remove('hidden');
+        myMediaPage.classList.add('hidden');
+    } else if (page === 'media') {
+        mainGeneratorPage.classList.add('hidden');
+        myMediaPage.classList.remove('hidden');
+    }
+}
 
 // --- Auth Functions ---
 function handleAuthAction() {
@@ -178,10 +193,18 @@ function updateUIForAuthState(user) {
         generationCounterEl.textContent = welcomeText;
         mobileGenerationCounterEl.textContent = welcomeText;
         authModal.setAttribute('aria-hidden', 'true');
+        myMediaBtn.classList.remove('hidden');
+        mobileMyMediaBtn.classList.remove('hidden');
+        fetchUserMedia(user.uid);
     } else {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
         updateGenerationCounter();
+        myMediaBtn.classList.add('hidden');
+        mobileMyMediaBtn.classList.add('hidden');
+        if (unsubscribeHistory) unsubscribeHistory(); // Stop listening to old user's data
+        mediaGrid.innerHTML = '';
+        navigateTo('main'); // Go back to main page on logout
     }
 }
 
@@ -315,69 +338,86 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
     }
 }
 
-// --- NEW Avatar Functions ---
-function handleAvatarUpload(event) {
-    const file = event.target.files[0];
-    if (!file || !file.type.startsWith('image/')) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-        avatarImageData = {
-            mimeType: file.type,
-            data: reader.result.split(',')[1]
-        };
-        avatarPreview.src = reader.result;
-        avatarPreview.classList.remove('hidden');
-        avatarUploadPrompt.classList.add('hidden');
-        generateAvatarBtn.disabled = false;
-    };
-    reader.readAsDataURL(file);
+// --- My Media Functions ---
+function fetchUserMedia(userId) {
+    const q = query(collection(db, "users", userId, "images"), orderBy("createdAt", "desc"));
+    
+    unsubscribeHistory = onSnapshot(q, (querySnapshot) => {
+        const images = [];
+        querySnapshot.forEach((doc) => {
+            images.push({ id: doc.id, ...doc.data() });
+        });
+        displayMedia(images);
+    });
 }
 
-async function generateAvatar() {
-    if (!avatarImageData) {
-        alert("Please upload an image first.");
-        return;
+function displayMedia(images) {
+    mediaGridLoader.classList.add('hidden');
+    mediaGrid.innerHTML = '';
+    if (images.length === 0) {
+        mediaPlaceholder.classList.remove('hidden');
+    } else {
+        mediaPlaceholder.classList.add('hidden');
+        images.forEach(image => {
+            const item = document.createElement('div');
+            item.className = 'grid-item';
+            item.innerHTML = `
+                <img src="${image.imageUrl}" alt="${image.prompt}" loading="lazy">
+                <div class="grid-item-overlay">
+                    <p class="grid-item-prompt">${image.prompt}</p>
+                    <div class="grid-item-actions">
+                        <button class="download-btn" title="Download"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
+                        <button class="delete-btn" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                    </div>
+                </div>
+            `;
+            item.querySelector('.download-btn').addEventListener('click', () => downloadImage(image.imageUrl, image.prompt));
+            item.querySelector('.delete-btn').addEventListener('click', () => deleteImage(image.id));
+            mediaGrid.appendChild(item);
+        });
     }
-    if (!auth.currentUser && getGenerationCount() >= FREE_GENERATION_LIMIT) {
+}
+
+async function saveImageToHistory(prompt, imageUrl) {
+    const user = auth.currentUser;
+    if (!user) {
         authModal.setAttribute('aria-hidden', 'false');
         return;
     }
-
-    // Reset UI
-    avatarLoading.classList.remove('hidden');
-    avatarResultImage.classList.add('hidden');
-    avatarDownloadBtn.classList.add('hidden');
-    avatarPlaceholder.classList.add('hidden');
-    generateAvatarBtn.disabled = true;
-
     try {
-        // --- IMPROVED PROMPT ---
-        const prompt = "Create a high-quality, artistic digital painting of the person in the image. Preserve their facial features and likeness, but render it in a smooth, modern, stylized avatar aesthetic. The background should be simple and complementary.";
-        const imageUrl = await generateImageWithRetry(prompt, avatarImageData);
-        
-        avatarResultImage.src = imageUrl;
-        avatarResultImage.classList.remove('hidden');
-        avatarResultImage.classList.add('reveal'); // Add class for animation
-        avatarDownloadBtn.classList.remove('hidden');
-        
-        if (!auth.currentUser) {
-            incrementGenerationCount();
+        await addDoc(collection(db, "users", user.uid, "images"), {
+            prompt: prompt,
+            imageUrl: imageUrl,
+            createdAt: serverTimestamp()
+        });
+        // Visual feedback
+        const saveBtn = document.querySelector('.save-btn-temp');
+        if(saveBtn) {
+            saveBtn.innerHTML = 'Saved!';
+            saveBtn.disabled = true;
         }
-    } catch (error) {
-        console.error("Avatar generation failed:", error);
-        avatarPlaceholder.textContent = "Sorry, couldn't create avatar.";
-        avatarPlaceholder.classList.remove('hidden');
-    } finally {
-        avatarLoading.classList.add('hidden');
-        generateAvatarBtn.disabled = false;
+    } catch (e) {
+        console.error("Error adding document: ", e);
+        alert("Could not save image. It might be too large.");
     }
 }
 
-function downloadAvatar() {
+async function deleteImage(imageId) {
+    const user = auth.currentUser;
+    if (!user) return;
+    if (confirm("Are you sure you want to delete this image?")) {
+        try {
+            await deleteDoc(doc(db, "users", user.uid, "images", imageId));
+        } catch (e) {
+            console.error("Error deleting document: ", e);
+        }
+    }
+}
+
+function downloadImage(imageUrl, prompt) {
     const a = document.createElement('a');
-    a.href = avatarResultImage.src;
-    a.download = 'genart-avatar.png';
+    a.href = imageUrl;
+    a.download = `${prompt.slice(0, 20).replace(/\s+/g, '_')}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -392,20 +432,27 @@ function displayImage(imageUrl, prompt) {
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
+    
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
+
+    const saveButton = document.createElement('button');
+    saveButton.className = 'bg-black/50 text-white p-2 rounded-full save-btn-temp';
+    saveButton.title = "Save to My Media";
+    saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`;
+    saveButton.onclick = () => saveImageToHistory(prompt, imageUrl);
+
     const downloadButton = document.createElement('button');
-    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
+    downloadButton.className = 'bg-black/50 text-white p-2 rounded-full';
+    downloadButton.title = "Download Image";
     downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-    downloadButton.ariaLabel = "Download Image";
-    downloadButton.onclick = () => {
-        const a = document.createElement('a');
-        a.href = imageUrl;
-        a.download = 'genart-image.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    };
+    downloadButton.onclick = () => downloadImage(imageUrl, prompt);
+
+    buttonContainer.appendChild(saveButton);
+    buttonContainer.appendChild(downloadButton);
+    
     imgContainer.appendChild(img);
-    imgContainer.appendChild(downloadButton);
+    imgContainer.appendChild(buttonContainer);
     imageGrid.appendChild(imgContainer);
 }
 
