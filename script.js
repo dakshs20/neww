@@ -340,6 +340,9 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
 
 // --- My Media Functions ---
 function fetchUserMedia(userId) {
+    mediaGridLoader.classList.remove('hidden');
+    mediaPlaceholder.classList.add('hidden');
+    
     const q = query(collection(db, "users", userId, "images"), orderBy("createdAt", "desc"));
     
     unsubscribeHistory = onSnapshot(q, (querySnapshot) => {
@@ -378,7 +381,7 @@ function displayMedia(images) {
     }
 }
 
-async function saveImageToHistory(prompt, imageUrl) {
+async function saveImageToHistory(prompt, imageUrl, saveBtn) {
     const user = auth.currentUser;
     if (!user) {
         authModal.setAttribute('aria-hidden', 'false');
@@ -390,11 +393,10 @@ async function saveImageToHistory(prompt, imageUrl) {
             imageUrl: imageUrl,
             createdAt: serverTimestamp()
         });
-        // Visual feedback
-        const saveBtn = document.querySelector('.save-btn-temp');
-        if(saveBtn) {
-            saveBtn.innerHTML = 'Saved!';
+        if (saveBtn) {
+            saveBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"></path></svg>`;
             saveBtn.disabled = true;
+            saveBtn.title = "Saved!";
         }
     } catch (e) {
         console.error("Error adding document: ", e);
@@ -405,12 +407,10 @@ async function saveImageToHistory(prompt, imageUrl) {
 async function deleteImage(imageId) {
     const user = auth.currentUser;
     if (!user) return;
-    if (confirm("Are you sure you want to delete this image?")) {
-        try {
-            await deleteDoc(doc(db, "users", user.uid, "images", imageId));
-        } catch (e) {
-            console.error("Error deleting document: ", e);
-        }
+    try {
+        await deleteDoc(doc(db, "users", user.uid, "images", imageId));
+    } catch (e) {
+        console.error("Error deleting document: ", e);
     }
 }
 
@@ -437,10 +437,10 @@ function displayImage(imageUrl, prompt) {
     buttonContainer.className = 'absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
 
     const saveButton = document.createElement('button');
-    saveButton.className = 'bg-black/50 text-white p-2 rounded-full save-btn-temp';
+    saveButton.className = 'bg-black/50 text-white p-2 rounded-full';
     saveButton.title = "Save to My Media";
     saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`;
-    saveButton.onclick = () => saveImageToHistory(prompt, imageUrl);
+    saveButton.onclick = (event) => saveImageToHistory(prompt, imageUrl, event.currentTarget);
 
     const downloadButton = document.createElement('button');
     downloadButton.className = 'bg-black/50 text-white p-2 rounded-full';
