@@ -3,10 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GenArt - Classic AI Image Generator</title>
+    
+    <!-- SEO Optimized Title -->
+    <title>Free & Fastest AI Image Generator | GenArt</title>
+    
+    <!-- SEO Optimized Meta Description -->
+    <meta name="description" content="Experience the fastest AI image generator. GenArt is a free tool that creates stunning visuals and AI avatars from text in under 17 seconds.">
+    
+    <!-- Keywords for SEO -->
+    <meta name="keywords" content="Free AI Image Generator, Fastest AI Image Generator, GenArt, AI Avatar, Create AI Art, AI Photo Editor, Text to Image, Generative AI">
+    
+    <!-- Open Graph Meta Tags for Social Sharing -->
+    <meta property="og:title" content="Free & Fastest AI Image Generator | GenArt">
+    <meta property="og:description" content="The fastest free tool for generating AI images and avatars. Create stunning art in under 17 seconds.">
+    <meta property="og:image" content="https://iili.io/FsAoG2I.md.png">
+    <meta property="og:url" content="YOUR_WEBSITE_URL_HERE">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Free & Fastest AI Image Generator | GenArt">
+    <meta name="twitter:description" content="The fastest free tool for generating AI images and avatars. Create stunning art in under 17 seconds.">
+    <meta name="twitter:image" content="https://iili.io/FsAoG2I.md.png">
+
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
+
+    <!-- JSON-LD Structured Data for SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "GenArt",
+      "applicationCategory": "DesignApplication",
+      "operatingSystem": "Web",
+      "description": "The fastest and free AI image generator and avatar creator. Allows users to create stunning visuals from text prompts and edit images in under 17 seconds.",
+      "featureList": [
+        "AI Image Generation",
+        "Text-to-Image Conversion",
+        "AI Photo Editing",
+        "AI Avatar Creation",
+        "Fast Generation"
+      ],
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
 </head>
 <body>
     <!-- Custom Cursor -->
@@ -16,10 +62,13 @@
     <div id="app-container" class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
         
         <header class="relative flex justify-between items-center py-5 px-2 fade-in-slide-up z-20">
-            <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
+            <a href="#" id="home-link" class="cursor-pointer">
+                <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo - Free and Fastest AI Image Generator" class="h-6 w-auto">
+            </a>
             <!-- Desktop Header Auth -->
             <div id="header-auth-section" class="hidden md:flex items-center space-x-4">
                 <div id="generation-counter" class="text-sm font-medium text-gray-500"></div>
+                <button id="my-media-btn" class="hidden text-sm font-medium text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-300">My Media</button>
                 <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all duration-300">
                     Sign In
                 </button>
@@ -34,6 +83,7 @@
             <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-[#42669C] rounded-lg shadow-xl z-50">
                 <div class="p-2">
                     <div id="mobile-generation-counter" class="text-sm text-center font-medium text-white px-2 py-2"></div>
+                    <button id="mobile-my-media-btn" class="hidden w-full text-left text-sm font-medium text-white px-4 py-2 rounded-md hover:bg-white/20 transition-all duration-300">My Media</button>
                     <button id="mobile-auth-btn" class="w-full text-left text-sm font-medium text-white px-4 py-2 rounded-md hover:bg-white/20 transition-all duration-300">
                         Sign In
                     </button>
@@ -41,157 +91,136 @@
             </div>
         </header>
 
-        <main class="flex-grow flex flex-col items-center justify-center text-center p-4 transition-all duration-500 ease-in-out">
-            <div class="w-full max-w-3xl">
-                <div id="generator-ui" class="w-full fade-in-slide-up" style="animation-delay: 100ms;">
-                    <h1 class="text-3xl sm:text-4xl md:text-5xl font-medium text-gray-900 mb-4">What do you want to create?</h1>
-                    <p class="text-base md:text-lg text-gray-500 mb-10">Start generating with a simple conversation or edit an image.</p>
-                    <div id="prompt-container" class="relative bg-white rounded-2xl border border-gray-200/80 shadow-sm transition-all duration-300 ease-in-out">
-                        <div class="p-3">
-                            <!-- Image Preview Container -->
-                            <div id="image-preview-container" class="hidden relative w-20 h-20 mb-2">
-                                <img id="image-preview" class="w-full h-full object-cover rounded-md" src="" alt="Image preview">
-                                <button id="remove-image-btn" class="absolute -top-2 -right-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-black">&times;</button>
-                            </div>
-                            <textarea id="prompt-input" rows="4" class="w-full p-3 bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none resize-none text-base" placeholder="An oil painting of a futuristic city skyline at dusk..."></textarea>
-                        </div>
-                        <div class="absolute bottom-4 left-5 flex items-center">
-                             <input type="file" id="image-upload-input" accept="image/png, image/jpeg" class="hidden">
-                             <button id="image-upload-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Add file"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-gray-600 transition-colors"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
-                        </div>
-                        <button id="generate-btn" class="absolute right-4 bottom-4 w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-gray-400" aria-label="Generate Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
-                    </div>
-                    <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-left text-sm">
-                        <button class="example-prompt text-gray-500 hover:text-gray-900 transition-colors text-left">Make an ad photo for my sneaker brand</button>
-                        <button class="example-prompt text-gray-500 hover:text-gray-900 transition-colors text-left">Generate a dramatic aerial video shot of NYC</button>
-                    </div>
-                </div>
-                <div id="result-container" class="w-full max-w-5xl mt-8 hidden">
-                    <div id="loading-indicator" class="w-full max-w-sm mx-auto hidden">
-                        <p class="font-medium text-gray-700 mb-3">Generating your vision...</p>
-                        <div id="progress-bar-container"><div id="progress-bar"></div></div>
-                        <p id="timer" class="text-sm text-gray-500 mt-3">0.0s / ~17s</p>
-                    </div>
-                    <div id="image-grid" class="mt-8 grid grid-cols-1 gap-6"></div>
-                    <div id="message-box" class="mt-8 text-center"></div>
-                </div>
-            </div>
-
-            <!-- Technology Section -->
-            <div class="mt-24 text-center max-w-2xl mx-auto fade-in-slide-up" style="animation-delay: 300ms;">
-                <h2 class="text-3xl font-medium text-[#42669C] mb-4">Technology for creating anything.</h2>
-                <p class="text-lg text-gray-600">
-                    GenArt is an applied AI research company building the next generation of creative tools. Our work is dedicated to building multimodal AI systems that enable new forms of storytelling.
-                </p>
-            </div>
-
-            <!-- REBUILT AI Avatar Section -->
-            <section id="avatar-section-container" class="w-full max-w-5xl mx-auto my-24 fade-in-slide-up" style="animation-delay: 400ms;">
-                <div id="avatar-section">
-                    <div class="aurora-background">
-                        <div class="aurora-shape shape1"></div>
-                        <div class="aurora-shape shape2"></div>
-                    </div>
-                    <div class="avatar-content">
-                        <div class="text-center mb-10">
-                            <h2 class="text-4xl font-bold text-white mb-3">Create Your AI Avatar</h2>
-                            <p class="text-lg text-gray-300">Upload your face and let GenArt craft a unique avatar for you.</p>
-                        </div>
-                        <div id="avatar-generator" class="flex flex-col md:flex-row items-center gap-8">
-                            <!-- Upload Area -->
-                            <div class="w-full md:w-1/2">
-                                <input type="file" id="avatar-upload-input" class="hidden" accept="image/png, image/jpeg">
-                                <label for="avatar-upload-input" id="avatar-upload-area">
-                                    <div id="avatar-upload-prompt" class="flex flex-col items-center justify-center text-center">
-                                        <div class="icon-wrapper">
-                                            <svg class="w-12 h-12 mb-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                                        </div>
-                                        <p class="mb-2 font-semibold text-white/90">Click to upload or drag & drop</p>
-                                        <p class="text-sm text-white/60">PNG or JPG</p>
-                                    </div>
-                                    <img id="avatar-preview" src="" class="absolute w-full h-full object-cover rounded-2xl hidden" alt="Avatar Preview"/>
-                                </label>
-                            </div>
-                            <!-- Result Area -->
-                            <div class="w-full md:w-1/2 flex flex-col items-center justify-center h-80">
-                                <div id="avatar-result-container">
-                                    <div id="avatar-loading" class="hidden flex-col items-center text-white">
-                                        <svg class="animate-spin h-10 w-10 text-white/80" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                        <p class="mt-4 font-medium text-lg">Crafting your avatar...</p>
-                                    </div>
-                                    <img id="avatar-result-image" src="" class="w-full h-full object-cover hidden" alt="AI Avatar Result"/>
-                                    <p id="avatar-placeholder" class="text-white/60 text-lg">Your avatar will appear here</p>
-                                    <button id="avatar-download-btn" class="absolute bottom-4 right-4 bg-black/60 text-white p-2.5 rounded-full hover:bg-black transition-colors hidden" title="Download Avatar">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                    </button>
+        <div id="main-generator-page">
+            <main class="flex-grow flex flex-col items-center justify-center text-center p-4 transition-all duration-500 ease-in-out">
+                <div class="w-full max-w-3xl">
+                    <div id="generator-ui" class="w-full fade-in-slide-up" style="animation-delay: 100ms;">
+                        <h1 class="text-3xl sm:text-4xl md:text-5xl font-medium text-gray-900 mb-4">The Fastest & Free AI Image Generator</h1>
+                        <p class="text-base md:text-lg text-gray-500 mb-10">Create stunning art and images from text in seconds. Absolutely free.</p>
+                        <div id="prompt-container" class="relative bg-white rounded-2xl border border-gray-200/80 shadow-sm transition-all duration-300 ease-in-out">
+                            <div class="p-3">
+                                <!-- Image Preview Container -->
+                                <div id="image-preview-container" class="hidden relative w-20 h-20 mb-2">
+                                    <img id="image-preview" class="w-full h-full object-cover rounded-md" src="" alt="User uploaded image preview for AI editing">
+                                    <button id="remove-image-btn" class="absolute -top-2 -right-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-black">&times;</button>
                                 </div>
-                                <button id="generate-avatar-btn" class="w-full mt-6" disabled>
-                                    <span>Generate Avatar</span>
-                                </button>
+                                <textarea id="prompt-input" rows="4" class="w-full p-3 bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none resize-none text-base" placeholder="An oil painting of a futuristic city skyline at dusk..."></textarea>
                             </div>
+                            <div class="absolute bottom-4 left-5 flex items-center">
+                                 <input type="file" id="image-upload-input" accept="image/png, image/jpeg" class="hidden">
+                                 <button id="image-upload-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Add file"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-gray-600 transition-colors"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+                            </div>
+                            <button id="generate-btn" class="absolute right-4 bottom-4 w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-gray-400" aria-label="Generate AI Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
                         </div>
+                        <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-left text-sm">
+                            <button class="example-prompt text-gray-500 hover:text-gray-900 transition-colors text-left">Make an ad photo for my sneaker brand</button>
+                            <button class="example-prompt text-gray-500 hover:text-gray-900 transition-colors text-left">Generate a dramatic aerial video shot of NYC</button>
+                        </div>
+                    </div>
+                    <div id="result-container" class="w-full max-w-5xl mt-8 hidden">
+                        <div id="loading-indicator" class="w-full max-w-sm mx-auto hidden">
+                            <p class="font-medium text-gray-700 mb-3">Generating your vision...</p>
+                            <div id="progress-bar-container"><div id="progress-bar"></div></div>
+                            <p id="timer" class="text-sm text-gray-500 mt-3">0.0s / ~17s</p>
+                        </div>
+                        <div id="image-grid" class="mt-8 grid grid-cols-1 gap-6"></div>
+                        <div id="message-box" class="mt-8 text-center"></div>
+                    </div>
+                </div>
+
+                <!-- Technology Section -->
+                <div class="mt-24 text-center max-w-2xl mx-auto fade-in-slide-up" style="animation-delay: 300ms;">
+                    <h2 class="text-3xl font-medium text-[#42669C] mb-4">Technology for Creating Anything</h2>
+                    <p class="text-lg text-gray-600">
+                        GenArt is an applied AI research company building the next generation of creative tools. Our work is dedicated to building multimodal AI systems that enable new forms of storytelling and AI art creation.
+                    </p>
+                </div>
+            </main>
+
+            <!-- Cinematic Section -->
+            <section id="cinematic-section" class="relative w-full py-24 md:py-32 my-16 rounded-2xl overflow-hidden">
+                <div id="stars-container">
+                    <div id="stars"></div>
+                    <div id="stars2"></div>
+                    <div id="stars3"></div>
+                </div>
+                <div class="relative z-10 text-center px-4">
+                    <h2 class="text-4xl md:text-5xl font-bold text-white mb-4 cinematic-text">Blazing-Fast AI Generation</h2>
+                    <p class="text-lg md:text-xl text-gray-300 max-w-xl mx-auto mb-8 cinematic-text" style="animation-delay: 0.2s;">
+                        Our foundational models are engineered for unparalleled speed and quality, bringing your ideas to life with breathtaking clarity.
+                    </p>
+                    <div class="inline-block bg-white/10 backdrop-blur-sm text-white font-semibold py-3 px-6 rounded-lg cinematic-text" style="animation-delay: 0.4s;">
+                        Average Generation Time: Under 17 Seconds
                     </div>
                 </div>
             </section>
-        </main>
 
-        <!-- Cinematic Section -->
-        <section id="cinematic-section" class="relative w-full py-24 md:py-32 my-16 rounded-2xl overflow-hidden">
-            <div id="stars-container">
-                <div id="stars"></div>
-                <div id="stars2"></div>
-                <div id="stars3"></div>
+            <!-- Gen-0 Announcement Section -->
+            <section id="gen0-section" class="relative w-full py-24 md:py-32 my-16 rounded-2xl overflow-hidden">
+                <div class="relative z-10 text-center px-4">
+                    <h3 class="text-lg md:text-xl text-blue-400 font-semibold mb-4 cinematic-text">COMING SOON</h3>
+                    <h2 class="text-4xl md:text-6xl font-bold text-white mb-6 cinematic-text" style="animation-delay: 0.2s;">Introducing Gen-0</h2>
+                    <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto cinematic-text" style="animation-delay: 0.4s;">
+                        A revolutionary leap in generative AI. Experience unparalleled quality and generate stunning visuals in under <span class="font-bold text-white">5 seconds</span>.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Gallery Section -->
+            <section id="gallery-section" class="w-full py-16 overflow-hidden">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-medium text-gray-800 fade-in-slide-up">Creations from the GenArt AI Image Generator</h2>
+                </div>
+                <div class="marquee">
+                    <div class="marquee-content">
+                        <img src="https://iili.io/FiiqmhB.md.png" alt="AI generated art of a futuristic city" class="gallery-image">
+                        <img src="https://iili.io/FiiC8VS.md.png" alt="AI generated art of a woman with neon lights" class="gallery-image">
+                        <img src="https://iili.io/FiizC0P.md.png" alt="AI generated art of a surreal landscape" class="gallery-image">
+                        <img src="https://iili.io/FiiT4UP.md.png" alt="AI generated art of a fantasy creature" class="gallery-image">
+                        <img src="https://iili.io/FiiA23B.md.png" alt="AI generated art of an abstract pattern" class="gallery-image">
+                        <img src="https://iili.io/Fii52mF.md.png" alt="AI generated art of a photorealistic animal" class="gallery-image">
+                        <img src="https://iili.io/Fii7T3Q.md.png" alt="AI generated art of a cyberpunk character" class="gallery-image">
+                    </div>
+            
+                    <div class="marquee-content" aria-hidden="true">
+                        <img src="https://iili.io/FiiqmhB.md.png" alt="AI generated art of a futuristic city" class="gallery-image">
+                        <img src="https://iili.io/FiiC8VS.md.png" alt="AI generated art of a woman with neon lights" class="gallery-image">
+                        <img src="https://iili.io/FiizC0P.md.png" alt="AI generated art of a surreal landscape" class="gallery-image">
+                        <img src="https://iili.io/FiiT4UP.md.png" alt="AI generated art of a fantasy creature" class="gallery-image">
+                        <img src="https://iili.io/FiiA23B.md.png" alt="AI generated art of an abstract pattern" class="gallery-image">
+                        <img src="https://iili.io/Fii52mF.md.png" alt="AI generated art of a photorealistic animal" class="gallery-image">
+                        <img src="https://iili.io/Fii7T3Q.md.png" alt="AI generated art of a cyberpunk character" class="gallery-image">
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- NEW My Media Page -->
+        <div id="my-media-page" class="hidden">
+            <div class="my-media-header">
+                <h1 class="text-4xl md:text-5xl font-bold text-white">My Media</h1>
+                <p class="text-lg md:text-xl text-gray-300 mt-2">Your personal gallery of AI creations.</p>
             </div>
-            <div class="relative z-10 text-center px-4">
-                <h2 class="text-4xl md:text-5xl font-bold text-white mb-4 cinematic-text">Modern Intelligence</h2>
-                <p class="text-lg md:text-xl text-gray-300 max-w-xl mx-auto mb-8 cinematic-text" style="animation-delay: 0.2s;">
-                    Our foundational models are engineered for unparalleled speed and quality, bringing your ideas to life with breathtaking clarity.
-                </p>
-                <div class="inline-block bg-white/10 backdrop-blur-sm text-white font-semibold py-3 px-6 rounded-lg cinematic-text" style="animation-delay: 0.4s;">
-                    Average Generation Time: 9 Seconds
+            <div id="media-grid-container">
+                <div id="media-grid-loader" class="flex justify-center items-center h-64">
+                    <!-- Shimmering Loaders -->
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
+                        <div class="w-full h-64 bg-gray-700/50 rounded-lg shimmer"></div>
+                        <div class="w-full h-80 bg-gray-700/50 rounded-lg shimmer"></div>
+                        <div class="w-full h-56 bg-gray-700/50 rounded-lg shimmer"></div>
+                        <div class="w-full h-72 bg-gray-700/50 rounded-lg shimmer hidden md:block"></div>
+                    </div>
+                </div>
+                <div id="media-grid" class="masonry-grid"></div>
+                <div id="media-placeholder" class="hidden text-center py-20">
+                    <svg class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <h3 class="mt-2 text-lg font-medium text-gray-400">No Saved Images</h3>
+                    <p class="mt-1 text-gray-500">Generate and save an image to see it here.</p>
                 </div>
             </div>
-        </section>
-
-        <!-- Gen-0 Announcement Section -->
-        <section id="gen0-section" class="relative w-full py-24 md:py-32 my-16 rounded-2xl overflow-hidden">
-            <div class="relative z-10 text-center px-4">
-                <h3 class="text-lg md:text-xl text-blue-400 font-semibold mb-4 cinematic-text">COMING SOON</h3>
-                <h2 class="text-4xl md:text-6xl font-bold text-white mb-6 cinematic-text" style="animation-delay: 0.2s;">Introducing Gen-0</h2>
-                <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto cinematic-text" style="animation-delay: 0.4s;">
-                    A revolutionary leap in generative AI. Experience unparalleled quality and generate stunning visuals in under <span class="font-bold text-white">5 seconds</span>.
-                </p>
-            </div>
-        </section>
-
-        <!-- Gallery Section -->
-        <section id="gallery-section" class="w-full py-16 overflow-hidden">
-            <div class="text-center mb-12">
-                <h2 class="text-3xl font-medium text-gray-800 fade-in-slide-up">Creations from GenArt</h2>
-            </div>
-            <div class="marquee">
-                <div class="marquee-content">
-                    <img src="https://iili.io/FiiqmhB.md.png" alt="Generated by GenArt" class="gallery-image">
-                    <img src="https://iili.io/FiiC8VS.md.png" alt="Generated by GenArt" class="gallery-image">
-                    <img src="https://iili.io/FiizC0P.md.png" alt="Generated by GenArt" class="gallery-image">
-                    <img src="https://iili.io/FiiT4UP.md.png" alt="Generated by GenArt" class="gallery-image">
-                    <img src="https://iili.io/FiiA23B.md.png" alt="Generated by GenArt" class="gallery-image">
-                    <img src="https://iili.io/Fii52mF.md.png" alt="Generated by GenArt" class="gallery-image">
-                    <img src="https://iili.io/Fii7T3Q.md.png" alt="Generated by GenArt" class="gallery-image">
-                </div>
-        
-                <div class="marquee-content" aria-hidden="true">
-                    <img src="https://iili.io/FiiqmhB.md.png" alt="Generated by GenArt" class="gallery-image">
-                    <img src="https://iili.io/FiiC8VS.md.png" alt="Generated by GenArt" class="gallery-image">
-                    <img src="https://iili.io/FiizC0P.md.png" alt="Generated by GenArt" class="gallery-image">
-                    <img src="https://iili.io/FiiT4UP.md.png" alt="Generated by GenArt" class="gallery-image">
-                    <img src="https://iili.io/FiiA23B.md.png" alt="Generated by GenArt" class="gallery-image">
-                    <img src="https://iili.io/Fii52mF.md.png" alt="Generated by GenArt" class="gallery-image">
-                    <img src="https://iili.io/Fii7T3Q.md.png" alt="Generated by GenArt" class="gallery-image">
-                </div>
-            </div>
-        </section>
-
+        </div>
 
         <footer class="text-center py-8 mt-auto border-t border-gray-200 fade-in-slide-up" style="animation-delay: 200ms;">
             <div class="flex justify-center items-center space-x-6 mb-4">
