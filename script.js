@@ -1,7 +1,6 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -17,16 +16,9 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // --- DOM Element References ---
-const mainGeneratorPage = document.getElementById('main-generator-page');
-const myMediaPage = document.getElementById('my-media-page');
-const homeLink = document.getElementById('home-link');
-const myMediaBtn = document.getElementById('my-media-btn');
-const mobileMyMediaBtn = document.getElementById('mobile-my-media-btn');
-
 const promptInput = document.getElementById('prompt-input');
 const generateBtn = document.getElementById('generate-btn');
 const resultContainer = document.getElementById('result-container');
@@ -66,15 +58,10 @@ const lofiMusic = document.getElementById('lofi-music');
 const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
 
-// --- My Media Page ---
-const mediaGrid = document.getElementById('media-grid');
-const mediaPlaceholder = document.getElementById('media-placeholder');
-const mediaGridLoader = document.getElementById('media-grid-loader');
-
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null; // To store the base64 image data
-let unsubscribeHistory = null; // To stop listening to Firestore changes on logout
+let lastGeneratedImageUrl = null; // To store the URL of the blurred image
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -152,26 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
         el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
     });
-
-    // --- Page Navigation ---
-    homeLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        navigateTo('main');
-    });
-    myMediaBtn.addEventListener('click', () => navigateTo('media'));
-    mobileMyMediaBtn.addEventListener('click', () => navigateTo('media'));
 });
-
-// --- Page Navigation Function ---
-function navigateTo(page) {
-    if (page === 'main') {
-        mainGeneratorPage.classList.remove('hidden');
-        myMediaPage.classList.add('hidden');
-    } else if (page === 'media') {
-        mainGeneratorPage.classList.add('hidden');
-        myMediaPage.classList.remove('hidden');
-    }
-}
 
 // --- Auth Functions ---
 function handleAuthAction() {
@@ -193,18 +161,23 @@ function updateUIForAuthState(user) {
         generationCounterEl.textContent = welcomeText;
         mobileGenerationCounterEl.textContent = welcomeText;
         authModal.setAttribute('aria-hidden', 'true');
-        myMediaBtn.classList.remove('hidden');
-        mobileMyMediaBtn.classList.remove('hidden');
-        fetchUserMedia(user.uid);
+
+        // Unblur image if one was just generated
+        if (lastGeneratedImageUrl) {
+            const blurredContainer = document.querySelector('.blurred-image-container');
+            if (blurredContainer) {
+                const img = blurredContainer.querySelector('img');
+                img.classList.remove('blurred-image');
+                const overlay = blurredContainer.querySelector('.unlock-overlay');
+                if (overlay) overlay.remove();
+            }
+            lastGeneratedImageUrl = null;
+        }
+
     } else {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
         updateGenerationCounter();
-        myMediaBtn.classList.add('hidden');
-        mobileMyMediaBtn.classList.add('hidden');
-        if (unsubscribeHistory) unsubscribeHistory(); // Stop listening to old user's data
-        mediaGrid.innerHTML = '';
-        navigateTo('main'); // Go back to main page on logout
     }
 }
 
@@ -262,10 +235,13 @@ async function generateImage() {
         return;
     }
 
-    if (!auth.currentUser && getGenerationCount() >= FREE_GENERATION_LIMIT) {
+    const count = getGenerationCount();
+    if (!auth.currentUser && count > FREE_GENERATION_LIMIT) {
         authModal.setAttribute('aria-hidden', 'false');
         return;
     }
+
+    const shouldBlur = !auth.currentUser && count === FREE_GENERATION_LIMIT;
 
     // UI Reset
     imageGrid.innerHTML = '';
@@ -278,7 +254,10 @@ async function generateImage() {
 
     try {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData);
-        displayImage(imageUrl, prompt);
+        if (shouldBlur) {
+            lastGeneratedImageUrl = imageUrl;
+        }
+        displayImage(imageUrl, prompt, shouldBlur);
         if (!auth.currentUser) {
             incrementGenerationCount();
         }
@@ -338,121 +317,55 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
     }
 }
 
-// --- My Media Functions ---
-function fetchUserMedia(userId) {
-    mediaGridLoader.classList.remove('hidden');
-    mediaPlaceholder.classList.add('hidden');
-    
-    const q = query(collection(db, "users", userId, "images"), orderBy("createdAt", "desc"));
-    
-    unsubscribeHistory = onSnapshot(q, (querySnapshot) => {
-        const images = [];
-        querySnapshot.forEach((doc) => {
-            images.push({ id: doc.id, ...doc.data() });
-        });
-        displayMedia(images);
-    });
-}
-
-function displayMedia(images) {
-    mediaGridLoader.classList.add('hidden');
-    mediaGrid.innerHTML = '';
-    if (images.length === 0) {
-        mediaPlaceholder.classList.remove('hidden');
-    } else {
-        mediaPlaceholder.classList.add('hidden');
-        images.forEach(image => {
-            const item = document.createElement('div');
-            item.className = 'grid-item';
-            item.innerHTML = `
-                <img src="${image.imageUrl}" alt="${image.prompt}" loading="lazy">
-                <div class="grid-item-overlay">
-                    <p class="grid-item-prompt">${image.prompt}</p>
-                    <div class="grid-item-actions">
-                        <button class="download-btn" title="Download"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
-                        <button class="delete-btn" title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
-                    </div>
-                </div>
-            `;
-            item.querySelector('.download-btn').addEventListener('click', () => downloadImage(image.imageUrl, image.prompt));
-            item.querySelector('.delete-btn').addEventListener('click', () => deleteImage(image.id));
-            mediaGrid.appendChild(item);
-        });
-    }
-}
-
-async function saveImageToHistory(prompt, imageUrl, saveBtn) {
-    const user = auth.currentUser;
-    if (!user) {
-        authModal.setAttribute('aria-hidden', 'false');
-        return;
-    }
-    try {
-        await addDoc(collection(db, "users", user.uid, "images"), {
-            prompt: prompt,
-            imageUrl: imageUrl,
-            createdAt: serverTimestamp()
-        });
-        if (saveBtn) {
-            saveBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"></path></svg>`;
-            saveBtn.disabled = true;
-            saveBtn.title = "Saved!";
-        }
-    } catch (e) {
-        console.error("Error adding document: ", e);
-        alert("Could not save image. It might be too large.");
-    }
-}
-
-async function deleteImage(imageId) {
-    const user = auth.currentUser;
-    if (!user) return;
-    try {
-        await deleteDoc(doc(db, "users", user.uid, "images", imageId));
-    } catch (e) {
-        console.error("Error deleting document: ", e);
-    }
-}
-
-function downloadImage(imageUrl, prompt) {
-    const a = document.createElement('a');
-    a.href = imageUrl;
-    a.download = `${prompt.slice(0, 20).replace(/\s+/g, '_')}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-}
-
-
 // --- Helper Functions ---
-function displayImage(imageUrl, prompt) {
+function displayImage(imageUrl, prompt, shouldBlur = false) {
     const imgContainer = document.createElement('div');
     imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
+    
+    if (shouldBlur) {
+        imgContainer.classList.add('blurred-image-container');
+    }
+
     const img = document.createElement('img');
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
-    
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
-
-    const saveButton = document.createElement('button');
-    saveButton.className = 'bg-black/50 text-white p-2 rounded-full';
-    saveButton.title = "Save to My Media";
-    saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`;
-    saveButton.onclick = (event) => saveImageToHistory(prompt, imageUrl, event.currentTarget);
+    if (shouldBlur) {
+        img.classList.add('blurred-image');
+    }
 
     const downloadButton = document.createElement('button');
-    downloadButton.className = 'bg-black/50 text-white p-2 rounded-full';
-    downloadButton.title = "Download Image";
+    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
     downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-    downloadButton.onclick = () => downloadImage(imageUrl, prompt);
+    downloadButton.ariaLabel = "Download Image";
+    downloadButton.onclick = () => {
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = 'genart-image.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
 
-    buttonContainer.appendChild(saveButton);
-    buttonContainer.appendChild(downloadButton);
-    
     imgContainer.appendChild(img);
-    imgContainer.appendChild(buttonContainer);
+    if (!shouldBlur) {
+        imgContainer.appendChild(downloadButton);
+    }
+
+    if (shouldBlur) {
+        const overlay = document.createElement('div');
+        overlay.className = 'unlock-overlay';
+        overlay.innerHTML = `
+            <h3 class="text-xl font-semibold">Unlock Image</h3>
+            <p class="mt-2">Sign in to unlock this image and get unlimited generations.</p>
+            <button id="unlock-btn">Sign In to Unlock</button>
+        `;
+        overlay.querySelector('#unlock-btn').onclick = () => {
+            authModal.setAttribute('aria-hidden', 'false');
+        };
+        imgContainer.appendChild(overlay);
+    }
+
     imageGrid.appendChild(imgContainer);
 }
 
