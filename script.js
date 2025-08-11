@@ -1,6 +1,7 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -16,6 +17,7 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // --- DOM Element References ---
@@ -258,6 +260,10 @@ async function generateImage() {
             lastGeneratedImageUrl = imageUrl;
         }
         displayImage(imageUrl, prompt, shouldBlur);
+        
+        // Increment the global counter for the admin dashboard
+        incrementTotalGenerations();
+
         if (!auth.currentUser) {
             incrementGenerationCount();
         }
@@ -314,6 +320,16 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
             if (attempt >= maxRetries - 1) throw error;
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         }
+    }
+}
+
+// --- Live Counter Function ---
+async function incrementTotalGenerations() {
+    const counterRef = doc(db, "stats", "imageGenerations");
+    try {
+        await setDoc(counterRef, { count: increment(1) }, { merge: true });
+    } catch (error) {
+        console.error("Error incrementing generation count:", error);
     }
 }
 
