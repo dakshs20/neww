@@ -67,6 +67,8 @@ let lastGeneratedImageUrl = null; // To store the URL of the blurred image
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
+    trackVisit(); // Track the user's session for the admin panel
+
     onAuthStateChanged(auth, user => {
         updateUIForAuthState(user);
     });
@@ -323,13 +325,27 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
     }
 }
 
-// --- Live Counter Function ---
+// --- Live Counter Functions ---
 async function incrementTotalGenerations() {
     const counterRef = doc(db, "stats", "imageGenerations");
     try {
         await setDoc(counterRef, { count: increment(1) }, { merge: true });
     } catch (error) {
         console.error("Error incrementing generation count:", error);
+    }
+}
+
+async function trackVisit() {
+    const sessionKey = 'genart_session_tracked';
+    if (!sessionStorage.getItem(sessionKey)) {
+        sessionStorage.setItem(sessionKey, 'true');
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const counterRef = doc(db, "stats", `visits_${today}`);
+        try {
+            await setDoc(counterRef, { count: increment(1) }, { merge: true });
+        } catch (error) {
+            console.error("Error tracking visit:", error);
+        }
     }
 }
 
