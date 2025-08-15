@@ -283,7 +283,7 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             let apiUrl, payload;
-            const apiKey = "AIzaSyBy6RkypG1x-kpvxDqe36bWM8Buijngfyg";
+            const apiKey = "AIzaSyCQX33nkl82ZiRHNfKnLgzkwtbwX2n6gYM";
 
             if (imageData) {
                 apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
