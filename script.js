@@ -67,8 +67,6 @@ let lastGeneratedImageUrl = null; // To store the URL of the blurred image
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
-    trackVisit(); // Track the user's session for the admin panel
-
     onAuthStateChanged(auth, user => {
         updateUIForAuthState(user);
     });
@@ -279,35 +277,32 @@ async function generateImage() {
     }
 }
 
+// --- THIS IS THE NEW, SECURE FUNCTION FOR VERCEL ---
 async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-            let apiUrl, payload;
-            const apiKey = "AIzaSyCQX33nkl82ZiRHNfKnLgzkwtbwX2n6gYM";
+            // This is the Vercel URL for your "kitchen" code.
+            const apiUrl = '/api/generate-image';
 
-            if (imageData) {
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
-                payload = {
-                    "contents": [{
-                        "parts": [
-                            { "text": prompt },
-                            { "inlineData": { "mimeType": imageData.mimeType, "data": imageData.data } }
-                        ]
-                    }],
-                    "generationConfig": { "responseModalities": ["IMAGE", "TEXT"] }
-                };
-            } else {
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-                payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
-            }
+            // We securely send the prompt and image data without the API key.
+            const payload = { prompt, imageData };
 
-            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                // We need to tell the server we're sending JSON data.
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`API Error: ${response.status} - ${errorText}`);
             }
 
+            // Get the result that our "kitchen" sent back.
             const result = await response.json();
+
+            // The rest of the logic is the same!
             let base64Data;
             if (imageData) {
                 base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
@@ -325,27 +320,13 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
     }
 }
 
-// --- Live Counter Functions ---
+// --- Live Counter Function ---
 async function incrementTotalGenerations() {
     const counterRef = doc(db, "stats", "imageGenerations");
     try {
         await setDoc(counterRef, { count: increment(1) }, { merge: true });
     } catch (error) {
         console.error("Error incrementing generation count:", error);
-    }
-}
-
-async function trackVisit() {
-    const sessionKey = 'genart_session_tracked';
-    if (!sessionStorage.getItem(sessionKey)) {
-        sessionStorage.setItem(sessionKey, 'true');
-        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-        const counterRef = doc(db, "stats", `visits_${today}`);
-        try {
-            await setDoc(counterRef, { count: increment(1) }, { merge: true });
-        } catch (error) {
-            console.error("Error tracking visit:", error);
-        }
     }
 }
 
