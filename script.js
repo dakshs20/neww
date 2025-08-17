@@ -345,21 +345,24 @@ async function generateImage() {
     loadingIndicator.classList.remove('hidden');
     generatorUI.classList.add('hidden');
     
-    // Reset loading text
     loadingIndicator.querySelector('p').textContent = 'Generating your vision...';
     startTimer();
 
     try {
+        // 1. Generate the image
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData);
-        
-        // --- FIX: Update UI to show the saving step ---
         stopTimer();
-        loadingIndicator.querySelector('p').textContent = 'Finalizing and saving...';
 
+        // 2. Immediately display the image and hide the main loader
+        displayImage(imageUrl, prompt, shouldBlur);
+        loadingIndicator.classList.add('hidden');
+
+        // 3. Handle credits and history saving in the background
         if (auth.currentUser) {
             const currentCredits = getCredits();
             setCredits(currentCredits - GENERATION_COST);
-            await saveToHistory(imageUrl); 
+            // This runs in the background without making the user wait
+            saveToHistory(imageUrl); 
         } else {
             incrementGenerationCount();
             if (shouldBlur) {
@@ -367,10 +370,7 @@ async function generateImage() {
             }
         }
         
-        displayImage(imageUrl, prompt, shouldBlur);
         incrementTotalGenerations();
-
-        loadingIndicator.classList.add('hidden');
 
     } catch (error) {
         console.error('Image generation failed:', error);
