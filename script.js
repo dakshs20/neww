@@ -2,6 +2,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// NEW: Import Firebase Storage module
+import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -19,6 +22,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
+// NEW: Initialize Firebase Storage
+const storage = getStorage(app);
 
 // --- DOM Element References ---
 const promptInput = document.getElementById('prompt-input');
@@ -75,6 +80,7 @@ let lastGeneratedImageUrl = null;
 const INITIAL_CREDITS = 25;
 const GENERATION_COST = 1;
 const HD_DOWNLOAD_COST = 5;
+const HISTORY_LIMIT = 15; // Set a limit for the number of images in history
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -256,19 +262,41 @@ function updateCreditDisplay() {
     mobileCreditDisplay.textContent = text;
 }
 
-// --- NEW: History Management Functions ---
+// --- REBUILT: History Management with Firebase Storage ---
 function getHistory() {
     if (!auth.currentUser) return [];
     const historyJson = localStorage.getItem(`history_${auth.currentUser.uid}`);
     return historyJson ? JSON.parse(historyJson) : [];
 }
 
-function saveToHistory(imageUrl) {
+async function saveToHistory(base64ImageUrl) {
     if (!auth.currentUser) return;
-    const history = getHistory();
-    history.unshift({ url: imageUrl, prompt: promptInput.value.trim() });
-    localStorage.setItem(`history_${auth.currentUser.uid}`, JSON.stringify(history));
-    loadAndRenderHistory();
+
+    try {
+        // 1. Upload the image to Firebase Storage
+        const fileName = `${Date.now()}.png`;
+        const storageRef = ref(storage, `history/${auth.currentUser.uid}/${fileName}`);
+        const uploadTask = await uploadString(storageRef, base64ImageUrl, 'data_url');
+        
+        // 2. Get the public URL of the uploaded image
+        const downloadURL = await getDownloadURL(uploadTask.ref);
+
+        // 3. Save the *URL* (not the base64 data) to localStorage
+        const history = getHistory();
+        history.unshift({ url: downloadURL, prompt: promptInput.value.trim() });
+
+        // 4. Enforce the history limit to prevent future quota issues
+        const trimmedHistory = history.slice(0, HISTORY_LIMIT);
+        
+        localStorage.setItem(`history_${auth.currentUser.uid}`, JSON.stringify(trimmedHistory));
+        
+        // 5. Refresh the displayed history
+        loadAndRenderHistory();
+
+    } catch (error) {
+        console.error("Error saving to history:", error);
+        showMessage("Could not save image to your history.", "error");
+    }
 }
 
 function loadAndRenderHistory() {
@@ -284,6 +312,7 @@ function loadAndRenderHistory() {
             img.src = item.url;
             img.alt = item.prompt;
             img.className = 'w-full h-full object-cover';
+            img.crossOrigin = "anonymous"; // Needed to allow canvas to process the image for watermarking
             
             const overlay = document.createElement('div');
             overlay.className = 'absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2';
@@ -344,7 +373,6 @@ async function generateImage() {
         return;
     }
 
-    // UPDATED: Check for auth and credits
     if (auth.currentUser) {
         const credits = getCredits();
         if (credits < GENERATION_COST) {
@@ -374,12 +402,11 @@ async function generateImage() {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData);
         
         if (auth.currentUser) {
-            // Deduct credits and save to history for logged-in users
             const currentCredits = getCredits();
             setCredits(currentCredits - GENERATION_COST);
-            saveToHistory(imageUrl);
+            // The saveToHistory function now handles uploading and saving the URL
+            await saveToHistory(imageUrl); 
         } else {
-            // Increment free counter for guests
             incrementGenerationCount();
             if (shouldBlur) {
                 lastGeneratedImageUrl = imageUrl;
@@ -519,7 +546,6 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
     imageGrid.appendChild(imgContainer);
 }
 
-// --- MODIFIED: Download Logic with Watermark ---
 async function downloadImage(imageUrl, quality) {
     let finalImageUrl = imageUrl;
     let fileName = `genart-image-${quality}.png`;
@@ -552,34 +578,23 @@ async function downloadImage(imageUrl, quality) {
     document.body.removeChild(a);
 }
 
-// --- NEW: Watermark Function ---
 function applyWatermark(imageUrl) {
     return new Promise((resolve, reject) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const img = new Image();
-        img.crossOrigin = 'Anonymous'; // Important for loading images from other origins
+        img.crossOrigin = 'Anonymous'; 
         
         img.onload = () => {
-            // Set canvas dimensions to the image dimensions
             canvas.width = img.width;
             canvas.height = img.height;
-
-            // Draw the original image
             ctx.drawImage(img, 0, 0);
-
-            // --- Watermark Styling ---
-            // You can also use an image as a watermark here with ctx.drawImage(watermarkImage, x, y)
             const watermarkText = 'GenArt';
-            ctx.font = `bold ${img.width / 20}px Arial`; // Dynamic font size
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; // Semi-transparent white
+            ctx.font = `bold ${img.width / 20}px Arial`;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-
-            // Draw the watermark in the center
             ctx.fillText(watermarkText, canvas.width / 2, canvas.height / 2);
-
-            // Resolve the promise with the new data URL
             resolve(canvas.toDataURL('image/png'));
         };
 
