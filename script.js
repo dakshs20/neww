@@ -418,7 +418,12 @@ async function generateImage() {
 
     } catch (error) {
         console.error('Image generation failed:', error);
-        showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
+        // UPDATED: Provide more specific error for timeouts
+        if (error.name === 'AbortError') {
+            showMessage("Image generation timed out. Please try again with a simpler prompt.", 'error');
+        } else {
+            showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
+        }
     } finally {
         stopTimer();
         loadingIndicator.classList.add('hidden');
@@ -426,7 +431,11 @@ async function generateImage() {
     }
 }
 
+// --- UPDATED with Timeout ---
 async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45-second timeout
+
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             let apiUrl, payload;
@@ -454,8 +463,11 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
             const response = await fetch(apiUrl, { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(payload) 
+                body: JSON.stringify(payload),
+                signal: controller.signal // Pass the abort signal to the fetch request
             });
+
+            clearTimeout(timeoutId); // Clear the timeout if the request succeeds
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -475,6 +487,11 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
             return `data:image/png;base64,${base64Data}`;
 
         } catch (error) {
+            clearTimeout(timeoutId); // Clear timeout on error as well
+            if (error.name === 'AbortError') {
+                // Re-throw the abort error so the calling function can catch it specifically
+                throw error;
+            }
             console.warn(`Attempt ${attempt + 1} failed: ${error.message}`);
             if (attempt >= maxRetries - 1) throw error;
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
