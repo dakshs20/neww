@@ -2,7 +2,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-// NEW: Import Firebase Storage module
 import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
 
@@ -22,7 +21,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
-// NEW: Initialize Firebase Storage
 const storage = getStorage(app);
 
 // --- DOM Element References ---
@@ -41,31 +39,19 @@ const imageUploadInput = document.getElementById('image-upload-input');
 const imagePreviewContainer = document.getElementById('image-preview-container');
 const imagePreview = document.getElementById('image-preview');
 const removeImageBtn = document.getElementById('remove-image-btn');
-
-// Auth Buttons & Counters
 const authBtn = document.getElementById('auth-btn');
 const mobileAuthBtn = document.getElementById('mobile-auth-btn');
 const generationCounterEl = document.getElementById('generation-counter');
 const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
-
-// Modal
 const authModal = document.getElementById('auth-modal');
 const googleSignInBtn = document.getElementById('google-signin-btn');
 const closeModalBtn = document.getElementById('close-modal-btn');
-
-// Mobile Menu
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mobileMenu = document.getElementById('mobile-menu');
-
-// --- REBUILT Music Player ---
 const musicBtn = document.getElementById('music-btn');
 const lofiMusic = document.getElementById('lofi-music');
-
-// --- REBUILT Custom Cursor ---
 const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
-
-// --- NEW: History and Credit Elements ---
 const historySection = document.getElementById('history-section');
 const historyGrid = document.getElementById('history-grid');
 const creditDisplay = document.getElementById('credit-display');
@@ -76,19 +62,16 @@ const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
 let lastGeneratedImageUrl = null;
 
-// --- NEW: State Management for Credits and History ---
 const INITIAL_CREDITS = 25;
 const GENERATION_COST = 1;
 const HD_DOWNLOAD_COST = 5;
-const HISTORY_LIMIT = 15; // Set a limit for the number of images in history
+const HISTORY_LIMIT = 15;
 
-// --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, user => {
         updateUIForAuthState(user);
     });
 
-    // --- Event Listeners ---
     mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
     document.addEventListener('click', (event) => {
         if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
@@ -116,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     generateBtn.addEventListener('click', generateImage);
-
     imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
     imageUploadInput.addEventListener('change', handleImageUpload);
     removeImageBtn.addEventListener('click', removeUploadedImage);
@@ -131,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
         musicBtn.classList.toggle('playing');
     });
     
-    // Custom cursor logic
     let mouseX = 0, mouseY = 0;
     let outlineX = 0, outlineY = 0;
 
@@ -158,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// --- Auth Functions ---
 function handleAuthAction() {
     if (auth.currentUser) {
         signOut(auth);
@@ -174,14 +154,11 @@ function signInWithGoogle() {
 
 function updateUIForAuthState(user) {
     if (user) {
-        // User is signed in
         authBtn.textContent = 'Sign Out';
         mobileAuthBtn.textContent = 'Sign Out';
         generationCounterEl.classList.add('hidden');
         mobileGenerationCounterEl.classList.add('hidden');
         authModal.setAttribute('aria-hidden', 'true');
-
-        // NEW: Handle credits and history
         initializeCredits();
         updateCreditDisplay();
         loadAndRenderHistory();
@@ -199,22 +176,17 @@ function updateUIForAuthState(user) {
             lastGeneratedImageUrl = null;
         }
     } else {
-        // User is signed out
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
         updateGenerationCounter();
         generationCounterEl.classList.remove('hidden');
         mobileGenerationCounterEl.classList.remove('hidden');
-
-        // NEW: Hide credits and history
         creditDisplay.classList.add('hidden');
         mobileCreditDisplay.classList.add('hidden');
         historySection.classList.add('hidden');
     }
 }
 
-
-// --- Free Generation Counter Functions ---
 function getGenerationCount() {
     return parseInt(localStorage.getItem('generationCount') || '0');
 }
@@ -234,7 +206,6 @@ function updateGenerationCounter() {
     mobileGenerationCounterEl.textContent = text;
 }
 
-// --- NEW: Credit Management Functions ---
 function getCredits() {
     if (!auth.currentUser) return 0;
     return parseInt(localStorage.getItem(`credits_${auth.currentUser.uid}`) || '0');
@@ -262,7 +233,6 @@ function updateCreditDisplay() {
     mobileCreditDisplay.textContent = text;
 }
 
-// --- REBUILT: History Management with Firebase Storage ---
 function getHistory() {
     if (!auth.currentUser) return [];
     const historyJson = localStorage.getItem(`history_${auth.currentUser.uid}`);
@@ -271,28 +241,16 @@ function getHistory() {
 
 async function saveToHistory(base64ImageUrl) {
     if (!auth.currentUser) return;
-
     try {
-        // 1. Upload the image to Firebase Storage
         const fileName = `${Date.now()}.png`;
         const storageRef = ref(storage, `history/${auth.currentUser.uid}/${fileName}`);
         const uploadTask = await uploadString(storageRef, base64ImageUrl, 'data_url');
-        
-        // 2. Get the public URL of the uploaded image
         const downloadURL = await getDownloadURL(uploadTask.ref);
-
-        // 3. Save the *URL* (not the base64 data) to localStorage
         const history = getHistory();
         history.unshift({ url: downloadURL, prompt: promptInput.value.trim() });
-
-        // 4. Enforce the history limit to prevent future quota issues
         const trimmedHistory = history.slice(0, HISTORY_LIMIT);
-        
         localStorage.setItem(`history_${auth.currentUser.uid}`, JSON.stringify(trimmedHistory));
-        
-        // 5. Refresh the displayed history
         loadAndRenderHistory();
-
     } catch (error) {
         console.error("Error saving to history:", error);
         showMessage("Could not save image to your history.", "error");
@@ -307,26 +265,21 @@ function loadAndRenderHistory() {
         history.forEach(item => {
             const historyItem = document.createElement('div');
             historyItem.className = 'relative group rounded-lg overflow-hidden history-item';
-            
             const img = document.createElement('img');
             img.src = item.url;
             img.alt = item.prompt;
             img.className = 'w-full h-full object-cover';
-            img.crossOrigin = "anonymous"; // Needed to allow canvas to process the image for watermarking
-            
+            img.crossOrigin = "anonymous";
             const overlay = document.createElement('div');
             overlay.className = 'absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2';
-
             const sdButton = document.createElement('button');
             sdButton.innerHTML = `SD <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
             sdButton.className = 'download-btn-small bg-blue-500 hover:bg-blue-600';
             sdButton.onclick = () => downloadImage(item.url, 'sd');
-
             const hdButton = document.createElement('button');
             hdButton.innerHTML = `HD (${HD_DOWNLOAD_COST} ✨) <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
             hdButton.className = 'download-btn-small bg-purple-500 hover:bg-purple-600 mt-2';
             hdButton.onclick = () => downloadImage(item.url, 'hd');
-            
             overlay.appendChild(sdButton);
             overlay.appendChild(hdButton);
             historyItem.appendChild(img);
@@ -338,12 +291,9 @@ function loadAndRenderHistory() {
     }
 }
 
-
-// --- Image Handling ---
 function handleImageUpload(event) {
     const file = event.target.files[0];
     if (!file || !file.type.startsWith('image/')) return;
-
     const reader = new FileReader();
     reader.onloadend = () => {
         uploadedImageData = {
@@ -365,7 +315,7 @@ function removeUploadedImage() {
     promptInput.placeholder = "An oil painting of a futuristic city skyline at dusk...";
 }
 
-// --- Core Image Generation Logic ---
+// --- REBUILT: Core Image Generation Logic with better UI feedback ---
 async function generateImage() {
     const prompt = promptInput.value.trim();
     if (!prompt) {
@@ -389,18 +339,23 @@ async function generateImage() {
 
     const shouldBlur = !auth.currentUser && getGenerationCount() === (FREE_GENERATION_LIMIT - 1);
 
-    // UI Reset
     imageGrid.innerHTML = '';
     messageBox.innerHTML = '';
     resultContainer.classList.remove('hidden');
     loadingIndicator.classList.remove('hidden');
     generatorUI.classList.add('hidden');
     
+    // Reset loading text
+    loadingIndicator.querySelector('p').textContent = 'Generating your vision...';
     startTimer();
 
     try {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData);
         
+        // --- FIX: Update UI to show the saving step ---
+        stopTimer();
+        loadingIndicator.querySelector('p').textContent = 'Finalizing and saving...';
+
         if (auth.currentUser) {
             const currentCredits = getCredits();
             setCredits(currentCredits - GENERATION_COST);
@@ -415,14 +370,11 @@ async function generateImage() {
         displayImage(imageUrl, prompt, shouldBlur);
         incrementTotalGenerations();
 
-        // --- FIX: Hide loader AFTER image is displayed ---
-        stopTimer();
         loadingIndicator.classList.add('hidden');
 
     } catch (error) {
         console.error('Image generation failed:', error);
         
-        // --- FIX: Hide loader on error too ---
         stopTimer();
         loadingIndicator.classList.add('hidden');
         
@@ -436,10 +388,9 @@ async function generateImage() {
     }
 }
 
-// --- UPDATED with Timeout ---
 async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45-second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
@@ -449,30 +400,22 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
             if (imageData) {
                 apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
                 payload = {
-                    "contents": [{
-                        "parts": [
-                            { "text": prompt },
-                            { "inlineData": { "mimeType": imageData.mimeType, "data": imageData.data } }
-                        ]
-                    }],
+                    "contents": [{"parts": [{ "text": prompt }, { "inlineData": { "mimeType": imageData.mimeType, "data": imageData.data } }]}],
                     "generationConfig": { "responseModalities": ["IMAGE", "TEXT"] }
                 };
             } else {
                 apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-                payload = { 
-                    instances: [{ prompt: prompt }], 
-                    parameters: { "sampleCount": 1 } 
-                };
+                payload = { instances: [{ prompt: prompt }], parameters: { "sampleCount": 1 } };
             }
 
             const response = await fetch(apiUrl, { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify(payload),
-                signal: controller.signal // Pass the abort signal to the fetch request
+                signal: controller.signal
             });
 
-            clearTimeout(timeoutId); // Clear the timeout if the request succeeds
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -492,9 +435,8 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
             return `data:image/png;base64,${base64Data}`;
 
         } catch (error) {
-            clearTimeout(timeoutId); // Clear timeout on error as well
+            clearTimeout(timeoutId);
             if (error.name === 'AbortError') {
-                // Re-throw the abort error so the calling function can catch it specifically
                 throw error;
             }
             console.warn(`Attempt ${attempt + 1} failed: ${error.message}`);
@@ -504,8 +446,6 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
     }
 }
 
-
-// --- Live Counter ---
 async function incrementTotalGenerations() {
     const counterRef = doc(db, "stats", "imageGenerations");
     try {
@@ -515,63 +455,46 @@ async function incrementTotalGenerations() {
     }
 }
 
-
-// --- UI Helper Functions ---
 function displayImage(imageUrl, prompt, shouldBlur = false) {
     const imgContainer = document.createElement('div');
     imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
-    
     if (shouldBlur) imgContainer.classList.add('blurred-image-container');
-
     const img = document.createElement('img');
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
     if (shouldBlur) img.classList.add('blurred-image');
-    
     imgContainer.appendChild(img);
-
     if (!shouldBlur) {
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
-
         const sdButton = document.createElement('button');
         sdButton.innerHTML = `Download SD <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
         sdButton.className = 'download-btn bg-blue-500 hover:bg-blue-600';
         sdButton.onclick = () => downloadImage(imageUrl, 'sd');
-        
         const hdButton = document.createElement('button');
         hdButton.innerHTML = `Download HD (${HD_DOWNLOAD_COST} ✨) <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
         hdButton.className = 'download-btn bg-purple-500 hover:bg-purple-600';
         hdButton.onclick = () => downloadImage(imageUrl, 'hd');
-
         buttonContainer.appendChild(sdButton);
         if (auth.currentUser) buttonContainer.appendChild(hdButton);
-        
         imgContainer.appendChild(buttonContainer);
     }
-    
     if (shouldBlur) {
         const overlay = document.createElement('div');
         overlay.className = 'unlock-overlay';
-        overlay.innerHTML = `
-            <h3 class="text-xl font-semibold">Unlock Image</h3>
-            <p class="mt-2">Sign in to unlock this image and get unlimited generations.</p>
-            <button id="unlock-btn">Sign In to Unlock</button>
-        `;
+        overlay.innerHTML = `<h3 class="text-xl font-semibold">Unlock Image</h3><p class="mt-2">Sign in to unlock this image and get unlimited generations.</p><button id="unlock-btn">Sign In to Unlock</button>`;
         overlay.querySelector('#unlock-btn').onclick = () => {
             authModal.setAttribute('aria-hidden', 'false');
         };
         imgContainer.appendChild(overlay);
     }
-
     imageGrid.appendChild(imgContainer);
 }
 
 async function downloadImage(imageUrl, quality) {
     let finalImageUrl = imageUrl;
     let fileName = `genart-image-${quality}.png`;
-
     if (quality === 'hd') {
         if (!auth.currentUser) {
             showMessage('Please sign in to download in HD.', 'error');
@@ -583,7 +506,7 @@ async function downloadImage(imageUrl, quality) {
             return;
         }
         setCredits(credits - HD_DOWNLOAD_COST);
-    } else { // 'sd' quality
+    } else {
         try {
             finalImageUrl = await applyWatermark(imageUrl);
         } catch (error) {
@@ -591,7 +514,6 @@ async function downloadImage(imageUrl, quality) {
             showMessage('Could not apply watermark. Downloading original image.', 'error');
         }
     }
-    
     const a = document.createElement('a');
     a.href = finalImageUrl;
     a.download = fileName;
@@ -605,8 +527,7 @@ function applyWatermark(imageUrl) {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const img = new Image();
-        img.crossOrigin = 'Anonymous'; 
-        
+        img.crossOrigin = 'Anonymous';
         img.onload = () => {
             canvas.width = img.width;
             canvas.height = img.height;
@@ -619,21 +540,18 @@ function applyWatermark(imageUrl) {
             ctx.fillText(watermarkText, canvas.width / 2, canvas.height / 2);
             resolve(canvas.toDataURL('image/png'));
         };
-
         img.onerror = (err) => {
             reject(err);
         };
-
         img.src = imageUrl;
     });
 }
-
 
 function showMessage(text, type = 'info') {
     const messageEl = document.createElement('div');
     messageEl.className = `p-3 rounded-lg ${type === 'error' ? 'text-red-700 bg-red-100' : 'text-gray-700 bg-gray-100'} fade-in-slide-up font-medium`;
     messageEl.textContent = text;
-    messageBox.innerHTML = ''; 
+    messageBox.innerHTML = '';
     messageBox.appendChild(messageEl);
 }
 
@@ -648,14 +566,14 @@ function addBackButton() {
         messageBox.innerHTML = '';
         promptInput.value = '';
         removeUploadedImage();
-        loadAndRenderHistory(); // Refresh history view
+        loadAndRenderHistory();
     };
     messageBox.prepend(backButton);
 }
 
 function startTimer() {
     let startTime = Date.now();
-    const maxTime = 17 * 1000; 
+    const maxTime = 17 * 1000;
     progressBar.style.width = '0%';
     timerInterval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
