@@ -404,7 +404,6 @@ async function generateImage() {
         if (auth.currentUser) {
             const currentCredits = getCredits();
             setCredits(currentCredits - GENERATION_COST);
-            // The saveToHistory function now handles uploading and saving the URL
             await saveToHistory(imageUrl); 
         } else {
             incrementGenerationCount();
@@ -416,17 +415,23 @@ async function generateImage() {
         displayImage(imageUrl, prompt, shouldBlur);
         incrementTotalGenerations();
 
+        // --- FIX: Hide loader AFTER image is displayed ---
+        stopTimer();
+        loadingIndicator.classList.add('hidden');
+
     } catch (error) {
         console.error('Image generation failed:', error);
-        // UPDATED: Provide more specific error for timeouts
+        
+        // --- FIX: Hide loader on error too ---
+        stopTimer();
+        loadingIndicator.classList.add('hidden');
+        
         if (error.name === 'AbortError') {
             showMessage("Image generation timed out. Please try again with a simpler prompt.", 'error');
         } else {
             showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
         }
     } finally {
-        stopTimer();
-        loadingIndicator.classList.add('hidden');
         addBackButton();
     }
 }
