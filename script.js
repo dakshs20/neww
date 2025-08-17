@@ -399,17 +399,13 @@ async function generateImage() {
     }
 }
 
-// --- FIXED: generateImageWithRetry function ---
 async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             let apiUrl, payload;
-            // This key is publicly exposed and should be secured in a real application.
-            // Ensure it is valid and has no domain restrictions for your testing environment.
             const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs";
 
             if (imageData) {
-                // Use a model that supports image-to-image generation/editing
                 apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
                 payload = {
                     "contents": [{
@@ -421,7 +417,6 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
                     "generationConfig": { "responseModalities": ["IMAGE", "TEXT"] }
                 };
             } else {
-                // Use a model for text-to-image generation
                 apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
                 payload = { 
                     instances: [{ prompt: prompt }], 
@@ -444,10 +439,8 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
             let base64Data;
 
             if (imageData) {
-                // Parse response from the gemini flash model
                 base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
             } else {
-                // Parse response from the imagen model
                 base64Data = result.predictions?.[0]?.bytesBase64Encoded;
             }
 
@@ -489,7 +482,6 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
     
     imgContainer.appendChild(img);
 
-    // --- UPDATED: Download options ---
     if (!shouldBlur) {
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
@@ -505,7 +497,7 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
         hdButton.onclick = () => downloadImage(imageUrl, 'hd');
 
         buttonContainer.appendChild(sdButton);
-        if (auth.currentUser) buttonContainer.appendChild(hdButton); // Only show HD for logged-in users
+        if (auth.currentUser) buttonContainer.appendChild(hdButton);
         
         imgContainer.appendChild(buttonContainer);
     }
@@ -527,8 +519,11 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
     imageGrid.appendChild(imgContainer);
 }
 
-// --- NEW: Download Logic ---
-function downloadImage(imageUrl, quality) {
+// --- MODIFIED: Download Logic with Watermark ---
+async function downloadImage(imageUrl, quality) {
+    let finalImageUrl = imageUrl;
+    let fileName = `genart-image-${quality}.png`;
+
     if (quality === 'hd') {
         if (!auth.currentUser) {
             showMessage('Please sign in to download in HD.', 'error');
@@ -540,14 +535,60 @@ function downloadImage(imageUrl, quality) {
             return;
         }
         setCredits(credits - HD_DOWNLOAD_COST);
+    } else { // 'sd' quality
+        try {
+            finalImageUrl = await applyWatermark(imageUrl);
+        } catch (error) {
+            console.error('Failed to apply watermark:', error);
+            showMessage('Could not apply watermark. Downloading original image.', 'error');
+        }
     }
     
     const a = document.createElement('a');
-    a.href = imageUrl;
-    a.download = `genart-image-${quality}.png`;
+    a.href = finalImageUrl;
+    a.download = fileName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+}
+
+// --- NEW: Watermark Function ---
+function applyWatermark(imageUrl) {
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.crossOrigin = 'Anonymous'; // Important for loading images from other origins
+        
+        img.onload = () => {
+            // Set canvas dimensions to the image dimensions
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            // Draw the original image
+            ctx.drawImage(img, 0, 0);
+
+            // --- Watermark Styling ---
+            // You can also use an image as a watermark here with ctx.drawImage(watermarkImage, x, y)
+            const watermarkText = 'GenArt';
+            ctx.font = `bold ${img.width / 20}px Arial`; // Dynamic font size
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'; // Semi-transparent white
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Draw the watermark in the center
+            ctx.fillText(watermarkText, canvas.width / 2, canvas.height / 2);
+
+            // Resolve the promise with the new data URL
+            resolve(canvas.toDataURL('image/png'));
+        };
+
+        img.onerror = (err) => {
+            reject(err);
+        };
+
+        img.src = imageUrl;
+    });
 }
 
 
