@@ -399,29 +399,42 @@ async function generateImage() {
     }
 }
 
+// --- FIXED: generateImageWithRetry function ---
 async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             let apiUrl, payload;
-            // IMPORTANT: This key is publicly exposed and should be secured in a real application.
+            // This key is publicly exposed and should be secured in a real application.
+            // Ensure it is valid and has no domain restrictions for your testing environment.
             const apiKey = "AIzaSyBZxXWl9s2AeSCzMrfoEfnYWpGyfvP7jqs";
 
             if (imageData) {
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=${apiKey}`;
+                // Use a model that supports image-to-image generation/editing
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
                 payload = {
                     "contents": [{
                         "parts": [
                             { "text": prompt },
-                            { "inline_data": { "mime_type": imageData.mimeType, "data": imageData.data } }
+                            { "inlineData": { "mimeType": imageData.mimeType, "data": imageData.data } }
                         ]
-                    }]
+                    }],
+                    "generationConfig": { "responseModalities": ["IMAGE", "TEXT"] }
                 };
             } else {
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/text-to-image:generateImage?key=${apiKey}`;
-                payload = { prompt: { text: prompt } };
+                // Use a model for text-to-image generation
+                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+                payload = { 
+                    instances: [{ prompt: prompt }], 
+                    parameters: { "sampleCount": 1 } 
+                };
             }
 
-            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const response = await fetch(apiUrl, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(payload) 
+            });
+
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(`API Error: ${response.status} - ${errorText}`);
@@ -429,12 +442,13 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
 
             const result = await response.json();
             let base64Data;
-             if (imageData) {
-                // Vision API doesn't generate images, this part of the logic is flawed for image editing.
-                // Assuming for now it returns an image somehow for demonstration purposes.
-                base64Data = result?.candidates?.[0]?.content?.parts?.[0]?.inline_data?.data;
+
+            if (imageData) {
+                // Parse response from the gemini flash model
+                base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
             } else {
-                base64Data = result.images?.[0]?.image;
+                // Parse response from the imagen model
+                base64Data = result.predictions?.[0]?.bytesBase64Encoded;
             }
 
             if (!base64Data) throw new Error("No image data received from API.");
@@ -447,6 +461,7 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
         }
     }
 }
+
 
 // --- Live Counter ---
 async function incrementTotalGenerations() {
@@ -495,7 +510,6 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
         imgContainer.appendChild(buttonContainer);
     }
     
-    // ... rest of the function remains the same ...
     if (shouldBlur) {
         const overlay = document.createElement('div');
         overlay.className = 'unlock-overlay';
