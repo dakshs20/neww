@@ -17,7 +17,7 @@
     <meta property="og:title" content="Free & Fastest AI Image Generator | GenArt">
     <meta property="og:description" content="The fastest free tool for generating AI images and avatars. Create stunning art in under 17 seconds.">
     <meta property="og:image" content="https://iili.io/FsAoG2I.md.png">
-    <meta property="og:url" content="https://neww-red.vercel.app/">
+    <meta property="og:url" content="YOUR_WEBSITE_URL_HERE">
     <meta property="og:type" content="website">
 
     <!-- Twitter Card Meta Tags -->
@@ -65,6 +65,8 @@
             <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo - Free and Fastest AI Image Generator" class="h-6 w-auto">
             <!-- Desktop Header Auth -->
             <div id="header-auth-section" class="hidden md:flex items-center space-x-4">
+                <!-- NEW: Credit Display -->
+                <div id="credit-display" class="hidden text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-lg"></div>
                 <div id="generation-counter" class="text-sm font-medium text-gray-500"></div>
                 <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all duration-300">
                     Sign In
@@ -79,6 +81,8 @@
             <!-- Mobile Drawer Menu -->
             <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-[#42669C] rounded-lg shadow-xl z-50">
                 <div class="p-2">
+                    <!-- NEW: Mobile Credit Display -->
+                    <div id="mobile-credit-display" class="hidden text-sm text-center font-medium text-white px-2 py-2"></div>
                     <div id="mobile-generation-counter" class="text-sm text-center font-medium text-white px-2 py-2"></div>
                     <button id="mobile-auth-btn" class="w-full text-left text-sm font-medium text-white px-4 py-2 rounded-md hover:bg-white/20 transition-all duration-300">
                         Sign In
@@ -122,6 +126,14 @@
                     <div id="message-box" class="mt-8 text-center"></div>
                 </div>
             </div>
+
+            <!-- NEW: History Section -->
+            <section id="history-section" class="w-full max-w-7xl mx-auto mt-16 hidden">
+                <h2 class="text-2xl font-medium text-gray-800 text-center mb-8">Generation History</h2>
+                <div id="history-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <!-- History images will be injected here by JavaScript -->
+                </div>
+            </section>
 
             <!-- Technology Section -->
             <div class="mt-24 text-center max-w-2xl mx-auto fade-in-slide-up" style="animation-delay: 300ms;">
@@ -191,7 +203,7 @@
 
         <footer class="text-center py-8 mt-auto border-t border-gray-200 fade-in-slide-up" style="animation-delay: 200ms;">
             <div class="flex justify-center items-center space-x-6 mb-4">
-                <a href="https://www.instagram.com/genartlabs/" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 012.153 2.153c.247.636.416 1.363.465 2.427.048 1.024.06 1.378.06 3.808s-.012 2.784-.06 3.808c-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-2.153 2.153c-.636.247-1.363.416-2.427.465-1.024.048-1.378.06-3.808.06s-2.784-.013-3.808-.06c-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-2.153-2.153c-.247-.636-.416-1.363-.465-2.427-.048-1.024-.06-1.378-.06-3.808s.012-2.784.06-3.808c.049-1.064.218-1.791.465-2.427a4.902 4.902 0 012.153-2.153c.636-.247 1.363.416 2.427.465C9.53 2.013 9.884 2 12.315 2zm0 1.62c-2.403 0-2.741.01-3.701.058-1.009.046-1.594.208-2.039.384a3.278 3.278 0 00-1.48 1.48c-.176.445-.338 1.03-.384 2.039-.049.96-.058 1.299-.058 3.701s.01 2.741.058 3.701c.046 1.009.208 1.594.384 2.039a3.278 3.278 0 001.48 1.48c.445.176 1.03.338 2.039.384.96.049 1.299.058 3.701.058s2.741-.01 3.701-.058c1.009-.046 1.594-.208 2.039-.384a3.278 3.278 0 001.48-1.48c.176-.445.338-1.03.384-2.039.049-.96.058-1.299.058-3.701s-.01-2.741-.058-3.701c-.046-1.009-.208-1.594-.384-2.039a3.278 3.278 0 00-1.48-1.48c-.445-.176-1.03-.338-2.039-.384C15.056 3.63 14.717 3.62 12.315 3.62zM12 7.18c-2.649 0-4.795 2.146-4.795 4.795s2.146 4.795 4.795 4.795 4.795-2.146 4.795-4.795S14.649 7.18 12 7.18zm0 7.96c-1.742 0-3.165-1.423-3.165-3.165S10.258 8.81 12 8.81s3.165 1.423 3.165 3.165S13.742 15.14 12 15.14zM18.81 5.99a1.38 1.38 0 100 2.76 1.38 1.38 0 000-2.76z" clip-rule="evenodd" /></svg><span class="sr-only">Instagram</span></a>
+                <a href="https://www.instagram.com/genartlabs/" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 012.153 2.153c.247.636.416 1.363.465 2.427.048 1.024.06 1.378.06 3.808s-.012 2.784-.06 3.808c-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-2.153 2.153c-.636.247-1.363.416-2.427.465-1.024.048-1.378.06-3.808.06s-2.784-.013-3.808-.06c-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-2.153-2.153c-.247-.636-.416-1.363-.465-2.427-.048-1.024-.06-1.378-.06-3.808s.012-2.784.06-3.808c.049 1.064.218 1.791.465-2.427a4.902 4.902 0 012.153-2.153c.636.247 1.363.416 2.427.465C9.53 2.013 9.884 2 12.315 2zm0 1.62c-2.403 0-2.741.01-3.701.058-1.009.046-1.594.208-2.039.384a3.278 3.278 0 00-1.48 1.48c-.176.445-.338 1.03-.384 2.039-.049.96-.058 1.299-.058 3.701s.01 2.741.058 3.701c.046 1.009.208 1.594.384 2.039a3.278 3.278 0 001.48 1.48c.445.176 1.03.338 2.039.384.96.049 1.299.058 3.701.058s2.741-.01 3.701-.058c1.009-.046 1.594-.208 2.039-.384a3.278 3.278 0 001.48-1.48c.176-.445.338-1.03.384-2.039.049-.96.058-1.299.058-3.701s-.01-2.741-.058-3.701c-.046-1.009-.208-1.594-.384-2.039a3.278 3.278 0 00-1.48-1.48c-.445-.176-1.03-.338-2.039-.384C15.056 3.63 14.717 3.62 12.315 3.62zM12 7.18c-2.649 0-4.795 2.146-4.795 4.795s2.146 4.795 4.795 4.795 4.795-2.146 4.795-4.795S14.649 7.18 12 7.18zm0 7.96c-1.742 0-3.165-1.423-3.165-3.165S10.258 8.81 12 8.81s3.165 1.423 3.165 3.165S13.742 15.14 12 15.14zM18.81 5.99a1.38 1.38 0 100 2.76 1.38 1.38 0 000-2.76z" clip-rule="evenodd" /></svg><span class="sr-only">Instagram</span></a>
                 <a href="https://x.com/GenArtai_" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span class="sr-only">X</span></a>
             </div>
             <p class="text-xs text-gray-500">&copy; 2025 GenArt. All rights reserved.</p>
@@ -200,7 +212,7 @@
 
     <!-- REBUILT Sticky Music Player -->
     <div id="music-player">
-        <audio id="lofi-music" loop src="https://www.chosic.com/wp-content/uploads/2022/01/Purrple-Cat-Calm-Down.mp3"></audio>
+        <audio id="lofi-music" loop src="https://files.catbox.moe/ucqs06.mp3"></audio>
         <button id="music-btn" title="Play/Pause Music">
             <div class="icon-container">
                 <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5.14v14l11-7-11-7z"/></svg>
@@ -228,4 +240,3 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
-
