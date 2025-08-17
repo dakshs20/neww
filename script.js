@@ -65,7 +65,7 @@ let lastGeneratedImageUrl = null;
 const INITIAL_CREDITS = 25;
 const GENERATION_COST = 1;
 const HD_DOWNLOAD_COST = 5;
-const HISTORY_LIMIT = 200; // Increased limit for the new system
+const HISTORY_LIMIT = 200;
 const HISTORY_SAVE_COST = 10;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -240,7 +240,6 @@ function getHistory() {
     return historyJson ? JSON.parse(historyJson) : [];
 }
 
-// --- REBUILT: History saving with new credit logic ---
 async function saveToHistory(base64ImageUrl) {
     if (!auth.currentUser) return false;
 
@@ -248,12 +247,11 @@ async function saveToHistory(base64ImageUrl) {
     const historyCount = history.length;
     const cyclePosition = historyCount % 100;
 
-    // Charge credits if the user is in the second half of a 100-image cycle (and has 50 or more total images)
     if (historyCount >= 50 && cyclePosition >= 50) {
         const credits = getCredits();
         if (credits < HISTORY_SAVE_COST) {
             showMessage(`You need ${HISTORY_SAVE_COST} credits to save more than ${historyCount} images. Your image was generated but NOT saved to history.`, 'error');
-            return false; // Indicate that the save failed
+            return false;
         }
         setCredits(credits - HISTORY_SAVE_COST);
     }
@@ -264,17 +262,18 @@ async function saveToHistory(base64ImageUrl) {
         const uploadTask = await uploadString(storageRef, base64ImageUrl, 'data_url');
         const downloadURL = await getDownloadURL(uploadTask.ref);
         
-        const newHistory = getHistory(); // Re-fetch in case of race conditions
+        const newHistory = getHistory();
         newHistory.unshift({ url: downloadURL, prompt: promptInput.value.trim() });
         const trimmedHistory = newHistory.slice(0, HISTORY_LIMIT);
         localStorage.setItem(`history_${auth.currentUser.uid}`, JSON.stringify(trimmedHistory));
         
+        // FIX: Ensure history UI is updated after the save completes
         loadAndRenderHistory();
-        return true; // Indicate success
+        return true;
     } catch (error) {
         console.error("Error saving to history:", error);
         showMessage("Could not save image to your history.", "error");
-        return false; // Indicate failure
+        return false;
     }
 }
 
@@ -375,13 +374,13 @@ async function generateImage() {
         stopTimer();
 
         displayImage(imageUrl, prompt, shouldBlur);
+        loadingIndicator.classList.add('hidden');
         
         if (auth.currentUser) {
-            loadingIndicator.querySelector('p').textContent = 'Saving to history...';
             const currentCredits = getCredits();
             setCredits(currentCredits - GENERATION_COST);
-            // Await the save process to ensure it completes before hiding the loader
-            await saveToHistory(imageUrl); 
+            // Run the save process in the background. It will update the UI when done.
+            saveToHistory(imageUrl); 
         } else {
             incrementGenerationCount();
             if (shouldBlur) {
@@ -394,13 +393,13 @@ async function generateImage() {
     } catch (error) {
         console.error('Image generation failed:', error);
         stopTimer();
+        loadingIndicator.classList.add('hidden');
         if (error.name === 'AbortError') {
             showMessage("Image generation timed out. Please try again with a simpler prompt.", 'error');
         } else {
             showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
         }
     } finally {
-        loadingIndicator.classList.add('hidden');
         addBackButton();
     }
 }
@@ -550,7 +549,8 @@ function applyWatermark(imageUrl) {
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
             const watermarkText = 'GenArt';
-            ctx.font = `bold ${img.width / 20}px Arial`;
+            // --- FIX: Changed font to Mersad ---
+            ctx.font = `bold ${img.width / 20}px Mersad`;
             ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
