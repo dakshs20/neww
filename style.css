@@ -39,12 +39,10 @@ body {
     transition: transform 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
-/* Cursor hover effect */
 .cursor-outline.cursor-hover {
     transform: translate(-50%, -50%) scale(1.5);
     background-color: rgba(66, 102, 156, 0.3);
 }
-
 
 #prompt-container:focus-within {
      border-color: #d1d5db;
@@ -88,7 +86,6 @@ textarea::-webkit-scrollbar-thumb:hover {
     transition: width 0.2s linear; 
 }
 
-/* Modal styles */
 #auth-modal { 
     transition: opacity 0.3s ease, visibility 0.3s ease; 
 }
@@ -142,6 +139,33 @@ textarea::-webkit-scrollbar-thumb:hover {
     background-color: #3a5a8a;
 }
 
+/* --- NEW: Download Button Styles --- */
+.download-btn, .download-btn-small {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: white;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+.download-btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+}
+.download-btn-small {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    width: 100%;
+}
+
+/* --- NEW: History Section Styles --- */
+.history-item {
+    aspect-ratio: 1 / 1;
+}
 
 /* --- Cinematic Section Styles --- */
 #cinematic-section {
