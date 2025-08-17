@@ -250,6 +250,7 @@ async function saveToHistory(base64ImageUrl) {
         history.unshift({ url: downloadURL, prompt: promptInput.value.trim() });
         const trimmedHistory = history.slice(0, HISTORY_LIMIT);
         localStorage.setItem(`history_${auth.currentUser.uid}`, JSON.stringify(trimmedHistory));
+        // This function will now correctly update the UI when the save is complete
         loadAndRenderHistory();
     } catch (error) {
         console.error("Error saving to history:", error);
@@ -315,7 +316,6 @@ function removeUploadedImage() {
     promptInput.placeholder = "An oil painting of a futuristic city skyline at dusk...";
 }
 
-// --- REBUILT: Core Image Generation Logic with better UI feedback ---
 async function generateImage() {
     const prompt = promptInput.value.trim();
     if (!prompt) {
@@ -349,19 +349,15 @@ async function generateImage() {
     startTimer();
 
     try {
-        // 1. Generate the image
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData);
         stopTimer();
 
-        // 2. Immediately display the image and hide the main loader
         displayImage(imageUrl, prompt, shouldBlur);
         loadingIndicator.classList.add('hidden');
 
-        // 3. Handle credits and history saving in the background
         if (auth.currentUser) {
             const currentCredits = getCredits();
             setCredits(currentCredits - GENERATION_COST);
-            // This runs in the background without making the user wait
             saveToHistory(imageUrl); 
         } else {
             incrementGenerationCount();
@@ -555,6 +551,7 @@ function showMessage(text, type = 'info') {
     messageBox.appendChild(messageEl);
 }
 
+// --- FIX: Removed problematic line from this function ---
 function addBackButton() {
     const backButton = document.createElement('button');
     backButton.textContent = '← Create another';
@@ -566,7 +563,8 @@ function addBackButton() {
         messageBox.innerHTML = '';
         promptInput.value = '';
         removeUploadedImage();
-        loadAndRenderHistory();
+        // The history will update automatically when the background save finishes.
+        // No need to call loadAndRenderHistory() here.
     };
     messageBox.prepend(backButton);
 }
