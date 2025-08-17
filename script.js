@@ -65,7 +65,8 @@ let lastGeneratedImageUrl = null;
 const INITIAL_CREDITS = 25;
 const GENERATION_COST = 1;
 const HD_DOWNLOAD_COST = 5;
-const HISTORY_LIMIT = 15;
+const HISTORY_LIMIT = 200; // Increased limit for the new system
+const HISTORY_SAVE_COST = 10;
 
 document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, user => {
@@ -239,24 +240,44 @@ function getHistory() {
     return historyJson ? JSON.parse(historyJson) : [];
 }
 
+// --- REBUILT: History saving with new credit logic ---
 async function saveToHistory(base64ImageUrl) {
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) return false;
+
+    const history = getHistory();
+    const historyCount = history.length;
+    const cyclePosition = historyCount % 100;
+
+    // Charge credits if the user is in the second half of a 100-image cycle (and has 50 or more total images)
+    if (historyCount >= 50 && cyclePosition >= 50) {
+        const credits = getCredits();
+        if (credits < HISTORY_SAVE_COST) {
+            showMessage(`You need ${HISTORY_SAVE_COST} credits to save more than ${historyCount} images. Your image was generated but NOT saved to history.`, 'error');
+            return false; // Indicate that the save failed
+        }
+        setCredits(credits - HISTORY_SAVE_COST);
+    }
+
     try {
         const fileName = `${Date.now()}.png`;
         const storageRef = ref(storage, `history/${auth.currentUser.uid}/${fileName}`);
         const uploadTask = await uploadString(storageRef, base64ImageUrl, 'data_url');
         const downloadURL = await getDownloadURL(uploadTask.ref);
-        const history = getHistory();
-        history.unshift({ url: downloadURL, prompt: promptInput.value.trim() });
-        const trimmedHistory = history.slice(0, HISTORY_LIMIT);
+        
+        const newHistory = getHistory(); // Re-fetch in case of race conditions
+        newHistory.unshift({ url: downloadURL, prompt: promptInput.value.trim() });
+        const trimmedHistory = newHistory.slice(0, HISTORY_LIMIT);
         localStorage.setItem(`history_${auth.currentUser.uid}`, JSON.stringify(trimmedHistory));
-        // This function will now correctly update the UI when the save is complete
+        
         loadAndRenderHistory();
+        return true; // Indicate success
     } catch (error) {
         console.error("Error saving to history:", error);
         showMessage("Could not save image to your history.", "error");
+        return false; // Indicate failure
     }
 }
+
 
 function loadAndRenderHistory() {
     const history = getHistory();
@@ -316,6 +337,7 @@ function removeUploadedImage() {
     promptInput.placeholder = "An oil painting of a futuristic city skyline at dusk...";
 }
 
+// --- REBUILT: Core Image Generation Logic with better UI feedback ---
 async function generateImage() {
     const prompt = promptInput.value.trim();
     if (!prompt) {
@@ -353,12 +375,13 @@ async function generateImage() {
         stopTimer();
 
         displayImage(imageUrl, prompt, shouldBlur);
-        loadingIndicator.classList.add('hidden');
-
+        
         if (auth.currentUser) {
+            loadingIndicator.querySelector('p').textContent = 'Saving to history...';
             const currentCredits = getCredits();
             setCredits(currentCredits - GENERATION_COST);
-            saveToHistory(imageUrl); 
+            // Await the save process to ensure it completes before hiding the loader
+            await saveToHistory(imageUrl); 
         } else {
             incrementGenerationCount();
             if (shouldBlur) {
@@ -370,16 +393,14 @@ async function generateImage() {
 
     } catch (error) {
         console.error('Image generation failed:', error);
-        
         stopTimer();
-        loadingIndicator.classList.add('hidden');
-        
         if (error.name === 'AbortError') {
             showMessage("Image generation timed out. Please try again with a simpler prompt.", 'error');
         } else {
             showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
         }
     } finally {
+        loadingIndicator.classList.add('hidden');
         addBackButton();
     }
 }
@@ -551,7 +572,6 @@ function showMessage(text, type = 'info') {
     messageBox.appendChild(messageEl);
 }
 
-// --- FIX: Removed problematic line from this function ---
 function addBackButton() {
     const backButton = document.createElement('button');
     backButton.textContent = '← Create another';
@@ -563,8 +583,6 @@ function addBackButton() {
         messageBox.innerHTML = '';
         promptInput.value = '';
         removeUploadedImage();
-        // The history will update automatically when the background save finishes.
-        // No need to call loadAndRenderHistory() here.
     };
     messageBox.prepend(backButton);
 }
