@@ -4,7 +4,6 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- App State Variables ---
-// These will be initialized after fetching the config from the server
 let app, auth, db, provider, googleApiKey;
 
 // --- DOM Element References ---
@@ -45,8 +44,8 @@ let lastGeneratedImageUrl = null;
 // --- Main App Initialization ---
 async function initializeAppAndSetup() {
     try {
-        // Fetch the configuration from our secure server endpoint
-        const response = await fetch('/api/config');
+        // Fetch the configuration from our secure serverless function
+        const response = await fetch('/api/config'); // Using the /api/ path for Vercel/Netlify
         if (!response.ok) {
             throw new Error(`Failed to fetch config: ${response.statusText}`);
         }
@@ -57,18 +56,22 @@ async function initializeAppAndSetup() {
         auth = getAuth(app);
         db = getFirestore(app);
         provider = new GoogleAuthProvider();
-        googleApiKey = config.googleApiKey; // Store the Google API key
+        googleApiKey = config.googleApiKey;
 
         // Now that Firebase is initialized, setup the rest of the app
         setupEventListeners();
-        setupCursor();
+        setupCursor(); // Setup the custom cursor
         onAuthStateChanged(auth, user => {
             updateUIForAuthState(user);
         });
 
     } catch (error) {
         console.error("Fatal Error: Could not initialize application.", error);
-        showMessage("Could not load the application. Please try refreshing the page.", "error");
+        // Display a user-friendly error message on the page
+        const generatorContainer = document.getElementById('generator-ui');
+        if(generatorContainer) {
+            generatorContainer.innerHTML = `<p class="text-red-500">Could not load the application. Please check your connection and refresh the page.</p>`;
+        }
     }
 }
 
@@ -117,30 +120,33 @@ function setupEventListeners() {
 }
 
 function setupCursor() {
-    let mouseX = 0, mouseY = 0;
-    let outlineX = 0, outlineY = 0;
+    // Only run this on devices that are not touch-based
+    if (window.matchMedia("(pointer: fine)").matches) {
+        let mouseX = 0, mouseY = 0;
+        let outlineX = 0, outlineY = 0;
 
-    window.addEventListener('mousemove', (e) => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-    });
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
 
-    const animateCursor = () => {
-        cursorDot.style.left = `${mouseX}px`;
-        cursorDot.style.top = `${mouseY}px`;
-        const ease = 0.15;
-        outlineX += (mouseX - outlineX) * ease;
-        outlineY += (mouseY - outlineY) * ease;
-        cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+        const animateCursor = () => {
+            cursorDot.style.left = `${mouseX}px`;
+            cursorDot.style.top = `${mouseY}px`;
+            const ease = 0.15;
+            outlineX += (mouseX - outlineX) * ease;
+            outlineY += (mouseY - outlineY) * ease;
+            cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+            requestAnimationFrame(animateCursor);
+        };
         requestAnimationFrame(animateCursor);
-    };
-    requestAnimationFrame(animateCursor);
 
-    const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
-    interactiveElements.forEach(el => {
-        el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
-        el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
-    });
+        const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
+            el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
+        });
+    }
 }
 
 
@@ -280,7 +286,6 @@ async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
         try {
             let apiUrl, payload;
             
-            // The API key is now fetched from the server and stored in the `googleApiKey` variable
             if (!googleApiKey) {
                 throw new Error("API Key not loaded. Please refresh the page.");
             }
