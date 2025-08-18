@@ -44,33 +44,34 @@ let lastGeneratedImageUrl = null;
 // --- Main App Initialization ---
 async function initializeAppAndSetup() {
     try {
-        // Fetch the configuration from our secure serverless function
-        const response = await fetch('/api/config'); // Using the /api/ path for Vercel/Netlify
+        const response = await fetch('/api/config');
         if (!response.ok) {
-            throw new Error(`Failed to fetch config: ${response.statusText}`);
+            // This will give us a more detailed error in the console
+            throw new Error(`Server responded with ${response.status}. The config function might be missing or in the wrong folder.`);
         }
         const config = await response.json();
 
-        // Use the fetched config to initialize Firebase and set API key
+        // Check if the keys were loaded correctly
+        if (!config.firebaseConfig || !config.googleApiKey) {
+            throw new Error("Config loaded, but keys are missing. Check your Environment Variables in Vercel.");
+        }
+
         app = initializeApp(config.firebaseConfig);
         auth = getAuth(app);
         db = getFirestore(app);
         provider = new GoogleAuthProvider();
         googleApiKey = config.googleApiKey;
 
-        // Now that Firebase is initialized, setup the rest of the app
         setupEventListeners();
-        setupCursor(); // Setup the custom cursor
+        setupCursor();
         onAuthStateChanged(auth, user => {
             updateUIForAuthState(user);
         });
 
     } catch (error) {
-        console.error("Fatal Error: Could not initialize application.", error);
-        // Display a user-friendly error message on the page
-        const generatorContainer = document.getElementById('generator-ui');
-        if(generatorContainer) {
-            generatorContainer.innerHTML = `<p class="text-red-500">Could not load the application. Please check your connection and refresh the page.</p>`;
+        console.error("Fatal Error:", error);
+        if(generatorUI) {
+            generatorUI.innerHTML = `<p class="text-red-600 font-semibold text-center">${error.message}</p>`;
         }
     }
 }
@@ -120,7 +121,6 @@ function setupEventListeners() {
 }
 
 function setupCursor() {
-    // Only run this on devices that are not touch-based
     if (window.matchMedia("(pointer: fine)").matches) {
         let mouseX = 0, mouseY = 0;
         let outlineX = 0, outlineY = 0;
