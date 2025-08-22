@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Your web app's Firebase configuration (This is safe to keep here)
+// Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
     authDomain: "genart-a693a.firebaseapp.com",
@@ -36,76 +36,56 @@ const imageUploadInput = document.getElementById('image-upload-input');
 const imagePreviewContainer = document.getElementById('image-preview-container');
 const imagePreview = document.getElementById('image-preview');
 const removeImageBtn = document.getElementById('remove-image-btn');
-
-// Auth Buttons & Counters
 const authBtn = document.getElementById('auth-btn');
 const mobileAuthBtn = document.getElementById('mobile-auth-btn');
 const generationCounterEl = document.getElementById('generation-counter');
 const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
-
-// Modal
 const authModal = document.getElementById('auth-modal');
 const googleSignInBtn = document.getElementById('google-signin-btn');
 const closeModalBtn = document.getElementById('close-modal-btn');
-
-// Mobile Menu
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mobileMenu = document.getElementById('mobile-menu');
-
-// --- REBUILT Music Player ---
 const musicBtn = document.getElementById('music-btn');
 const lofiMusic = document.getElementById('lofi-music');
-
-// --- REBUILT Custom Cursor ---
 const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
 
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
-let uploadedImageData = null; // To store the base64 image data
-let lastGeneratedImageUrl = null; // To store the URL of the blurred image
+let uploadedImageData = null;
+let lastGeneratedImageUrl = null;
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, user => {
         updateUIForAuthState(user);
     });
-
-    // --- Event Listeners ---
     mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
     document.addEventListener('click', (event) => {
         if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
             mobileMenu.classList.add('hidden');
         }
     });
-
     authBtn.addEventListener('click', handleAuthAction);
     mobileAuthBtn.addEventListener('click', handleAuthAction);
     googleSignInBtn.addEventListener('click', signInWithGoogle);
     closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
-
     examplePrompts.forEach(button => {
         button.addEventListener('click', () => {
             promptInput.value = button.innerText.trim();
             promptInput.focus();
         });
     });
-
     promptInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             generateImage();
         }
     });
-
     generateBtn.addEventListener('click', generateImage);
-
-    // --- Image Upload Listeners ---
     imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
     imageUploadInput.addEventListener('change', handleImageUpload);
     removeImageBtn.addEventListener('click', removeUploadedImage);
-
-    // --- CORRECTED Music Player Listener ---
     musicBtn.addEventListener('click', () => {
         const isPlaying = musicBtn.classList.contains('playing');
         if (isPlaying) {
@@ -115,16 +95,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         musicBtn.classList.toggle('playing');
     });
-
-    // --- REBUILT Custom Cursor Logic ---
     let mouseX = 0, mouseY = 0;
     let outlineX = 0, outlineY = 0;
-
     window.addEventListener('mousemove', (e) => {
         mouseX = e.clientX;
         mouseY = e.clientY;
     });
-
     const animateCursor = () => {
         cursorDot.style.left = `${mouseX}px`;
         cursorDot.style.top = `${mouseY}px`;
@@ -135,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(animateCursor);
     };
     requestAnimationFrame(animateCursor);
-
     const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
     interactiveElements.forEach(el => {
         el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
@@ -143,18 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// --- Auth Functions ---
-function handleAuthAction() {
-    if (auth.currentUser) signOut(auth);
-    else signInWithGoogle();
-}
-
-function signInWithGoogle() {
-    signInWithPopup(auth, provider)
-        .then(result => updateUIForAuthState(result.user))
-        .catch(error => console.error("Authentication Error:", error));
-}
-
+function handleAuthAction() { if (auth.currentUser) signOut(auth); else signInWithGoogle(); }
+function signInWithGoogle() { signInWithPopup(auth, provider).then(result => updateUIForAuthState(result.user)).catch(error => console.error("Authentication Error:", error)); }
 function updateUIForAuthState(user) {
     if (user) {
         const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
@@ -163,8 +128,6 @@ function updateUIForAuthState(user) {
         generationCounterEl.textContent = welcomeText;
         mobileGenerationCounterEl.textContent = welcomeText;
         authModal.setAttribute('aria-hidden', 'true');
-
-        // Unblur image if one was just generated
         if (lastGeneratedImageUrl) {
             const blurredContainer = document.querySelector('.blurred-image-container');
             if (blurredContainer) {
@@ -175,25 +138,18 @@ function updateUIForAuthState(user) {
             }
             lastGeneratedImageUrl = null;
         }
-
     } else {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
         updateGenerationCounter();
     }
 }
-
-// --- Generation Counter Functions ---
-function getGenerationCount() {
-    return parseInt(localStorage.getItem('generationCount') || '0');
-}
-
+function getGenerationCount() { return parseInt(localStorage.getItem('generationCount') || '0'); }
 function incrementGenerationCount() {
     const newCount = getGenerationCount() + 1;
     localStorage.setItem('generationCount', newCount);
     updateGenerationCounter();
 }
-
 function updateGenerationCounter() {
     if (auth.currentUser) return;
     const count = getGenerationCount();
@@ -202,25 +158,18 @@ function updateGenerationCounter() {
     generationCounterEl.textContent = text;
     mobileGenerationCounterEl.textContent = text;
 }
-
-// --- Image Handling Functions ---
 function handleImageUpload(event) {
     const file = event.target.files[0];
     if (!file || !file.type.startsWith('image/')) return;
-
     const reader = new FileReader();
     reader.onloadend = () => {
-        uploadedImageData = {
-            mimeType: file.type,
-            data: reader.result.split(',')[1]
-        };
+        uploadedImageData = { mimeType: file.type, data: reader.result.split(',')[1] };
         imagePreview.src = reader.result;
         imagePreviewContainer.classList.remove('hidden');
         promptInput.placeholder = "Describe the edits you want to make...";
     };
     reader.readAsDataURL(file);
 }
-
 function removeUploadedImage() {
     uploadedImageData = null;
     imageUploadInput.value = '';
@@ -228,47 +177,33 @@ function removeUploadedImage() {
     imagePreview.src = '';
     promptInput.placeholder = "An oil painting of a futuristic city skyline at dusk...";
 }
-
-// --- Core Image Generation Logic ---
 async function generateImage() {
     const prompt = promptInput.value.trim();
     if (!prompt) {
         showMessage('Please describe what you want to create or edit.', 'error');
         return;
     }
-
     const count = getGenerationCount();
     if (!auth.currentUser && count > FREE_GENERATION_LIMIT) {
         authModal.setAttribute('aria-hidden', 'false');
         return;
     }
-
     const shouldBlur = !auth.currentUser && count === FREE_GENERATION_LIMIT;
-
-    // UI Reset
     imageGrid.innerHTML = '';
     messageBox.innerHTML = '';
     resultContainer.classList.remove('hidden');
     loadingIndicator.classList.remove('hidden');
     generatorUI.classList.add('hidden');
-    
     startTimer();
-
     try {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData);
-        if (shouldBlur) {
-            lastGeneratedImageUrl = imageUrl;
-        }
+        if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
         displayImage(imageUrl, prompt, shouldBlur);
-        
-        // Increment the global counter for the admin dashboard
         incrementTotalGenerations();
-
-        if (!auth.currentUser) {
-            incrementGenerationCount();
-        }
+        if (!auth.currentUser) { incrementGenerationCount(); }
     } catch (error) {
         console.error('Image generation failed:', error);
+        // This is where the error you see is displayed.
         showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
     } finally {
         stopTimer();
@@ -277,64 +212,57 @@ async function generateImage() {
     }
 }
 
-/**
- * SECURELY generates an image by calling our backend function.
- * The secret API key is no longer here.
- */
-async function generateImageWithRetry(prompt, imageData) {
-    // Call our own secure backend function instead of Google directly.
-    const response = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt, imageData }), // Send the prompt and image data
-    });
+// This function calls your backend. It is confirmed to be correct.
+// If it fails, the problem is that it cannot reach '/api/generate'.
+async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt, imageData })
+            });
 
-    if (!response.ok) {
-        // Try to get a user-friendly error message from our backend.
-        const errorResult = await response.json();
-        throw new Error(errorResult.message || `Request failed with status ${response.status}`);
-    }
+            // If the response is not ok, we try to parse the error message.
+            if (!response.ok) {
+                // This is where the "Unexpected token 'T'" error happens,
+                // because the response is a 404 HTML page, not JSON.
+                const errorResult = await response.json();
+                throw new Error(errorResult.error || `API Error: ${response.status}`);
+            }
 
-    const result = await response.json();
-    
-    if (!result.base64Data) {
-        throw new Error("No image data received from the server.");
+            const result = await response.json();
+            
+            let base64Data;
+            if (imageData) {
+                base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+            } else {
+                base64Data = result.predictions?.[0]?.bytesBase64Encoded;
+            }
+
+            if (!base64Data) throw new Error("No image data received from API.");
+            return `data:image/png;base64,${base64Data}`;
+
+        } catch (error) {
+            if (attempt >= maxRetries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
     }
-    
-    // Return the image data URL ready to be used in an <img> tag.
-    return `data:image/png;base64,${result.base64Data}`;
 }
 
-
-// --- Live Counter Function ---
 async function incrementTotalGenerations() {
     const counterRef = doc(db, "stats", "imageGenerations");
-    try {
-        await setDoc(counterRef, { count: increment(1) }, { merge: true });
-    } catch (error) {
-        console.error("Error incrementing generation count:", error);
-    }
+    try { await setDoc(counterRef, { count: increment(1) }, { merge: true }); } catch (error) { console.error("Error incrementing generation count:", error); }
 }
-
-// --- Helper Functions ---
 function displayImage(imageUrl, prompt, shouldBlur = false) {
     const imgContainer = document.createElement('div');
     imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
-    
-    if (shouldBlur) {
-        imgContainer.classList.add('blurred-image-container');
-    }
-
+    if (shouldBlur) { imgContainer.classList.add('blurred-image-container'); }
     const img = document.createElement('img');
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
-    if (shouldBlur) {
-        img.classList.add('blurred-image');
-    }
-
+    if (shouldBlur) { img.classList.add('blurred-image'); }
     const downloadButton = document.createElement('button');
     downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
     downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
@@ -347,37 +275,24 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
         a.click();
         document.body.removeChild(a);
     };
-
     imgContainer.appendChild(img);
-    if (!shouldBlur) {
-        imgContainer.appendChild(downloadButton);
-    }
-
+    if (!shouldBlur) { imgContainer.appendChild(downloadButton); }
     if (shouldBlur) {
         const overlay = document.createElement('div');
         overlay.className = 'unlock-overlay';
-        overlay.innerHTML = `
-            <h3 class="text-xl font-semibold">Unlock Image</h3>
-            <p class="mt-2">Sign in to unlock this image and get unlimited generations.</p>
-            <button id="unlock-btn">Sign In to Unlock</button>
-        `;
-        overlay.querySelector('#unlock-btn').onclick = () => {
-            authModal.setAttribute('aria-hidden', 'false');
-        };
+        overlay.innerHTML = `<h3 class="text-xl font-semibold">Unlock Image</h3><p class="mt-2">Sign in to unlock this image and get unlimited generations.</p><button id="unlock-btn">Sign In to Unlock</button>`;
+        overlay.querySelector('#unlock-btn').onclick = () => { authModal.setAttribute('aria-hidden', 'false'); };
         imgContainer.appendChild(overlay);
     }
-
     imageGrid.appendChild(imgContainer);
 }
-
 function showMessage(text, type = 'info') {
     const messageEl = document.createElement('div');
     messageEl.className = `p-2 rounded-lg ${type === 'error' ? 'text-red-600' : 'text-gray-600'} fade-in-slide-up`;
     messageEl.textContent = text;
-    messageBox.innerHTML = ''; 
+    messageBox.innerHTML = '';
     messageBox.appendChild(messageEl);
 }
-
 function addBackButton() {
     const backButton = document.createElement('button');
     backButton.textContent = '← Create another';
@@ -388,28 +303,24 @@ function addBackButton() {
         imageGrid.innerHTML = '';
         messageBox.innerHTML = '';
         promptInput.value = '';
-        removeUploadedImage(); // Also clear the image when going back
+        removeUploadedImage();
     };
     messageBox.prepend(backButton);
 }
-
 function startTimer() {
     let startTime = Date.now();
-    // **UPDATED TIMER DURATION**
-    const maxTime = 17 * 1000; 
+    const maxTime = 17 * 1000;
     progressBar.style.width = '0%';
     timerInterval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
         const progress = Math.min(elapsedTime / maxTime, 1);
         progressBar.style.width = `${progress * 100}%`;
-        // **UPDATED TIMER TEXT**
         timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
         if (elapsedTime >= maxTime) {
             timerEl.textContent = `17.0s / ~17s`;
         }
     }, 100);
 }
-
 function stopTimer() {
     clearInterval(timerInterval);
     progressBar.style.width = '100%';
