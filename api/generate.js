@@ -1,36 +1,27 @@
 // File: /api/generate.js
-// FINAL DEBUGGING VERSION - With a direct browser test.
+// Final working version.
 
 export default async function handler(req, res) {
-    // --- NEW BROWSER TEST ---
-    // If you visit this URL directly in your browser, it will send a GET request.
-    // This code will catch it and send back a success message if the file is working.
+    // This is a test to see if the file is reachable.
+    // Go to https://your-website-url/api/generate in your browser.
+    // If you see a success message, this file is working.
     if (req.method === 'GET') {
-        console.log("--- Browser GET test received. Endpoint is reachable. ---");
         return res.status(200).json({ status: "ok", message: "API endpoint is working correctly." });
     }
-    // --- END OF NEW TEST ---
 
-    console.log("--- [1/7] API function started with POST request ---");
-
+    // Only allow POST requests for the actual image generation.
     if (req.method !== 'POST') {
-        console.error("--- [FAIL] Method was not POST. It was:", req.method);
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
     try {
-        console.log("--- [2/7] Attempting to get API key from environment variables. ---");
+        const { prompt, imageData } = req.body;
         const apiKey = process.env.GOOGLE_API_KEY;
 
         if (!apiKey) {
-            console.error("--- [CRITICAL FAIL] GOOGLE_API_KEY not found in process.env! Check Vercel settings and redeploy. ---");
-            return res.status(500).json({ error: "Server configuration error." });
+            // This error means the key is missing from Vercel's settings.
+            return res.status(500).json({ error: "Server configuration error: API key not found." });
         }
-
-        console.log("--- [3/7] API Key was found successfully. ---");
-
-        const { prompt, imageData } = req.body;
-        console.log(`--- [4/7] Received data: Prompt=${prompt ? 'Yes' : 'No'}, ImageData=${imageData ? 'Yes' : 'No'} ---`);
 
         let apiUrl, payload;
 
@@ -45,8 +36,6 @@ export default async function handler(req, res) {
             payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
         }
 
-        console.log(`--- [5/7] Preparing to call Google API at: ${apiUrl.split('?')[0]} ---`);
-
         const apiResponse = await fetch(apiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -55,17 +44,13 @@ export default async function handler(req, res) {
 
         if (!apiResponse.ok) {
             const errorText = await apiResponse.text();
-            console.error(`--- [FAIL] Google API returned an error: ${apiResponse.status}`, errorText);
-            return res.status(apiResponse.status).json({ error: `API Error: ${errorText}` });
+            return res.status(apiResponse.status).json({ error: `Google API Error: ${errorText}` });
         }
 
-        console.log("--- [6/7] Google API call was successful. ---");
         const result = await apiResponse.json();
         res.status(200).json(result);
-        console.log("--- [7/7] API function finished and sent response. ---");
 
     } catch (error) {
-        console.error('--- [FATAL CRASH] The API function crashed:', error);
-        res.status(500).json({ error: 'An internal server error occurred.' });
+        res.status(500).json({ error: 'The API function crashed.', details: error.message });
     }
 }
