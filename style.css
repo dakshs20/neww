@@ -1,18 +1,19 @@
 /* A more refined, classic, and aesthetic UI style */
-body {
+html {
+    /* Apply a base font setting and cursor hiding to the root element */
     font-family: 'Inter', sans-serif;
+    cursor: none;
+}
+
+body {
     background-color: #f7f7f7;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
     color: #2d2d2d;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    cursor: none; /* Hide the default cursor */
 }
 
-/* --- REBUILT Custom Cursor --- */
+/* --- REBUILT Custom Cursor (FIXED) --- */
+/* This ensures the custom cursor is always on top and visible */
 .cursor-dot,
 .cursor-outline {
     pointer-events: none;
@@ -21,28 +22,32 @@ body {
     left: 0;
     border-radius: 50%;
     opacity: 1;
-    z-index: 9999;
+    z-index: 9999; /* High z-index to stay on top of everything */
+    transform: translate(-50%, -50%);
 }
 
 .cursor-dot {
     width: 8px;
     height: 8px;
     background-color: #42669C;
-    transform: translate(-50%, -50%);
 }
 
 .cursor-outline {
     width: 40px;
     height: 40px;
     background-color: rgba(66, 102, 156, 0.2);
-    transform: translate(-50%, -50%);
-    transition: transform 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+    transition: transform 0.2s cubic-bezier(0.165, 0.84, 0.44, 1), background-color 0.2s ease;
 }
 
 /* Cursor hover effect */
 .cursor-outline.cursor-hover {
     transform: translate(-50%, -50%) scale(1.5);
     background-color: rgba(66, 102, 156, 0.3);
+}
+
+/* Ensure interactive elements don't show the default cursor */
+a, button, textarea, input, label {
+    cursor: none;
 }
 
 
@@ -89,14 +94,14 @@ textarea::-webkit-scrollbar-thumb:hover {
 }
 
 /* Modal styles */
-#auth-modal { 
+#auth-modal, #my-media-modal { 
     transition: opacity 0.3s ease, visibility 0.3s ease; 
 }
-#auth-modal[aria-hidden="true"] { 
+#auth-modal[aria-hidden="true"], #my-media-modal[aria-hidden="true"] { 
     opacity: 0; 
     visibility: hidden; 
 }
-#auth-modal[aria-hidden="false"] { 
+#auth-modal[aria-hidden="false"], #my-media-modal[aria-hidden="false"] { 
     opacity: 1; 
     visibility: visible; 
 }
@@ -328,7 +333,6 @@ textarea::-webkit-scrollbar-thumb:hover {
     background: #ffffff;
     border: none;
     border-radius: 50%;
-    cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -422,19 +426,7 @@ textarea::-webkit-scrollbar-thumb:hover {
     display: block;
 }
 
-/* --- NEW: My Media Modal --- */
-#my-media-modal {
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-#my-media-modal[aria-hidden="true"] {
-    opacity: 0;
-    visibility: hidden;
-}
-#my-media-modal[aria-hidden="false"] {
-    opacity: 1;
-    visibility: visible;
-}
-
+/* --- My Media Modal --- */
 #close-my-media-modal-btn {
     font-size: 2rem;
     line-height: 1;
