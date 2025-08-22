@@ -1,8 +1,17 @@
 // File: /api/generate.js
-// DEBUGGING VERSION - This will add more details to your Vercel logs.
+// FINAL DEBUGGING VERSION - With a direct browser test.
 
 export default async function handler(req, res) {
-    console.log("--- [1/7] API function started ---");
+    // --- NEW BROWSER TEST ---
+    // If you visit this URL directly in your browser, it will send a GET request.
+    // This code will catch it and send back a success message if the file is working.
+    if (req.method === 'GET') {
+        console.log("--- Browser GET test received. Endpoint is reachable. ---");
+        return res.status(200).json({ status: "ok", message: "API endpoint is working correctly." });
+    }
+    // --- END OF NEW TEST ---
+
+    console.log("--- [1/7] API function started with POST request ---");
 
     if (req.method !== 'POST') {
         console.error("--- [FAIL] Method was not POST. It was:", req.method);
