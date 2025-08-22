@@ -3,8 +3,22 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// --- App State Variables ---
-let app, auth, db, provider, googleApiKey;
+// Your web app's Firebase configuration (This is safe to keep here)
+const firebaseConfig = {
+    apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
+    authDomain: "genart-a693a.firebaseapp.com",
+    projectId: "genart-a693a",
+    storageBucket: "genart-a693a.appspot.com",
+    messagingSenderId: "96958671615",
+    appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
+    measurementId: "G-EDCW8VYXY6"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
 
 // --- DOM Element References ---
 const promptInput = document.getElementById('prompt-input');
@@ -22,62 +36,42 @@ const imageUploadInput = document.getElementById('image-upload-input');
 const imagePreviewContainer = document.getElementById('image-preview-container');
 const imagePreview = document.getElementById('image-preview');
 const removeImageBtn = document.getElementById('remove-image-btn');
+
+// Auth Buttons & Counters
 const authBtn = document.getElementById('auth-btn');
 const mobileAuthBtn = document.getElementById('mobile-auth-btn');
 const generationCounterEl = document.getElementById('generation-counter');
 const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
+
+// Modal
 const authModal = document.getElementById('auth-modal');
 const googleSignInBtn = document.getElementById('google-signin-btn');
 const closeModalBtn = document.getElementById('close-modal-btn');
+
+// Mobile Menu
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mobileMenu = document.getElementById('mobile-menu');
+
+// --- REBUILT Music Player ---
 const musicBtn = document.getElementById('music-btn');
 const lofiMusic = document.getElementById('lofi-music');
+
+// --- REBUILT Custom Cursor ---
 const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
 
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
-let uploadedImageData = null;
-let lastGeneratedImageUrl = null;
+let uploadedImageData = null; // To store the base64 image data
+let lastGeneratedImageUrl = null; // To store the URL of the blurred image
 
-// --- Main App Initialization ---
-async function initializeAppAndSetup() {
-    try {
-        const response = await fetch('/api/config');
-        if (!response.ok) {
-            // This will give us a more detailed error in the console
-            throw new Error(`Server responded with ${response.status}. The config function might be missing or in the wrong folder.`);
-        }
-        const config = await response.json();
+// --- Main App Logic ---
+document.addEventListener('DOMContentLoaded', () => {
+    onAuthStateChanged(auth, user => {
+        updateUIForAuthState(user);
+    });
 
-        // Check if the keys were loaded correctly
-        if (!config.firebaseConfig || !config.googleApiKey) {
-            throw new Error("Config loaded, but keys are missing. Check your Environment Variables in Vercel.");
-        }
-
-        app = initializeApp(config.firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-        provider = new GoogleAuthProvider();
-        googleApiKey = config.googleApiKey;
-
-        setupEventListeners();
-        setupCursor();
-        onAuthStateChanged(auth, user => {
-            updateUIForAuthState(user);
-        });
-
-    } catch (error) {
-        console.error("Fatal Error:", error);
-        if(generatorUI) {
-            generatorUI.innerHTML = `<p class="text-red-600 font-semibold text-center">${error.message}</p>`;
-        }
-    }
-}
-
-// --- Setup Functions ---
-function setupEventListeners() {
+    // --- Event Listeners ---
     mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
     document.addEventListener('click', (event) => {
         if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
@@ -105,10 +99,13 @@ function setupEventListeners() {
     });
 
     generateBtn.addEventListener('click', generateImage);
+
+    // --- Image Upload Listeners ---
     imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
     imageUploadInput.addEventListener('change', handleImageUpload);
     removeImageBtn.addEventListener('click', removeUploadedImage);
 
+    // --- CORRECTED Music Player Listener ---
     musicBtn.addEventListener('click', () => {
         const isPlaying = musicBtn.classList.contains('playing');
         if (isPlaying) {
@@ -118,37 +115,33 @@ function setupEventListeners() {
         }
         musicBtn.classList.toggle('playing');
     });
-}
 
-function setupCursor() {
-    if (window.matchMedia("(pointer: fine)").matches) {
-        let mouseX = 0, mouseY = 0;
-        let outlineX = 0, outlineY = 0;
+    // --- REBUILT Custom Cursor Logic ---
+    let mouseX = 0, mouseY = 0;
+    let outlineX = 0, outlineY = 0;
 
-        window.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-        });
+    window.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
 
-        const animateCursor = () => {
-            cursorDot.style.left = `${mouseX}px`;
-            cursorDot.style.top = `${mouseY}px`;
-            const ease = 0.15;
-            outlineX += (mouseX - outlineX) * ease;
-            outlineY += (mouseY - outlineY) * ease;
-            cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
-            requestAnimationFrame(animateCursor);
-        };
+    const animateCursor = () => {
+        cursorDot.style.left = `${mouseX}px`;
+        cursorDot.style.top = `${mouseY}px`;
+        const ease = 0.15;
+        outlineX += (mouseX - outlineX) * ease;
+        outlineY += (mouseY - outlineY) * ease;
+        cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
         requestAnimationFrame(animateCursor);
+    };
+    requestAnimationFrame(animateCursor);
 
-        const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
-        interactiveElements.forEach(el => {
-            el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
-            el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
-        });
-    }
-}
-
+    const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
+    interactiveElements.forEach(el => {
+        el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
+        el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
+    });
+});
 
 // --- Auth Functions ---
 function handleAuthAction() {
@@ -171,6 +164,7 @@ function updateUIForAuthState(user) {
         mobileGenerationCounterEl.textContent = welcomeText;
         authModal.setAttribute('aria-hidden', 'true');
 
+        // Unblur image if one was just generated
         if (lastGeneratedImageUrl) {
             const blurredContainer = document.querySelector('.blurred-image-container');
             if (blurredContainer) {
@@ -244,13 +238,14 @@ async function generateImage() {
     }
 
     const count = getGenerationCount();
-    if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
+    if (!auth.currentUser && count > FREE_GENERATION_LIMIT) {
         authModal.setAttribute('aria-hidden', 'false');
         return;
     }
-    
-    const shouldBlur = !auth.currentUser && count === (FREE_GENERATION_LIMIT - 1);
 
+    const shouldBlur = !auth.currentUser && count === FREE_GENERATION_LIMIT;
+
+    // UI Reset
     imageGrid.innerHTML = '';
     messageBox.innerHTML = '';
     resultContainer.classList.remove('hidden');
@@ -266,6 +261,7 @@ async function generateImage() {
         }
         displayImage(imageUrl, prompt, shouldBlur);
         
+        // Increment the global counter for the admin dashboard
         incrementTotalGenerations();
 
         if (!auth.currentUser) {
@@ -281,55 +277,36 @@ async function generateImage() {
     }
 }
 
-async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-        try {
-            let apiUrl, payload;
-            
-            if (!googleApiKey) {
-                throw new Error("API Key not loaded. Please refresh the page.");
-            }
+/**
+ * SECURELY generates an image by calling our backend function.
+ * The secret API key is no longer here.
+ */
+async function generateImageWithRetry(prompt, imageData) {
+    // Call our own secure backend function instead of Google directly.
+    const response = await fetch('/api/generate-image', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt, imageData }), // Send the prompt and image data
+    });
 
-            if (imageData) {
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${googleApiKey}`;
-                payload = {
-                    "contents": [{
-                        "parts": [
-                            { "text": prompt },
-                            { "inlineData": { "mimeType": imageData.mimeType, "data": imageData.data } }
-                        ]
-                    }],
-                    "generationConfig": { "responseModalities": ["IMAGE", "TEXT"] }
-                };
-            } else {
-                apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${googleApiKey}`;
-                payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
-            }
-
-            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`API Error: ${response.status} - ${errorText}`);
-            }
-
-            const result = await response.json();
-            let base64Data;
-            if (imageData) {
-                base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-            } else {
-                base64Data = result.predictions?.[0]?.bytesBase64Encoded;
-            }
-
-            if (!base64Data) throw new Error("No image data received from API.");
-            return `data:image/png;base64,${base64Data}`;
-
-        } catch (error) {
-            console.error(`Attempt ${attempt + 1} failed:`, error);
-            if (attempt >= maxRetries - 1) throw error;
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-        }
+    if (!response.ok) {
+        // Try to get a user-friendly error message from our backend.
+        const errorResult = await response.json();
+        throw new Error(errorResult.message || `Request failed with status ${response.status}`);
     }
+
+    const result = await response.json();
+    
+    if (!result.base64Data) {
+        throw new Error("No image data received from the server.");
+    }
+    
+    // Return the image data URL ready to be used in an <img> tag.
+    return `data:image/png;base64,${result.base64Data}`;
 }
+
 
 // --- Live Counter Function ---
 async function incrementTotalGenerations() {
@@ -411,19 +388,21 @@ function addBackButton() {
         imageGrid.innerHTML = '';
         messageBox.innerHTML = '';
         promptInput.value = '';
-        removeUploadedImage();
+        removeUploadedImage(); // Also clear the image when going back
     };
     messageBox.prepend(backButton);
 }
 
 function startTimer() {
     let startTime = Date.now();
+    // **UPDATED TIMER DURATION**
     const maxTime = 17 * 1000; 
     progressBar.style.width = '0%';
     timerInterval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
         const progress = Math.min(elapsedTime / maxTime, 1);
         progressBar.style.width = `${progress * 100}%`;
+        // **UPDATED TIMER TEXT**
         timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
         if (elapsedTime >= maxTime) {
             timerEl.textContent = `17.0s / ~17s`;
@@ -435,6 +414,3 @@ function stopTimer() {
     clearInterval(timerInterval);
     progressBar.style.width = '100%';
 }
-
-// --- Start the application ---
-document.addEventListener('DOMContentLoaded', initializeAppAndSetup);
