@@ -1,18 +1,17 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-// UPDATED: Added more firestore functions for the "My Media" feature
-import { getFirestore, doc, setDoc, increment, collection, addDoc, serverTimestamp, query, where, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+    apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
+    authDomain: "genart-a693a.firebaseapp.com",
+    projectId: "genart-a693a",
+    storageBucket: "genart-a693a.appspot.com",
+    messagingSenderId: "96958671615",
+    appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
+    measurementId: "G-EDCW8VYXY6"
 };
 
 // Initialize Firebase
@@ -51,22 +50,33 @@ const lofiMusic = document.getElementById('lofi-music');
 const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
 
-// NEW: My Media Modal elements
-const myMediaBtn = document.getElementById('my-media-btn');
-const mobileMyMediaBtn = document.getElementById('mobile-my-media-btn');
-const myMediaModal = document.getElementById('my-media-modal');
-const closeMyMediaModalBtn = document.getElementById('close-my-media-modal-btn');
-const myMediaGrid = document.getElementById('my-media-grid');
-const myMediaLoading = document.getElementById('my-media-loading');
-
-
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
 let lastGeneratedImageUrl = null;
 
+// --- RECAPTCHA CALLBACK FUNCTIONS ---
+// These functions must be in the global scope (window) for the reCAPTCHA script to find them.
+window.onRecaptchaSuccess = function(token) {
+    console.log('reCAPTCHA verified successfully.');
+    // Enable the generate button when the user passes the check
+    generateBtn.disabled = false;
+    generateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+};
+
+window.onRecaptchaExpired = function() {
+    console.log('reCAPTCHA token expired.');
+    // Disable the button again if the token expires
+    generateBtn.disabled = true;
+    generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+};
+
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
+    // Disable the generate button by default until CAPTCHA is solved
+    generateBtn.disabled = true;
+    generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
     onAuthStateChanged(auth, user => {
         updateUIForAuthState(user);
     });
@@ -80,12 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
     mobileAuthBtn.addEventListener('click', handleAuthAction);
     googleSignInBtn.addEventListener('click', signInWithGoogle);
     closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
-    
-    // NEW: My Media event listeners
-    myMediaBtn.addEventListener('click', openMyMediaModal);
-    mobileMyMediaBtn.addEventListener('click', openMyMediaModal);
-    closeMyMediaModalBtn.addEventListener('click', () => myMediaModal.setAttribute('aria-hidden', 'true'));
-
     examplePrompts.forEach(button => {
         button.addEventListener('click', () => {
             promptInput.value = button.innerText.trim();
@@ -95,7 +99,10 @@ document.addEventListener('DOMContentLoaded', () => {
     promptInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            generateImage();
+            // Check if button is enabled before generating
+            if (!generateBtn.disabled) {
+                generateImage();
+            }
         }
     });
     generateBtn.addEventListener('click', generateImage);
@@ -136,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function handleAuthAction() { if (auth.currentUser) signOut(auth); else signInWithGoogle(); }
 function signInWithGoogle() { signInWithPopup(auth, provider).then(result => updateUIForAuthState(result.user)).catch(error => console.error("Authentication Error:", error)); }
-
 function updateUIForAuthState(user) {
     if (user) {
         const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
@@ -145,11 +151,6 @@ function updateUIForAuthState(user) {
         generationCounterEl.textContent = welcomeText;
         mobileGenerationCounterEl.textContent = welcomeText;
         authModal.setAttribute('aria-hidden', 'true');
-        
-        // NEW: Show My Media buttons for logged-in users
-        myMediaBtn.classList.remove('hidden');
-        mobileMyMediaBtn.classList.remove('hidden');
-
         if (lastGeneratedImageUrl) {
             const blurredContainer = document.querySelector('.blurred-image-container');
             if (blurredContainer) {
@@ -164,10 +165,6 @@ function updateUIForAuthState(user) {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
         updateGenerationCounter();
-        
-        // NEW: Hide My Media buttons for logged-out users
-        myMediaBtn.classList.add('hidden');
-        mobileMyMediaBtn.classList.add('hidden');
     }
 }
 function getGenerationCount() { return parseInt(localStorage.getItem('generationCount') || '0'); }
@@ -209,6 +206,14 @@ async function generateImage() {
         showMessage('Please describe what you want to create or edit.', 'error');
         return;
     }
+
+    // Get the CAPTCHA response token. It's provided by the widget.
+    const recaptchaToken = grecaptcha.getResponse();
+    if (!recaptchaToken) {
+        showMessage('Please complete the "I\'m not a robot" check.', 'error');
+        return;
+    }
+
     const count = getGenerationCount();
     if (!auth.currentUser && count > FREE_GENERATION_LIMIT) {
         authModal.setAttribute('aria-hidden', 'false');
@@ -222,18 +227,12 @@ async function generateImage() {
     generatorUI.classList.add('hidden');
     startTimer();
     try {
-        const imageUrl = await generateImageWithRetry(prompt, uploadedImageData);
+        // Pass the token to the backend function call
+        const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken);
         if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
         displayImage(imageUrl, prompt, shouldBlur);
         incrementTotalGenerations();
-        
-        if (!auth.currentUser) { 
-            incrementGenerationCount(); 
-        } else {
-            // NEW: Save the generated image to Firestore if the user is logged in
-            saveImageToFirestore(imageUrl, prompt);
-        }
-
+        if (!auth.currentUser) { incrementGenerationCount(); }
     } catch (error) {
         console.error('Image generation failed:', error);
         showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
@@ -241,16 +240,22 @@ async function generateImage() {
         stopTimer();
         loadingIndicator.classList.add('hidden');
         addBackButton();
+        // Reset the CAPTCHA widget and disable the button for the next round
+        grecaptcha.reset();
+        generateBtn.disabled = true;
+        generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
     }
 }
 
-async function generateImageWithRetry(prompt, imageData, maxRetries = 3) {
+// This function calls your backend. It now includes the reCAPTCHA token.
+async function generateImageWithRetry(prompt, imageData, recaptchaToken, maxRetries = 3) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             const response = await fetch('/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, imageData })
+                // Add the recaptchaToken to the JSON body
+                body: JSON.stringify({ prompt, imageData, recaptchaToken })
             });
 
             if (!response.ok) {
@@ -313,89 +318,6 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
     }
     imageGrid.appendChild(imgContainer);
 }
-
-// --- NEW Functions for My Media ---
-
-/**
- * Saves the generated image URL and prompt to Firestore for the current user.
- * @param {string} imageUrl - The base64 data URL of the generated image.
- * @param {string} prompt - The text prompt used for generation.
- */
-async function saveImageToFirestore(imageUrl, prompt) {
-    const user = auth.currentUser;
-    if (!user) return; // Should not happen if called correctly, but good practice
-
-    try {
-        await addDoc(collection(db, "userImages"), {
-            userId: user.uid,
-            imageUrl: imageUrl, // Storing base64 directly. For very large images, consider Firebase Storage.
-            prompt: prompt,
-            createdAt: serverTimestamp()
-        });
-    } catch (error) {
-        console.error("Error saving image to Firestore:", error);
-    }
-}
-
-/**
- * Opens the 'My Media' modal and triggers fetching the user's images.
- */
-function openMyMediaModal() {
-    myMediaModal.setAttribute('aria-hidden', 'false');
-    fetchUserMedia();
-}
-
-/**
- * Fetches and displays the current user's generated images from Firestore.
- */
-async function fetchUserMedia() {
-    const user = auth.currentUser;
-    if (!user) {
-        myMediaGrid.innerHTML = '<p class="col-span-full text-center text-gray-500">Please sign in to see your media.</p>';
-        return;
-    }
-
-    myMediaGrid.innerHTML = ''; // Clear previous results
-    myMediaLoading.classList.remove('hidden');
-
-    try {
-        const q = query(collection(db, "userImages"), where("userId", "==", user.uid));
-        const querySnapshot = await getDocs(q);
-
-        myMediaLoading.classList.add('hidden');
-
-        if (querySnapshot.empty) {
-            myMediaGrid.innerHTML = '<p class="col-span-full text-center text-gray-500">You haven\'t generated any images yet.</p>';
-            return;
-        }
-
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            const mediaItem = document.createElement('div');
-            mediaItem.className = 'media-item group';
-
-            const img = document.createElement('img');
-            img.src = data.imageUrl;
-            img.alt = data.prompt;
-            img.loading = 'lazy'; // Lazy load images for better performance
-
-            const overlay = document.createElement('div');
-            overlay.className = 'overlay';
-            overlay.textContent = data.prompt;
-
-            mediaItem.appendChild(img);
-            mediaItem.appendChild(overlay);
-            myMediaGrid.appendChild(mediaItem);
-        });
-
-    } catch (error) {
-        console.error("Error fetching user media:", error);
-        myMediaLoading.classList.add('hidden');
-        myMediaGrid.innerHTML = '<p class="col-span-full text-center text-red-500">Could not load your media. Please try again later.</p>';
-    }
-}
-
-
 function showMessage(text, type = 'info') {
     const messageEl = document.createElement('div');
     messageEl.className = `p-2 rounded-lg ${type === 'error' ? 'text-red-600' : 'text-gray-600'} fade-in-slide-up`;
