@@ -1,10 +1,8 @@
 // File: /api/generate.js
-// Final working version.
+// Final working version with CAPTCHA verification.
 
 export default async function handler(req, res) {
     // This is a test to see if the file is reachable.
-    // Go to https://your-website-url/api/generate in your browser.
-    // If you see a success message, this file is working.
     if (req.method === 'GET') {
         return res.status(200).json({ status: "ok", message: "API endpoint is working correctly." });
     }
@@ -15,24 +13,51 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { prompt, imageData } = req.body;
-        const apiKey = process.env.GOOGLE_API_KEY;
+        // Destructure all expected parts from the request body
+        const { prompt, imageData, recaptchaToken } = req.body;
+        
+        // Get API keys from environment variables
+        const googleApiKey = process.env.GOOGLE_API_KEY;
+        // IMPORTANT: You must set this in your Vercel project settings
+        const recaptchaSecretKey = process.env.RECAPTCHA_SECRET_KEY;
 
-        if (!apiKey) {
-            // This error means the key is missing from Vercel's settings.
-            return res.status(500).json({ error: "Server configuration error: API key not found." });
+        // --- Start CAPTCHA VERIFICATION ---
+        if (!recaptchaToken) {
+            return res.status(400).json({ error: "CAPTCHA token is missing. Please complete the check." });
+        }
+        if (!recaptchaSecretKey) {
+            return res.status(500).json({ error: "Server configuration error: reCAPTCHA secret key not found." });
+        }
+
+        // Construct the verification URL to send to Google's API
+        const verificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${recaptchaSecretKey}&response=${recaptchaToken}`;
+        
+        // Send the verification request
+        const verificationResponse = await fetch(verificationUrl, { method: 'POST' });
+        const verificationData = await verificationResponse.json();
+
+        // Check if the verification was successful
+        if (!verificationData.success) {
+            // If verification fails, log the error codes and return an error response
+            console.error('CAPTCHA verification failed:', verificationData['error-codes']);
+            return res.status(403).json({ error: "Failed CAPTCHA verification. Please try again." });
+        }
+        // --- End CAPTCHA VERIFICATION ---
+
+        if (!googleApiKey) {
+            return res.status(500).json({ error: "Server configuration error: Google API key not found." });
         }
 
         let apiUrl, payload;
 
         if (imageData) {
-            apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
+            apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${googleApiKey}`;
             payload = {
                 "contents": [{ "parts": [{ "text": prompt }, { "inlineData": { "mimeType": imageData.mimeType, "data": imageData.data } }] }],
                 "generationConfig": { "responseModalities": ["IMAGE", "TEXT"] }
             };
         } else {
-            apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+            apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${googleApiKey}`;
             payload = { instances: [{ prompt }], parameters: { "sampleCount": 1 } };
         }
 
@@ -51,6 +76,7 @@ export default async function handler(req, res) {
         res.status(200).json(result);
 
     } catch (error) {
-        res.status(500).json({ error: 'The API function crashed.', details: error.message });
+        console.error('The API function crashed:', error);
+        res.status(500).json({ error: 'An unexpected error occurred on the server.', details: error.message });
     }
 }
