@@ -30,6 +30,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
 
+    <!-- ADDED: Google reCAPTCHA Script -->
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
     <!-- JSON-LD Structured Data for SEO -->
     <script type="application/ld+json">
     {
@@ -66,7 +69,6 @@
             <!-- Desktop Header Auth -->
             <div id="header-auth-section" class="hidden md:flex items-center space-x-4">
                 <div id="generation-counter" class="text-sm font-medium text-gray-500"></div>
-                <button id="my-media-btn" class="hidden text-sm font-medium text-gray-700 hover:text-black transition-all duration-300">My Media</button>
                 <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all duration-300">
                     Sign In
                 </button>
@@ -81,7 +83,6 @@
             <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-[#42669C] rounded-lg shadow-xl z-50">
                 <div class="p-2">
                     <div id="mobile-generation-counter" class="text-sm text-center font-medium text-white px-2 py-2"></div>
-                    <button id="mobile-my-media-btn" class="hidden w-full text-left text-sm font-medium text-white px-4 py-2 rounded-md hover:bg-white/20 transition-all duration-300">My Media</button>
                     <button id="mobile-auth-btn" class="w-full text-left text-sm font-medium text-white px-4 py-2 rounded-md hover:bg-white/20 transition-all duration-300">
                         Sign In
                     </button>
@@ -109,6 +110,16 @@
                         </div>
                         <button id="generate-btn" class="absolute right-4 bottom-4 w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-gray-400" aria-label="Generate AI Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
                     </div>
+
+                    <!-- ADDED: reCAPTCHA Widget with your Site Key -->
+                    <div class="flex justify-center mt-6">
+                        <div class="g-recaptcha" 
+                             data-sitekey="6LeywLArAAAAAI_rPCZEP9jcw3Jk5iWpyalfOTQbm" 
+                             data-callback="onRecaptchaSuccess"
+                             data-expired-callback="onRecaptchaExpired">
+                        </div>
+                    </div>
+
                     <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-left text-sm">
                         <button class="example-prompt text-gray-500 hover:text-gray-900 transition-colors text-left">Make an ad photo for my sneaker brand</button>
                         <button class="example-prompt text-gray-500 hover:text-gray-900 transition-colors text-left">Generate a dramatic aerial video shot of NYC</button>
@@ -225,21 +236,6 @@
             <button id="close-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Maybe later</button>
         </div>
     </div>
-    
-    <!-- My Media Modal -->
-    <div id="my-media-modal" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-4xl w-full h-[90vh] flex flex-col fade-in-slide-up">
-            <div class="flex justify-between items-center mb-4 flex-shrink-0">
-                <h2 class="text-2xl font-semibold text-gray-800">My Media</h2>
-                <button id="close-my-media-modal-btn" class="text-gray-500 hover:text-gray-800">&times;</button>
-            </div>
-            <div id="my-media-loading" class="hidden text-center py-10">Loading your creations...</div>
-            <div id="my-media-grid" class="flex-grow overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                <!-- User's generated images will be populated here -->
-            </div>
-        </div>
-    </div>
-
 
     <!-- Import and use the script.js file -->
     <script type="module" src="script.js"></script>
