@@ -2,13 +2,44 @@
 body {
     font-family: 'Inter', sans-serif;
     background-color: #f7f7f7;
-    /* We remove the alignment here so the app container can be at the top */
     min-height: 100vh;
     color: #2d2d2d;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    cursor: none; /* Hide the default cursor */
+    cursor: none;
 }
+
+.grecaptcha-badge { 
+    visibility: hidden !important;
+}
+
+/* --- Aspect Ratio Button Styles --- */
+.aspect-ratio-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 9999px; /* Pill shape */
+    border: 1px solid #e5e7eb; /* Light gray border */
+    background-color: #ffffff;
+    color: #6b7280; /* Muted text color */
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.aspect-ratio-btn:hover {
+    border-color: #d1d5db;
+    color: #111827;
+}
+
+/* Style for the selected button */
+.aspect-ratio-btn.selected {
+    border-color: #3b82f6; /* Blue border */
+    background-color: #eff6ff; /* Light blue background */
+    color: #2563eb; /* Darker blue text */
+}
+
 
 /* --- REBUILT Custom Cursor --- */
 .cursor-dot,
@@ -37,7 +68,6 @@ body {
     transition: transform 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
-/* Cursor hover effect */
 .cursor-outline.cursor-hover {
     transform: translate(-50%, -50%) scale(1.5);
     background-color: rgba(66, 102, 156, 0.3);
@@ -86,7 +116,6 @@ textarea::-webkit-scrollbar-thumb:hover {
     transition: width 0.2s linear; 
 }
 
-/* Modal styles */
 #auth-modal { 
     transition: opacity 0.3s ease, visibility 0.3s ease; 
 }
@@ -99,7 +128,6 @@ textarea::-webkit-scrollbar-thumb:hover {
     visibility: visible; 
 }
 
-/* --- Blurred Image and Unlock Overlay --- */
 .blurred-image-container {
     position: relative;
 }
@@ -140,8 +168,6 @@ textarea::-webkit-scrollbar-thumb:hover {
     background-color: #3a5a8a;
 }
 
-
-/* --- Cinematic Section Styles --- */
 #cinematic-section {
     background-color: #0c0a18;
     background-image: radial-gradient(ellipse at top, #1b2735 0%, #090a0f 100%);
@@ -154,7 +180,6 @@ textarea::-webkit-scrollbar-thumb:hover {
     text-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
-/* --- Animated Stars Background --- */
 @keyframes move-twink-back {
     from {background-position:0 0;}
     to {background-position:-10000px 5000px;}
@@ -218,7 +243,6 @@ textarea::-webkit-scrollbar-thumb:hover {
     animation: move-twink-back 100s linear infinite;
 }
 
-/* --- Gallery Section Styles --- */
 @keyframes scroll {
     from { transform: translateX(0); }
     to { transform: translateX(-100%); }
@@ -259,7 +283,6 @@ textarea::-webkit-scrollbar-thumb:hover {
     box-shadow: 0 15px 30px rgba(0,0,0,0.2);
 }
 
-/* --- Gen-0 Section Styles --- */
 #gen0-section {
     background: linear-gradient(-45deg, #020024, #0c0a18, #1b2735, #3b82f6);
     background-size: 400% 400%;
@@ -312,7 +335,6 @@ textarea::-webkit-scrollbar-thumb:hover {
     100% { background-position: 0% 0%; }
 }
 
-/* --- REBUILT Sticky Music Player --- */
 #music-player {
     position: fixed;
     bottom: 2rem;
@@ -411,18 +433,21 @@ textarea::-webkit-scrollbar-thumb:hover {
     }
 }
 
-/* Hide waves by default */
 .wave {
     display: none;
 }
-/* Show waves only when playing */
 #music-btn.playing .wave {
     display: block;
 }
 
-
-/* --- Mobile Responsiveness --- */
 @media (max-width: 768px) {
+    body {
+        cursor: auto;
+    }
+    .cursor-dot, .cursor-outline {
+        display: none;
+    }
+
     .gallery-image {
         height: 240px;
         margin: 0 0.5rem;
