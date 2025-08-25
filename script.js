@@ -1,7 +1,8 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// MODIFIED: Added more firestore functions for the library feature
+import { getFirestore, doc, setDoc, increment, collection, addDoc, query, onSnapshot, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -52,11 +53,22 @@ const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
 const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
 
+// NEW: DOM elements for library feature
+const logoBtn = document.getElementById('logo-btn');
+const libraryBtn = document.getElementById('library-btn');
+const mobileLibraryBtn = document.getElementById('mobile-library-btn');
+const libraryContainer = document.getElementById('library-container');
+const libraryGrid = document.getElementById('library-grid');
+const libraryEmptyMessage = document.getElementById('library-empty-message');
+const mainContent = document.querySelector('main > .w-full.max-w-3xl');
+const otherSections = document.querySelectorAll('main > section, main > .mt-24.text-center');
+
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
 let lastGeneratedImageUrl = null;
 let selectedAspectRatio = '1:1'; // Default aspect ratio
+let unsubscribeLibrary = null; // To store the onSnapshot listener for cleanup
 
 // --- reCAPTCHA Callback Function ---
 window.onRecaptchaSuccess = function(token) {
@@ -86,6 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
+    // NEW: Event listeners for library navigation
+    libraryBtn.addEventListener('click', showLibraryView);
+    mobileLibraryBtn.addEventListener('click', showLibraryView);
+    logoBtn.addEventListener('click', showGeneratorView);
+
     generateBtn.addEventListener('click', () => {
         const prompt = promptInput.value.trim();
         if (!prompt) {
@@ -108,16 +125,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Aspect Ratio Button Logic ---
     aspectRatioBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Remove 'selected' from all buttons
             aspectRatioBtns.forEach(b => b.classList.remove('selected'));
-            // Add 'selected' to the clicked button
             btn.classList.add('selected');
-            // Update the state
             selectedAspectRatio = btn.dataset.ratio;
-            console.log(`Aspect ratio set to: ${selectedAspectRatio}`);
         });
     });
 
@@ -168,10 +180,16 @@ async function generateImage(recaptchaToken) {
     startTimer();
 
     try {
-        // Pass the selected aspect ratio to the backend
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
         if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
+        
         displayImage(imageUrl, prompt, shouldBlur);
+        
+        // NEW: Save image to Firestore library if user is logged in
+        if (auth.currentUser && !shouldBlur) {
+            saveImageToLibrary(imageUrl, prompt);
+        }
+
         incrementTotalGenerations();
         if (!auth.currentUser) { incrementGenerationCount(); }
     } catch (error) {
@@ -187,6 +205,7 @@ async function generateImage(recaptchaToken) {
 
 function handleAuthAction() { if (auth.currentUser) signOut(auth); else signInWithGoogle(); }
 function signInWithGoogle() { signInWithPopup(auth, provider).then(result => updateUIForAuthState(result.user)).catch(error => console.error("Authentication Error:", error)); }
+
 function updateUIForAuthState(user) {
     if (user) {
         const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
@@ -195,6 +214,13 @@ function updateUIForAuthState(user) {
         generationCounterEl.textContent = welcomeText;
         mobileGenerationCounterEl.textContent = welcomeText;
         authModal.setAttribute('aria-hidden', 'true');
+        
+        // NEW: Show library buttons and load images
+        libraryBtn.classList.remove('hidden');
+        mobileLibraryBtn.classList.remove('hidden');
+        if (unsubscribeLibrary) unsubscribeLibrary(); // Clean up old listener
+        loadUserImages();
+
         if (lastGeneratedImageUrl) {
             const blurredContainer = document.querySelector('.blurred-image-container');
             if (blurredContainer) {
@@ -202,6 +228,7 @@ function updateUIForAuthState(user) {
                 img.classList.remove('blurred-image');
                 const overlay = blurredContainer.querySelector('.unlock-overlay');
                 if (overlay) overlay.remove();
+                saveImageToLibrary(lastGeneratedImageUrl, promptInput.value.trim());
             }
             lastGeneratedImageUrl = null;
         }
@@ -209,8 +236,124 @@ function updateUIForAuthState(user) {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
         updateGenerationCounter();
+        
+        // NEW: Hide library buttons and go back to generator view
+        libraryBtn.classList.add('hidden');
+        mobileLibraryBtn.classList.add('hidden');
+        showGeneratorView();
+        if (unsubscribeLibrary) {
+            unsubscribeLibrary(); // Clean up listener on logout
+            unsubscribeLibrary = null;
+        }
     }
 }
+
+// --- NEW Library Feature Functions ---
+
+function showLibraryView() {
+    mainContent.classList.add('hidden');
+    otherSections.forEach(sec => sec.classList.add('hidden'));
+    libraryContainer.classList.remove('hidden');
+    mobileMenu.classList.add('hidden'); // Ensure mobile menu closes
+}
+
+function showGeneratorView() {
+    mainContent.classList.remove('hidden');
+    otherSections.forEach(sec => sec.classList.remove('hidden'));
+    libraryContainer.classList.add('hidden');
+    // Ensure the main generator UI is visible, not the results
+    generatorUI.classList.remove('hidden');
+    resultContainer.classList.add('hidden');
+}
+
+async function saveImageToLibrary(imageUrl, prompt) {
+    if (!auth.currentUser) return;
+    try {
+        const userImagesCollection = collection(db, 'users', auth.currentUser.uid, 'images');
+        await addDoc(userImagesCollection, {
+            imageUrl: imageUrl, // Storing the base64 string
+            prompt: prompt,
+            aspectRatio: selectedAspectRatio,
+            createdAt: Timestamp.now()
+        });
+    } catch (error) {
+        console.error("Error saving image to library:", error);
+    }
+}
+
+function loadUserImages() {
+    if (!auth.currentUser) return;
+
+    const userImagesCollection = collection(db, 'users', auth.currentUser.uid, 'images');
+    const q = query(userImagesCollection); // No ordering to avoid needing composite indexes
+
+    unsubscribeLibrary = onSnapshot(q, (querySnapshot) => {
+        const images = [];
+        querySnapshot.forEach((doc) => {
+            images.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // Sort client-side to show newest first
+        images.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+        
+        libraryGrid.innerHTML = ''; // Clear previous images
+        if (images.length === 0) {
+            libraryEmptyMessage.classList.remove('hidden');
+        } else {
+            libraryEmptyMessage.classList.add('hidden');
+            images.forEach(data => {
+                const imageCard = createImageCard(data);
+                libraryGrid.appendChild(imageCard);
+            });
+        }
+    }, (error) => {
+        console.error("Error fetching user images:", error);
+        libraryGrid.innerHTML = '';
+        libraryEmptyMessage.textContent = "Could not load your library. Please try again later.";
+        libraryEmptyMessage.classList.remove('hidden');
+    });
+}
+
+function createImageCard(data) {
+    const card = document.createElement('div');
+    card.className = 'group relative fade-in-slide-up bg-gray-100 rounded-lg overflow-hidden';
+
+    const img = document.createElement('img');
+    img.src = data.imageUrl;
+    img.alt = data.prompt;
+    img.className = 'w-full h-full object-cover aspect-square'; // Keep grid uniform
+
+    const overlay = document.createElement('div');
+    overlay.className = 'absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4';
+
+    const promptText = document.createElement('p');
+    promptText.className = 'text-white text-sm font-medium line-clamp-3';
+    promptText.textContent = data.prompt;
+
+    const downloadButton = document.createElement('button');
+    downloadButton.className = 'absolute top-2 right-2 bg-white/20 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
+    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+    downloadButton.ariaLabel = "Download Image";
+    downloadButton.onclick = (e) => {
+        e.stopPropagation();
+        const a = document.createElement('a');
+        a.href = data.imageUrl;
+        a.download = 'genart-image.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
+    overlay.appendChild(promptText);
+    card.appendChild(img);
+    card.appendChild(overlay);
+    card.appendChild(downloadButton);
+
+    return card;
+}
+
+// --- Existing Helper Functions (some modified) ---
+
 function getGenerationCount() { return parseInt(localStorage.getItem('generationCount') || '0'); }
 function incrementGenerationCount() {
     const newCount = getGenerationCount() + 1;
@@ -251,7 +394,6 @@ async function generateImageWithRetry(prompt, imageData, token, aspectRatio, max
             const response = await fetch('/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Send the aspect ratio in the request body
                 body: JSON.stringify({ prompt, imageData, recaptchaToken: token, aspectRatio: aspectRatio })
             });
 
@@ -326,14 +468,8 @@ function addBackButton() {
     const backButton = document.createElement('button');
     backButton.textContent = '← Create another';
     backButton.className = 'mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
-    backButton.onclick = () => {
-        generatorUI.classList.remove('hidden');
-        resultContainer.classList.add('hidden');
-        imageGrid.innerHTML = '';
-        messageBox.innerHTML = '';
-        promptInput.value = '';
-        removeUploadedImage();
-    };
+    // MODIFIED: Use the new view switching function
+    backButton.onclick = showGeneratorView;
     messageBox.prepend(backButton);
 }
 function startTimer() {
