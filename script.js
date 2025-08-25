@@ -51,7 +51,6 @@ const lofiMusic = document.getElementById('lofi-music');
 const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
 const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
-// NEW: References for new buttons
 const copyPromptBtn = document.getElementById('copy-prompt-btn');
 const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
 
@@ -112,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Aspect Ratio Button Logic ---
     aspectRatioBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             aspectRatioBtns.forEach(b => b.classList.remove('selected'));
@@ -121,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Event Listeners for New Buttons ---
     copyPromptBtn.addEventListener('click', copyPrompt);
     enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
 
@@ -188,7 +185,6 @@ async function generateImage(recaptchaToken) {
     }
 }
 
-// --- NEW: Function to copy prompt to clipboard ---
 function copyPrompt() {
     const promptText = promptInput.value;
     if (!promptText) {
@@ -197,7 +193,6 @@ function copyPrompt() {
     }
     const textArea = document.createElement('textarea');
     textArea.value = promptText;
-    // Avoid scrolling to bottom
     textArea.style.top = "0";
     textArea.style.left = "0";
     textArea.style.position = "fixed";
@@ -207,7 +202,6 @@ function copyPrompt() {
     try {
         document.execCommand('copy');
         showMessage('Prompt copied to clipboard!', 'info');
-        // Visual feedback
         const originalIcon = copyPromptBtn.innerHTML;
         copyPromptBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
         setTimeout(() => {
@@ -220,7 +214,6 @@ function copyPrompt() {
     document.body.removeChild(textArea);
 }
 
-// --- NEW: Function to handle prompt enhancement ---
 async function handleEnhancePrompt() {
     const promptText = promptInput.value.trim();
     if (!promptText) {
@@ -234,8 +227,11 @@ async function handleEnhancePrompt() {
     enhancePromptBtn.disabled = true;
 
     try {
-        const enhancedPrompt = await callGeminiToEnhance(promptText);
+        const enhancedPrompt = await callApiToEnhance(promptText);
         promptInput.value = enhancedPrompt;
+        // Auto-adjust textarea height after enhancing
+        promptInput.style.height = 'auto';
+        promptInput.style.height = (promptInput.scrollHeight) + 'px';
     } catch (error) {
         console.error('Failed to enhance prompt:', error);
         showMessage('Sorry, the prompt could not be enhanced right now.', 'error');
@@ -245,40 +241,36 @@ async function handleEnhancePrompt() {
     }
 }
 
-// --- NEW: Function to call Gemini API for enhancement ---
-async function callGeminiToEnhance(prompt, maxRetries = 3) {
-    const geminiPrompt = `You are an expert prompt engineer for AI image generators. Enhance the following prompt to make it more vivid, detailed, and imaginative. Focus on visual details. Add descriptors like "hyperrealistic, 8k, cinematic lighting, photorealistic". Do not add any explanatory text or conversational filler, just return the enhanced prompt itself. Original prompt: "${prompt}"`;
-    
-    let chatHistory = [{ role: "user", parts: [{ text: geminiPrompt }] }];
-    const payload = { contents: chatHistory };
-    const apiKey = ""; // This will be provided by the execution environment
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
+/**
+ * Calls a new backend endpoint `/api/enhance` to get an enhanced prompt.
+ * This follows the same pattern as image generation for better security and reliability.
+ * NOTE: You will need to create this endpoint on your server. It should accept a
+ * JSON body like { prompt: "user's prompt" } and return JSON like
+ * { text: "enhanced prompt" }.
+ */
+async function callApiToEnhance(prompt, maxRetries = 3) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-            const response = await fetch(apiUrl, {
+            const response = await fetch('/api/enhance', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ prompt })
             });
 
             if (!response.ok) {
-                if (response.status >= 400 && response.status < 500) {
-                     const errorResult = await response.json();
-                     throw new Error(`API Error: ${errorResult.error?.message || response.statusText}`);
-                }
-                throw new Error(`API Error: ${response.statusText}`);
+                const errorResult = await response.json();
+                throw new Error(errorResult.error || `API Error: ${response.status}`);
             }
 
             const result = await response.json();
             
-            if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
-                let text = result.candidates[0].content.parts[0].text;
-                return text.trim().replace(/^"|"$/g, '').trim();
+            if (result.text) {
+                return result.text;
             } else {
-                throw new Error("Unexpected response structure from API.");
+                throw new Error("Unexpected response structure from enhancement API.");
             }
         } catch (error) {
+            console.error(`Enhancement attempt ${attempt + 1} failed:`, error);
             if (attempt >= maxRetries - 1) throw error;
             await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         }
@@ -421,7 +413,6 @@ function showMessage(text, type = 'info') {
     messageEl.textContent = text;
     messageBox.innerHTML = '';
     messageBox.appendChild(messageEl);
-    // Automatically remove the message after some time
     setTimeout(() => {
         if(messageBox.contains(messageEl)) {
             messageBox.removeChild(messageEl);
@@ -429,7 +420,6 @@ function showMessage(text, type = 'info') {
     }, 4000);
 }
 function addBackButton() {
-    // Check if a back button already exists to avoid duplicates
     if (document.getElementById('back-to-generator-btn')) return;
 
     const backButton = document.createElement('button');
