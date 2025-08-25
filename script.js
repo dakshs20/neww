@@ -1,7 +1,7 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, increment, collection, addDoc, query, onSnapshot, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -51,21 +51,16 @@ const lofiMusic = document.getElementById('lofi-music');
 const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
 const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
-const logoBtn = document.getElementById('logo-btn');
-const libraryBtn = document.getElementById('library-btn');
-const mobileLibraryBtn = document.getElementById('mobile-library-btn');
-const libraryContainer = document.getElementById('library-container');
-const libraryGrid = document.getElementById('library-grid');
-const libraryEmptyMessage = document.getElementById('library-empty-message');
-const mainContent = document.querySelector('main > .w-full.max-w-3xl');
-const otherSections = document.querySelectorAll('main > section, main > .mt-24.text-center');
+// NEW: References for new buttons
+const copyPromptBtn = document.getElementById('copy-prompt-btn');
+const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
+
 
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
-let lastGeneratedImage = null; 
-let selectedAspectRatio = '1:1';
-let unsubscribeLibrary = null;
+let lastGeneratedImageUrl = null;
+let selectedAspectRatio = '1:1'; // Default aspect ratio
 
 // --- reCAPTCHA Callback Function ---
 window.onRecaptchaSuccess = function(token) {
@@ -95,10 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    libraryBtn.addEventListener('click', showLibraryView);
-    mobileLibraryBtn.addEventListener('click', showLibraryView);
-    logoBtn.addEventListener('click', showGeneratorView);
-
     generateBtn.addEventListener('click', () => {
         const prompt = promptInput.value.trim();
         if (!prompt) {
@@ -121,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Aspect Ratio Button Logic ---
     aspectRatioBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             aspectRatioBtns.forEach(b => b.classList.remove('selected'));
@@ -128,6 +120,10 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedAspectRatio = btn.dataset.ratio;
         });
     });
+
+    // --- Event Listeners for New Buttons ---
+    copyPromptBtn.addEventListener('click', copyPrompt);
+    enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
 
     imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
     imageUploadInput.addEventListener('change', handleImageUpload);
@@ -166,8 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function generateImage(recaptchaToken) {
     const prompt = promptInput.value.trim();
-    // MODIFIED: Corrected the blur logic to trigger when the limit is reached or exceeded.
-    const shouldBlur = !auth.currentUser && getGenerationCount() >= FREE_GENERATION_LIMIT;
+    const shouldBlur = !auth.currentUser && getGenerationCount() === (FREE_GENERATION_LIMIT -1);
     
     imageGrid.innerHTML = '';
     messageBox.innerHTML = '';
@@ -178,17 +173,8 @@ async function generateImage(recaptchaToken) {
 
     try {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
-        
-        if (shouldBlur) { 
-            lastGeneratedImage = { url: imageUrl, prompt: prompt }; 
-        }
-        
+        if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
         displayImage(imageUrl, prompt, shouldBlur);
-        
-        if (auth.currentUser && !shouldBlur) {
-            saveImageToLibrary(imageUrl, prompt);
-        }
-
         incrementTotalGenerations();
         if (!auth.currentUser) { incrementGenerationCount(); }
     } catch (error) {
@@ -202,9 +188,106 @@ async function generateImage(recaptchaToken) {
     }
 }
 
-function handleAuthAction() { if (auth.currentUser) signOut(auth); else signInWithGoogle(); }
-function signInWithGoogle() { signInWithPopup(auth, provider).catch(error => console.error("Authentication Error:", error)); }
+// --- NEW: Function to copy prompt to clipboard ---
+function copyPrompt() {
+    const promptText = promptInput.value;
+    if (!promptText) {
+        showMessage('There is no prompt to copy.', 'info');
+        return;
+    }
+    const textArea = document.createElement('textarea');
+    textArea.value = promptText;
+    // Avoid scrolling to bottom
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        showMessage('Prompt copied to clipboard!', 'info');
+        // Visual feedback
+        const originalIcon = copyPromptBtn.innerHTML;
+        copyPromptBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        setTimeout(() => {
+            copyPromptBtn.innerHTML = originalIcon;
+        }, 2000);
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+        showMessage('Failed to copy prompt.', 'error');
+    }
+    document.body.removeChild(textArea);
+}
 
+// --- NEW: Function to handle prompt enhancement ---
+async function handleEnhancePrompt() {
+    const promptText = promptInput.value.trim();
+    if (!promptText) {
+        showMessage('Please enter a prompt to enhance.', 'info');
+        return;
+    }
+
+    const originalIcon = enhancePromptBtn.innerHTML;
+    const spinner = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+    enhancePromptBtn.innerHTML = spinner;
+    enhancePromptBtn.disabled = true;
+
+    try {
+        const enhancedPrompt = await callGeminiToEnhance(promptText);
+        promptInput.value = enhancedPrompt;
+    } catch (error) {
+        console.error('Failed to enhance prompt:', error);
+        showMessage('Sorry, the prompt could not be enhanced right now.', 'error');
+    } finally {
+        enhancePromptBtn.innerHTML = originalIcon;
+        enhancePromptBtn.disabled = false;
+    }
+}
+
+// --- NEW: Function to call Gemini API for enhancement ---
+async function callGeminiToEnhance(prompt, maxRetries = 3) {
+    const geminiPrompt = `You are an expert prompt engineer for AI image generators. Enhance the following prompt to make it more vivid, detailed, and imaginative. Focus on visual details. Add descriptors like "hyperrealistic, 8k, cinematic lighting, photorealistic". Do not add any explanatory text or conversational filler, just return the enhanced prompt itself. Original prompt: "${prompt}"`;
+    
+    let chatHistory = [{ role: "user", parts: [{ text: geminiPrompt }] }];
+    const payload = { contents: chatHistory };
+    const apiKey = ""; // This will be provided by the execution environment
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                if (response.status >= 400 && response.status < 500) {
+                     const errorResult = await response.json();
+                     throw new Error(`API Error: ${errorResult.error?.message || response.statusText}`);
+                }
+                throw new Error(`API Error: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
+                let text = result.candidates[0].content.parts[0].text;
+                return text.trim().replace(/^"|"$/g, '').trim();
+            } else {
+                throw new Error("Unexpected response structure from API.");
+            }
+        } catch (error) {
+            if (attempt >= maxRetries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+    }
+}
+
+
+function handleAuthAction() { if (auth.currentUser) signOut(auth); else signInWithGoogle(); }
+function signInWithGoogle() { signInWithPopup(auth, provider).then(result => updateUIForAuthState(result.user)).catch(error => console.error("Authentication Error:", error)); }
 function updateUIForAuthState(user) {
     if (user) {
         const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
@@ -213,160 +296,22 @@ function updateUIForAuthState(user) {
         generationCounterEl.textContent = welcomeText;
         mobileGenerationCounterEl.textContent = welcomeText;
         authModal.setAttribute('aria-hidden', 'true');
-        
-        libraryBtn.classList.remove('hidden');
-        mobileLibraryBtn.classList.remove('hidden');
-        if (unsubscribeLibrary) unsubscribeLibrary(); 
-        loadUserImages();
-
-        if (lastGeneratedImage) {
+        if (lastGeneratedImageUrl) {
             const blurredContainer = document.querySelector('.blurred-image-container');
             if (blurredContainer) {
                 const img = blurredContainer.querySelector('img');
                 img.classList.remove('blurred-image');
                 const overlay = blurredContainer.querySelector('.unlock-overlay');
-                if (overlay) {
-                    overlay.remove();
-                    // Also re-add the download button that was missing
-                    const downloadButton = createDownloadButton(lastGeneratedImage.url);
-                    blurredContainer.appendChild(downloadButton);
-                }
-                saveImageToLibrary(lastGeneratedImage.url, lastGeneratedImage.prompt);
+                if (overlay) overlay.remove();
             }
-            lastGeneratedImage = null; 
+            lastGeneratedImageUrl = null;
         }
     } else {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
         updateGenerationCounter();
-        
-        libraryBtn.classList.add('hidden');
-        mobileLibraryBtn.classList.add('hidden');
-        showGeneratorView();
-        if (unsubscribeLibrary) {
-            unsubscribeLibrary();
-            unsubscribeLibrary = null;
-        }
     }
 }
-
-function showLibraryView() {
-    mainContent.classList.add('hidden');
-    otherSections.forEach(sec => sec.classList.add('hidden'));
-    libraryContainer.classList.remove('hidden');
-    mobileMenu.classList.add('hidden');
-}
-
-function showGeneratorView() {
-    mainContent.classList.remove('hidden');
-    otherSections.forEach(sec => sec.classList.remove('hidden'));
-    libraryContainer.classList.add('hidden');
-    
-    generatorUI.classList.remove('hidden');
-    resultContainer.classList.add('hidden');
-    imageGrid.innerHTML = '';
-    messageBox.innerHTML = '';
-    promptInput.value = '';
-    removeUploadedImage();
-}
-
-async function saveImageToLibrary(imageUrl, prompt) {
-    if (!auth.currentUser) return;
-    try {
-        const userImagesCollection = collection(db, 'users', auth.currentUser.uid, 'images');
-        await addDoc(userImagesCollection, {
-            imageUrl: imageUrl,
-            prompt: prompt,
-            aspectRatio: selectedAspectRatio,
-            createdAt: Timestamp.now()
-        });
-        console.log("Image successfully saved to library!");
-    } catch (error) {
-        console.error("Error saving image to library:", error);
-    }
-}
-
-function loadUserImages() {
-    if (!auth.currentUser) return;
-
-    const userImagesCollection = collection(db, 'users', auth.currentUser.uid, 'images');
-    const q = query(userImagesCollection);
-
-    unsubscribeLibrary = onSnapshot(q, (querySnapshot) => {
-        const images = [];
-        querySnapshot.forEach((doc) => {
-            images.push({ id: doc.id, ...doc.data() });
-        });
-        
-        images.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
-        
-        libraryGrid.innerHTML = '';
-        if (images.length === 0) {
-            libraryEmptyMessage.classList.remove('hidden');
-        } else {
-            libraryEmptyMessage.classList.add('hidden');
-            images.forEach(data => {
-                const imageCard = createImageCard(data);
-                libraryGrid.appendChild(imageCard);
-            });
-        }
-    }, (error) => {
-        console.error("Error fetching user images:", error);
-        libraryGrid.innerHTML = '';
-        libraryEmptyMessage.textContent = "Could not load your library. Please try again later.";
-        libraryEmptyMessage.classList.remove('hidden');
-    });
-}
-
-function createImageCard(data) {
-    const card = document.createElement('div');
-    card.className = 'group relative fade-in-slide-up bg-gray-100 rounded-lg overflow-hidden';
-
-    const img = document.createElement('img');
-    img.src = data.imageUrl;
-    img.alt = data.prompt;
-    img.className = 'w-full h-full object-cover aspect-square';
-
-    const overlay = document.createElement('div');
-    overlay.className = 'absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4';
-
-    const promptText = document.createElement('p');
-    promptText.className = 'text-white text-sm font-medium line-clamp-3';
-    promptText.textContent = data.prompt;
-
-    const downloadButton = createDownloadButton(data.imageUrl, true); // isLibraryCard = true
-
-    overlay.appendChild(promptText);
-    card.appendChild(img);
-    card.appendChild(overlay);
-    card.appendChild(downloadButton);
-
-    return card;
-}
-
-// MODIFIED: Extracted download button creation into a helper function
-function createDownloadButton(imageUrl, isLibraryCard = false) {
-    const downloadButton = document.createElement('button');
-    if (isLibraryCard) {
-        downloadButton.className = 'absolute top-2 right-2 bg-white/20 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
-        downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-    } else {
-        downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
-        downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-    }
-    downloadButton.ariaLabel = "Download Image";
-    downloadButton.onclick = (e) => {
-        e.stopPropagation(); // Prevent card click events if any
-        const a = document.createElement('a');
-        a.href = imageUrl;
-        a.download = 'genart-image.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    };
-    return downloadButton;
-}
-
 function getGenerationCount() { return parseInt(localStorage.getItem('generationCount') || '0'); }
 function incrementGenerationCount() {
     const newCount = getGenerationCount() + 1;
@@ -447,13 +392,20 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
     if (shouldBlur) { img.classList.add('blurred-image'); }
-    
+    const downloadButton = document.createElement('button');
+    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
+    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+    downloadButton.ariaLabel = "Download Image";
+    downloadButton.onclick = () => {
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = 'genart-image.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
     imgContainer.appendChild(img);
-
-    if (!shouldBlur) { 
-        const downloadButton = createDownloadButton(imageUrl);
-        imgContainer.appendChild(downloadButton); 
-    }
+    if (!shouldBlur) { imgContainer.appendChild(downloadButton); }
     if (shouldBlur) {
         const overlay = document.createElement('div');
         overlay.className = 'unlock-overlay';
@@ -469,12 +421,29 @@ function showMessage(text, type = 'info') {
     messageEl.textContent = text;
     messageBox.innerHTML = '';
     messageBox.appendChild(messageEl);
+    // Automatically remove the message after some time
+    setTimeout(() => {
+        if(messageBox.contains(messageEl)) {
+            messageBox.removeChild(messageEl);
+        }
+    }, 4000);
 }
 function addBackButton() {
+    // Check if a back button already exists to avoid duplicates
+    if (document.getElementById('back-to-generator-btn')) return;
+
     const backButton = document.createElement('button');
+    backButton.id = 'back-to-generator-btn';
     backButton.textContent = '← Create another';
     backButton.className = 'mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
-    backButton.onclick = showGeneratorView;
+    backButton.onclick = () => {
+        generatorUI.classList.remove('hidden');
+        resultContainer.classList.add('hidden');
+        imageGrid.innerHTML = '';
+        messageBox.innerHTML = '';
+        promptInput.value = '';
+        removeUploadedImage();
+    };
     messageBox.prepend(backButton);
 }
 function startTimer() {
