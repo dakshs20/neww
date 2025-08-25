@@ -440,6 +440,14 @@ textarea::-webkit-scrollbar-thumb:hover {
     display: block;
 }
 
+/* NEW: Style for prompt text clamping */
+.line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
 @media (max-width: 768px) {
     body {
         cursor: auto;
