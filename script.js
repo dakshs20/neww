@@ -21,6 +21,8 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // --- DOM Element References ---
+const recaptchaGate = document.getElementById('recaptcha-gate');
+const appContainer = document.getElementById('app-container');
 const promptInput = document.getElementById('prompt-input');
 const generateBtn = document.getElementById('generate-btn');
 const resultContainer = document.getElementById('result-container');
@@ -54,29 +56,31 @@ let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
 let lastGeneratedImageUrl = null;
+let recaptchaToken = null; // To store the reCAPTCHA token
 
-// --- RECAPTCHA CALLBACK FUNCTIONS ---
-// These functions must be in the global scope (window) for the reCAPTCHA script to find them.
+// --- reCAPTCHA Callback Functions ---
+// This function runs when the user successfully completes the reCAPTCHA
 window.onRecaptchaSuccess = function(token) {
-    console.log('reCAPTCHA verified successfully.');
-    // Enable the generate button when the user passes the check
-    generateBtn.disabled = false;
-    generateBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    console.log("reCAPTCHA check passed. Unlocking website.");
+    recaptchaToken = token;
+    
+    // Hide the gate and show the main app
+    recaptchaGate.style.display = 'none';
+    appContainer.classList.remove('hidden');
+    appContainer.classList.add('flex'); // Make sure it's visible and flex
 };
 
+// This function runs when the reCAPTCHA expires
 window.onRecaptchaExpired = function() {
-    console.log('reCAPTCHA token expired.');
-    // Disable the button again if the token expires
-    generateBtn.disabled = true;
-    generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    console.log("reCAPTCHA expired.");
+    recaptchaToken = null;
+    // Optional: you could show the gate again if it expires,
+    // but for now we'll just log it.
 };
+
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Disable the generate button by default until CAPTCHA is solved
-    generateBtn.disabled = true;
-    generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
-
     onAuthStateChanged(auth, user => {
         updateUIForAuthState(user);
     });
@@ -99,10 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
     promptInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            // Check if button is enabled before generating
-            if (!generateBtn.disabled) {
-                generateImage();
-            }
+            generateImage();
         }
     });
     generateBtn.addEventListener('click', generateImage);
@@ -207,10 +208,9 @@ async function generateImage() {
         return;
     }
 
-    // Get the CAPTCHA response token. It's provided by the widget.
-    const recaptchaToken = grecaptcha.getResponse();
+    // Check if reCAPTCHA token exists from the initial check
     if (!recaptchaToken) {
-        showMessage('Please complete the "I\'m not a robot" check.', 'error');
+        showMessage('reCAPTCHA verification is missing. Please refresh the page.', 'error');
         return;
     }
 
@@ -227,7 +227,7 @@ async function generateImage() {
     generatorUI.classList.add('hidden');
     startTimer();
     try {
-        // Pass the token to the backend function call
+        // Pass the token to the backend
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken);
         if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
         displayImage(imageUrl, prompt, shouldBlur);
@@ -240,22 +240,19 @@ async function generateImage() {
         stopTimer();
         loadingIndicator.classList.add('hidden');
         addBackButton();
-        // Reset the CAPTCHA widget and disable the button for the next round
-        grecaptcha.reset();
-        generateBtn.disabled = true;
-        generateBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        // Since the reCAPTCHA is only done once, we don't reset it here.
+        // The token will be reused for this session.
     }
 }
 
-// This function calls your backend. It now includes the reCAPTCHA token.
-async function generateImageWithRetry(prompt, imageData, recaptchaToken, maxRetries = 3) {
+async function generateImageWithRetry(prompt, imageData, token, maxRetries = 3) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             const response = await fetch('/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Add the recaptchaToken to the JSON body
-                body: JSON.stringify({ prompt, imageData, recaptchaToken })
+                // Send the reCAPTCHA token in the request body
+                body: JSON.stringify({ prompt, imageData, recaptchaToken: token })
             });
 
             if (!response.ok) {
@@ -320,9 +317,9 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
 }
 function showMessage(text, type = 'info') {
     const messageEl = document.createElement('div');
-    messageEl.className = `p-2 rounded-lg ${type === 'error' ? 'text-red-600' : 'text-gray-600'} fade-in-slide-up`;
+    messageEl.className = `p-4 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} fade-in-slide-up`;
     messageEl.textContent = text;
-    messageBox.innerHTML = '';
+    messageBox.innerHTML = ''; // Clear previous messages
     messageBox.appendChild(messageEl);
 }
 function addBackButton() {
