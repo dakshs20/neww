@@ -41,44 +41,22 @@
     <div class="cursor-dot"></div>
     <div class="cursor-outline"></div>
 
-    <!-- Fullscreen reCAPTCHA Verification Page -->
-    <div id="recaptcha-gate" class="fixed inset-0 bg-gray-100 flex flex-col items-center justify-center z-[100]">
-        <div class="text-center p-8">
-            <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-8 w-auto mx-auto mb-6">
-            <h1 class="text-2xl font-medium text-gray-800 mb-2">Verifying you are human.</h1>
-            <p class="text-gray-500 mb-8">This may take a few seconds.</p>
-            
-            <!-- The reCAPTCHA widget -->
-            <div class="g-recaptcha inline-block" 
-                 data-sitekey="6LefMrErAAAAAMsrpbO_0_T5ipjVN74QVod_83tz"
-                 data-callback="onRecaptchaSuccess"
-                 data-expired-callback="onRecaptchaExpired">
-            </div>
-            
-            <p class="text-sm text-gray-400 mt-8">GenArt needs to review the security of your connection before proceeding.</p>
-        </div>
-    </div>
-
-
-    <!-- Main App Container (Initially Hidden) -->
-    <div id="app-container" class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex-col min-h-screen hidden">
+    <!-- Main App Container -->
+    <div id="app-container" class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
         
         <header class="relative flex justify-between items-center py-5 px-2 fade-in-slide-up z-20">
             <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo - Free and Fastest AI Image Generator" class="h-6 w-auto">
-            <!-- Desktop Header Auth -->
             <div id="header-auth-section" class="hidden md:flex items-center space-x-4">
                 <div id="generation-counter" class="text-sm font-medium text-gray-500"></div>
                 <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all duration-300">
                     Sign In
                 </button>
             </div>
-            <!-- Mobile Menu Button -->
             <div class="md:hidden">
                 <button id="mobile-menu-btn" class="p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
             </div>
-            <!-- Mobile Drawer Menu -->
             <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-[#42669C] rounded-lg shadow-xl z-50">
                 <div class="p-2">
                     <div id="mobile-generation-counter" class="text-sm text-center font-medium text-white px-2 py-2"></div>
@@ -96,7 +74,6 @@
                     <p class="text-base md:text-lg text-gray-500 mb-10">Create stunning art and images from text in seconds. Absolutely free.</p>
                     <div id="prompt-container" class="relative bg-white rounded-2xl border border-gray-200/80 shadow-sm transition-all duration-300 ease-in-out">
                         <div class="p-3">
-                            <!-- Image Preview Container -->
                             <div id="image-preview-container" class="hidden relative w-20 h-20 mb-2">
                                 <img id="image-preview" class="w-full h-full object-cover rounded-md" src="" alt="User uploaded image preview for AI editing">
                                 <button id="remove-image-btn" class="absolute -top-2 -right-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-black">&times;</button>
@@ -109,6 +86,25 @@
                         </div>
                         <button id="generate-btn" class="absolute right-4 bottom-4 w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-gray-400" aria-label="Generate AI Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
                     </div>
+
+                    <!-- NEW: Aspect Ratio Selector -->
+                    <div id="aspect-ratio-selector" class="mt-4 flex justify-center items-center gap-3">
+                        <button class="aspect-ratio-btn selected" data-ratio="1:1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                            <span>1:1</span>
+                        </button>
+                        <button class="aspect-ratio-btn" data-ratio="16:9">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect></svg>
+                            <span>16:9</span>
+                        </button>
+                        <button class="aspect-ratio-btn" data-ratio="9:16">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect></svg>
+                            <span>9:16</span>
+                        </button>
+                    </div>
+
+                    <div class="g-recaptcha" data-sitekey="6Lfwb7ErAAAAAEo_MUSTFYNb6ekKlhBDcGDfvWes" data-callback="onRecaptchaSuccess" data-size="invisible"></div>
+
                     <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-left text-sm">
                         <button class="example-prompt text-gray-500 hover:text-gray-900 transition-colors text-left">Make an ad photo for my sneaker brand</button>
                         <button class="example-prompt text-gray-500 hover:text-gray-900 transition-colors text-left">Generate a dramatic aerial video shot of NYC</button>
@@ -197,6 +193,11 @@
                 <a href="https://x.com/GenArtai_" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span class="sr-only">X</span></a>
             </div>
             <p class="text-xs text-gray-500">&copy; 2025 GenArt. All rights reserved.</p>
+            <p class="text-xs text-gray-400 mt-2">
+                This site is protected by reCAPTCHA and the Google
+                <a href="https://policies.google.com/privacy" class="underline hover:text-gray-600">Privacy Policy</a> and
+                <a href="https://policies.google.com/terms" class="underline hover:text-gray-600">Terms of Service</a> apply.
+            </p>
         </footer>
     </div>
 
@@ -226,7 +227,6 @@
         </div>
     </div>
 
-    <!-- Import and use the script.js file -->
     <script type="module" src="script.js"></script>
 </body>
 </html>
