@@ -63,7 +63,6 @@ const otherSections = document.querySelectorAll('main > section, main > .mt-24.t
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
-// MODIFIED: Changed to an object to store both URL and prompt for the unlock-to-save feature
 let lastGeneratedImage = null; 
 let selectedAspectRatio = '1:1';
 let unsubscribeLibrary = null;
@@ -167,7 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function generateImage(recaptchaToken) {
     const prompt = promptInput.value.trim();
-    const shouldBlur = !auth.currentUser && getGenerationCount() === (FREE_GENERATION_LIMIT -1);
+    // MODIFIED: Corrected the blur logic to trigger when the limit is reached or exceeded.
+    const shouldBlur = !auth.currentUser && getGenerationCount() >= FREE_GENERATION_LIMIT;
     
     imageGrid.innerHTML = '';
     messageBox.innerHTML = '';
@@ -179,7 +179,6 @@ async function generateImage(recaptchaToken) {
     try {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
         
-        // MODIFIED: Store prompt with image URL for guests
         if (shouldBlur) { 
             lastGeneratedImage = { url: imageUrl, prompt: prompt }; 
         }
@@ -220,18 +219,21 @@ function updateUIForAuthState(user) {
         if (unsubscribeLibrary) unsubscribeLibrary(); 
         loadUserImages();
 
-        // MODIFIED: Correctly save the last generated image with its original prompt upon sign-in
         if (lastGeneratedImage) {
             const blurredContainer = document.querySelector('.blurred-image-container');
             if (blurredContainer) {
                 const img = blurredContainer.querySelector('img');
                 img.classList.remove('blurred-image');
                 const overlay = blurredContainer.querySelector('.unlock-overlay');
-                if (overlay) overlay.remove();
-                // Use the saved prompt, not the current input value
+                if (overlay) {
+                    overlay.remove();
+                    // Also re-add the download button that was missing
+                    const downloadButton = createDownloadButton(lastGeneratedImage.url);
+                    blurredContainer.appendChild(downloadButton);
+                }
                 saveImageToLibrary(lastGeneratedImage.url, lastGeneratedImage.prompt);
             }
-            lastGeneratedImage = null;
+            lastGeneratedImage = null; 
         }
     } else {
         authBtn.textContent = 'Sign In';
@@ -255,13 +257,11 @@ function showLibraryView() {
     mobileMenu.classList.add('hidden');
 }
 
-// MODIFIED: This function now properly resets the UI state
 function showGeneratorView() {
     mainContent.classList.remove('hidden');
     otherSections.forEach(sec => sec.classList.remove('hidden'));
     libraryContainer.classList.add('hidden');
     
-    // Reset the generator UI state for a clean slate
     generatorUI.classList.remove('hidden');
     resultContainer.classList.add('hidden');
     imageGrid.innerHTML = '';
@@ -334,19 +334,7 @@ function createImageCard(data) {
     promptText.className = 'text-white text-sm font-medium line-clamp-3';
     promptText.textContent = data.prompt;
 
-    const downloadButton = document.createElement('button');
-    downloadButton.className = 'absolute top-2 right-2 bg-white/20 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
-    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-    downloadButton.ariaLabel = "Download Image";
-    downloadButton.onclick = (e) => {
-        e.stopPropagation();
-        const a = document.createElement('a');
-        a.href = data.imageUrl;
-        a.download = 'genart-image.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    };
+    const downloadButton = createDownloadButton(data.imageUrl, true); // isLibraryCard = true
 
     overlay.appendChild(promptText);
     card.appendChild(img);
@@ -354,6 +342,29 @@ function createImageCard(data) {
     card.appendChild(downloadButton);
 
     return card;
+}
+
+// MODIFIED: Extracted download button creation into a helper function
+function createDownloadButton(imageUrl, isLibraryCard = false) {
+    const downloadButton = document.createElement('button');
+    if (isLibraryCard) {
+        downloadButton.className = 'absolute top-2 right-2 bg-white/20 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
+        downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+    } else {
+        downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
+        downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+    }
+    downloadButton.ariaLabel = "Download Image";
+    downloadButton.onclick = (e) => {
+        e.stopPropagation(); // Prevent card click events if any
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = 'genart-image.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+    return downloadButton;
 }
 
 function getGenerationCount() { return parseInt(localStorage.getItem('generationCount') || '0'); }
@@ -436,20 +447,13 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
     if (shouldBlur) { img.classList.add('blurred-image'); }
-    const downloadButton = document.createElement('button');
-    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
-    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-    downloadButton.ariaLabel = "Download Image";
-    downloadButton.onclick = () => {
-        const a = document.createElement('a');
-        a.href = imageUrl;
-        a.download = 'genart-image.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-    };
+    
     imgContainer.appendChild(img);
-    if (!shouldBlur) { imgContainer.appendChild(downloadButton); }
+
+    if (!shouldBlur) { 
+        const downloadButton = createDownloadButton(imageUrl);
+        imgContainer.appendChild(downloadButton); 
+    }
     if (shouldBlur) {
         const overlay = document.createElement('div');
         overlay.className = 'unlock-overlay';
