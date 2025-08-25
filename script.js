@@ -1,7 +1,6 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-// MODIFIED: Added more firestore functions for the library feature
 import { getFirestore, doc, setDoc, increment, collection, addDoc, query, onSnapshot, Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
@@ -52,8 +51,6 @@ const lofiMusic = document.getElementById('lofi-music');
 const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
 const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
-
-// NEW: DOM elements for library feature
 const logoBtn = document.getElementById('logo-btn');
 const libraryBtn = document.getElementById('library-btn');
 const mobileLibraryBtn = document.getElementById('mobile-library-btn');
@@ -66,9 +63,10 @@ const otherSections = document.querySelectorAll('main > section, main > .mt-24.t
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
-let lastGeneratedImageUrl = null;
-let selectedAspectRatio = '1:1'; // Default aspect ratio
-let unsubscribeLibrary = null; // To store the onSnapshot listener for cleanup
+// MODIFIED: Changed to an object to store both URL and prompt for the unlock-to-save feature
+let lastGeneratedImage = null; 
+let selectedAspectRatio = '1:1';
+let unsubscribeLibrary = null;
 
 // --- reCAPTCHA Callback Function ---
 window.onRecaptchaSuccess = function(token) {
@@ -98,7 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // NEW: Event listeners for library navigation
     libraryBtn.addEventListener('click', showLibraryView);
     mobileLibraryBtn.addEventListener('click', showLibraryView);
     logoBtn.addEventListener('click', showGeneratorView);
@@ -181,11 +178,14 @@ async function generateImage(recaptchaToken) {
 
     try {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
-        if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
+        
+        // MODIFIED: Store prompt with image URL for guests
+        if (shouldBlur) { 
+            lastGeneratedImage = { url: imageUrl, prompt: prompt }; 
+        }
         
         displayImage(imageUrl, prompt, shouldBlur);
         
-        // NEW: Save image to Firestore library if user is logged in
         if (auth.currentUser && !shouldBlur) {
             saveImageToLibrary(imageUrl, prompt);
         }
@@ -204,7 +204,7 @@ async function generateImage(recaptchaToken) {
 }
 
 function handleAuthAction() { if (auth.currentUser) signOut(auth); else signInWithGoogle(); }
-function signInWithGoogle() { signInWithPopup(auth, provider).then(result => updateUIForAuthState(result.user)).catch(error => console.error("Authentication Error:", error)); }
+function signInWithGoogle() { signInWithPopup(auth, provider).catch(error => console.error("Authentication Error:", error)); }
 
 function updateUIForAuthState(user) {
     if (user) {
@@ -215,55 +215,59 @@ function updateUIForAuthState(user) {
         mobileGenerationCounterEl.textContent = welcomeText;
         authModal.setAttribute('aria-hidden', 'true');
         
-        // NEW: Show library buttons and load images
         libraryBtn.classList.remove('hidden');
         mobileLibraryBtn.classList.remove('hidden');
-        if (unsubscribeLibrary) unsubscribeLibrary(); // Clean up old listener
+        if (unsubscribeLibrary) unsubscribeLibrary(); 
         loadUserImages();
 
-        if (lastGeneratedImageUrl) {
+        // MODIFIED: Correctly save the last generated image with its original prompt upon sign-in
+        if (lastGeneratedImage) {
             const blurredContainer = document.querySelector('.blurred-image-container');
             if (blurredContainer) {
                 const img = blurredContainer.querySelector('img');
                 img.classList.remove('blurred-image');
                 const overlay = blurredContainer.querySelector('.unlock-overlay');
                 if (overlay) overlay.remove();
-                saveImageToLibrary(lastGeneratedImageUrl, promptInput.value.trim());
+                // Use the saved prompt, not the current input value
+                saveImageToLibrary(lastGeneratedImage.url, lastGeneratedImage.prompt);
             }
-            lastGeneratedImageUrl = null;
+            lastGeneratedImage = null;
         }
     } else {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
         updateGenerationCounter();
         
-        // NEW: Hide library buttons and go back to generator view
         libraryBtn.classList.add('hidden');
         mobileLibraryBtn.classList.add('hidden');
         showGeneratorView();
         if (unsubscribeLibrary) {
-            unsubscribeLibrary(); // Clean up listener on logout
+            unsubscribeLibrary();
             unsubscribeLibrary = null;
         }
     }
 }
 
-// --- NEW Library Feature Functions ---
-
 function showLibraryView() {
     mainContent.classList.add('hidden');
     otherSections.forEach(sec => sec.classList.add('hidden'));
     libraryContainer.classList.remove('hidden');
-    mobileMenu.classList.add('hidden'); // Ensure mobile menu closes
+    mobileMenu.classList.add('hidden');
 }
 
+// MODIFIED: This function now properly resets the UI state
 function showGeneratorView() {
     mainContent.classList.remove('hidden');
     otherSections.forEach(sec => sec.classList.remove('hidden'));
     libraryContainer.classList.add('hidden');
-    // Ensure the main generator UI is visible, not the results
+    
+    // Reset the generator UI state for a clean slate
     generatorUI.classList.remove('hidden');
     resultContainer.classList.add('hidden');
+    imageGrid.innerHTML = '';
+    messageBox.innerHTML = '';
+    promptInput.value = '';
+    removeUploadedImage();
 }
 
 async function saveImageToLibrary(imageUrl, prompt) {
@@ -271,11 +275,12 @@ async function saveImageToLibrary(imageUrl, prompt) {
     try {
         const userImagesCollection = collection(db, 'users', auth.currentUser.uid, 'images');
         await addDoc(userImagesCollection, {
-            imageUrl: imageUrl, // Storing the base64 string
+            imageUrl: imageUrl,
             prompt: prompt,
             aspectRatio: selectedAspectRatio,
             createdAt: Timestamp.now()
         });
+        console.log("Image successfully saved to library!");
     } catch (error) {
         console.error("Error saving image to library:", error);
     }
@@ -285,7 +290,7 @@ function loadUserImages() {
     if (!auth.currentUser) return;
 
     const userImagesCollection = collection(db, 'users', auth.currentUser.uid, 'images');
-    const q = query(userImagesCollection); // No ordering to avoid needing composite indexes
+    const q = query(userImagesCollection);
 
     unsubscribeLibrary = onSnapshot(q, (querySnapshot) => {
         const images = [];
@@ -293,10 +298,9 @@ function loadUserImages() {
             images.push({ id: doc.id, ...doc.data() });
         });
         
-        // Sort client-side to show newest first
         images.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
         
-        libraryGrid.innerHTML = ''; // Clear previous images
+        libraryGrid.innerHTML = '';
         if (images.length === 0) {
             libraryEmptyMessage.classList.remove('hidden');
         } else {
@@ -321,7 +325,7 @@ function createImageCard(data) {
     const img = document.createElement('img');
     img.src = data.imageUrl;
     img.alt = data.prompt;
-    img.className = 'w-full h-full object-cover aspect-square'; // Keep grid uniform
+    img.className = 'w-full h-full object-cover aspect-square';
 
     const overlay = document.createElement('div');
     overlay.className = 'absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4';
@@ -351,8 +355,6 @@ function createImageCard(data) {
 
     return card;
 }
-
-// --- Existing Helper Functions (some modified) ---
 
 function getGenerationCount() { return parseInt(localStorage.getItem('generationCount') || '0'); }
 function incrementGenerationCount() {
@@ -468,7 +470,6 @@ function addBackButton() {
     const backButton = document.createElement('button');
     backButton.textContent = '← Create another';
     backButton.className = 'mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
-    // MODIFIED: Use the new view switching function
     backButton.onclick = showGeneratorView;
     messageBox.prepend(backButton);
 }
