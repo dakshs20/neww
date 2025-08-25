@@ -21,7 +21,6 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // --- DOM Element References ---
-const recaptchaGate = document.getElementById('recaptcha-gate');
 const appContainer = document.getElementById('app-container');
 const promptInput = document.getElementById('prompt-input');
 const generateBtn = document.getElementById('generate-btn');
@@ -51,33 +50,19 @@ const musicBtn = document.getElementById('music-btn');
 const lofiMusic = document.getElementById('lofi-music');
 const cursorDot = document.querySelector('.cursor-dot');
 const cursorOutline = document.querySelector('.cursor-outline');
+const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
 
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
 let lastGeneratedImageUrl = null;
-let recaptchaToken = null; // To store the reCAPTCHA token
+let selectedAspectRatio = '1:1'; // Default aspect ratio
 
-// --- reCAPTCHA Callback Functions ---
-// This function runs when the user successfully completes the reCAPTCHA
+// --- reCAPTCHA Callback Function ---
 window.onRecaptchaSuccess = function(token) {
-    console.log("reCAPTCHA check passed. Unlocking website.");
-    recaptchaToken = token;
-    
-    // Hide the gate and show the main app
-    recaptchaGate.style.display = 'none';
-    appContainer.classList.remove('hidden');
-    appContainer.classList.add('flex'); // Make sure it's visible and flex
+    console.log("Invisible reCAPTCHA check passed. Proceeding with image generation.");
+    generateImage(token);
 };
-
-// This function runs when the reCAPTCHA expires
-window.onRecaptchaExpired = function() {
-    console.log("reCAPTCHA expired.");
-    recaptchaToken = null;
-    // Optional: you could show the gate again if it expires,
-    // but for now we'll just log it.
-};
-
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -100,13 +85,42 @@ document.addEventListener('DOMContentLoaded', () => {
             promptInput.focus();
         });
     });
+    
+    generateBtn.addEventListener('click', () => {
+        const prompt = promptInput.value.trim();
+        if (!prompt) {
+            showMessage('Please describe what you want to create or edit.', 'error');
+            return;
+        }
+
+        const count = getGenerationCount();
+        if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
+            authModal.setAttribute('aria-hidden', 'false');
+            return;
+        }
+        grecaptcha.execute();
+    });
+
     promptInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            generateImage();
+            generateBtn.click();
         }
     });
-    generateBtn.addEventListener('click', generateImage);
+
+    // --- Aspect Ratio Button Logic ---
+    aspectRatioBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove 'selected' from all buttons
+            aspectRatioBtns.forEach(b => b.classList.remove('selected'));
+            // Add 'selected' to the clicked button
+            btn.classList.add('selected');
+            // Update the state
+            selectedAspectRatio = btn.dataset.ratio;
+            console.log(`Aspect ratio set to: ${selectedAspectRatio}`);
+        });
+    });
+
     imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
     imageUploadInput.addEventListener('change', handleImageUpload);
     removeImageBtn.addEventListener('click', removeUploadedImage);
@@ -141,6 +155,35 @@ document.addEventListener('DOMContentLoaded', () => {
         el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
     });
 });
+
+async function generateImage(recaptchaToken) {
+    const prompt = promptInput.value.trim();
+    const shouldBlur = !auth.currentUser && getGenerationCount() === (FREE_GENERATION_LIMIT -1);
+    
+    imageGrid.innerHTML = '';
+    messageBox.innerHTML = '';
+    resultContainer.classList.remove('hidden');
+    loadingIndicator.classList.remove('hidden');
+    generatorUI.classList.add('hidden');
+    startTimer();
+
+    try {
+        // Pass the selected aspect ratio to the backend
+        const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
+        if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
+        displayImage(imageUrl, prompt, shouldBlur);
+        incrementTotalGenerations();
+        if (!auth.currentUser) { incrementGenerationCount(); }
+    } catch (error) {
+        console.error('Image generation failed:', error);
+        showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
+    } finally {
+        stopTimer();
+        loadingIndicator.classList.add('hidden');
+        addBackButton();
+        grecaptcha.reset();
+    }
+}
 
 function handleAuthAction() { if (auth.currentUser) signOut(auth); else signInWithGoogle(); }
 function signInWithGoogle() { signInWithPopup(auth, provider).then(result => updateUIForAuthState(result.user)).catch(error => console.error("Authentication Error:", error)); }
@@ -201,58 +244,15 @@ function removeUploadedImage() {
     imagePreview.src = '';
     promptInput.placeholder = "An oil painting of a futuristic city skyline at dusk...";
 }
-async function generateImage() {
-    const prompt = promptInput.value.trim();
-    if (!prompt) {
-        showMessage('Please describe what you want to create or edit.', 'error');
-        return;
-    }
 
-    // Check if reCAPTCHA token exists from the initial check
-    if (!recaptchaToken) {
-        showMessage('reCAPTCHA verification is missing. Please refresh the page.', 'error');
-        return;
-    }
-
-    const count = getGenerationCount();
-    if (!auth.currentUser && count > FREE_GENERATION_LIMIT) {
-        authModal.setAttribute('aria-hidden', 'false');
-        return;
-    }
-    const shouldBlur = !auth.currentUser && count === FREE_GENERATION_LIMIT;
-    imageGrid.innerHTML = '';
-    messageBox.innerHTML = '';
-    resultContainer.classList.remove('hidden');
-    loadingIndicator.classList.remove('hidden');
-    generatorUI.classList.add('hidden');
-    startTimer();
-    try {
-        // Pass the token to the backend
-        const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken);
-        if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
-        displayImage(imageUrl, prompt, shouldBlur);
-        incrementTotalGenerations();
-        if (!auth.currentUser) { incrementGenerationCount(); }
-    } catch (error) {
-        console.error('Image generation failed:', error);
-        showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
-    } finally {
-        stopTimer();
-        loadingIndicator.classList.add('hidden');
-        addBackButton();
-        // Since the reCAPTCHA is only done once, we don't reset it here.
-        // The token will be reused for this session.
-    }
-}
-
-async function generateImageWithRetry(prompt, imageData, token, maxRetries = 3) {
+async function generateImageWithRetry(prompt, imageData, token, aspectRatio, maxRetries = 3) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             const response = await fetch('/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // Send the reCAPTCHA token in the request body
-                body: JSON.stringify({ prompt, imageData, recaptchaToken: token })
+                // Send the aspect ratio in the request body
+                body: JSON.stringify({ prompt, imageData, recaptchaToken: token, aspectRatio: aspectRatio })
             });
 
             if (!response.ok) {
@@ -319,7 +319,7 @@ function showMessage(text, type = 'info') {
     const messageEl = document.createElement('div');
     messageEl.className = `p-4 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} fade-in-slide-up`;
     messageEl.textContent = text;
-    messageBox.innerHTML = ''; // Clear previous messages
+    messageBox.innerHTML = '';
     messageBox.appendChild(messageEl);
 }
 function addBackButton() {
