@@ -18,7 +18,7 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: "Server configuration error: API key not found." });
         }
 
-        const geminiPrompt = `You are an expert prompt engineer for AI image generators. Enhance the following prompt to make it more vivid, detailed, and imaginative. Focus on visual details. Add descriptors like "hyperrealistic, 8k, cinematic lighting, photorealistic". Do not add any explanatory text or conversational filler, just return the enhanced prompt itself. Original prompt: "${prompt}"`;
+        const geminiPrompt = `You are an expert prompt engineer for AI image generators. Enhance the following prompt to make it more vivid, detailed, and imaginative. Focus on visual details. Add descriptors like "hyperrealistic, 8k, cinematic lighting, photorealistic". Do not add any explanatory text or conversational filler, and medium length, just return the enhanced prompt itself. Original prompt: "${prompt}"`;
         
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
         
