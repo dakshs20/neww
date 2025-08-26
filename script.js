@@ -5,8 +5,8 @@ import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/fi
 
 // --- Google Drive API Configuration ---
 // IMPORTANT: You must get these from your Google Cloud Console project.
-const GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"; // Replace with your Google API Key
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"; // Replace with your Google Client ID
+const GOOGLE_API_KEY = "AIzaSyAypNULLr5wkLATw1V3qA-I5NwcnGIc0v8"; // Replace with your Google API Key
+const GOOGLE_CLIENT_ID = "673422771881-dkts1iissdsbev5mi1nvbp90nvdo2mvh.apps.googleusercontent.com"; // Replace with your Google Client ID
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
@@ -179,10 +179,17 @@ function initializeForTeamsPage() {
     if(googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
     if(closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
     
-    // This is the key line for your request. It ensures the modal only shows on click.
-    getStartedBtn.addEventListener('click', () => emailModal.setAttribute('aria-hidden', 'false'));
+    // CORRECTED LOGIC: This now correctly shows the modal on click.
+    getStartedBtn.addEventListener('click', () => {
+        emailModal.classList.remove('hidden');
+        emailModal.setAttribute('aria-hidden', 'false');
+    });
     
-    closeEmailModalBtn.addEventListener('click', () => emailModal.setAttribute('aria-hidden', 'true'));
+    closeEmailModalBtn.addEventListener('click', () => {
+        emailModal.classList.add('hidden');
+        emailModal.setAttribute('aria-hidden', 'true');
+    });
+
     emailForm.addEventListener('submit', handleEmailSubmit);
 }
 
