@@ -182,14 +182,16 @@ function initializeForTeamsPage() {
     mobileAuthBtn.addEventListener('click', handleAuthAction);
     if(googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
     if(closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
+    
+    // This is the key line for your request. It ensures the modal only shows on click.
     getStartedBtn.addEventListener('click', () => emailModal.setAttribute('aria-hidden', 'false'));
+    
     closeEmailModalBtn.addEventListener('click', () => emailModal.setAttribute('aria-hidden', 'true'));
     emailForm.addEventListener('submit', handleEmailSubmit);
 }
 
 function initializeProGeneratorPage() {
     // Logic specific to pro-generator.html
-    // Load Google API scripts
     const gapiScript = document.createElement('script');
     gapiScript.src = 'https://apis.google.com/js/api.js';
     gapiScript.async = true;
@@ -216,16 +218,15 @@ function handleGenerateClick() {
         showMessage('Please describe what you want to create or edit.', 'error');
         return;
     }
-    // On pro page, there's no limit. On free page, check limit.
     if (authBtn) { 
         const count = getGenerationCount();
         if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
             authModal.setAttribute('aria-hidden', 'false');
             return;
         }
-        grecaptcha.execute(); // Only execute reCAPTCHA on the free page
+        grecaptcha.execute();
     } else {
-        generateImage(); // On pro page, generate directly
+        generateImage();
     }
 }
 
@@ -243,7 +244,6 @@ function handleEmailSubmit(e) {
     
     emailErrorMsg.classList.add('hidden');
     console.log('Business email validated:', email);
-    // Redirect to the pro generator page
     window.location.href = 'pro-generator.html';
 }
 
@@ -259,7 +259,7 @@ function toggleMusic() {
 
 async function generateImage(recaptchaToken = null) {
     const prompt = promptInput.value.trim();
-    const isFreePage = !!authBtn; // Check if on the free page
+    const isFreePage = !!authBtn;
     const shouldBlur = isFreePage && !auth.currentUser && getGenerationCount() === (FREE_GENERATION_LIMIT - 1);
     
     imageGrid.innerHTML = '';
@@ -272,7 +272,7 @@ async function generateImage(recaptchaToken = null) {
     try {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
         const response = await fetch(imageUrl);
-        lastGeneratedBlob = await response.blob(); // Store blob for upload
+        lastGeneratedBlob = await response.blob();
         
         if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
         displayImage(imageUrl, prompt, shouldBlur);
@@ -315,7 +315,6 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
 
     buttonContainer.appendChild(downloadButton);
 
-    // Add "Save to Drive" button only on the pro page
     if (driveConnectBtn) {
         const saveToDriveButton = createActionButton('drive', 'Save to Drive', uploadFile);
         saveToDriveButton.id = 'save-to-drive-btn';
@@ -409,7 +408,7 @@ async function uploadFile() {
     }
     if (gapi.client.getToken() === null) {
         showMessage('Please connect to Google Drive first.', 'info');
-        handleAuthClick(); // Prompt for auth
+        handleAuthClick();
         return;
     }
 
