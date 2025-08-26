@@ -3,18 +3,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// --- Google Drive API Configuration ---
-// IMPORTANT: You must get these from your Google Cloud Console project.
-const GOOGLE_API_KEY = "AIzaSyAypNULLr5wkLATw1V3qA-I5NwcnGIc0v8"; // Replace with your Google API Key
-const GOOGLE_CLIENT_ID = "673422771881-dkts1iissdsbev5mi1nvbp90nvdo2mvh.apps.googleusercontent.com"; // Replace with your Google Client ID
-const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
-
-let tokenClient;
-let gapiInited = false;
-let gisInited = false;
-
-
 // Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
@@ -33,13 +21,21 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // --- DOM Element References ---
-// Shared Elements
-const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-const mobileMenu = document.getElementById('mobile-menu');
-const cursorDot = document.querySelector('.cursor-dot');
-const cursorOutline = document.querySelector('.cursor-outline');
-
-// Page: index.html & for-teams.html
+const promptInput = document.getElementById('prompt-input');
+const generateBtn = document.getElementById('generate-btn');
+const resultContainer = document.getElementById('result-container');
+const loadingIndicator = document.getElementById('loading-indicator');
+const imageGrid = document.getElementById('image-grid');
+const timerEl = document.getElementById('timer');
+const progressBar = document.getElementById('progress-bar');
+const messageBox = document.getElementById('message-box');
+const examplePrompts = document.querySelectorAll('.example-prompt');
+const generatorUI = document.getElementById('generator-ui');
+const imageUploadBtn = document.getElementById('image-upload-btn');
+const imageUploadInput = document.getElementById('image-upload-input');
+const imagePreviewContainer = document.getElementById('image-preview-container');
+const imagePreview = document.getElementById('image-preview');
+const removeImageBtn = document.getElementById('remove-image-btn');
 const authBtn = document.getElementById('auth-btn');
 const mobileAuthBtn = document.getElementById('mobile-auth-btn');
 const generationCounterEl = document.getElementById('generation-counter');
@@ -47,373 +43,325 @@ const mobileGenerationCounterEl = document.getElementById('mobile-generation-cou
 const authModal = document.getElementById('auth-modal');
 const googleSignInBtn = document.getElementById('google-signin-btn');
 const closeModalBtn = document.getElementById('close-modal-btn');
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const mobileMenu = document.getElementById('mobile-menu');
 const musicBtn = document.getElementById('music-btn');
 const lofiMusic = document.getElementById('lofi-music');
-
-// Page: for-teams.html
-const getStartedBtn = document.getElementById('get-started-btn');
-const emailModal = document.getElementById('email-modal');
-const emailForm = document.getElementById('email-form');
-const emailInput = document.getElementById('business-email-input');
-const emailErrorMsg = document.getElementById('email-error-msg');
-const closeEmailModalBtn = document.getElementById('close-email-modal-btn');
-
-// Page: index.html & pro-generator.html (Generator UI)
-const promptInput = document.getElementById('prompt-input');
-const generateBtn = document.getElementById('generate-btn');
-const resultContainer = document.getElementById('result-container');
-const loadingIndicator = document.getElementById('loading-indicator');
-const imageGrid = document.getElementById('image-grid');
-const messageBox = document.getElementById('message-box');
-const generatorUI = document.getElementById('generator-ui');
-const imageUploadBtn = document.getElementById('image-upload-btn');
-const imageUploadInput = document.getElementById('image-upload-input');
-const imagePreviewContainer = document.getElementById('image-preview-container');
-const imagePreview = document.getElementById('image-preview');
-const removeImageBtn = document.getElementById('remove-image-btn');
 const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
 const copyPromptBtn = document.getElementById('copy-prompt-btn');
 const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
 
-// Page: pro-generator.html
-const driveConnectBtn = document.getElementById('drive-connect-btn');
-const mobileDriveConnectBtn = document.getElementById('mobile-drive-connect-btn');
-const brandingPanel = document.getElementById('branding-panel');
-const brandingPanelBackdrop = document.getElementById('branding-panel-backdrop');
-const brandingSettingsBtn = document.getElementById('branding-settings-btn');
-const closeBrandingPanelBtn = document.getElementById('close-branding-panel-btn');
-const logoUploadInput = document.getElementById('logo-upload-input');
-const logoUploadBtn = document.getElementById('logo-upload-btn');
-const removeLogoBtn = document.getElementById('remove-logo-btn');
-const logoPreview = document.getElementById('logo-preview');
-const logoPlaceholderText = document.getElementById('logo-placeholder-text');
-const watermarkEnabledToggle = document.getElementById('watermark-enabled-toggle');
-const placementOptions = document.getElementById('placement-options');
-const opacitySlider = document.getElementById('opacity-slider');
-const opacityValue = document.getElementById('opacity-value');
-const sizeSlider = document.getElementById('size-slider');
-const sizeValue = document.getElementById('size-value');
-const paddingXInput = document.getElementById('padding-x-input');
-const paddingYInput = document.getElementById('padding-y-input');
-
-// --- Global State ---
+let timerInterval;
+const FREE_GENERATION_LIMIT = 3;
+let uploadedImageData = null;
 let lastGeneratedImageUrl = null;
-let lastGeneratedBlob = null;
-let brandingSettings = {};
+let selectedAspectRatio = '1:1';
+
+// --- reCAPTCHA Callback Function ---
+window.onRecaptchaSuccess = function(token) {
+    generateImage(token);
+};
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
-    initializeCursor();
+    onAuthStateChanged(auth, user => {
+        updateUIForAuthState(user);
+    });
 
-    if (document.body.contains(getStartedBtn)) {
-        initializeForTeamsPage();
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+    document.addEventListener('click', (event) => {
+        if (mobileMenu && !mobileMenu.contains(event.target) && mobileMenuBtn && !mobileMenuBtn.contains(event.target)) {
+            mobileMenu.classList.add('hidden');
+        }
+    });
+
+    if (authBtn) authBtn.addEventListener('click', handleAuthAction);
+    if (mobileAuthBtn) mobileAuthBtn.addEventListener('click', handleAuthAction);
+    if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
+    
+    if (examplePrompts) {
+        examplePrompts.forEach(button => {
+            button.addEventListener('click', () => {
+                promptInput.value = button.innerText.trim();
+                promptInput.focus();
+            });
+        });
     }
-    if (document.body.contains(document.getElementById('generator-ui'))) {
-        initializeGeneratorPage();
+    
+    if (generateBtn) {
+        generateBtn.addEventListener('click', () => {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                showMessage('Please describe what you want to create or edit.', 'error');
+                return;
+            }
+
+            const count = getGenerationCount();
+            if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
+                authModal.setAttribute('aria-hidden', 'false');
+                return;
+            }
+            grecaptcha.execute();
+        });
     }
-    if (document.body.contains(driveConnectBtn)) {
-        initializeProGeneratorPage();
+
+    if (promptInput) {
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generateBtn.click();
+            }
+        });
     }
+
+    if (aspectRatioBtns) {
+        aspectRatioBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                aspectRatioBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedAspectRatio = btn.dataset.ratio;
+            });
+        });
+    }
+
+    if (copyPromptBtn) copyPromptBtn.addEventListener('click', copyPrompt);
+    if (enhancePromptBtn) enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
+    if (imageUploadBtn) imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
+    if (imageUploadInput) imageUploadInput.addEventListener('change', handleImageUpload);
+    if (removeImageBtn) removeImageBtn.addEventListener('click', removeUploadedImage);
+    if (musicBtn) musicBtn.addEventListener('click', toggleMusic);
+    
+    initializeCursor();
 });
 
-// --- Initializer Functions ---
 function initializeCursor() {
+    const cursorDot = document.querySelector('.cursor-dot');
+    const cursorOutline = document.querySelector('.cursor-outline');
     if (!cursorDot || !cursorOutline) return;
+    
     let mouseX = 0, mouseY = 0, outlineX = 0, outlineY = 0;
     window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
-    const animate = () => {
+    
+    const animateCursor = () => {
         cursorDot.style.left = `${mouseX}px`;
         cursorDot.style.top = `${mouseY}px`;
-        outlineX += (mouseX - outlineX) * 0.15;
-        outlineY += (mouseY - outlineY) * 0.15;
+        const ease = 0.15;
+        outlineX += (mouseX - outlineX) * ease;
+        outlineY += (mouseY - outlineY) * ease;
         cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
-        requestAnimationFrame(animate);
+        requestAnimationFrame(animateCursor);
     };
-    requestAnimationFrame(animate);
+    requestAnimationFrame(animateCursor);
+
     document.querySelectorAll('a, button, textarea, input, label').forEach(el => {
         el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
         el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
     });
 }
 
-function initializeGeneratorPage() {
-    generateBtn.addEventListener('click', handleGenerateClick);
-    // ... (Add other generator event listeners if they are not page-specific)
-}
-
-function initializeForTeamsPage() {
-    getStartedBtn.addEventListener('click', () => {
-        emailModal.classList.remove('hidden');
-        emailModal.setAttribute('aria-hidden', 'false');
-    });
-    closeEmailModalBtn.addEventListener('click', () => {
-        emailModal.classList.add('hidden');
-        emailModal.setAttribute('aria-hidden', 'true');
-    });
-    emailForm.addEventListener('submit', handleEmailSubmit);
-}
-
-function initializeProGeneratorPage() {
-    loadBrandingSettings();
-    
-    brandingSettingsBtn.addEventListener('click', openBrandingPanel);
-    closeBrandingPanelBtn.addEventListener('click', closeBrandingPanel);
-    brandingPanelBackdrop.addEventListener('click', closeBrandingPanel);
-    logoUploadBtn.addEventListener('click', () => logoUploadInput.click());
-    logoUploadInput.addEventListener('change', handleLogoUpload);
-    removeLogoBtn.addEventListener('click', removeLogo);
-    watermarkEnabledToggle.addEventListener('click', () => {
-        const isEnabled = watermarkEnabledToggle.getAttribute('aria-checked') === 'true';
-        setWatermarkEnabled(!isEnabled);
-        saveBrandingSettings();
-    });
-    placementOptions.addEventListener('click', (e) => {
-        if (e.target.classList.contains('placement-btn')) {
-            document.querySelectorAll('.placement-btn').forEach(btn => btn.classList.remove('selected'));
-            e.target.classList.add('selected');
-            brandingSettings.position = e.target.dataset.position;
-            saveBrandingSettings();
-        }
-    });
-    opacitySlider.addEventListener('input', (e) => {
-        opacityValue.textContent = `${e.target.value}%`;
-        brandingSettings.opacity = e.target.value / 100;
-        saveBrandingSettings();
-    });
-    sizeSlider.addEventListener('input', (e) => {
-        sizeValue.textContent = `${e.target.value}%`;
-        brandingSettings.size = e.target.value / 100;
-        saveBrandingSettings();
-    });
-    paddingXInput.addEventListener('input', (e) => {
-        brandingSettings.paddingX = parseInt(e.target.value, 10);
-        saveBrandingSettings();
-    });
-    paddingYInput.addEventListener('input', (e) => {
-        brandingSettings.paddingY = parseInt(e.target.value, 10);
-        saveBrandingSettings();
-    });
-}
-
-// --- Event Handlers ---
-function handleGenerateClick() {
+async function generateImage(recaptchaToken) {
     const prompt = promptInput.value.trim();
-    if (!prompt) {
-        showMessage('Please describe what you want to create or edit.', 'error');
-        return;
-    }
-    generateImage();
-}
-
-function handleEmailSubmit(e) {
-    e.preventDefault();
-    const email = emailInput.value.trim();
-    const commonProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com'];
-    const domain = email.split('@')[1];
-
-    if (!domain || commonProviders.includes(domain.toLowerCase())) {
-        emailErrorMsg.textContent = 'Please use a valid business email.';
-        emailErrorMsg.classList.remove('hidden');
-        return;
-    }
+    const shouldBlur = !auth.currentUser && getGenerationCount() === (FREE_GENERATION_LIMIT - 1);
     
-    emailErrorMsg.classList.add('hidden');
-    window.location.href = 'pro-generator.html';
-}
-
-// --- Branding & Watermarking Functions ---
-function openBrandingPanel() {
-    brandingPanel.classList.remove('translate-x-full');
-    brandingPanelBackdrop.classList.remove('hidden');
-}
-
-function closeBrandingPanel() {
-    brandingPanel.classList.add('translate-x-full');
-    brandingPanelBackdrop.classList.add('hidden');
-}
-
-function handleLogoUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-        brandingSettings.logo = reader.result;
-        updateLogoPreview();
-        saveBrandingSettings();
-    };
-    reader.readAsDataURL(file);
-}
-
-function removeLogo() {
-    brandingSettings.logo = null;
-    updateLogoPreview();
-    saveBrandingSettings();
-}
-
-function updateLogoPreview() {
-    if (brandingSettings.logo) {
-        logoPreview.src = brandingSettings.logo;
-        logoPreview.classList.remove('hidden');
-        logoPlaceholderText.classList.add('hidden');
-        removeLogoBtn.classList.remove('hidden');
-    } else {
-        logoPreview.src = '';
-        logoPreview.classList.add('hidden');
-        logoPlaceholderText.classList.remove('hidden');
-        removeLogoBtn.classList.add('hidden');
-    }
-}
-
-function setWatermarkEnabled(isEnabled) {
-    watermarkEnabledToggle.setAttribute('aria-checked', isEnabled);
-    brandingSettings.enabled = isEnabled;
-    if (isEnabled) {
-        watermarkEnabledToggle.classList.add('bg-blue-600');
-    } else {
-        watermarkEnabledToggle.classList.remove('bg-blue-600');
-    }
-}
-
-function saveBrandingSettings() {
-    localStorage.setItem('genartBrandingSettings', JSON.stringify(brandingSettings));
-}
-
-function loadBrandingSettings() {
-    const savedSettings = localStorage.getItem('genartBrandingSettings');
-    if (savedSettings) {
-        brandingSettings = JSON.parse(savedSettings);
-        updateLogoPreview();
-        setWatermarkEnabled(brandingSettings.enabled);
-        document.querySelectorAll('.placement-btn').forEach(btn => {
-            btn.classList.toggle('selected', btn.dataset.position === brandingSettings.position);
-        });
-        opacitySlider.value = (brandingSettings.opacity || 1) * 100;
-        opacityValue.textContent = `${opacitySlider.value}%`;
-        sizeSlider.value = (brandingSettings.size || 0.1) * 100;
-        sizeValue.textContent = `${sizeSlider.value}%`;
-        paddingXInput.value = brandingSettings.paddingX || 20;
-        paddingYInput.value = brandingSettings.paddingY || 20;
-    } else {
-        brandingSettings = { logo: null, enabled: false, position: 'bottom-right', opacity: 1, size: 0.1, paddingX: 20, paddingY: 20 };
-    }
-}
-
-function applyWatermarkAndDownload() {
-    if (!brandingSettings.logo) {
-        showMessage("Please upload a logo in Branding Settings first.", "error");
-        return;
-    }
-    if (!lastGeneratedImageUrl) {
-        showMessage("Please generate an image first.", "error");
-        return;
-    }
-
-    const mainImage = new Image();
-    mainImage.crossOrigin = "anonymous";
-    mainImage.onload = () => {
-        const watermark = new Image();
-        watermark.crossOrigin = "anonymous";
-        watermark.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = mainImage.naturalWidth;
-            canvas.height = mainImage.naturalHeight;
-            ctx.drawImage(mainImage, 0, 0);
-
-            const watermarkWidth = canvas.width * brandingSettings.size;
-            const watermarkHeight = watermark.height * (watermarkWidth / watermark.width);
-            const paddingX = brandingSettings.paddingX;
-            const paddingY = brandingSettings.paddingY;
-
-            let x, y;
-            switch (brandingSettings.position) {
-                case 'top-left': x = paddingX; y = paddingY; break;
-                case 'top-right': x = canvas.width - watermarkWidth - paddingX; y = paddingY; break;
-                case 'bottom-left': x = paddingX; y = canvas.height - watermarkHeight - paddingY; break;
-                default: x = canvas.width - watermarkWidth - paddingX; y = canvas.height - watermarkHeight - paddingY; break;
-            }
-
-            ctx.globalAlpha = brandingSettings.opacity;
-            ctx.drawImage(watermark, x, y, watermarkWidth, watermarkHeight);
-
-            const link = document.createElement('a');
-            link.download = `GenArt_Branded_${Date.now()}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        };
-        watermark.src = brandingSettings.logo;
-    };
-    mainImage.src = lastGeneratedImageUrl;
-}
-
-// --- Core Functionality ---
-async function generateImage() {
-    const prompt = promptInput.value.trim();
-    generatorUI.classList.add('hidden');
+    imageGrid.innerHTML = '';
+    messageBox.innerHTML = '';
     resultContainer.classList.remove('hidden');
     loadingIndicator.classList.remove('hidden');
-    
-    // MOCK API CALL
-    setTimeout(() => {
-        const mockImageUrl = `https://placehold.co/1024x1024/EFEFEF/333333?text=${encodeURIComponent(prompt.substring(0, 20))}`;
-        fetch(mockImageUrl)
-            .then(res => res.blob())
-            .then(blob => {
-                lastGeneratedBlob = blob;
-                lastGeneratedImageUrl = URL.createObjectURL(blob);
-                displayImage(lastGeneratedImageUrl, prompt);
-                loadingIndicator.classList.add('hidden');
-                addBackButton();
-            });
-    }, 2000);
+    generatorUI.classList.add('hidden');
+    startTimer();
+
+    try {
+        const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
+        if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
+        displayImage(imageUrl, prompt, shouldBlur);
+        incrementTotalGenerations();
+        if (!auth.currentUser) { incrementGenerationCount(); }
+    } catch (error) {
+        console.error('Image generation failed:', error);
+        showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
+    } finally {
+        stopTimer();
+        loadingIndicator.classList.add('hidden');
+        addBackButton();
+        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+    }
 }
 
-function displayImage(imageUrl, prompt) {
+async function generateImageWithRetry(prompt, imageData, token, aspectRatio, maxRetries = 3) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt, imageData, recaptchaToken: token, aspectRatio: aspectRatio })
+            });
+
+            if (!response.ok) {
+                const errorResult = await response.json();
+                throw new Error(errorResult.error || `API Error: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            let base64Data;
+            if (imageData) {
+                base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+            } else {
+                base64Data = result.predictions?.[0]?.bytesBase64Encoded;
+            }
+
+            if (!base64Data) throw new Error("No image data received from API.");
+            return `data:image/png;base64,${base64Data}`;
+
+        } catch (error) {
+            console.error(`Generation attempt ${attempt + 1} failed:`, error);
+            if (attempt >= maxRetries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+    }
+}
+
+function displayImage(imageUrl, prompt, shouldBlur = false) {
     const imgContainer = document.createElement('div');
     imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
+    if (shouldBlur) { imgContainer.classList.add('blurred-image-container'); }
     
     const img = document.createElement('img');
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
+    if (shouldBlur) { img.classList.add('blurred-image'); }
     
-    const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
-
-    const downloadButton = createActionButton('download', 'Download Original', () => {
+    const downloadButton = document.createElement('button');
+    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
+    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+    downloadButton.ariaLabel = "Download Image";
+    downloadButton.onclick = () => {
         const a = document.createElement('a');
         a.href = imageUrl;
-        a.download = `GenArt_Original_${Date.now()}.png`;
+        a.download = 'genart-image.png';
+        document.body.appendChild(a);
         a.click();
-    });
-    buttonContainer.appendChild(downloadButton);
-
-    if (brandingSettings.enabled) {
-        const exportBrandedButton = createActionButton('brand', 'Export with Branding', applyWatermarkAndDownload);
-        buttonContainer.appendChild(exportBrandedButton);
-    }
+        document.body.removeChild(a);
+    };
     
     imgContainer.appendChild(img);
-    imgContainer.appendChild(buttonContainer);
-    imageGrid.innerHTML = '';
+    if (!shouldBlur) { imgContainer.appendChild(downloadButton); }
+    
+    if (shouldBlur) {
+        const overlay = document.createElement('div');
+        overlay.className = 'unlock-overlay';
+        overlay.innerHTML = `<h3 class="text-xl font-semibold">Unlock Image</h3><p class="mt-2">Sign in to unlock this image and get unlimited generations.</p><button id="unlock-btn">Sign In to Unlock</button>`;
+        overlay.querySelector('#unlock-btn').onclick = () => { authModal.setAttribute('aria-hidden', 'false'); };
+        imgContainer.appendChild(overlay);
+    }
+    
     imageGrid.appendChild(imgContainer);
 }
 
-function createActionButton(type, title, onClick) {
-    const button = document.createElement('button');
-    button.className = 'bg-black/50 text-white p-2 rounded-full hover:bg-black/75 transition-colors';
-    button.title = title;
-    button.onclick = onClick;
-    
-    const icons = {
-        download: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
-        brand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>`
-    };
-    
-    button.innerHTML = icons[type] || '';
-    return button;
+function handleAuthAction() {
+    if (auth.currentUser) {
+        signOut(auth).catch(error => console.error("Sign Out Error:", error));
+    } else {
+        signInWithGoogle();
+    }
 }
 
+function signInWithGoogle() {
+    signInWithPopup(auth, provider)
+        .then(result => updateUIForAuthState(result.user))
+        .catch(error => console.error("Authentication Error:", error));
+}
+
+function updateUIForAuthState(user) {
+    if (user) {
+        const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
+        authBtn.textContent = 'Sign Out';
+        mobileAuthBtn.textContent = 'Sign Out';
+        generationCounterEl.textContent = welcomeText;
+        mobileGenerationCounterEl.textContent = welcomeText;
+        authModal.setAttribute('aria-hidden', 'true');
+        if (lastGeneratedImageUrl) {
+            const blurredContainer = document.querySelector('.blurred-image-container');
+            if (blurredContainer) {
+                const img = blurredContainer.querySelector('img');
+                img.classList.remove('blurred-image');
+                const overlay = blurredContainer.querySelector('.unlock-overlay');
+                if (overlay) overlay.remove();
+            }
+            lastGeneratedImageUrl = null;
+        }
+    } else {
+        authBtn.textContent = 'Sign In';
+        mobileAuthBtn.textContent = 'Sign In';
+        updateGenerationCounter();
+    }
+}
+
+function startTimer() {
+    let startTime = Date.now();
+    const maxTime = 17 * 1000;
+    progressBar.style.width = '0%';
+    timerEl.textContent = `0.0s / ~17s`;
+
+    timerInterval = setInterval(() => {
+        const elapsedTime = Date.now() - startTime;
+        if (elapsedTime >= maxTime) {
+            stopTimer();
+            progressBar.style.width = '100%';
+            timerEl.textContent = `17.0s / ~17s`;
+            return;
+        }
+        const progress = Math.min(elapsedTime / maxTime, 1);
+        progressBar.style.width = `${progress * 100}%`;
+        timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
+    }, 100);
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+}
+
+// --- Helper Functions ---
+function getGenerationCount() { return parseInt(localStorage.getItem('generationCount') || '0'); }
+function incrementGenerationCount() {
+    const newCount = getGenerationCount() + 1;
+    localStorage.setItem('generationCount', newCount);
+    updateGenerationCounter();
+}
+function updateGenerationCounter() {
+    if (auth.currentUser) return;
+    const count = getGenerationCount();
+    const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
+    const text = `${remaining} free generation${remaining !== 1 ? 's' : ''} left`;
+    if (generationCounterEl) generationCounterEl.textContent = text;
+    if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = text;
+}
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        uploadedImageData = { mimeType: file.type, data: reader.result.split(',')[1] };
+        imagePreview.src = reader.result;
+        imagePreviewContainer.classList.remove('hidden');
+        promptInput.placeholder = "Describe the edits you want to make...";
+    };
+    reader.readAsDataURL(file);
+}
+function removeUploadedImage() {
+    uploadedImageData = null;
+    imageUploadInput.value = '';
+    imagePreviewContainer.classList.add('hidden');
+    imagePreview.src = '';
+    promptInput.placeholder = "An oil painting of a futuristic city skyline at dusk...";
+}
+async function incrementTotalGenerations() {
+    const counterRef = doc(db, "stats", "imageGenerations");
+    try { await setDoc(counterRef, { count: increment(1) }, { merge: true }); } catch (error) { console.error("Error incrementing generation count:", error); }
+}
 function showMessage(text, type = 'info') {
     if (!messageBox) return;
     const messageEl = document.createElement('div');
@@ -423,7 +371,6 @@ function showMessage(text, type = 'info') {
     messageBox.appendChild(messageEl);
     setTimeout(() => { if(messageBox.contains(messageEl)) messageBox.removeChild(messageEl); }, 4000);
 }
-
 function addBackButton() {
     if (document.getElementById('back-to-generator-btn')) return;
     const backButton = document.createElement('button');
@@ -436,7 +383,78 @@ function addBackButton() {
         imageGrid.innerHTML = '';
         messageBox.innerHTML = '';
         promptInput.value = '';
+        removeUploadedImage();
     };
     if (messageBox) messageBox.prepend(backButton);
 }
-
+function toggleMusic() {
+    if (!musicBtn || !lofiMusic) return;
+    const isPlaying = musicBtn.classList.contains('playing');
+    if (isPlaying) lofiMusic.pause();
+    else lofiMusic.play().catch(e => console.error("Audio error:", e));
+    musicBtn.classList.toggle('playing');
+}
+function copyPrompt() {
+    const promptText = promptInput.value;
+    if (!promptText) {
+        showMessage('There is no prompt to copy.', 'info');
+        return;
+    }
+    navigator.clipboard.writeText(promptText).then(() => {
+        showMessage('Prompt copied to clipboard!', 'info');
+        const originalIcon = copyPromptBtn.innerHTML;
+        copyPromptBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        setTimeout(() => { copyPromptBtn.innerHTML = originalIcon; }, 2000);
+    }, (err) => {
+        console.error('Failed to copy text: ', err);
+        showMessage('Failed to copy prompt.', 'error');
+    });
+}
+async function handleEnhancePrompt() {
+    const promptText = promptInput.value.trim();
+    if (!promptText) {
+        showMessage('Please enter a prompt to enhance.', 'info');
+        return;
+    }
+    const originalIcon = enhancePromptBtn.innerHTML;
+    const spinner = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+    enhancePromptBtn.innerHTML = spinner;
+    enhancePromptBtn.disabled = true;
+    try {
+        const enhancedPrompt = await callApiToEnhance(promptText);
+        promptInput.value = enhancedPrompt;
+        promptInput.style.height = 'auto';
+        promptInput.style.height = (promptInput.scrollHeight) + 'px';
+    } catch (error) {
+        console.error('Failed to enhance prompt:', error);
+        showMessage('Sorry, the prompt could not be enhanced right now.', 'error');
+    } finally {
+        enhancePromptBtn.innerHTML = originalIcon;
+        enhancePromptBtn.disabled = false;
+    }
+}
+async function callApiToEnhance(prompt) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            const response = await fetch('/api/enhance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt })
+            });
+            if (!response.ok) {
+                const errorResult = await response.json();
+                throw new Error(errorResult.error || `API Error: ${response.status}`);
+            }
+            const result = await response.json();
+            if (result.text) {
+                return result.text;
+            } else {
+                throw new Error("Unexpected response structure from enhancement API.");
+            }
+        } catch (error) {
+            console.error(`Enhancement attempt ${attempt + 1} failed:`, error);
+            if (attempt >= 2) throw error;
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+    }
+}
