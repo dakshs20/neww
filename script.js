@@ -370,9 +370,13 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
     });
     buttonContainer.appendChild(downloadButton);
 
-    if (brandingSettingsBtn && brandingSettings.enabled) {
-        const exportBrandedButton = createActionButton('brand', 'Export with Branding', applyWatermarkAndDownload);
-        buttonContainer.appendChild(exportBrandedButton);
+    if (brandingSettingsBtn) { // Check if on pro page
+        if (brandingSettings.enabled) {
+            const exportBrandedButton = createActionButton('brand', 'Export with Branding', applyWatermarkAndDownload);
+            buttonContainer.appendChild(exportBrandedButton);
+        }
+        const saveToDriveButton = createActionButton('drive', 'Save to Drive', uploadFile);
+        buttonContainer.appendChild(saveToDriveButton);
     }
     
     imgContainer.appendChild(img);
@@ -397,7 +401,8 @@ function createActionButton(type, title, onClick) {
     
     const icons = {
         download: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
-        brand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>`
+        brand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>`,
+        drive: `<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.42 5.58a1 1 0 0 0-1.42 0l-5.58 5.58-5.58-5.58a1 1 0 0 0-1.42 1.42l6.29 6.29a.996.996 0 0 0 1.41 0l6.29-6.29a1 1 0 0 0 0-1.42z"/><path d="m12 16-6-6h12z"/></svg>`
     };
     
     button.innerHTML = icons[type] || '';
@@ -594,12 +599,73 @@ function handleAuthClick() {
     }
     if (gapi.client.getToken() === null) {
         tokenClient.callback = async (resp) => {
-            if (resp.error !== undefined) throw (resp);
-            // No UI update needed here now
+            if (resp.error !== undefined) {
+                console.error("Google Auth Error:", resp);
+                showMessage("Could not connect to Google Drive.", "error");
+                return;
+            };
+            updateDriveButtonUI(true);
         };
         tokenClient.requestAccessToken({ prompt: 'consent' });
     } else {
         showMessage("You are already connected to Google Drive.", "info");
+    }
+}
+
+function updateDriveButtonUI(isConnected) {
+    const textEl = document.getElementById('drive-connect-text');
+    if (isConnected) {
+        textEl.textContent = 'Drive Connected';
+        driveConnectBtn.classList.add('bg-green-100', 'border-green-300', 'text-green-800');
+        if(mobileDriveConnectBtn) mobileDriveConnectBtn.textContent = 'Drive Connected';
+    } else {
+        textEl.textContent = 'Connect Drive';
+        driveConnectBtn.classList.remove('bg-green-100', 'border-green-300', 'text-green-800');
+        if(mobileDriveConnectBtn) mobileDriveConnectBtn.textContent = 'Connect Drive';
+    }
+}
+
+async function uploadFile() {
+    if (!lastGeneratedBlob) {
+        showMessage('No image has been generated yet to save.', 'error');
+        return;
+    }
+    if (gapi.client.getToken() === null) {
+        showMessage('Please connect to Google Drive first.', 'info');
+        handleAuthClick();
+        return;
+    }
+
+    const metadata = {
+        'name': `GenArt_${Date.now()}.png`,
+        'mimeType': 'image/png',
+    };
+    
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', lastGeneratedBlob);
+
+    try {
+        const saveButton = document.querySelector('button[title="Save to Drive"]');
+        const originalIcon = saveButton.innerHTML;
+        saveButton.innerHTML = `<svg class="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+        saveButton.disabled = true;
+
+        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+            method: 'POST',
+            headers: new Headers({ 'Authorization': 'Bearer ' + gapi.client.getToken().access_token }),
+            body: form,
+        });
+        const result = await response.json();
+        if (result.error) {
+            throw new Error(result.error.message);
+        }
+        showMessage('Image saved to your Google Drive!', 'info');
+        saveButton.innerHTML = originalIcon;
+        saveButton.disabled = false;
+    } catch (error) {
+        console.error('Error uploading to Drive:', error);
+        showMessage(`Failed to save to Drive: ${error.message}`, 'error');
     }
 }
 
