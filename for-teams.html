@@ -9,6 +9,51 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
+    
+    <!-- NEW: Custom styles for animations and dynamic elements -->
+    <style>
+        /* Animation for counters and cards to appear */
+        @keyframes subtle-fade-in-up {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Class to apply the animation when an element is in view */
+        .is-in-view {
+            animation: subtle-fade-in-up 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        
+        /* Professional hover effect for feature cards */
+        .feature-card {
+            opacity: 0; /* Start hidden for animation */
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), 
+                        box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        /* Dynamic background for the CTA section */
+        #dynamic-cta-section {
+            background: linear-gradient(-45deg, #020024, #0c0a18, #1b2735, #3b82f6);
+            background-size: 400% 400%;
+            animation: gradient-animation 15s ease infinite;
+        }
+
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
 </head>
 <body>
     <!-- Custom Cursor -->
@@ -52,12 +97,24 @@
                 </div>
             </section>
 
-            <section class="w-full max-w-5xl text-center py-12 fade-in-slide-up" style="animation-delay: 150ms;">
+            <!-- MODIFIED: Added id="social-proof-section" for JS targeting -->
+            <section id="social-proof-section" class="w-full max-w-5xl text-center py-12">
                 <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-8">TRUSTED BY THE MOST INNOVATIVE TEAMS</p>
                 <div class="flex flex-col sm:flex-row justify-center items-center gap-8 md:gap-16">
-                    <div class="text-center"><p class="text-4xl md:text-5xl font-bold text-[#42669C]">500+</p><p class="text-gray-600 mt-1">Happy Teams</p></div>
-                    <div class="text-center"><p class="text-4xl md:text-5xl font-bold text-[#42669C]">1M+</p><p class="text-gray-600 mt-1">Generations Per Day</p></div>
-                    <div class="text-center"><p class="text-4xl md:text-5xl font-bold text-[#42669C]">99.9%</p><p class="text-gray-600 mt-1">Uptime SLA</p></div>
+                    <div class="text-center">
+                        <!-- MODIFIED: Added class and data-target for counter animation -->
+                        <p class="counter-number text-4xl md:text-5xl font-bold text-[#42669C]" data-target="500">0+</p>
+                        <p class="text-gray-600 mt-1">Happy Teams</p>
+                    </div>
+                    <div class="text-center">
+                        <!-- MODIFIED: Added class and data-target for counter animation -->
+                        <p class="counter-number text-4xl md:text-5xl font-bold text-[#42669C]" data-target="1000000">0+</p>
+                        <p class="text-gray-600 mt-1">Generations Per Day</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-4xl md:text-5xl font-bold text-[#42669C]">99.9%</p>
+                        <p class="text-gray-600 mt-1">Uptime SLA</p>
+                    </div>
                 </div>
             </section>
 
@@ -67,18 +124,20 @@
                         <h2 class="text-3xl md:text-4xl font-medium text-gray-900">Built for Business & Agencies</h2>
                         <p class="text-lg text-gray-500 mt-3">Tools to supercharge your entire creative process.</p>
                     </div>
-                    <div class="grid md:grid-cols-3 gap-10 text-center">
-                        <div class="fade-in-slide-up" style="animation-delay: 200ms;">
+                    <!-- MODIFIED: Added id="features-grid" for JS targeting -->
+                    <div id="features-grid" class="grid md:grid-cols-3 gap-10 text-center">
+                        <!-- MODIFIED: Added 'feature-card' class for animation and hover -->
+                        <div class="feature-card p-6 rounded-lg">
                             <div class="mx-auto bg-[#eff6ff] rounded-full h-16 w-16 flex items-center justify-center"><svg class="w-8 h-8 text-[#3b82f6]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.42 5.58a1 1 0 0 0-1.42 0l-5.58 5.58-5.58-5.58a1 1 0 0 0-1.42 1.42l6.29 6.29a.996.996 0 0 0 1.41 0l6.29-6.29a1 1 0 0 0 0-1.42z"/><path d="m12 16-6-6h12z"/></svg></div>
                             <h3 class="text-xl font-semibold text-gray-800 mt-5">Direct Google Drive Sync</h3>
                             <p class="text-gray-500 mt-2">Automatically sync your generated assets to a shared Google Drive folder. Keep your team's creative library organized and accessible.</p>
                         </div>
-                        <div class="fade-in-slide-up" style="animation-delay: 300ms;">
+                        <div class="feature-card p-6 rounded-lg">
                             <div class="mx-auto bg-[#eff6ff] rounded-full h-16 w-16 flex items-center justify-center"><svg class="w-8 h-8 text-[#3b82f6]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg></div>
                             <h3 class="text-xl font-semibold text-gray-800 mt-5">Priority Generation Queue</h3>
                             <p class="text-gray-500 mt-2">Team members get priority access to our fastest models. Generate stunning visuals for marketing and branding in record time.</p>
                         </div>
-                        <div class="fade-in-slide-up" style="animation-delay: 400ms;">
+                        <div class="feature-card p-6 rounded-lg">
                             <div class="mx-auto bg-[#eff6ff] rounded-full h-16 w-16 flex items-center justify-center"><svg class="w-8 h-8 text-[#3b82f6]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
                             <h3 class="text-xl font-semibold text-gray-800 mt-5">Best for Marketing & Branding</h3>
                             <p class="text-gray-500 mt-2">Fine-tuned models that excel at creating commercially viable and on-brand content. Perfect for ad creatives, social media, and product shots.</p>
@@ -87,7 +146,8 @@
                 </div>
             </section>
             
-            <section id="gen0-section" class="relative w-full py-24 md:py-32 my-16 rounded-2xl overflow-hidden">
+            <!-- MODIFIED: Changed ID for new dynamic background -->
+            <section id="dynamic-cta-section" class="relative w-full py-24 md:py-32 my-16 rounded-2xl overflow-hidden">
                 <div class="relative z-10 text-center px-4">
                     <h2 class="text-4xl md:text-5xl font-bold text-white mb-6 cinematic-text">Ready to Elevate Your Team?</h2>
                     <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto mb-8 cinematic-text" style="animation-delay: 0.2s;">Join hundreds of businesses streamlining their creative process with GenArt.</p>
@@ -108,7 +168,7 @@
     </div>
 
     <!-- Business Email Modal -->
-    <div id="email-modal" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div id="email-modal" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center fade-in-slide-up">
             <h2 class="text-2xl font-semibold text-gray-800 mb-2">Access Pro Features</h2>
             <p class="text-gray-500 mb-6">Enter your business email to unlock the Pro Generator with Google Drive integration.</p>
@@ -122,5 +182,74 @@
     </div>
 
     <script type="module" src="script.js"></script>
+    
+    <!-- NEW: Script for dynamic animations on this page -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const observerOptions = {
+                root: null,
+                rootMargin: "0px",
+                threshold: 0.1
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // Handle counting numbers
+                        if (entry.target.id === 'social-proof-section') {
+                            const counters = entry.target.querySelectorAll('.counter-number');
+                            counters.forEach(counter => {
+                                const target = +counter.getAttribute('data-target');
+                                let current = 0;
+                                const increment = target / 100; // Animation speed
+
+                                const updateCounter = () => {
+                                    current += increment;
+                                    if (current < target) {
+                                        if (target >= 1000000) {
+                                            counter.innerText = (current / 1000000).toFixed(1) + 'M+';
+                                        } else {
+                                            counter.innerText = Math.ceil(current).toLocaleString() + '+';
+                                        }
+                                        requestAnimationFrame(updateCounter);
+                                    } else {
+                                        if (target >= 1000000) {
+                                            counter.innerText = (target / 1000000) + 'M+';
+                                        } else {
+                                            counter.innerText = target.toLocaleString() + '+';
+                                        }
+                                    }
+                                };
+                                updateCounter();
+                            });
+                            observer.unobserve(entry.target); // Animate only once
+                        }
+
+                        // Handle staggered feature cards
+                        if (entry.target.id === 'features-grid') {
+                            const cards = entry.target.querySelectorAll('.feature-card');
+                            cards.forEach((card, index) => {
+                                setTimeout(() => {
+                                    card.classList.add('is-in-view');
+                                }, index * 150); // Staggered delay
+                            });
+                            observer.unobserve(entry.target); // Animate only once
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            // Observe the sections
+            const socialProofSection = document.getElementById('social-proof-section');
+            const featuresGrid = document.getElementById('features-grid');
+            
+            if (socialProofSection) {
+                observer.observe(socialProofSection);
+            }
+            if (featuresGrid) {
+                observer.observe(featuresGrid);
+            }
+        });
+    </script>
 </body>
 </html>
