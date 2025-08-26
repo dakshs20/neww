@@ -3,6 +3,21 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+// --- Google Drive API Configuration ---
+// ===================================================================================
+// IMPORTANT: Paste your Google API keys here.
+// ===================================================================================
+const GOOGLE_API_KEY = "PASTE_YOUR_GOOGLE_API_KEY_HERE"; 
+const GOOGLE_CLIENT_ID = "PASTE_YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com"; 
+// ===================================================================================
+
+const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+
+let tokenClient;
+let gapiInited = false;
+let gisInited = false;
+
 // Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
@@ -51,6 +66,15 @@ const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
 const copyPromptBtn = document.getElementById('copy-prompt-btn');
 const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
 
+// Page: for-teams.html specific
+const getStartedBtn = document.getElementById('get-started-btn');
+const emailModal = document.getElementById('email-modal');
+const emailForm = document.getElementById('email-form');
+const emailInput = document.getElementById('business-email-input');
+const emailErrorMsg = document.getElementById('email-error-msg');
+const closeEmailModalBtn = document.getElementById('close-email-modal-btn');
+
+
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
@@ -64,73 +88,58 @@ window.onRecaptchaSuccess = function(token) {
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
+    // This single script now handles all pages.
+    // We check if elements exist before adding listeners to them.
+    
+    // Shared Logic
     onAuthStateChanged(auth, user => {
-        updateUIForAuthState(user);
+        if (authBtn) updateUIForAuthState(user);
     });
-
     if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
     document.addEventListener('click', (event) => {
-        if (mobileMenu && !mobileMenu.contains(event.target) && mobileMenuBtn && !mobileMenuBtn.contains(event.target)) {
+        if (mobileMenu && !mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
             mobileMenu.classList.add('hidden');
         }
     });
 
+    // Logic for pages with Authentication (index, for-teams)
     if (authBtn) authBtn.addEventListener('click', handleAuthAction);
     if (mobileAuthBtn) mobileAuthBtn.addEventListener('click', handleAuthAction);
     if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
     if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
-    
-    if (examplePrompts) {
-        examplePrompts.forEach(button => {
-            button.addEventListener('click', () => {
-                promptInput.value = button.innerText.trim();
-                promptInput.focus();
-            });
-        });
-    }
-    
-    if (generateBtn) {
-        generateBtn.addEventListener('click', () => {
-            const prompt = promptInput.value.trim();
-            if (!prompt) {
-                showMessage('Please describe what you want to create or edit.', 'error');
-                return;
-            }
-
-            const count = getGenerationCount();
-            if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
-                authModal.setAttribute('aria-hidden', 'false');
-                return;
-            }
-            grecaptcha.execute();
-        });
-    }
-
-    if (promptInput) {
-        promptInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                generateBtn.click();
-            }
-        });
-    }
-
-    if (aspectRatioBtns) {
-        aspectRatioBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                aspectRatioBtns.forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                selectedAspectRatio = btn.dataset.ratio;
-            });
-        });
-    }
-
-    if (copyPromptBtn) copyPromptBtn.addEventListener('click', copyPrompt);
-    if (enhancePromptBtn) enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
-    if (imageUploadBtn) imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
-    if (imageUploadInput) imageUploadInput.addEventListener('change', handleImageUpload);
-    if (removeImageBtn) removeImageBtn.addEventListener('click', removeUploadedImage);
     if (musicBtn) musicBtn.addEventListener('click', toggleMusic);
+
+    // Logic for Generator Page (index.html)
+    if (generatorUI) {
+        if (generateBtn) generateBtn.addEventListener('click', handleGenerateClick);
+        if (promptInput) promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generateBtn.click(); }
+        });
+        if (examplePrompts) examplePrompts.forEach(b => b.addEventListener('click', () => { promptInput.value = b.innerText.trim(); promptInput.focus(); }));
+        if (aspectRatioBtns) aspectRatioBtns.forEach(btn => btn.addEventListener('click', () => {
+            aspectRatioBtns.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedAspectRatio = btn.dataset.ratio;
+        }));
+        if (copyPromptBtn) copyPromptBtn.addEventListener('click', copyPrompt);
+        if (enhancePromptBtn) enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
+        if (imageUploadBtn) imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
+        if (imageUploadInput) imageUploadInput.addEventListener('change', handleImageUpload);
+        if (removeImageBtn) removeImageBtn.addEventListener('click', removeUploadedImage);
+    }
+    
+    // Logic for For Teams Page (for-teams.html)
+    if (getStartedBtn) {
+        getStartedBtn.addEventListener('click', () => {
+            emailModal.classList.remove('hidden');
+            emailModal.setAttribute('aria-hidden', 'false');
+        });
+        closeEmailModalBtn.addEventListener('click', () => {
+            emailModal.classList.add('hidden');
+            emailModal.setAttribute('aria-hidden', 'true');
+        });
+        emailForm.addEventListener('submit', handleEmailSubmit);
+    }
     
     initializeCursor();
 });
@@ -139,10 +148,8 @@ function initializeCursor() {
     const cursorDot = document.querySelector('.cursor-dot');
     const cursorOutline = document.querySelector('.cursor-outline');
     if (!cursorDot || !cursorOutline) return;
-    
     let mouseX = 0, mouseY = 0, outlineX = 0, outlineY = 0;
     window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
-    
     const animateCursor = () => {
         cursorDot.style.left = `${mouseX}px`;
         cursorDot.style.top = `${mouseY}px`;
@@ -153,11 +160,40 @@ function initializeCursor() {
         requestAnimationFrame(animateCursor);
     };
     requestAnimationFrame(animateCursor);
-
     document.querySelectorAll('a, button, textarea, input, label').forEach(el => {
         el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
         el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
     });
+}
+
+function handleGenerateClick() {
+    const prompt = promptInput.value.trim();
+    if (!prompt) {
+        showMessage('Please describe what you want to create or edit.', 'error');
+        return;
+    }
+    const count = getGenerationCount();
+    if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
+        authModal.setAttribute('aria-hidden', 'false');
+        return;
+    }
+    grecaptcha.execute();
+}
+
+function handleEmailSubmit(e) {
+    e.preventDefault();
+    const email = emailInput.value.trim();
+    const commonProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com'];
+    const domain = email.split('@')[1];
+
+    if (!domain || commonProviders.includes(domain.toLowerCase())) {
+        emailErrorMsg.textContent = 'Please use a valid business email.';
+        emailErrorMsg.classList.remove('hidden');
+        return;
+    }
+    
+    emailErrorMsg.classList.add('hidden');
+    window.location.href = 'pro-generator.html';
 }
 
 async function generateImage(recaptchaToken) {
