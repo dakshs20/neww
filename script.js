@@ -3,16 +3,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// --- START: Google Drive API Configuration ---
-const GOOGLE_API_KEY = ''; // API Key is not needed for OAuth-based uploads
-const GOOGLE_CLIENT_ID = '727829689787-p9119ek4iphj99l051ojt8r42nhduam6.apps.googleusercontent.com'; // Your Client ID
-const DRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
-let tokenClient;
-let gapiInited = false;
-let gisInited = false;
-// --- END: Google Drive API Configuration ---
-
-
 // Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
@@ -79,242 +69,118 @@ window.onRecaptchaSuccess = function(token) {
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
-    // --- START: Load Google API scripts and initialize them ---
-    const scriptGapi = document.createElement('script');
-    scriptGapi.src = 'https://apis.google.com/js/api.js';
-    scriptGapi.async = true;
-    scriptGapi.defer = true;
-    scriptGapi.onload = gapiLoaded;
-    document.body.appendChild(scriptGapi);
-
-    const scriptGis = document.createElement('script');
-    scriptGis.src = 'https://accounts.google.com/gsi/client';
-    scriptGis.async = true;
-    scriptGis.defer = true;
-    scriptGis.onload = gisLoaded;
-    document.body.appendChild(scriptGis);
-    // --- END: Load Google API scripts ---
-
     onAuthStateChanged(auth, user => {
         updateUIForAuthState(user);
     });
-    mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+    
+    // --- SHARED EVENT LISTENERS (for all pages) ---
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+    
     document.addEventListener('click', (event) => {
-        if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+        if (mobileMenu && !mobileMenu.contains(event.target) && mobileMenuBtn && !mobileMenuBtn.contains(event.target)) {
             mobileMenu.classList.add('hidden');
         }
     });
-    authBtn.addEventListener('click', handleAuthAction);
-    mobileAuthBtn.addEventListener('click', handleAuthAction);
-    googleSignInBtn.addEventListener('click', signInWithGoogle);
-    closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
-    examplePrompts.forEach(button => {
-        button.addEventListener('click', () => {
-            promptInput.value = button.innerText.trim();
-            promptInput.focus();
-        });
-    });
+
+    if (authBtn) authBtn.addEventListener('click', handleAuthAction);
+    if (mobileAuthBtn) mobileAuthBtn.addEventListener('click', handleAuthAction);
+    if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
     
-    generateBtn.addEventListener('click', () => {
-        const prompt = promptInput.value.trim();
-        if (!prompt) {
-            showMessage('Please describe what you want to create or edit.', 'error');
-            return;
-        }
-
-        const count = getGenerationCount();
-        if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
-            authModal.setAttribute('aria-hidden', 'false');
-            return;
-        }
-        grecaptcha.execute();
-    });
-
-    promptInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            generateBtn.click();
-        }
-    });
-
-    aspectRatioBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            aspectRatioBtns.forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedAspectRatio = btn.dataset.ratio;
+    if (musicBtn) {
+        musicBtn.addEventListener('click', () => {
+            const isPlaying = musicBtn.classList.contains('playing');
+            if (isPlaying) {
+                lofiMusic.pause();
+            } else {
+                lofiMusic.play().catch(error => console.error("Audio playback failed:", error));
+            }
+            musicBtn.classList.toggle('playing');
         });
-    });
+    }
 
-    copyPromptBtn.addEventListener('click', copyPrompt);
-    enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
+    // --- PAGE-SPECIFIC LISTENERS (for index.html) ---
+    // This prevents errors on pages that don't have these elements.
+    if (generateBtn) {
+        generateBtn.addEventListener('click', () => {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                showMessage('Please describe what you want to create or edit.', 'error');
+                return;
+            }
 
-    imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
-    imageUploadInput.addEventListener('change', handleImageUpload);
-    removeImageBtn.addEventListener('click', removeUploadedImage);
-    musicBtn.addEventListener('click', () => {
-        const isPlaying = musicBtn.classList.contains('playing');
-        if (isPlaying) {
-            lofiMusic.pause();
-        } else {
-            lofiMusic.play().catch(error => console.error("Audio playback failed:", error));
-        }
-        musicBtn.classList.toggle('playing');
-    });
-    let mouseX = 0, mouseY = 0;
-    let outlineX = 0, outlineY = 0;
-    window.addEventListener('mousemove', (e) => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-    });
-    const animateCursor = () => {
-        cursorDot.style.left = `${mouseX}px`;
-        cursorDot.style.top = `${mouseY}px`;
-        const ease = 0.15;
-        outlineX += (mouseX - outlineX) * ease;
-        outlineY += (mouseY - outlineY) * ease;
-        cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+            const count = getGenerationCount();
+            if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
+                authModal.setAttribute('aria-hidden', 'false');
+                return;
+            }
+            grecaptcha.execute();
+        });
+    }
+
+    if (promptInput) {
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generateBtn.click();
+            }
+        });
+    }
+
+    if (examplePrompts) {
+        examplePrompts.forEach(button => {
+            button.addEventListener('click', () => {
+                promptInput.value = button.innerText.trim();
+                promptInput.focus();
+            });
+        });
+    }
+
+    if (aspectRatioBtns) {
+        aspectRatioBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                aspectRatioBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedAspectRatio = btn.dataset.ratio;
+            });
+        });
+    }
+    
+    if (copyPromptBtn) copyPromptBtn.addEventListener('click', copyPrompt);
+    if (enhancePromptBtn) enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
+    if (imageUploadBtn) imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
+    if (imageUploadInput) imageUploadInput.addEventListener('change', handleImageUpload);
+    if (removeImageBtn) removeImageBtn.addEventListener('click', removeUploadedImage);
+
+    // --- CURSOR LOGIC (for all pages on desktop) ---
+    if (cursorDot && cursorOutline) {
+        let mouseX = 0, mouseY = 0;
+        let outlineX = 0, outlineY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        const animateCursor = () => {
+            cursorDot.style.left = `${mouseX}px`;
+            cursorDot.style.top = `${mouseY}px`;
+            const ease = 0.15;
+            outlineX += (mouseX - outlineX) * ease;
+            outlineY += (mouseY - outlineY) * ease;
+            cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+            requestAnimationFrame(animateCursor);
+        };
         requestAnimationFrame(animateCursor);
-    };
-    requestAnimationFrame(animateCursor);
-    const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
-    interactiveElements.forEach(el => {
-        el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
-        el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
-    });
+        const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
+            el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
+        });
+    }
 });
 
-// --- START: Google Drive API Functions ---
-
-/**
- * Callback after the GAPI client library has loaded.
- */
-function gapiLoaded() {
-    gapi.load('client', initializeGapiClient);
-}
-
-/**
- * Initializes the GAPI client with the Drive API.
- */
-async function initializeGapiClient() {
-    await gapi.client.init({
-        // apiKey is not required for OAuth2 flows, but discoveryDocs is
-        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-    });
-    gapiInited = true;
-    console.log("GAPI client initialized.");
-}
-
-/**
- * Callback after the Google Identity Services library has loaded.
- */
-function gisLoaded() {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: DRIVE_SCOPES,
-        callback: '', // Callback is handled by the promise/async flow
-    });
-    gisInited = true;
-    console.log("GIS client initialized.");
-}
-
-/**
- * Handles the OAuth 2.0 flow to get user permission for Google Drive.
- */
-function handleDriveAuthClick() {
-    if (gapiInited && gisInited) {
-        tokenClient.callback = async (resp) => {
-            if (resp.error !== undefined) {
-                console.error("Google Auth Error:", resp);
-                showMessage('Google Drive authentication failed.', 'error');
-                throw (resp);
-            }
-            showMessage('Connected to Google Drive!', 'info');
-            // Re-enable the "Save to Drive" button and change its function
-            const saveBtn = document.getElementById('save-to-drive-btn');
-            if(saveBtn) {
-                saveBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10l-7.5 7.5L8 11l4.5-4.5L22 10z"/><path d="M3.5 14.5L11 22l8-8-4.5-4.5-3.5 3.5-3.5-3.5z"/></svg>`;
-                saveBtn.onclick = () => saveImageToDrive(lastGeneratedImageUrl, promptInput.value);
-            }
-        };
-
-        // If the token is null or expired, request a new one.
-        if (gapi.client.getToken() === null) {
-            tokenClient.requestAccessToken({prompt: 'consent'});
-        } else {
-             tokenClient.requestAccessToken({prompt: ''});
-        }
-    } else {
-        showMessage('Google API not ready. Please try again in a moment.', 'error');
-        console.error("Auth clicked before GAPI or GIS was ready.");
-    }
-}
-
-/**
- * Converts a data URL (base64) to a Blob object.
- */
-function dataURLtoBlob(dataurl) {
-    let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-    while(n--){
-        u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], {type:mime});
-}
-
-
-/**
- * Uploads the generated image to the user's Google Drive.
- */
-async function saveImageToDrive(imageUrl, prompt) {
-    if (!gapi.client.getToken()) {
-        showMessage('Please connect to Google Drive first.', 'error');
-        handleDriveAuthClick(); // Prompt for auth if not connected
-        return;
-    }
-
-    const saveBtn = document.getElementById('save-to-drive-btn');
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
-
-    try {
-        const blob = dataURLtoBlob(imageUrl);
-        const safePrompt = prompt.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50);
-        const metadata = {
-            'name': `GenArt_${safePrompt}.png`,
-            'mimeType': 'image/png',
-            'parents': ['root'] // Saves to the root folder.
-        };
-
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-        form.append('file', blob);
-
-        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST',
-            headers: new Headers({ 'Authorization': `Bearer ${gapi.client.getToken().access_token}` }),
-            body: form,
-        });
-
-        if (!response.ok) {
-            const errorBody = await response.json();
-            console.error("Drive Upload Error:", errorBody);
-            throw new Error(`Failed to upload: ${errorBody.error.message}`);
-        }
-        
-        await response.json();
-        showMessage('Image saved to your Google Drive!', 'info');
-        saveBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-
-    } catch (error) {
-        console.error('Error saving to Drive:', error);
-        showMessage(`Could not save to Drive. ${error.message}`, 'error');
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10l-7.5 7.5L8 11l4.5-4.5L22 10z"/><path d="M3.5 14.5L11 22l8-8-4.5-4.5-3.5 3.5-3.5-3.5z"/></svg>`;
-    }
-}
-
-// --- END: Google Drive API Functions ---
-
+// --- The rest of your functions (generateImage, copyPrompt, etc.) remain unchanged ---
+// They are only called by the event listeners above, which are now safely
+// attached only when the necessary elements exist on the page.
 
 async function generateImage(recaptchaToken) {
     const prompt = promptInput.value.trim();
@@ -329,7 +195,6 @@ async function generateImage(recaptchaToken) {
 
     try {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
-        lastGeneratedImageUrl = imageUrl; // Store the latest image URL
         if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
         displayImage(imageUrl, prompt, shouldBlur);
         incrementTotalGenerations();
@@ -345,66 +210,6 @@ async function generateImage(recaptchaToken) {
     }
 }
 
-function displayImage(imageUrl, prompt, shouldBlur = false) {
-    const imgContainer = document.createElement('div');
-    imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
-    if (shouldBlur) { imgContainer.classList.add('blurred-image-container'); }
-    const img = document.createElement('img');
-    img.src = imageUrl;
-    img.alt = prompt;
-    img.className = 'w-full h-auto object-contain';
-    if (shouldBlur) { img.classList.add('blurred-image'); }
-    
-    if (!shouldBlur) {
-        const actionsContainer = document.createElement('div');
-        actionsContainer.className = 'absolute top-4 right-4 flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
-
-        const downloadButton = document.createElement('button');
-        downloadButton.className = 'bg-black/50 text-white p-2 rounded-full focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
-        downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-        downloadButton.ariaLabel = "Download Image";
-        downloadButton.onclick = () => {
-            const a = document.createElement('a');
-            a.href = imageUrl;
-            a.download = 'genart-image.png';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        };
-        actionsContainer.appendChild(downloadButton);
-
-        const saveToDriveButton = document.createElement('button');
-        saveToDriveButton.id = 'save-to-drive-btn';
-        saveToDriveButton.className = 'bg-black/50 text-white p-2 rounded-full focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white flex items-center justify-center';
-        saveToDriveButton.ariaLabel = "Save to Google Drive";
-        
-        if (!gapi.client?.getToken()) {
-             saveToDriveButton.innerHTML = `Connect Drive`;
-             saveToDriveButton.onclick = handleDriveAuthClick;
-        } else {
-            saveToDriveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10l-7.5 7.5L8 11l4.5-4.5L22 10z"/><path d="M3.5 14.5L11 22l8-8-4.5-4.5-3.5 3.5-3.5-3.5z"/></svg>`;
-            saveToDriveButton.onclick = () => saveImageToDrive(imageUrl, prompt);
-        }
-        
-        actionsContainer.appendChild(saveToDriveButton);
-        imgContainer.appendChild(actionsContainer);
-    }
-    
-    imgContainer.prepend(img);
-    
-    if (shouldBlur) {
-        const overlay = document.createElement('div');
-        overlay.className = 'unlock-overlay';
-        overlay.innerHTML = `<h3 class="text-xl font-semibold">Unlock Image</h3><p class="mt-2">Sign in to unlock this image and get unlimited generations.</p><button id="unlock-btn">Sign In to Unlock</button>`;
-        overlay.querySelector('#unlock-btn').onclick = () => { authModal.setAttribute('aria-hidden', 'false'); };
-        imgContainer.appendChild(overlay);
-    }
-    imageGrid.appendChild(imgContainer);
-}
-
-
-// --- All other existing functions (copyPrompt, handleEnhancePrompt, auth, etc.) remain below ---
-// (No changes needed for the rest of the file)
 function copyPrompt() {
     const promptText = promptInput.value;
     if (!promptText) {
@@ -449,6 +254,7 @@ async function handleEnhancePrompt() {
     try {
         const enhancedPrompt = await callApiToEnhance(promptText);
         promptInput.value = enhancedPrompt;
+        // Auto-adjust textarea height after enhancing
         promptInput.style.height = 'auto';
         promptInput.style.height = (promptInput.scrollHeight) + 'px';
     } catch (error) {
@@ -527,8 +333,8 @@ function updateGenerationCounter() {
     const count = getGenerationCount();
     const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
     const text = `${remaining} free generation${remaining !== 1 ? 's' : ''} left`;
-    generationCounterEl.textContent = text;
-    mobileGenerationCounterEl.textContent = text;
+    if (generationCounterEl) generationCounterEl.textContent = text;
+    if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = text;
 }
 function handleImageUpload(event) {
     const file = event.target.files[0];
@@ -587,7 +393,38 @@ async function incrementTotalGenerations() {
     const counterRef = doc(db, "stats", "imageGenerations");
     try { await setDoc(counterRef, { count: increment(1) }, { merge: true }); } catch (error) { console.error("Error incrementing generation count:", error); }
 }
-
+function displayImage(imageUrl, prompt, shouldBlur = false) {
+    const imgContainer = document.createElement('div');
+    imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
+    if (shouldBlur) { imgContainer.classList.add('blurred-image-container'); }
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.alt = prompt;
+    img.className = 'w-full h-auto object-contain';
+    if (shouldBlur) { img.classList.add('blurred-image'); }
+    const downloadButton = document.createElement('button');
+    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
+    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+    downloadButton.ariaLabel = "Download Image";
+    downloadButton.onclick = () => {
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = 'genart-image.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+    imgContainer.appendChild(img);
+    if (!shouldBlur) { imgContainer.appendChild(downloadButton); }
+    if (shouldBlur) {
+        const overlay = document.createElement('div');
+        overlay.className = 'unlock-overlay';
+        overlay.innerHTML = `<h3 class="text-xl font-semibold">Unlock Image</h3><p class="mt-2">Sign in to unlock this image and get unlimited generations.</p><button id="unlock-btn">Sign In to Unlock</button>`;
+        overlay.querySelector('#unlock-btn').onclick = () => { authModal.setAttribute('aria-hidden', 'false'); };
+        imgContainer.appendChild(overlay);
+    }
+    imageGrid.appendChild(imgContainer);
+}
 function showMessage(text, type = 'info') {
     const messageEl = document.createElement('div');
     messageEl.className = `p-4 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} fade-in-slide-up`;
