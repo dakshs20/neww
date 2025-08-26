@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenArt for Teams | Collaborative AI Image Generation</title>
+    
+    <meta name="description" content="Supercharge your creative workflow with GenArt for Teams. Enjoy collaborative tools, Google Drive integration, and blazing-fast AI image generation for your business or agency.">
+    <meta name="keywords" content="AI for Teams, Collaborative AI, Business AI Image Generator, Agency AI Tools, GenArt for Business, Marketing AI">
+    <meta property="og:title" content="GenArt for Teams | Collaborative AI Image Generation">
+    <meta property="og:description" content="Unlock powerful features for your creative team. Blazing-fast generation, seamless collaboration, and direct integration with your workflow.">
+    <meta property="og:image" content="https://iili.io/FsAoG2I.md.png"> <!-- Use a relevant image for teams -->
+    <meta property="og:url" content="YOUR_WEBSITE_URL_HERE/teams.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Link to your original stylesheet and the new one for this page -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="teams.css">
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <div class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
+        
+        <header class="relative flex justify-between items-center py-5 px-2 z-20">
+            <!-- Link back to the main page -->
+            <a href="index.html">
+                <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
+            </a>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="index.html" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">Generator</a>
+                <a href="teams.html" class="text-sm font-medium text-gray-900">For Teams</a>
+            </nav>
+            <div class="hidden md:flex">
+                 <button id="get-started-header-btn" class="text-sm font-medium bg-gray-800 text-white px-5 py-2.5 rounded-lg hover:bg-black transition-all duration-300">
+                    Get Started
+                </button>
+            </div>
+             <div class="md:hidden">
+                <button id="mobile-menu-btn" class="p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
+            <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-[#42669C] rounded-lg shadow-xl z-50">
+                <div class="p-2">
+                    <a href="index.html" class="block w-full text-left text-sm font-medium text-white px-4 py-2 rounded-md hover:bg-white/20">Generator</a>
+                    <a href="teams.html" class="block w-full text-left text-sm font-medium text-white px-4 py-2 rounded-md hover:bg-white/20">For Teams</a>
+                    <button id="get-started-mobile-btn" class="mt-2 w-full text-sm font-medium bg-white/90 text-gray-800 px-4 py-2 rounded-md hover:bg-white transition-all duration-300">
+                        Get Started
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            <!-- Hero Section -->
+            <section class="text-center py-20 md:py-32">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-medium text-gray-900 mb-6 fade-in-slide-up">Built for modern creative teams</h1>
+                <p class="text-lg md:text-xl text-gray-500 max-w-3xl mx-auto mb-10 fade-in-slide-up" style="animation-delay: 100ms;">The generative AI platform that scales with your vision. From marketing assets to product design, create studio-quality visuals, faster.</p>
+                <button id="get-started-hero-btn" class="bg-gray-800 text-white font-semibold py-3 px-8 rounded-lg hover:bg-black transition-all duration-300 transform hover:scale-105 fade-in-slide-up" style="animation-delay: 200ms;">Get Started</button>
+                <div class="mt-16 grid grid-cols-2 md:grid-cols-2 gap-8 max-w-2xl mx-auto fade-in-slide-up" style="animation-delay: 300ms;">
+                    <div class="text-center">
+                        <p class="text-4xl font-bold text-[#42669C]">500+</p>
+                        <p class="text-sm text-gray-500 mt-1">Active Teams</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-4xl font-bold text-[#42669C]">1M+</p>
+                        <p class="text-sm text-gray-500 mt-1">Generations Per Day</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features Section -->
+            <section class="py-20 bg-white rounded-2xl">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl md:text-4xl font-medium text-gray-800">Supercharge your workflow</h2>
+                    <p class="text-lg text-gray-500 mt-3 max-w-2xl mx-auto">Tools designed for speed, collaboration, and creativity.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-6xl mx-auto">
+                    <!-- Feature 1: Google Drive -->
+                    <div class="text-center p-6">
+                        <div class="flex justify-center items-center h-16 w-16 bg-blue-100 text-blue-600 rounded-full mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10l-7.5 7.5L8 11l4.5-4.5L22 10z"/><path d="M3.5 14.5L11 22l8-8-4.5-4.5-3.5 3.5-3.5-3.5z"/></svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Link with Google Drive</h3>
+                        <p class="text-gray-500">Directly save your generations to shared team folders in Google Drive, keeping all your assets organized and accessible.</p>
+                    </div>
+                    <!-- Feature 2: Fast Generation -->
+                    <div class="text-center p-6">
+                        <div class="flex justify-center items-center h-16 w-16 bg-purple-100 text-purple-600 rounded-full mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Priority Generation Queue</h3>
+                        <p class="text-gray-500">Team members get priority access to our fastest models, ensuring your ideas come to life in seconds, not minutes.</p>
+                    </div>
+                    <!-- Feature 3: Marketing & Branding -->
+                    <div class="text-center p-6">
+                        <div class="flex justify-center items-center h-16 w-16 bg-green-100 text-green-600 rounded-full mx-auto mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Best for Marketing & Branding</h3>
+                        <p class="text-gray-500">Maintain brand consistency with style references and generate unlimited on-brand assets for campaigns and social media.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- For Business and Agencies Section -->
+            <section id="cinematic-section" class="relative w-full py-24 md:py-32 my-16 rounded-2xl overflow-hidden">
+                <div id="stars-container"><div id="stars"></div><div id="stars2"></div><div id="stars3"></div></div>
+                <div class="relative z-10 text-center px-4">
+                    <h2 class="text-4xl md:text-5xl font-bold text-white mb-4 cinematic-text">Made for Businesses & Agencies</h2>
+                    <p class="text-lg md:text-xl text-gray-300 max-w-xl mx-auto mb-8 cinematic-text" style="animation-delay: 0.2s;">
+                        GenArt provides the security, support, and control that professional creative teams need to innovate confidently.
+                    </p>
+                </div>
+            </section>
+        </main>
+
+        <footer class="text-center py-8 mt-auto border-t border-gray-200">
+            <div class="flex justify-center items-center space-x-6 mb-4">
+                 <a href="https://www.instagram.com/genartlabs/" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 012.153 2.153c.247.636.416 1.363.465 2.427.048 1.024.06 1.378.06 3.808s-.012 2.784-.06 3.808c-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-2.153 2.153c-.636.247-1.363.416-2.427.465-1.024.048-1.378.06-3.808.06s-2.784-.013-3.808-.06c-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-2.153-2.153c-.247-.636-.416-1.363-.465-2.427-.048-1.024-.06-1.378-.06-3.808s.012-2.784.06-3.808c.049-1.064.218-1.791.465-2.427a4.902 4.902 0 012.153-2.153c.636-.247 1.363.416 2.427.465C9.53 2.013 9.884 2 12.315 2zm0 1.62c-2.403 0-2.741.01-3.701.058-1.009.046-1.594.208-2.039.384a3.278 3.278 0 00-1.48 1.48c-.176.445-.338 1.03-.384 2.039-.049.96-.058 1.299-.058 3.701s.01 2.741.058 3.701c.046 1.009.208 1.594.384 2.039a3.278 3.278 0 001.48 1.48c.445.176 1.03.338 2.039.384.96.049 1.299.058 3.701.058s2.741-.01 3.701-.058c1.009-.046 1.594-.208 2.039-.384a3.278 3.278 0 001.48-1.48c.176-.445-.338-1.03.384-2.039.049-.96.058-1.299.058-3.701s-.01-2.741-.058-3.701c-.046-1.009-.208-1.594-.384-2.039a3.278 3.278 0 00-1.48-1.48c-.445-.176-1.03-.338-2.039-.384C15.056 3.63 14.717 3.62 12.315 3.62zM12 7.18c-2.649 0-4.795 2.146-4.795 4.795s2.146 4.795 4.795 4.795 4.795-2.146 4.795-4.795S14.649 7.18 12 7.18zm0 7.96c-1.742 0-3.165-1.423-3.165-3.165S10.258 8.81 12 8.81s3.165 1.423 3.165 3.165S13.742 15.14 12 15.14zM18.81 5.99a1.38 1.38 0 100 2.76 1.38 1.38 0 000-2.76z" clip-rule="evenodd" /></svg><span class="sr-only">Instagram</span></a>
+                <a href="https://x.com/GenArtai_" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span class="sr-only">X</span></a>
+            </div>
+            <p class="text-xs text-gray-500">&copy; 2025 GenArt. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Email Modal -->
+    <div id="email-modal" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-left fade-in-slide-up relative">
+            <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">&times;</button>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Get started with GenArt for Teams</h2>
+            <p class="text-gray-500 mb-6">Enter your work email to get started. We'll be in touch with the next steps.</p>
+            <form id="team-form">
+                <label for="email-input" class="text-sm font-medium text-gray-700">Work Email</label>
+                <input type="email" id="email-input" placeholder="you@company.com" class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                <p id="email-error" class="text-red-500 text-sm mt-1 h-5"></p>
+                <button type="submit" class="w-full mt-4 bg-gray-800 text-white font-semibold py-3 px-4 rounded-lg hover:bg-black transition-colors duration-300">
+                    Continue
+                </button>
+            </form>
+             <div id="success-message" class="hidden text-center py-8">
+                <h3 class="text-2xl font-semibold text-green-600">Thank You!</h3>
+                <p class="text-gray-600 mt-2">We've received your request and will be in touch shortly.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="teams.js"></script>
+</body>
+</html>
