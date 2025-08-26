@@ -5,7 +5,7 @@ import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/fi
 
 // --- Google Drive API Configuration ---
 // ===================================================================================
-// IMPORTANT: Paste your Google API keys here.
+// IMPORTANT: Paste your Google API keys here. The button will not work without them.
 // ===================================================================================
 const GOOGLE_API_KEY = "AIzaSyAypNULLr5wkLATw1V3qA-I5NwcnGIc0v8"; 
 const GOOGLE_CLIENT_ID = "673422771881-dkts1iissdsbev5mi1nvbp90nvdo2mvh.apps.googleusercontent.com"; 
@@ -36,6 +36,7 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // --- DOM Element References ---
+// This script finds elements by ID. If an element doesn't exist on a page, the corresponding variable will be null.
 const promptInput = document.getElementById('prompt-input');
 const generateBtn = document.getElementById('generate-btn');
 const resultContainer = document.getElementById('result-container');
@@ -65,20 +66,17 @@ const lofiMusic = document.getElementById('lofi-music');
 const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
 const copyPromptBtn = document.getElementById('copy-prompt-btn');
 const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
-
-// Page: for-teams.html specific
 const getStartedBtn = document.getElementById('get-started-btn');
 const emailModal = document.getElementById('email-modal');
 const emailForm = document.getElementById('email-form');
 const emailInput = document.getElementById('business-email-input');
 const emailErrorMsg = document.getElementById('email-error-msg');
 const closeEmailModalBtn = document.getElementById('close-email-modal-btn');
-
-// Page: pro-generator.html specific
 const brandingSettingsBtn = document.getElementById('branding-settings-btn');
 const driveConnectBtn = document.getElementById('drive-connect-btn');
+const mobileDriveConnectBtn = document.getElementById('mobile-drive-connect-btn');
 
-
+// --- Global State ---
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
@@ -95,9 +93,6 @@ window.onRecaptchaSuccess = function(token) {
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
     initializeCursor();
-    
-    // This single script now handles all pages.
-    // We check if elements exist before adding listeners to them.
     
     // Shared Logic
     if (authBtn) onAuthStateChanged(auth, user => updateUIForAuthState(user));
@@ -176,7 +171,6 @@ function initializeCursor() {
 }
 
 function initializeProGeneratorPage() {
-    // This function is now correctly called only on the pro page
     const brandingPanel = document.getElementById('branding-panel');
     const brandingPanelBackdrop = document.getElementById('branding-panel-backdrop');
     const closeBrandingPanelBtn = document.getElementById('close-branding-panel-btn');
@@ -229,6 +223,24 @@ function initializeProGeneratorPage() {
         brandingSettings.paddingY = parseInt(e.target.value, 10);
         saveBrandingSettings();
     });
+
+    // Google Drive script loading
+    const gapiScript = document.createElement('script');
+    gapiScript.src = 'https://apis.google.com/js/api.js';
+    gapiScript.async = true;
+    gapiScript.defer = true;
+    gapiScript.onload = gapiLoaded;
+    document.head.appendChild(gapiScript);
+
+    const gisScript = document.createElement('script');
+    gisScript.src = 'https://accounts.google.com/gsi/client';
+    gisScript.async = true;
+    gisScript.defer = true;
+    gisScript.onload = gisLoaded;
+    document.head.appendChild(gisScript);
+    
+    if (driveConnectBtn) driveConnectBtn.addEventListener('click', handleAuthClick);
+    if (mobileDriveConnectBtn) mobileDriveConnectBtn.addEventListener('click', handleAuthClick);
 }
 
 function handleGenerateClick() {
@@ -237,15 +249,14 @@ function handleGenerateClick() {
         showMessage('Please describe what you want to create or edit.', 'error');
         return;
     }
-    // Logic for free vs pro pages
-    if (document.getElementById('auth-btn')) { // Free page has auth button
+    if (document.getElementById('auth-btn')) { 
         const count = getGenerationCount();
         if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
             authModal.setAttribute('aria-hidden', 'false');
             return;
         }
         grecaptcha.execute();
-    } else { // Pro page does not
+    } else {
         generateImage();
     }
 }
@@ -560,6 +571,36 @@ function applyWatermarkAndDownload() {
         watermark.src = brandingSettings.logo;
     };
     mainImage.src = lastGeneratedImageUrl;
+}
+
+// --- Google Drive API Functions ---
+function gapiLoaded() { gapi.load('client', initializeGapiClient); }
+async function initializeGapiClient() {
+    await gapi.client.init({ apiKey: GOOGLE_API_KEY, discoveryDocs: DISCOVERY_DOCS });
+    gapiInited = true;
+}
+function gisLoaded() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: SCOPES,
+        callback: '',
+    });
+    gisInited = true;
+}
+function handleAuthClick() {
+    if (!gapiInited || !gisInited) {
+        showMessage("Google API is not ready yet. Please wait a moment.", "info");
+        return;
+    }
+    if (gapi.client.getToken() === null) {
+        tokenClient.callback = async (resp) => {
+            if (resp.error !== undefined) throw (resp);
+            // No UI update needed here now
+        };
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+    } else {
+        showMessage("You are already connected to Google Drive.", "info");
+    }
 }
 
 // --- Helper Functions ---
