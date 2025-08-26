@@ -5,8 +5,8 @@ import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/fi
 
 // --- Google Drive API Configuration ---
 // IMPORTANT: You must get these from your Google Cloud Console project.
-const GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY"; // Replace with your Google API Key
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"; // Replace with your Google Client ID
+const GOOGLE_API_KEY = "AIzaSyAypNULLr5wkLATw1V3qA-I5NwcnGIc0v8"; // Replace with your Google API Key
+const GOOGLE_CLIENT_ID = "673422771881-dkts1iissdsbev5mi1nvbp90nvdo2mvh.apps.googleusercontent.com"; // Replace with your Google Client ID
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
@@ -439,3 +439,4 @@ function addBackButton() {
     };
     if (messageBox) messageBox.prepend(backButton);
 }
+
