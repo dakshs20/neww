@@ -7,8 +7,8 @@ import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/fi
 // ===================================================================================
 // IMPORTANT: Paste your Google API keys here.
 // ===================================================================================
-const GOOGLE_API_KEY = "PASTE_YOUR_GOOGLE_API_KEY_HERE"; 
-const GOOGLE_CLIENT_ID = "PASTE_YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com"; 
+const GOOGLE_API_KEY = "AIzaSyAypNULLr5wkLATw1V3qA-I5NwcnGIc0v8"; 
+const GOOGLE_CLIENT_ID = "673422771881-dkts1iissdsbev5mi1nvbp90nvdo2mvh.apps.googleusercontent.com"; 
 // ===================================================================================
 
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
@@ -74,12 +74,18 @@ const emailInput = document.getElementById('business-email-input');
 const emailErrorMsg = document.getElementById('email-error-msg');
 const closeEmailModalBtn = document.getElementById('close-email-modal-btn');
 
+// Page: pro-generator.html specific
+const brandingSettingsBtn = document.getElementById('branding-settings-btn');
+const driveConnectBtn = document.getElementById('drive-connect-btn');
+
 
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
 let lastGeneratedImageUrl = null;
+let lastGeneratedBlob = null;
 let selectedAspectRatio = '1:1';
+let brandingSettings = {};
 
 // --- reCAPTCHA Callback Function ---
 window.onRecaptchaSuccess = function(token) {
@@ -88,13 +94,13 @@ window.onRecaptchaSuccess = function(token) {
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
+    initializeCursor();
+    
     // This single script now handles all pages.
     // We check if elements exist before adding listeners to them.
     
     // Shared Logic
-    onAuthStateChanged(auth, user => {
-        if (authBtn) updateUIForAuthState(user);
-    });
+    if (authBtn) onAuthStateChanged(auth, user => updateUIForAuthState(user));
     if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
     document.addEventListener('click', (event) => {
         if (mobileMenu && !mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
@@ -109,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
     if (musicBtn) musicBtn.addEventListener('click', toggleMusic);
 
-    // Logic for Generator Page (index.html)
+    // Logic for Generator Pages (index.html, pro-generator.html)
     if (generatorUI) {
         if (generateBtn) generateBtn.addEventListener('click', handleGenerateClick);
         if (promptInput) promptInput.addEventListener('keydown', (e) => {
@@ -140,8 +146,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         emailForm.addEventListener('submit', handleEmailSubmit);
     }
-    
-    initializeCursor();
+
+    // Logic for Pro Generator Page (pro-generator.html)
+    if (brandingSettingsBtn) {
+        initializeProGeneratorPage();
+    }
 });
 
 function initializeCursor() {
@@ -166,18 +175,79 @@ function initializeCursor() {
     });
 }
 
+function initializeProGeneratorPage() {
+    // This function is now correctly called only on the pro page
+    const brandingPanel = document.getElementById('branding-panel');
+    const brandingPanelBackdrop = document.getElementById('branding-panel-backdrop');
+    const closeBrandingPanelBtn = document.getElementById('close-branding-panel-btn');
+    const logoUploadInput = document.getElementById('logo-upload-input');
+    const logoUploadBtn = document.getElementById('logo-upload-btn');
+    const removeLogoBtn = document.getElementById('remove-logo-btn');
+    const watermarkEnabledToggle = document.getElementById('watermark-enabled-toggle');
+    const placementOptions = document.getElementById('placement-options');
+    const opacitySlider = document.getElementById('opacity-slider');
+    const sizeSlider = document.getElementById('size-slider');
+    const paddingXInput = document.getElementById('padding-x-input');
+    const paddingYInput = document.getElementById('padding-y-input');
+
+    loadBrandingSettings();
+    
+    brandingSettingsBtn.addEventListener('click', openBrandingPanel);
+    closeBrandingPanelBtn.addEventListener('click', closeBrandingPanel);
+    brandingPanelBackdrop.addEventListener('click', closeBrandingPanel);
+    logoUploadBtn.addEventListener('click', () => logoUploadInput.click());
+    logoUploadInput.addEventListener('change', handleLogoUpload);
+    removeLogoBtn.addEventListener('click', removeLogo);
+    watermarkEnabledToggle.addEventListener('click', () => {
+        const isEnabled = watermarkEnabledToggle.getAttribute('aria-checked') === 'true';
+        setWatermarkEnabled(!isEnabled);
+        saveBrandingSettings();
+    });
+    placementOptions.addEventListener('click', (e) => {
+        if (e.target.classList.contains('placement-btn')) {
+            document.querySelectorAll('.placement-btn').forEach(btn => btn.classList.remove('selected'));
+            e.target.classList.add('selected');
+            brandingSettings.position = e.target.dataset.position;
+            saveBrandingSettings();
+        }
+    });
+    opacitySlider.addEventListener('input', (e) => {
+        document.getElementById('opacity-value').textContent = `${e.target.value}%`;
+        brandingSettings.opacity = e.target.value / 100;
+        saveBrandingSettings();
+    });
+    sizeSlider.addEventListener('input', (e) => {
+        document.getElementById('size-value').textContent = `${e.target.value}%`;
+        brandingSettings.size = e.target.value / 100;
+        saveBrandingSettings();
+    });
+    paddingXInput.addEventListener('input', (e) => {
+        brandingSettings.paddingX = parseInt(e.target.value, 10);
+        saveBrandingSettings();
+    });
+    paddingYInput.addEventListener('input', (e) => {
+        brandingSettings.paddingY = parseInt(e.target.value, 10);
+        saveBrandingSettings();
+    });
+}
+
 function handleGenerateClick() {
     const prompt = promptInput.value.trim();
     if (!prompt) {
         showMessage('Please describe what you want to create or edit.', 'error');
         return;
     }
-    const count = getGenerationCount();
-    if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
-        authModal.setAttribute('aria-hidden', 'false');
-        return;
+    // Logic for free vs pro pages
+    if (document.getElementById('auth-btn')) { // Free page has auth button
+        const count = getGenerationCount();
+        if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
+            authModal.setAttribute('aria-hidden', 'false');
+            return;
+        }
+        grecaptcha.execute();
+    } else { // Pro page does not
+        generateImage();
     }
-    grecaptcha.execute();
 }
 
 function handleEmailSubmit(e) {
@@ -196,9 +266,10 @@ function handleEmailSubmit(e) {
     window.location.href = 'pro-generator.html';
 }
 
-async function generateImage(recaptchaToken) {
+async function generateImage(recaptchaToken = null) {
     const prompt = promptInput.value.trim();
-    const shouldBlur = !auth.currentUser && getGenerationCount() === (FREE_GENERATION_LIMIT - 1);
+    const isFreePage = !!document.getElementById('auth-btn');
+    const shouldBlur = isFreePage && !auth.currentUser && getGenerationCount() === (FREE_GENERATION_LIMIT - 1);
     
     imageGrid.innerHTML = '';
     messageBox.innerHTML = '';
@@ -209,10 +280,16 @@ async function generateImage(recaptchaToken) {
 
     try {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
+        const response = await fetch(imageUrl);
+        lastGeneratedBlob = await response.blob();
+        
         if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
         displayImage(imageUrl, prompt, shouldBlur);
-        incrementTotalGenerations();
-        if (!auth.currentUser) { incrementGenerationCount(); }
+        
+        if (isFreePage) {
+            incrementTotalGenerations();
+            if (!auth.currentUser) { incrementGenerationCount(); }
+        }
     } catch (error) {
         console.error('Image generation failed:', error);
         showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
@@ -220,7 +297,7 @@ async function generateImage(recaptchaToken) {
         stopTimer();
         loadingIndicator.classList.add('hidden');
         addBackButton();
-        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+        if (isFreePage && typeof grecaptcha !== 'undefined') grecaptcha.reset();
     }
 }
 
@@ -259,31 +336,36 @@ async function generateImageWithRetry(prompt, imageData, token, aspectRatio, max
 }
 
 function displayImage(imageUrl, prompt, shouldBlur = false) {
+    lastGeneratedImageUrl = imageUrl;
+    
     const imgContainer = document.createElement('div');
     imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
-    if (shouldBlur) { imgContainer.classList.add('blurred-image-container'); }
+    if (shouldBlur) imgContainer.classList.add('blurred-image-container');
     
     const img = document.createElement('img');
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
-    if (shouldBlur) { img.classList.add('blurred-image'); }
+    if (shouldBlur) img.classList.add('blurred-image');
     
-    const downloadButton = document.createElement('button');
-    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
-    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-    downloadButton.ariaLabel = "Download Image";
-    downloadButton.onclick = () => {
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
+
+    const downloadButton = createActionButton('download', 'Download Original', () => {
         const a = document.createElement('a');
         a.href = imageUrl;
-        a.download = 'genart-image.png';
-        document.body.appendChild(a);
+        a.download = `GenArt_Original_${Date.now()}.png`;
         a.click();
-        document.body.removeChild(a);
-    };
+    });
+    buttonContainer.appendChild(downloadButton);
+
+    if (brandingSettingsBtn && brandingSettings.enabled) {
+        const exportBrandedButton = createActionButton('brand', 'Export with Branding', applyWatermarkAndDownload);
+        buttonContainer.appendChild(exportBrandedButton);
+    }
     
     imgContainer.appendChild(img);
-    if (!shouldBlur) { imgContainer.appendChild(downloadButton); }
+    if (!shouldBlur) imgContainer.appendChild(buttonContainer);
     
     if (shouldBlur) {
         const overlay = document.createElement('div');
@@ -292,10 +374,26 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
         overlay.querySelector('#unlock-btn').onclick = () => { authModal.setAttribute('aria-hidden', 'false'); };
         imgContainer.appendChild(overlay);
     }
-    
+    imageGrid.innerHTML = '';
     imageGrid.appendChild(imgContainer);
 }
 
+function createActionButton(type, title, onClick) {
+    const button = document.createElement('button');
+    button.className = 'bg-black/50 text-white p-2 rounded-full hover:bg-black/75 transition-colors';
+    button.title = title;
+    button.onclick = onClick;
+    
+    const icons = {
+        download: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
+        brand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>`
+    };
+    
+    button.innerHTML = icons[type] || '';
+    return button;
+}
+
+// --- Authentication ---
 function handleAuthAction() {
     if (auth.currentUser) {
         signOut(auth).catch(error => console.error("Sign Out Error:", error));
@@ -335,12 +433,141 @@ function updateUIForAuthState(user) {
     }
 }
 
+// --- Branding & Watermarking ---
+function openBrandingPanel() {
+    document.getElementById('branding-panel').classList.remove('translate-x-full');
+    document.getElementById('branding-panel-backdrop').classList.remove('hidden');
+}
+
+function closeBrandingPanel() {
+    document.getElementById('branding-panel').classList.add('translate-x-full');
+    document.getElementById('branding-panel-backdrop').classList.add('hidden');
+}
+
+function handleLogoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        brandingSettings.logo = reader.result;
+        updateLogoPreview();
+        saveBrandingSettings();
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeLogo() {
+    brandingSettings.logo = null;
+    updateLogoPreview();
+    saveBrandingSettings();
+}
+
+function updateLogoPreview() {
+    const logoPreview = document.getElementById('logo-preview');
+    const logoPlaceholderText = document.getElementById('logo-placeholder-text');
+    const removeLogoBtn = document.getElementById('remove-logo-btn');
+    if (brandingSettings.logo) {
+        logoPreview.src = brandingSettings.logo;
+        logoPreview.classList.remove('hidden');
+        logoPlaceholderText.classList.add('hidden');
+        removeLogoBtn.classList.remove('hidden');
+    } else {
+        logoPreview.src = '';
+        logoPreview.classList.add('hidden');
+        logoPlaceholderText.classList.remove('hidden');
+        removeLogoBtn.classList.add('hidden');
+    }
+}
+
+function setWatermarkEnabled(isEnabled) {
+    const watermarkEnabledToggle = document.getElementById('watermark-enabled-toggle');
+    watermarkEnabledToggle.setAttribute('aria-checked', isEnabled);
+    brandingSettings.enabled = isEnabled;
+    if (isEnabled) {
+        watermarkEnabledToggle.classList.add('bg-blue-600');
+    } else {
+        watermarkEnabledToggle.classList.remove('bg-blue-600');
+    }
+}
+
+function saveBrandingSettings() {
+    localStorage.setItem('genartBrandingSettings', JSON.stringify(brandingSettings));
+}
+
+function loadBrandingSettings() {
+    const savedSettings = localStorage.getItem('genartBrandingSettings');
+    if (savedSettings) {
+        brandingSettings = JSON.parse(savedSettings);
+        updateLogoPreview();
+        setWatermarkEnabled(brandingSettings.enabled);
+        document.querySelectorAll('.placement-btn').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.position === brandingSettings.position);
+        });
+        document.getElementById('opacity-slider').value = (brandingSettings.opacity || 1) * 100;
+        document.getElementById('opacity-value').textContent = `${document.getElementById('opacity-slider').value}%`;
+        document.getElementById('size-slider').value = (brandingSettings.size || 0.1) * 100;
+        document.getElementById('size-value').textContent = `${document.getElementById('size-slider').value}%`;
+        document.getElementById('padding-x-input').value = brandingSettings.paddingX || 20;
+        document.getElementById('padding-y-input').value = brandingSettings.paddingY || 20;
+    } else {
+        brandingSettings = { logo: null, enabled: false, position: 'bottom-right', opacity: 1, size: 0.1, paddingX: 20, paddingY: 20 };
+    }
+}
+
+function applyWatermarkAndDownload() {
+    if (!brandingSettings.logo) {
+        showMessage("Please upload a logo in Branding Settings first.", "error");
+        return;
+    }
+    if (!lastGeneratedImageUrl) {
+        showMessage("Please generate an image first.", "error");
+        return;
+    }
+
+    const mainImage = new Image();
+    mainImage.crossOrigin = "anonymous";
+    mainImage.onload = () => {
+        const watermark = new Image();
+        watermark.crossOrigin = "anonymous";
+        watermark.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = mainImage.naturalWidth;
+            canvas.height = mainImage.naturalHeight;
+            ctx.drawImage(mainImage, 0, 0);
+
+            const watermarkWidth = canvas.width * brandingSettings.size;
+            const watermarkHeight = watermark.height * (watermarkWidth / watermark.width);
+            const paddingX = brandingSettings.paddingX;
+            const paddingY = brandingSettings.paddingY;
+
+            let x, y;
+            switch (brandingSettings.position) {
+                case 'top-left': x = paddingX; y = paddingY; break;
+                case 'top-right': x = canvas.width - watermarkWidth - paddingX; y = paddingY; break;
+                case 'bottom-left': x = paddingX; y = canvas.height - watermarkHeight - paddingY; break;
+                default: x = canvas.width - watermarkWidth - paddingX; y = canvas.height - watermarkHeight - paddingY; break;
+            }
+
+            ctx.globalAlpha = brandingSettings.opacity;
+            ctx.drawImage(watermark, x, y, watermarkWidth, watermarkHeight);
+
+            const link = document.createElement('a');
+            link.download = `GenArt_Branded_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        };
+        watermark.src = brandingSettings.logo;
+    };
+    mainImage.src = lastGeneratedImageUrl;
+}
+
+// --- Helper Functions ---
 function startTimer() {
     let startTime = Date.now();
     const maxTime = 17 * 1000;
     progressBar.style.width = '0%';
     timerEl.textContent = `0.0s / ~17s`;
-
     timerInterval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
         if (elapsedTime >= maxTime) {
@@ -354,13 +581,7 @@ function startTimer() {
         timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
     }, 100);
 }
-
-function stopTimer() {
-    clearInterval(timerInterval);
-    timerInterval = null;
-}
-
-// --- Helper Functions ---
+function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
 function getGenerationCount() { return parseInt(localStorage.getItem('generationCount') || '0'); }
 function incrementGenerationCount() {
     const newCount = getGenerationCount() + 1;
