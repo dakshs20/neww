@@ -8,7 +8,7 @@ import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/fi
 // IMPORTANT: Paste your Google API keys here. The button will not work without them.
 // ===================================================================================
 const GOOGLE_API_KEY = "AIzaSyAypNULLr5wkLATw1V3qA-I5NwcnGIc0v8"; 
-const GOOGLE_CLIENT_ID = "673422771881-dkts1iissdsbev5mi1nvbp90nvdo2mvh.apps.googleusercontent.com";  
+const GOOGLE_CLIENT_ID = "673422771881-dkts1iissdsbev5mi1nvbp90nvdo2mvh.apps.googleusercontent.com";
 // ===================================================================================
 
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
@@ -182,6 +182,11 @@ function initializeProGeneratorPage() {
     const sizeSlider = document.getElementById('size-slider');
     const paddingXInput = document.getElementById('padding-x-input');
     const paddingYInput = document.getElementById('padding-y-input');
+    
+    const driveOptionsModal = document.getElementById('drive-options-modal');
+    const saveWithBrandingBtn = document.getElementById('save-with-branding-btn');
+    const saveWithoutBrandingBtn = document.getElementById('save-without-branding-btn');
+    const cancelSaveBtn = document.getElementById('cancel-save-btn');
 
     loadBrandingSettings();
     
@@ -223,7 +228,16 @@ function initializeProGeneratorPage() {
         saveBrandingSettings();
     });
 
-    // Google Drive script loading
+    saveWithBrandingBtn.addEventListener('click', () => {
+        uploadToDrive({ withBranding: true });
+        hideDriveOptions();
+    });
+    saveWithoutBrandingBtn.addEventListener('click', () => {
+        uploadToDrive({ withBranding: false });
+        hideDriveOptions();
+    });
+    cancelSaveBtn.addEventListener('click', hideDriveOptions);
+
     const gapiScript = document.createElement('script');
     gapiScript.src = 'https://apis.google.com/js/api.js';
     gapiScript.async = true;
@@ -374,7 +388,7 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
             const exportBrandedButton = createActionButton('brand', 'Export with Branding', applyWatermarkAndDownload);
             buttonContainer.appendChild(exportBrandedButton);
         }
-        const saveToDriveButton = createActionButton('drive', 'Save to Drive', uploadFile);
+        const saveToDriveButton = createActionButton('drive', 'Save to Drive', showDriveOptions);
         buttonContainer.appendChild(saveToDriveButton);
     }
     
@@ -401,7 +415,6 @@ function createActionButton(type, title, onClick) {
     const icons = {
         download: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
         brand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>`,
-        // MODIFIED: Replaced SVG with an img tag pointing to your link
         drive: `<img src="https://iili.io/K25gUKl.md.png" alt="Save to Drive" class="w-5 h-5">`
     };
     
@@ -625,7 +638,17 @@ function updateDriveButtonUI(isConnected) {
     }
 }
 
-async function uploadFile() {
+function showDriveOptions() {
+    const modal = document.getElementById('drive-options-modal');
+    modal.classList.remove('hidden');
+}
+
+function hideDriveOptions() {
+    const modal = document.getElementById('drive-options-modal');
+    modal.classList.add('hidden');
+}
+
+async function uploadToDrive(options = { withBranding: false }) {
     if (!lastGeneratedBlob) {
         showMessage('No image has been generated yet to save.', 'error');
         return;
@@ -636,14 +659,62 @@ async function uploadFile() {
         return;
     }
 
+    if (options.withBranding && !brandingSettings.logo) {
+        showMessage("Please upload a logo in Branding Settings to save with branding.", "error");
+        return;
+    }
+
+    if (options.withBranding) {
+        const mainImage = new Image();
+        mainImage.crossOrigin = "anonymous";
+        mainImage.onload = () => {
+            const watermark = new Image();
+            watermark.crossOrigin = "anonymous";
+            watermark.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = mainImage.naturalWidth;
+                canvas.height = mainImage.naturalHeight;
+                ctx.drawImage(mainImage, 0, 0);
+
+                const watermarkWidth = canvas.width * brandingSettings.size;
+                const watermarkHeight = watermark.height * (watermarkWidth / watermark.width);
+                const paddingX = brandingSettings.paddingX;
+                const paddingY = brandingSettings.paddingY;
+
+                let x, y;
+                switch (brandingSettings.position) {
+                    case 'top-left': x = paddingX; y = paddingY; break;
+                    case 'top-right': x = canvas.width - watermarkWidth - paddingX; y = paddingY; break;
+                    case 'bottom-left': x = paddingX; y = canvas.height - watermarkHeight - paddingY; break;
+                    default: x = canvas.width - watermarkWidth - paddingX; y = canvas.height - watermarkHeight - paddingY; break;
+                }
+
+                ctx.globalAlpha = brandingSettings.opacity;
+                ctx.drawImage(watermark, x, y, watermarkWidth, watermarkHeight);
+                
+                canvas.toBlob((blob) => {
+                    performUpload(blob, { branded: true });
+                }, 'image/png');
+            };
+            watermark.src = brandingSettings.logo;
+        };
+        mainImage.src = lastGeneratedImageUrl;
+    } else {
+        performUpload(lastGeneratedBlob, { branded: false });
+    }
+}
+
+async function performUpload(blob, options = { branded: false }) {
+    const fileName = `GenArt_${options.branded ? 'Branded_' : ''}${Date.now()}.png`;
     const metadata = {
-        'name': `GenArt_${Date.now()}.png`,
+        'name': fileName,
         'mimeType': 'image/png',
     };
     
     const form = new FormData();
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', lastGeneratedBlob);
+    form.append('file', blob);
 
     try {
         const saveButton = document.querySelector('button[title="Save to Drive"]');
@@ -668,6 +739,7 @@ async function uploadFile() {
         showMessage(`Failed to save to Drive: ${error.message}`, 'error');
     }
 }
+
 
 // --- Helper Functions ---
 function startTimer() {
