@@ -8,7 +8,7 @@ import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/fi
 // IMPORTANT: Paste your Google API keys here. The button will not work without them.
 // ===================================================================================
 const GOOGLE_API_KEY = "AIzaSyAypNULLr5wkLATw1V3qA-I5NwcnGIc0v8"; 
-const GOOGLE_CLIENT_ID = "673422771881-dkts1iissdsbev5mi1nvbp90nvdo2mvh.apps.googleusercontent.com"; 
+const GOOGLE_CLIENT_ID = "673422771881-dkts1iissdsbev5mi1nvbp90nvdo2mvh.apps.googleusercontent.com";  
 // ===================================================================================
 
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
@@ -36,7 +36,6 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // --- DOM Element References ---
-// This script finds elements by ID. If an element doesn't exist on a page, the corresponding variable will be null.
 const promptInput = document.getElementById('prompt-input');
 const generateBtn = document.getElementById('generate-btn');
 const resultContainer = document.getElementById('result-container');
@@ -402,7 +401,8 @@ function createActionButton(type, title, onClick) {
     const icons = {
         download: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
         brand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>`,
-        drive: `<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.42 5.58a1 1 0 0 0-1.42 0l-5.58 5.58-5.58-5.58a1 1 0 0 0-1.42 1.42l6.29 6.29a.996.996 0 0 0 1.41 0l6.29-6.29a1 1 0 0 0 0-1.42z"/><path d="m12 16-6-6h12z"/></svg>`
+        // MODIFIED: Replaced icon with official Google Drive logo SVG
+        drive: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20.33 9.77L13.33 9.76L13.33 16.03L17.5 16.03C18.47 16.03 19.33 15.24 19.33 14.26L19.33 11.52C19.33 10.55 18.47 9.76 17.5 9.76L20.33 9.77Z" fill="#FFC107"/><path d="M5.53 9.77L12.53 20.24L16.7 14.26L9.7 3.79L5.53 9.77Z" fill="#34A853"/><path d="M9.7 3.79L16.7 14.26L20.33 9.77L13.33 9.76L9.7 3.79Z" fill="#EA4335"/><path d="M5.53 9.77L9.7 3.79L3.67 9.77L5.53 9.77Z" fill="#4285F4"/></svg>`
     };
     
     button.innerHTML = icons[type] || '';
