@@ -527,6 +527,12 @@ textarea::-webkit-scrollbar-thumb:hover {
     cursor: pointer;
 }
 
+/* Style for the selected variants button */
+#variants-btn.selected {
+    background-color: #3b82f6; /* Blue background */
+    color: white;
+}
+
 @media (max-width: 768px) {
     body {
         cursor: auto;
