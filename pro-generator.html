@@ -23,13 +23,13 @@
             <!-- Pro Header -->
             <div id="header-auth-section" class="hidden md:flex items-center space-x-4">
                 <span class="text-sm font-semibold bg-blue-100 text-blue-700 px-3 py-1 rounded-full">PRO</span>
-                <!-- NEW: Branding Settings Button -->
                 <button id="branding-settings-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-300 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>
                     <span>Branding</span>
                 </button>
                 <button id="drive-connect-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-300 flex items-center gap-2">
-                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M19.42 5.58a1 1 0 0 0-1.42 0l-5.58 5.58-5.58-5.58a1 1 0 0 0-1.42 1.42l6.29 6.29a.996.996 0 0 0 1.41 0l6.29-6.29a1 1 0 0 0 0-1.42z"/><path d="m12 16-6-6h12z"/></svg>
+                    <!-- MODIFIED: Replaced SVG with your image link -->
+                    <img src="https://iili.io/K25gUKl.md.png" alt="Google Drive Logo" class="w-5 h-5">
                     <span id="drive-connect-text">Connect Drive</span>
                 </button>
             </div>
@@ -89,7 +89,7 @@
         </footer>
     </div>
 
-    <!-- NEW: Branding Settings Panel (Slide-out) -->
+    <!-- Branding Settings Panel (Slide-out) -->
     <div id="branding-panel-backdrop" class="fixed inset-0 bg-black/40 z-30 hidden"></div>
     <div id="branding-panel" class="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-40 transform translate-x-full transition-transform duration-300 ease-in-out">
         <div class="p-6 h-full flex flex-col">
