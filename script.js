@@ -453,7 +453,8 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
         proButtons.push(createActionButton('drive', 'Save to Drive', () => showDriveOptions(imageUrl)));
     }
 
-    if (selectedAspectRatio === '16:9' && !isVariant && !shouldBlur) {
+    // UPDATED LOGIC: If aspect ratio is 16:9, buttons go below for single images AND variants.
+    if (selectedAspectRatio === '16:9' && !shouldBlur) {
         buttonContainer.className = 'flex items-center justify-center gap-3 mt-4';
         imgContainer.appendChild(img);
         cardWrapper.appendChild(imgContainer);
