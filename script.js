@@ -8,7 +8,7 @@ import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/fi
 // IMPORTANT: Paste your Google API keys here. The button will not work without them.
 // ===================================================================================
 const GOOGLE_API_KEY = "AIzaSyAypNULLr5wkLATw1V3qA-I5NwcnGIc0v8"; 
-const GOOGLE_CLIENT_ID = "673422771881-dkts1iissdsbev5mi1nvbp90nvdo2mvh.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "673422771881-dkts1iissdsbev5mi1nvbp90nvdo2mvh.apps.googleusercontent.com"; 
 // ===================================================================================
 
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
@@ -83,6 +83,7 @@ let lastGeneratedImageUrl = null;
 let lastGeneratedBlob = null;
 let selectedAspectRatio = '1:1';
 let brandingSettings = {};
+let currentUploadOptions = {}; // NEW: To store branding choice
 
 // --- reCAPTCHA Callback Function ---
 window.onRecaptchaSuccess = function(token) {
@@ -188,6 +189,10 @@ function initializeProGeneratorPage() {
     const saveWithoutBrandingBtn = document.getElementById('save-without-branding-btn');
     const cancelSaveBtn = document.getElementById('cancel-save-btn');
 
+    const fileNameModal = document.getElementById('file-name-modal');
+    const fileNameForm = document.getElementById('file-name-form');
+    const cancelFileNameBtn = document.getElementById('cancel-file-name-btn');
+
     loadBrandingSettings();
     
     brandingSettingsBtn.addEventListener('click', openBrandingPanel);
@@ -229,14 +234,22 @@ function initializeProGeneratorPage() {
     });
 
     saveWithBrandingBtn.addEventListener('click', () => {
-        uploadToDrive({ withBranding: true });
         hideDriveOptions();
+        showFileNameModal({ withBranding: true });
     });
     saveWithoutBrandingBtn.addEventListener('click', () => {
-        uploadToDrive({ withBranding: false });
         hideDriveOptions();
+        showFileNameModal({ withBranding: false });
     });
     cancelSaveBtn.addEventListener('click', hideDriveOptions);
+
+    fileNameForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const fileName = document.getElementById('file-name-input').value;
+        uploadToDrive(currentUploadOptions, fileName);
+        hideFileNameModal();
+    });
+    cancelFileNameBtn.addEventListener('click', hideFileNameModal);
 
     const gapiScript = document.createElement('script');
     gapiScript.src = 'https://apis.google.com/js/api.js';
@@ -648,7 +661,22 @@ function hideDriveOptions() {
     modal.classList.add('hidden');
 }
 
-async function uploadToDrive(options = { withBranding: false }) {
+function showFileNameModal(options) {
+    currentUploadOptions = options;
+    const modal = document.getElementById('file-name-modal');
+    const input = document.getElementById('file-name-input');
+    const promptText = document.getElementById('prompt-input').value.substring(0, 30).replace(/\s/g, '_');
+    input.value = `GenArt_${promptText || 'image'}`;
+    modal.classList.remove('hidden');
+    input.focus();
+}
+
+function hideFileNameModal() {
+    const modal = document.getElementById('file-name-modal');
+    modal.classList.add('hidden');
+}
+
+async function uploadToDrive(options = { withBranding: false }, fileName) {
     if (!lastGeneratedBlob) {
         showMessage('No image has been generated yet to save.', 'error');
         return;
@@ -694,21 +722,21 @@ async function uploadToDrive(options = { withBranding: false }) {
                 ctx.drawImage(watermark, x, y, watermarkWidth, watermarkHeight);
                 
                 canvas.toBlob((blob) => {
-                    performUpload(blob, { branded: true });
+                    performUpload(blob, fileName);
                 }, 'image/png');
             };
             watermark.src = brandingSettings.logo;
         };
         mainImage.src = lastGeneratedImageUrl;
     } else {
-        performUpload(lastGeneratedBlob, { branded: false });
+        performUpload(lastGeneratedBlob, fileName);
     }
 }
 
-async function performUpload(blob, options = { branded: false }) {
-    const fileName = `GenArt_${options.branded ? 'Branded_' : ''}${Date.now()}.png`;
+async function performUpload(blob, fileName) {
+    const finalFileName = fileName ? `${fileName}.png` : `GenArt_${Date.now()}.png`;
     const metadata = {
-        'name': fileName,
+        'name': finalFileName,
         'mimeType': 'image/png',
     };
     
@@ -731,7 +759,7 @@ async function performUpload(blob, options = { branded: false }) {
         if (result.error) {
             throw new Error(result.error.message);
         }
-        showMessage('Image saved to your Google Drive!', 'info');
+        showMessage(`Image saved as "${finalFileName}" to your Google Drive!`, 'info');
         saveButton.innerHTML = originalIcon;
         saveButton.disabled = false;
     } catch (error) {
