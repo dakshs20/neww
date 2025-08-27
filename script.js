@@ -422,10 +422,8 @@ async function generateImageWithRetry(prompt, imageData, token, aspectRatio, max
 function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
     const imgContainer = document.createElement('div');
     
-    // Base classes
     let containerClasses = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up border border-gray-200/80';
     
-    // If it's a single image, keep it centered. If it's a variant, add the hover class.
     if (!isVariant) {
         containerClasses += ' mx-auto max-w-2xl';
     } else {
@@ -452,6 +450,9 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
         a.click();
     });
     buttonContainer.appendChild(downloadButton);
+    
+    const removeBgButton = createActionButton('remove-bg', 'Remove Background', (e) => removeBackgroundAndDownload(imageUrl, e.currentTarget));
+    buttonContainer.appendChild(removeBgButton);
 
     if (brandingSettingsBtn) { // Check if on pro page
         if (brandingSettings.enabled && brandingSettings.logo) {
@@ -488,12 +489,50 @@ function createActionButton(type, title, onClick) {
     const icons = {
         download: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
         brand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>`,
-        drive: `<img src="https://iili.io/K25gUKl.md.png" alt="Save to Drive" class="w-5 h-5">`
+        drive: `<img src="https://iili.io/K25gUKl.md.png" alt="Save to Drive" class="w-5 h-5">`,
+        'remove-bg': `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>`
     };
     
     button.innerHTML = icons[type] || '';
     return button;
 }
+
+async function removeBackgroundAndDownload(imageUrl, buttonEl) {
+    const originalIcon = buttonEl.innerHTML;
+    const spinner = `<svg class="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+    buttonEl.innerHTML = spinner;
+    buttonEl.disabled = true;
+
+    try {
+        const response = await fetch('/api/remove-background', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageUrl })
+        });
+
+        if (!response.ok) {
+            const errorResult = await response.json();
+            throw new Error(errorResult.error || 'Background removal failed.');
+        }
+
+        const result = await response.json();
+        
+        const a = document.createElement('a');
+        a.href = result.imageUrl;
+        a.download = `GenArt_NoBG_${Date.now()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+    } catch (error) {
+        console.error('Error removing background:', error);
+        showMessage(error.message, 'error');
+    } finally {
+        buttonEl.innerHTML = originalIcon;
+        buttonEl.disabled = false;
+    }
+}
+
 
 // --- Authentication ---
 function handleAuthAction() {
