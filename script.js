@@ -146,7 +146,25 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initializeCursor() {
-    // ... (cursor logic remains the same)
+    const cursorDot = document.querySelector('.cursor-dot');
+    const cursorOutline = document.querySelector('.cursor-outline');
+    if (!cursorDot || !cursorOutline) return;
+    let mouseX = 0, mouseY = 0, outlineX = 0, outlineY = 0;
+    window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+    const animateCursor = () => {
+        cursorDot.style.left = `${mouseX}px`;
+        cursorDot.style.top = `${mouseY}px`;
+        const ease = 0.15;
+        outlineX += (mouseX - outlineX) * ease;
+        outlineY += (mouseY - outlineY) * ease;
+        cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+        requestAnimationFrame(animateCursor);
+    };
+    requestAnimationFrame(animateCursor);
+    document.querySelectorAll('a, button, textarea, input, label').forEach(el => {
+        el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
+        el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
+    });
 }
 
 function initializeProGeneratorPage() {
@@ -289,6 +307,8 @@ async function generateVariants() {
         return;
     }
 
+    variantsBtn.classList.add('selected');
+
     imageGrid.innerHTML = '';
     messageBox.innerHTML = '';
     resultContainer.classList.remove('hidden');
@@ -306,7 +326,7 @@ async function generateVariants() {
         const imageUrls = await Promise.all(promises);
         
         imageUrls.forEach(imageUrl => {
-            displayImage(imageUrl, prompt, false, true); // Pass true for isVariant
+            displayImage(imageUrl, prompt, false, true);
         });
 
     } catch (error) {
@@ -867,6 +887,9 @@ function addBackButton() {
         messageBox.innerHTML = '';
         promptInput.value = '';
         removeUploadedImage();
+        if (variantsBtn) {
+            variantsBtn.classList.remove('selected');
+        }
     };
     if (messageBox) messageBox.prepend(backButton);
 }
