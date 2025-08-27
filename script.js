@@ -394,15 +394,15 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
 
 function createActionButton(type, title, onClick) {
     const button = document.createElement('button');
-    button.className = 'bg-black/50 text-white p-2 rounded-full hover:bg-black/75 transition-colors';
+    button.className = 'bg-black/50 text-white p-2 rounded-full hover:bg-black/75 transition-colors flex items-center justify-center w-10 h-10';
     button.title = title;
     button.onclick = onClick;
     
     const icons = {
         download: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
         brand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>`,
-        // MODIFIED: Replaced icon with official Google Drive logo SVG
-        drive: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20.33 9.77L13.33 9.76L13.33 16.03L17.5 16.03C18.47 16.03 19.33 15.24 19.33 14.26L19.33 11.52C19.33 10.55 18.47 9.76 17.5 9.76L20.33 9.77Z" fill="#FFC107"/><path d="M5.53 9.77L12.53 20.24L16.7 14.26L9.7 3.79L5.53 9.77Z" fill="#34A853"/><path d="M9.7 3.79L16.7 14.26L20.33 9.77L13.33 9.76L9.7 3.79Z" fill="#EA4335"/><path d="M5.53 9.77L9.7 3.79L3.67 9.77L5.53 9.77Z" fill="#4285F4"/></svg>`
+        // MODIFIED: Replaced SVG with an img tag pointing to your link
+        drive: `<img src="https://iili.io/K25gUKl.md.png" alt="Save to Drive" class="w-5 h-5">`
     };
     
     button.innerHTML = icons[type] || '';
