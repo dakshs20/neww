@@ -204,10 +204,10 @@ function initializeProGeneratorPage() {
         saveBrandingSettings();
     });
     placementOptions.addEventListener('click', (e) => {
-        if (e.target.classList.contains('placement-btn')) {
+        if (e.target.closest('.placement-btn')) {
             document.querySelectorAll('.placement-btn').forEach(btn => btn.classList.remove('selected'));
-            e.target.classList.add('selected');
-            brandingSettings.position = e.target.dataset.position;
+            e.target.closest('.placement-btn').classList.add('selected');
+            brandingSettings.position = e.target.closest('.placement-btn').dataset.position;
             saveBrandingSettings();
         }
     });
@@ -317,14 +317,21 @@ async function generateVariants() {
     startTimer();
 
     try {
+        // Create three parallel requests for image generation
         const promises = [
             generateImageWithRetry(prompt, uploadedImageData, null, selectedAspectRatio),
             generateImageWithRetry(prompt, uploadedImageData, null, selectedAspectRatio),
             generateImageWithRetry(prompt, uploadedImageData, null, selectedAspectRatio)
         ];
 
+        // Wait for all three images to be generated
         const imageUrls = await Promise.all(promises);
         
+        // Adjust grid for multiple images
+        imageGrid.classList.remove('md:grid-cols-1');
+        imageGrid.classList.add('md:grid-cols-3');
+        
+        // Display each generated image
         imageUrls.forEach(imageUrl => {
             displayImage(imageUrl, prompt, false, true);
         });
@@ -357,6 +364,11 @@ async function generateImage(recaptchaToken = null) {
         lastGeneratedBlob = await response.blob();
         
         if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
+        
+        // Adjust grid for a single image
+        imageGrid.classList.remove('md:grid-cols-3');
+        imageGrid.classList.add('md:grid-cols-1');
+
         displayImage(imageUrl, prompt, shouldBlur);
         
         if (isFreePage) {
@@ -433,7 +445,7 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
     buttonContainer.appendChild(downloadButton);
 
     if (brandingSettingsBtn) { // Check if on pro page
-        if (brandingSettings.enabled) {
+        if (brandingSettings.enabled && brandingSettings.logo) {
             const exportBrandedButton = createActionButton('brand', 'Export with Branding', applyWatermarkAndDownload);
             buttonContainer.appendChild(exportBrandedButton);
         }
@@ -452,6 +464,7 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
         imgContainer.appendChild(overlay);
     }
     
+    // If it's not a variant, clear the grid first. If it is, just append.
     if (!isVariant) {
         imageGrid.innerHTML = '';
     }
