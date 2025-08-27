@@ -585,6 +585,17 @@ textarea::-webkit-scrollbar-thumb:hover {
     border-color: #93c5fd; /* Blue 300 */
 }
 
+/* NEW: Styles for Variant Image Hover Effect */
+.variant-image-container {
+    transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.variant-image-container:hover {
+    transform: scale(1.05);
+    z-index: 10; /* Ensure the hovered image is on top of others */
+    box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.2);
+}
+
 
 @media (max-width: 768px) {
     body {
