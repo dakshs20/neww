@@ -80,8 +80,8 @@ const variantsBtn = document.getElementById('variants-btn');
 let timerInterval;
 const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
-let lastGeneratedImageUrl = null;
-let lastGeneratedBlob = null;
+let lastGeneratedBlob = null; // Used for single generations
+let currentImageUrlToSave = null; // Used for saving any image (single or variant)
 let selectedAspectRatio = '1:1';
 let brandingSettings = {};
 let currentUploadOptions = {};
@@ -317,21 +317,17 @@ async function generateVariants() {
     startTimer();
 
     try {
-        // Create three parallel requests for image generation
         const promises = [
             generateImageWithRetry(prompt, uploadedImageData, null, selectedAspectRatio),
             generateImageWithRetry(prompt, uploadedImageData, null, selectedAspectRatio),
             generateImageWithRetry(prompt, uploadedImageData, null, selectedAspectRatio)
         ];
 
-        // Wait for all three images to be generated
         const imageUrls = await Promise.all(promises);
         
-        // Adjust grid for multiple images
         imageGrid.classList.remove('md:grid-cols-1');
         imageGrid.classList.add('md:grid-cols-3');
         
-        // Display each generated image
         imageUrls.forEach(imageUrl => {
             displayImage(imageUrl, prompt, false, true);
         });
@@ -363,9 +359,12 @@ async function generateImage(recaptchaToken = null) {
         const response = await fetch(imageUrl);
         lastGeneratedBlob = await response.blob();
         
-        if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
+        if (shouldBlur) { 
+            // Don't set the main save URL if it's blurred, let the unlock handle it.
+        } else {
+            currentImageUrlToSave = imageUrl;
+        }
         
-        // Adjust grid for a single image
         imageGrid.classList.remove('md:grid-cols-3');
         imageGrid.classList.add('md:grid-cols-1');
 
@@ -421,8 +420,6 @@ async function generateImageWithRetry(prompt, imageData, token, aspectRatio, max
 }
 
 function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
-    lastGeneratedImageUrl = imageUrl;
-    
     const imgContainer = document.createElement('div');
     imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
     if (shouldBlur) imgContainer.classList.add('blurred-image-container');
@@ -446,10 +443,10 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
 
     if (brandingSettingsBtn) { // Check if on pro page
         if (brandingSettings.enabled && brandingSettings.logo) {
-            const exportBrandedButton = createActionButton('brand', 'Export with Branding', applyWatermarkAndDownload);
+            const exportBrandedButton = createActionButton('brand', 'Export with Branding', () => applyWatermarkAndDownload(imageUrl));
             buttonContainer.appendChild(exportBrandedButton);
         }
-        const saveToDriveButton = createActionButton('drive', 'Save to Drive', showDriveOptions);
+        const saveToDriveButton = createActionButton('drive', 'Save to Drive', () => showDriveOptions(imageUrl));
         buttonContainer.appendChild(saveToDriveButton);
     }
     
@@ -464,7 +461,6 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
         imgContainer.appendChild(overlay);
     }
     
-    // If it's not a variant, clear the grid first. If it is, just append.
     if (!isVariant) {
         imageGrid.innerHTML = '';
     }
@@ -510,15 +506,21 @@ function updateUIForAuthState(user) {
         generationCounterEl.textContent = welcomeText;
         mobileGenerationCounterEl.textContent = welcomeText;
         authModal.setAttribute('aria-hidden', 'true');
-        if (lastGeneratedImageUrl) {
-            const blurredContainer = document.querySelector('.blurred-image-container');
-            if (blurredContainer) {
-                const img = blurredContainer.querySelector('img');
-                img.classList.remove('blurred-image');
-                const overlay = blurredContainer.querySelector('.unlock-overlay');
-                if (overlay) overlay.remove();
-            }
-            lastGeneratedImageUrl = null;
+        // Check if there's a blurred image to unlock
+        const blurredContainer = document.querySelector('.blurred-image-container');
+        if (blurredContainer) {
+            const img = blurredContainer.querySelector('img');
+            img.classList.remove('blurred-image');
+            const overlay = blurredContainer.querySelector('.unlock-overlay');
+            if (overlay) overlay.remove();
+            // Re-add the action buttons that were missing
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
+            const downloadButton = createActionButton('download', 'Download Original', () => {
+                const a = document.createElement('a'); a.href = img.src; a.download = `GenArt_Original_${Date.now()}.png`; a.click();
+            });
+            buttonContainer.appendChild(downloadButton);
+            blurredContainer.appendChild(buttonContainer);
         }
     } else {
         authBtn.textContent = 'Sign In';
@@ -608,12 +610,12 @@ function loadBrandingSettings() {
     }
 }
 
-function applyWatermarkAndDownload() {
+function applyWatermarkAndDownload(imageUrl) {
     if (!brandingSettings.logo) {
         showMessage("Please upload a logo in Branding Settings first.", "error");
         return;
     }
-    if (!lastGeneratedImageUrl) {
+    if (!imageUrl) {
         showMessage("Please generate an image first.", "error");
         return;
     }
@@ -653,7 +655,7 @@ function applyWatermarkAndDownload() {
         };
         watermark.src = brandingSettings.logo;
     };
-    mainImage.src = lastGeneratedImageUrl;
+    mainImage.src = imageUrl;
 }
 
 // --- Google Drive API Functions ---
@@ -703,7 +705,8 @@ function updateDriveButtonUI(isConnected) {
     }
 }
 
-function showDriveOptions() {
+function showDriveOptions(imageUrl) {
+    currentImageUrlToSave = imageUrl;
     const modal = document.getElementById('drive-options-modal');
     modal.classList.remove('hidden');
 }
@@ -729,8 +732,8 @@ function hideFileNameModal() {
 }
 
 async function uploadToDrive(options = { withBranding: false }, fileName) {
-    if (!lastGeneratedBlob) {
-        showMessage('No image has been generated yet to save.', 'error');
+    if (!currentImageUrlToSave) {
+        showMessage('No image selected to save.', 'error');
         return;
     }
     if (gapi.client.getToken() === null) {
@@ -779,9 +782,11 @@ async function uploadToDrive(options = { withBranding: false }, fileName) {
             };
             watermark.src = brandingSettings.logo;
         };
-        mainImage.src = lastGeneratedImageUrl;
+        mainImage.src = currentImageUrlToSave;
     } else {
-        performUpload(lastGeneratedBlob, fileName);
+        const response = await fetch(currentImageUrlToSave);
+        const imageBlob = await response.blob();
+        performUpload(imageBlob, fileName);
     }
 }
 
