@@ -421,7 +421,19 @@ async function generateImageWithRetry(prompt, imageData, token, aspectRatio, max
 
 function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
     const imgContainer = document.createElement('div');
-    imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
+    
+    // Base classes
+    let containerClasses = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up border border-gray-200/80';
+    
+    // If it's a single image, keep it centered. If it's a variant, add the hover class.
+    if (!isVariant) {
+        containerClasses += ' mx-auto max-w-2xl';
+    } else {
+        containerClasses += ' variant-image-container';
+    }
+
+    imgContainer.className = containerClasses;
+
     if (shouldBlur) imgContainer.classList.add('blurred-image-container');
     
     const img = document.createElement('img');
