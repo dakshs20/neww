@@ -420,52 +420,58 @@ async function generateImageWithRetry(prompt, imageData, token, aspectRatio, max
 }
 
 function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
+    const cardWrapper = document.createElement('div');
     const imgContainer = document.createElement('div');
-    
-    let containerClasses = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up border border-gray-200/80';
-    
+    imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group border border-gray-200/80';
+
     if (!isVariant) {
-        containerClasses += ' mx-auto max-w-2xl';
+        cardWrapper.className = 'mx-auto max-w-2xl fade-in-slide-up';
     } else {
-        containerClasses += ' variant-image-container';
+        cardWrapper.className = 'variant-image-container fade-in-slide-up';
+        imgContainer.classList.add('h-full');
     }
 
-    imgContainer.className = containerClasses;
-
     if (shouldBlur) imgContainer.classList.add('blurred-image-container');
-    
+
     const img = document.createElement('img');
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
+    if (isVariant) img.classList.add('h-full', 'object-cover');
     if (shouldBlur) img.classList.add('blurred-image');
-    
+
     const buttonContainer = document.createElement('div');
-    buttonContainer.className = 'absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
-
     const downloadButton = createActionButton('download', 'Download Original', () => {
-        const a = document.createElement('a');
-        a.href = imageUrl;
-        a.download = `GenArt_Original_${Date.now()}.png`;
-        a.click();
+        const a = document.createElement('a'); a.href = imageUrl; a.download = `GenArt_Original_${Date.now()}.png`; a.click();
     });
-    buttonContainer.appendChild(downloadButton);
-    
     const removeBgButton = createActionButton('remove-bg', 'Remove Background', (e) => removeBackgroundAndDownload(imageUrl, e.currentTarget));
-    buttonContainer.appendChild(removeBgButton);
-
-    if (brandingSettingsBtn) { // Check if on pro page
+    
+    let proButtons = [];
+    if (brandingSettingsBtn) {
         if (brandingSettings.enabled && brandingSettings.logo) {
-            const exportBrandedButton = createActionButton('brand', 'Export with Branding', () => applyWatermarkAndDownload(imageUrl));
-            buttonContainer.appendChild(exportBrandedButton);
+            proButtons.push(createActionButton('brand', 'Export with Branding', () => applyWatermarkAndDownload(imageUrl)));
         }
-        const saveToDriveButton = createActionButton('drive', 'Save to Drive', () => showDriveOptions(imageUrl));
-        buttonContainer.appendChild(saveToDriveButton);
+        proButtons.push(createActionButton('drive', 'Save to Drive', () => showDriveOptions(imageUrl)));
     }
-    
-    imgContainer.appendChild(img);
-    if (!shouldBlur) imgContainer.appendChild(buttonContainer);
-    
+
+    if (selectedAspectRatio === '16:9' && !isVariant && !shouldBlur) {
+        buttonContainer.className = 'flex items-center justify-center gap-3 mt-4';
+        imgContainer.appendChild(img);
+        cardWrapper.appendChild(imgContainer);
+        buttonContainer.appendChild(downloadButton);
+        buttonContainer.appendChild(removeBgButton);
+        proButtons.forEach(btn => buttonContainer.appendChild(btn));
+        cardWrapper.appendChild(buttonContainer);
+    } else {
+        buttonContainer.className = 'absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
+        buttonContainer.appendChild(downloadButton);
+        buttonContainer.appendChild(removeBgButton);
+        proButtons.forEach(btn => buttonContainer.appendChild(btn));
+        imgContainer.appendChild(img);
+        if (!shouldBlur) imgContainer.appendChild(buttonContainer);
+        cardWrapper.appendChild(imgContainer);
+    }
+
     if (shouldBlur) {
         const overlay = document.createElement('div');
         overlay.className = 'unlock-overlay';
@@ -474,11 +480,10 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
         imgContainer.appendChild(overlay);
     }
     
-    if (!isVariant) {
-        imageGrid.innerHTML = '';
-    }
-    imageGrid.appendChild(imgContainer);
+    if (!isVariant) imageGrid.innerHTML = '';
+    imageGrid.appendChild(cardWrapper);
 }
+
 
 function createActionButton(type, title, onClick) {
     const button = document.createElement('button');
@@ -511,13 +516,11 @@ async function removeBackgroundAndDownload(imageUrl, buttonEl) {
         });
 
         if (!response.ok) {
-            // Try to parse the error as JSON, but fall back to text if it fails
             let errorText = await response.text();
             try {
                 const errorJson = JSON.parse(errorText);
                 errorText = errorJson.error || 'Background removal failed.';
             } catch (e) {
-                // The response was not JSON, so we use the raw text.
                 console.error("Could not parse error response as JSON:", errorText);
             }
             throw new Error(errorText);
