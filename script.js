@@ -444,7 +444,6 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
     const downloadButton = createActionButton('download', 'Download Original', () => {
         const a = document.createElement('a'); a.href = imageUrl; a.download = `GenArt_Original_${Date.now()}.png`; a.click();
     });
-    const removeBgButton = createActionButton('remove-bg', 'Remove Background', (e) => removeBackgroundAndDownload(imageUrl, e.currentTarget));
     
     let proButtons = [];
     if (brandingSettingsBtn) {
@@ -459,13 +458,11 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
         imgContainer.appendChild(img);
         cardWrapper.appendChild(imgContainer);
         buttonContainer.appendChild(downloadButton);
-        buttonContainer.appendChild(removeBgButton);
         proButtons.forEach(btn => buttonContainer.appendChild(btn));
         cardWrapper.appendChild(buttonContainer);
     } else {
         buttonContainer.className = 'absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
         buttonContainer.appendChild(downloadButton);
-        buttonContainer.appendChild(removeBgButton);
         proButtons.forEach(btn => buttonContainer.appendChild(btn));
         imgContainer.appendChild(img);
         if (!shouldBlur) imgContainer.appendChild(buttonContainer);
@@ -484,7 +481,6 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
     imageGrid.appendChild(cardWrapper);
 }
 
-
 function createActionButton(type, title, onClick) {
     const button = document.createElement('button');
     button.className = 'bg-black/50 text-white p-2 rounded-full hover:bg-black/75 transition-colors flex items-center justify-center w-10 h-10';
@@ -494,56 +490,12 @@ function createActionButton(type, title, onClick) {
     const icons = {
         download: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
         brand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>`,
-        drive: `<img src="https://iili.io/K25gUKl.md.png" alt="Save to Drive" class="w-5 h-5">`,
-        'remove-bg': `<img src="https://iili.io/K2VAC5x.png" alt="Remove Background" class="w-5 h-5">`
+        drive: `<img src="https://iili.io/K25gUKl.md.png" alt="Save to Drive" class="w-5 h-5">`
     };
     
     button.innerHTML = icons[type] || '';
     return button;
 }
-
-async function removeBackgroundAndDownload(imageUrl, buttonEl) {
-    const originalIcon = buttonEl.innerHTML;
-    const spinner = `<svg class="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
-    buttonEl.innerHTML = spinner;
-    buttonEl.disabled = true;
-
-    try {
-        const response = await fetch('/api/remove-background', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageUrl })
-        });
-
-        if (!response.ok) {
-            let errorText = await response.text();
-            try {
-                const errorJson = JSON.parse(errorText);
-                errorText = errorJson.error || 'Background removal failed.';
-            } catch (e) {
-                console.error("Could not parse error response as JSON:", errorText);
-            }
-            throw new Error(errorText);
-        }
-
-        const result = await response.json();
-        
-        const a = document.createElement('a');
-        a.href = result.imageUrl;
-        a.download = `GenArt_NoBG_${Date.now()}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-
-    } catch (error) {
-        console.error('Error removing background:', error);
-        showMessage(error.message, 'error');
-    } finally {
-        buttonEl.innerHTML = originalIcon;
-        buttonEl.disabled = false;
-    }
-}
-
 
 // --- Authentication ---
 function handleAuthAction() {
