@@ -554,24 +554,35 @@ async function updateUserCredits(userId, amount) {
     await updateDoc(userDocRef, {
         credits: increment(amount)
     });
-    currentUserCredits += amount;
+    // Refetch the latest credit count to avoid race conditions
+    const updatedDoc = await getDoc(userDocRef);
+    if (updatedDoc.exists()) {
+        currentUserCredits = updatedDoc.data().credits;
+    }
     updateCreditCounter(currentUserCredits);
     updateGenerateButtonState();
 }
 
 
 function updateCreditCounter(credits) {
-    if (credits !== null) {
+    const user = auth.currentUser;
+    let displayText = '';
+
+    if (user && credits !== null) {
+        const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
         const creditText = `Credits: ${credits}`;
-        generationCounterEl.textContent = creditText;
-        mobileGenerationCounterEl.textContent = creditText;
-    } else {
-        generationCounterEl.textContent = '';
-        mobileGenerationCounterEl.textContent = '';
+        displayText = `${welcomeText} | ${creditText}`;
     }
+    // If user is null, displayText remains '', which is correct.
+
+    if(generationCounterEl) generationCounterEl.textContent = displayText;
+    if(mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = displayText;
 }
 
+
 function updateGenerateButtonState() {
+    if (!generateBtn) return; // Only run on pages with a generate button
+
     if (!auth.currentUser) {
         generateBtn.disabled = true;
         generateBtn.title = "Please sign in to generate images.";
