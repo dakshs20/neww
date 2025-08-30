@@ -1,15 +1,14 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, increment, collection, addDoc, getDocs, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// NEW: Import Firebase Storage modules
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
 
 // --- Google Drive API Configuration ---
-// ===================================================================================
-// IMPORTANT: Paste your Google API keys here. The button will not work without them.
-// ===================================================================================
 const GOOGLE_API_KEY = "AIzaSyAypNULLr5wkLATw1V3qA-I5NwcnGIc0v8"; 
 const GOOGLE_CLIENT_ID = "673422771881-dkts1iissdsbev5mi1nvbp90nvdo2mvh.apps.googleusercontent.com"; 
-// ===================================================================================
 
 const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
@@ -33,9 +32,12 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+// NEW: Initialize Firebase Storage
+const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
 // --- DOM Element References ---
+// (Existing references)
 const promptInput = document.getElementById('prompt-input');
 const generateBtn = document.getElementById('generate-btn');
 const resultContainer = document.getElementById('result-container');
@@ -75,6 +77,12 @@ const brandingSettingsBtn = document.getElementById('branding-settings-btn');
 const driveConnectBtn = document.getElementById('drive-connect-btn');
 const mobileDriveConnectBtn = document.getElementById('mobile-drive-connect-btn');
 const variantsBtn = document.getElementById('variants-btn');
+// NEW: Library page references
+const libraryGrid = document.getElementById('library-grid');
+const libraryLoader = document.getElementById('library-loader');
+const emptyLibraryMessage = document.getElementById('empty-library-message');
+const userWelcomeEl = document.getElementById('user-welcome');
+
 
 // --- Global State ---
 let timerInterval;
@@ -85,6 +93,7 @@ let currentImageUrlToSave = null; // Used for saving any image (single or varian
 let selectedAspectRatio = '1:1';
 let brandingSettings = {};
 let currentUploadOptions = {};
+let currentUser = null; // NEW: Store current user state
 
 // --- reCAPTCHA Callback Function ---
 window.onRecaptchaSuccess = function(token) {
@@ -95,7 +104,24 @@ window.onRecaptchaSuccess = function(token) {
 document.addEventListener('DOMContentLoaded', () => {
     initializeCursor();
     
-    if (authBtn) onAuthStateChanged(auth, user => updateUIForAuthState(user));
+    // Auth state listener is now the primary entry point for user-dependent UI
+    onAuthStateChanged(auth, user => {
+        currentUser = user; // Set global user state
+        updateUIForAuthState(user);
+
+        // Page-specific initializations
+        if (document.body.contains(document.getElementById('generator-ui'))) {
+             // This is the generator page
+        } else if (document.body.contains(document.getElementById('library-grid'))) {
+            // This is the library page
+            if (user) {
+                fetchUserLibrary();
+            } else {
+                window.location.href = 'pro-generator.html'; // Redirect if not logged in
+            }
+        }
+    });
+
     if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
     document.addEventListener('click', (event) => {
         if (mobileMenu && !mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
@@ -146,6 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initializeCursor() {
+    // ... (no changes in this function)
     const cursorDot = document.querySelector('.cursor-dot');
     const cursorOutline = document.querySelector('.cursor-outline');
     if (!cursorDot || !cursorOutline) return;
@@ -168,6 +195,7 @@ function initializeCursor() {
 }
 
 function initializeProGeneratorPage() {
+    // ... (no changes in this function)
     const brandingPanel = document.getElementById('branding-panel');
     const brandingPanelBackdrop = document.getElementById('branding-panel-backdrop');
     const closeBrandingPanelBtn = document.getElementById('close-branding-panel-btn');
@@ -272,19 +300,29 @@ function handleGenerateClick() {
         showMessage('Please describe what you want to create or edit.', 'error');
         return;
     }
-    if (document.getElementById('auth-btn')) { 
+
+    // Pro generator page doesn't have free limits, but we check for login
+    if (brandingSettingsBtn && !currentUser) {
+        showMessage('Please sign in to use the Pro generator.', 'error');
+        // This is a placeholder for a proper login flow on the pro page if needed
+        // For now, we assume users arrive here logged in.
+        return;
+    }
+    
+    if (document.getElementById('auth-btn') && !brandingSettingsBtn) { // This logic is for the FREE page
         const count = getGenerationCount();
         if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
             authModal.setAttribute('aria-hidden', 'false');
             return;
         }
         grecaptcha.execute();
-    } else {
+    } else { // This is for the PRO page
         generateImage();
     }
 }
 
 function handleEmailSubmit(e) {
+    // ... (no changes in this function)
     e.preventDefault();
     const email = emailInput.value.trim();
     const commonProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com'];
@@ -301,6 +339,7 @@ function handleEmailSubmit(e) {
 }
 
 async function generateVariants() {
+    // ... (no changes in this function)
     const prompt = promptInput.value.trim();
     if (!prompt) {
         showMessage('Please enter a prompt to generate variants.', 'error');
@@ -343,8 +382,9 @@ async function generateVariants() {
 }
 
 async function generateImage(recaptchaToken = null) {
+    // ... (no changes in this function)
     const prompt = promptInput.value.trim();
-    const isFreePage = !!document.getElementById('auth-btn');
+    const isFreePage = !!document.getElementById('auth-btn') && !brandingSettingsBtn;
     const shouldBlur = isFreePage && !auth.currentUser && getGenerationCount() === (FREE_GENERATION_LIMIT - 1);
     
     imageGrid.innerHTML = '';
@@ -374,7 +414,8 @@ async function generateImage(recaptchaToken = null) {
             incrementTotalGenerations();
             if (!auth.currentUser) { incrementGenerationCount(); }
         }
-    } catch (error) {
+    } catch (error)
+        {
         console.error('Image generation failed:', error);
         showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
     } finally {
@@ -385,7 +426,9 @@ async function generateImage(recaptchaToken = null) {
     }
 }
 
+
 async function generateImageWithRetry(prompt, imageData, token, aspectRatio, maxRetries = 3) {
+    // ... (no changes in this function)
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             const response = await fetch('/api/generate', {
@@ -420,6 +463,7 @@ async function generateImageWithRetry(prompt, imageData, token, aspectRatio, max
 }
 
 function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
+    // ... (slight modifications)
     const cardWrapper = document.createElement('div');
     const imgContainer = document.createElement('div');
     imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group border border-gray-200/80';
@@ -446,7 +490,8 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
     });
     
     let proButtons = [];
-    if (brandingSettingsBtn) {
+    if (brandingSettingsBtn) { // Only show pro buttons on the pro page
+        proButtons.push(createActionButton('library', 'Save to Library', () => saveToLibrary(imageUrl, prompt)));
         if (brandingSettings.enabled && brandingSettings.logo) {
             proButtons.push(createActionButton('brand', 'Export with Branding', () => applyWatermarkAndDownload(imageUrl)));
         }
@@ -486,12 +531,19 @@ function createActionButton(type, title, onClick) {
     const button = document.createElement('button');
     button.className = 'bg-black/50 text-white p-2 rounded-full hover:bg-black/75 transition-colors flex items-center justify-center w-10 h-10';
     button.title = title;
-    button.onclick = onClick;
+    button.onclick = (e) => {
+        e.stopPropagation(); // Prevent card click events
+        onClick();
+    };
     
     const icons = {
         download: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`,
         brand: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>`,
-        drive: `<img src="https://iili.io/K25gUKl.md.png" alt="Save to Drive" class="w-5 h-5">`
+        drive: `<img src="https://iili.io/K25gUKl.md.png" alt="Save to Drive" class="w-5 h-5">`,
+        // NEW: Library Icon
+        library: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`,
+        // NEW: Remove Icon
+        remove: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`
     };
     
     button.innerHTML = icons[type] || '';
@@ -509,26 +561,41 @@ function handleAuthAction() {
 
 function signInWithGoogle() {
     signInWithPopup(auth, provider)
-        .then(result => updateUIForAuthState(result.user))
+        .then(result => {
+             // Redirect to pro page after first sign in from index
+            if (!brandingSettingsBtn) {
+                window.location.href = 'pro-generator.html';
+            } else {
+                updateUIForAuthState(result.user);
+            }
+        })
         .catch(error => console.error("Authentication Error:", error));
 }
 
 function updateUIForAuthState(user) {
+    const libraryBtn = document.getElementById('library-btn');
+    const mobileLibraryBtn = document.getElementById('mobile-library-btn');
+
     if (user) {
         const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
-        authBtn.textContent = 'Sign Out';
-        mobileAuthBtn.textContent = 'Sign Out';
-        generationCounterEl.textContent = welcomeText;
-        mobileGenerationCounterEl.textContent = welcomeText;
-        authModal.setAttribute('aria-hidden', 'true');
-        // Check if there's a blurred image to unlock
+        
+        if (authBtn) authBtn.textContent = 'Sign Out';
+        if (mobileAuthBtn) mobileAuthBtn.textContent = 'Sign Out';
+        if (userWelcomeEl) userWelcomeEl.textContent = welcomeText;
+        if (generationCounterEl) generationCounterEl.textContent = welcomeText;
+        if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = welcomeText;
+        if (authModal) authModal.setAttribute('aria-hidden', 'true');
+
+        if (libraryBtn) libraryBtn.classList.remove('hidden');
+        if (mobileLibraryBtn) mobileLibraryBtn.classList.remove('hidden');
+
+        // Unlock blurred image if present
         const blurredContainer = document.querySelector('.blurred-image-container');
         if (blurredContainer) {
             const img = blurredContainer.querySelector('img');
             img.classList.remove('blurred-image');
             const overlay = blurredContainer.querySelector('.unlock-overlay');
             if (overlay) overlay.remove();
-            // Re-add the action buttons that were missing
             const buttonContainer = document.createElement('div');
             buttonContainer.className = 'absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
             const downloadButton = createActionButton('download', 'Download Original', () => {
@@ -538,23 +605,26 @@ function updateUIForAuthState(user) {
             blurredContainer.appendChild(buttonContainer);
         }
     } else {
-        authBtn.textContent = 'Sign In';
-        mobileAuthBtn.textContent = 'Sign In';
-        updateGenerationCounter();
+        if (authBtn) authBtn.textContent = 'Sign In';
+        if (mobileAuthBtn) mobileAuthBtn.textContent = 'Sign In';
+        if (userWelcomeEl) userWelcomeEl.textContent = '';
+        if (libraryBtn) libraryBtn.classList.add('hidden');
+        if (mobileLibraryBtn) mobileLibraryBtn.classList.add('hidden');
+        updateGenerationCounter(); // Only for free page
     }
 }
 
+
 // --- Branding & Watermarking ---
+// ... (no changes in these functions)
 function openBrandingPanel() {
     document.getElementById('branding-panel').classList.remove('translate-x-full');
     document.getElementById('branding-panel-backdrop').classList.remove('hidden');
 }
-
 function closeBrandingPanel() {
     document.getElementById('branding-panel').classList.add('translate-x-full');
     document.getElementById('branding-panel-backdrop').classList.add('hidden');
 }
-
 function handleLogoUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -566,13 +636,11 @@ function handleLogoUpload(event) {
     };
     reader.readAsDataURL(file);
 }
-
 function removeLogo() {
     brandingSettings.logo = null;
     updateLogoPreview();
     saveBrandingSettings();
 }
-
 function updateLogoPreview() {
     const logoPreview = document.getElementById('logo-preview');
     const logoPlaceholderText = document.getElementById('logo-placeholder-text');
@@ -589,7 +657,6 @@ function updateLogoPreview() {
         removeLogoBtn.classList.add('hidden');
     }
 }
-
 function setWatermarkEnabled(isEnabled) {
     const watermarkEnabledToggle = document.getElementById('watermark-enabled-toggle');
     watermarkEnabledToggle.setAttribute('aria-checked', isEnabled);
@@ -600,11 +667,9 @@ function setWatermarkEnabled(isEnabled) {
         watermarkEnabledToggle.classList.remove('bg-blue-600');
     }
 }
-
 function saveBrandingSettings() {
     localStorage.setItem('genartBrandingSettings', JSON.stringify(brandingSettings));
 }
-
 function loadBrandingSettings() {
     const savedSettings = localStorage.getItem('genartBrandingSettings');
     if (savedSettings) {
@@ -624,7 +689,6 @@ function loadBrandingSettings() {
         brandingSettings = { logo: null, enabled: false, position: 'bottom-right', opacity: 1, size: 0.1, paddingX: 20, paddingY: 20 };
     }
 }
-
 function applyWatermarkAndDownload(imageUrl) {
     if (!brandingSettings.logo) {
         showMessage("Please upload a logo in Branding Settings first.", "error");
@@ -674,6 +738,7 @@ function applyWatermarkAndDownload(imageUrl) {
 }
 
 // --- Google Drive API Functions ---
+// ... (no changes in these functions)
 function gapiLoaded() { gapi.load('client', initializeGapiClient); }
 async function initializeGapiClient() {
     await gapi.client.init({ apiKey: GOOGLE_API_KEY, discoveryDocs: DISCOVERY_DOCS });
@@ -706,31 +771,29 @@ function handleAuthClick() {
         showMessage("You are already connected to Google Drive.", "info");
     }
 }
-
 function updateDriveButtonUI(isConnected) {
     const textEl = document.getElementById('drive-connect-text');
-    if (isConnected) {
-        textEl.textContent = 'Drive Connected';
-        driveConnectBtn.classList.add('bg-green-100', 'border-green-300', 'text-green-800');
-        if(mobileDriveConnectBtn) mobileDriveConnectBtn.textContent = 'Drive Connected';
-    } else {
-        textEl.textContent = 'Connect Drive';
-        driveConnectBtn.classList.remove('bg-green-100', 'border-green-300', 'text-green-800');
-        if(mobileDriveConnectBtn) mobileDriveConnectBtn.textContent = 'Connect Drive';
+    if(textEl) {
+        if (isConnected) {
+            textEl.textContent = 'Drive Connected';
+            driveConnectBtn.classList.add('bg-green-100', 'border-green-300', 'text-green-800');
+            if(mobileDriveConnectBtn) mobileDriveConnectBtn.textContent = 'Drive Connected';
+        } else {
+            textEl.textContent = 'Connect Drive';
+            driveConnectBtn.classList.remove('bg-green-100', 'border-green-300', 'text-green-800');
+            if(mobileDriveConnectBtn) mobileDriveConnectBtn.textContent = 'Connect Drive';
+        }
     }
 }
-
 function showDriveOptions(imageUrl) {
     currentImageUrlToSave = imageUrl;
     const modal = document.getElementById('drive-options-modal');
     modal.classList.remove('hidden');
 }
-
 function hideDriveOptions() {
     const modal = document.getElementById('drive-options-modal');
     modal.classList.add('hidden');
 }
-
 function showFileNameModal(options) {
     currentUploadOptions = options;
     const modal = document.getElementById('file-name-modal');
@@ -740,12 +803,10 @@ function showFileNameModal(options) {
     modal.classList.remove('hidden');
     input.focus();
 }
-
 function hideFileNameModal() {
     const modal = document.getElementById('file-name-modal');
     modal.classList.add('hidden');
 }
-
 async function uploadToDrive(options = { withBranding: false }, fileName) {
     if (!currentImageUrlToSave) {
         showMessage('No image selected to save.', 'error');
@@ -804,7 +865,6 @@ async function uploadToDrive(options = { withBranding: false }, fileName) {
         performUpload(imageBlob, fileName);
     }
 }
-
 async function performUpload(blob, fileName) {
     const finalFileName = fileName ? `${fileName}.png` : `GenArt_${Date.now()}.png`;
     const metadata = {
@@ -840,8 +900,150 @@ async function performUpload(blob, fileName) {
     }
 }
 
+// --- NEW: Library Functions ---
+
+async function saveToLibrary(imageUrl, prompt) {
+    if (!currentUser) {
+        showMessage('You must be signed in to save images to your library.', 'error');
+        return;
+    }
+
+    const saveButton = document.querySelector('button[title="Save to Library"]');
+    const originalIcon = saveButton.innerHTML;
+    saveButton.innerHTML = `<svg class="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+    saveButton.disabled = true;
+
+    try {
+        // 1. Convert base64 URL to Blob
+        const response = await fetch(imageUrl);
+        const imageBlob = await response.blob();
+
+        // 2. Create a reference in Firebase Storage
+        const imageId = `genart_${Date.now()}.png`;
+        const storageRef = ref(storage, `user_images/${currentUser.uid}/${imageId}`);
+
+        // 3. Upload the Blob
+        const uploadResult = await uploadBytes(storageRef, imageBlob);
+
+        // 4. Get the public download URL
+        const downloadURL = await getDownloadURL(uploadResult.ref);
+
+        // 5. Save metadata to Firestore
+        const libraryCollectionRef = collection(db, 'userLibraries', currentUser.uid, 'images');
+        await addDoc(libraryCollectionRef, {
+            imageUrl: downloadURL,
+            prompt: prompt,
+            storagePath: uploadResult.ref.fullPath,
+            createdAt: serverTimestamp()
+        });
+
+        showMessage('Image saved to your library!', 'info');
+
+    } catch (error) {
+        console.error("Error saving to library: ", error);
+        showMessage('Could not save image. Please try again.', 'error');
+    } finally {
+        saveButton.innerHTML = originalIcon;
+        saveButton.disabled = false;
+    }
+}
+
+async function fetchUserLibrary() {
+    if (!currentUser || !libraryGrid) return;
+
+    libraryLoader.style.display = 'block';
+    emptyLibraryMessage.style.display = 'none';
+    libraryGrid.innerHTML = '';
+
+    try {
+        const libraryCollectionRef = collection(db, 'userLibraries', currentUser.uid, 'images');
+        const querySnapshot = await getDocs(libraryCollectionRef);
+
+        if (querySnapshot.empty) {
+            emptyLibraryMessage.style.display = 'block';
+        } else {
+            querySnapshot.docs.forEach(doc => {
+                const imageData = doc.data();
+                const imageId = doc.id;
+                displayLibraryImage(imageData, imageId);
+            });
+        }
+    } catch (error) {
+        console.error("Error fetching library:", error);
+        showMessage("Could not load your library. Please refresh the page.", 'error');
+    } finally {
+        libraryLoader.style.display = 'none';
+    }
+}
+
+function displayLibraryImage(imageData, imageId) {
+    const card = document.createElement('div');
+    card.id = `library-card-${imageId}`;
+    card.className = 'group relative aspect-w-1 aspect-h-1 bg-gray-100 rounded-lg overflow-hidden shadow-md';
+    
+    const img = document.createElement('img');
+    img.src = imageData.imageUrl;
+    img.alt = imageData.prompt;
+    img.className = 'w-full h-full object-cover group-hover:opacity-75 transition-opacity';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-4 text-white';
+
+    const promptText = document.createElement('p');
+    promptText.className = 'text-sm line-clamp-3';
+    promptText.textContent = imageData.prompt;
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'flex items-center justify-end gap-2';
+
+    const downloadBtn = createActionButton('download', 'Download', () => {
+         const a = document.createElement('a'); a.href = imageData.imageUrl; a.target = '_blank'; a.download = `GenArt_Library_${imageId}.png`; a.click();
+    });
+    const removeBtn = createActionButton('remove', 'Remove from Library', () => removeFromLibrary(imageId, imageData.storagePath));
+    
+    buttonContainer.appendChild(downloadBtn);
+    buttonContainer.appendChild(removeBtn);
+
+    overlay.appendChild(promptText);
+    overlay.appendChild(buttonContainer);
+    card.appendChild(img);
+    card.appendChild(overlay);
+    libraryGrid.appendChild(card);
+}
+
+async function removeFromLibrary(docId, storagePath) {
+     if (!currentUser) return;
+     if (!confirm('Are you sure you want to permanently remove this image?')) return;
+
+    try {
+        // 1. Delete from Firestore
+        await deleteDoc(doc(db, 'userLibraries', currentUser.uid, 'images', docId));
+
+        // 2. Delete from Storage
+        const storageRef = ref(storage, storagePath);
+        await deleteObject(storageRef);
+
+        // 3. Remove from UI
+        const cardToRemove = document.getElementById(`library-card-${docId}`);
+        if (cardToRemove) {
+            cardToRemove.remove();
+        }
+
+        if(libraryGrid.children.length === 0){
+             emptyLibraryMessage.style.display = 'block';
+        }
+
+        showMessage('Image removed from library.', 'info');
+
+    } catch (error) {
+        console.error("Error removing image: ", error);
+        showMessage('Failed to remove image. Please try again.', 'error');
+    }
+}
+
 
 // --- Helper Functions ---
+// ... (no changes in these functions except showMessage)
 function startTimer() {
     let startTime = Date.now();
     const maxTime = 17 * 1000;
@@ -868,11 +1070,11 @@ function incrementGenerationCount() {
     updateGenerationCounter();
 }
 function updateGenerationCounter() {
-    if (auth.currentUser) return;
+    if (auth.currentUser || !generationCounterEl) return;
     const count = getGenerationCount();
     const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
     const text = `${remaining} free generation${remaining !== 1 ? 's' : ''} left`;
-    if (generationCounterEl) generationCounterEl.textContent = text;
+    generationCounterEl.textContent = text;
     if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = text;
 }
 function handleImageUpload(event) {
@@ -899,13 +1101,21 @@ async function incrementTotalGenerations() {
     try { await setDoc(counterRef, { count: increment(1) }, { merge: true }); } catch (error) { console.error("Error incrementing generation count:", error); }
 }
 function showMessage(text, type = 'info') {
-    if (!messageBox) return;
+    const container = document.getElementById('message-box') || document.body;
     const messageEl = document.createElement('div');
-    messageEl.className = `p-4 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} fade-in-slide-up`;
+    
+    // Use different styles for a global message vs. in-app message
+    if (container.id === 'message-box') {
+        messageEl.className = `p-4 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} fade-in-slide-up`;
+        container.innerHTML = ''; // Clear previous messages
+        container.appendChild(messageEl);
+    } else {
+        messageEl.className = `fixed top-5 right-5 z-50 p-4 rounded-lg shadow-lg ${type === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white'} fade-in-slide-up`;
+        container.appendChild(messageEl);
+    }
+    
     messageEl.textContent = text;
-    messageBox.innerHTML = '';
-    messageBox.appendChild(messageEl);
-    setTimeout(() => { if(messageBox.contains(messageEl)) messageBox.removeChild(messageEl); }, 4000);
+    setTimeout(() => { if(container.contains(messageEl)) container.removeChild(messageEl); }, 4000);
 }
 function addBackButton() {
     if (document.getElementById('back-to-generator-btn')) return;
