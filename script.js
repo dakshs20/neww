@@ -1,8 +1,7 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- Google Drive API Configuration ---
 // ===================================================================================
@@ -76,21 +75,16 @@ const brandingSettingsBtn = document.getElementById('branding-settings-btn');
 const driveConnectBtn = document.getElementById('drive-connect-btn');
 const mobileDriveConnectBtn = document.getElementById('mobile-drive-connect-btn');
 const variantsBtn = document.getElementById('variants-btn');
-const creditsModal = document.getElementById('credits-modal');
-const closeCreditsModalBtn = document.getElementById('close-credits-modal-btn');
-
 
 // --- Global State ---
 let timerInterval;
-const INITIAL_FREE_CREDITS = 5;
+const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
 let lastGeneratedBlob = null; // Used for single generations
 let currentImageUrlToSave = null; // Used for saving any image (single or variant)
 let selectedAspectRatio = '1:1';
 let brandingSettings = {};
 let currentUploadOptions = {};
-let currentUserCredits = 0;
-
 
 // --- reCAPTCHA Callback Function ---
 window.onRecaptchaSuccess = function(token) {
@@ -112,8 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (authBtn) authBtn.addEventListener('click', handleAuthAction);
     if (mobileAuthBtn) mobileAuthBtn.addEventListener('click', handleAuthAction);
     if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
-    if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.classList.add('hidden'));
-    if (closeCreditsModalBtn) closeCreditsModalBtn.addEventListener('click', () => creditsModal.classList.add('hidden'));
+    if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
     if (musicBtn) musicBtn.addEventListener('click', toggleMusic);
 
     if (generatorUI) {
@@ -279,18 +272,16 @@ function handleGenerateClick() {
         showMessage('Please describe what you want to create or edit.', 'error');
         return;
     }
-    
-    if (!auth.currentUser) {
-        authModal.classList.remove('hidden');
-        return;
+    if (document.getElementById('auth-btn')) { 
+        const count = getGenerationCount();
+        if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
+            authModal.setAttribute('aria-hidden', 'false');
+            return;
+        }
+        grecaptcha.execute();
+    } else {
+        generateImage();
     }
-
-    if (currentUserCredits <= 0) {
-        creditsModal.classList.remove('hidden');
-        return;
-    }
-
-    grecaptcha.execute();
 }
 
 function handleEmailSubmit(e) {
@@ -315,17 +306,6 @@ async function generateVariants() {
         showMessage('Please enter a prompt to generate variants.', 'error');
         return;
     }
-
-    if (!auth.currentUser) {
-        authModal.classList.remove('hidden');
-        return;
-    }
-
-    if (currentUserCredits < 3) {
-        showMessage(`You need at least 3 credits to generate variants. You have ${currentUserCredits}.`, 'error');
-        return;
-    }
-
 
     variantsBtn.classList.add('selected');
 
@@ -352,9 +332,6 @@ async function generateVariants() {
             displayImage(imageUrl, prompt, false, true);
         });
 
-        await updateUserCredits(auth.currentUser.uid, -3);
-
-
     } catch (error) {
         console.error('Variant generation failed:', error);
         showMessage(`Sorry, we couldn't generate variants. ${error.message}`, 'error');
@@ -367,6 +344,8 @@ async function generateVariants() {
 
 async function generateImage(recaptchaToken = null) {
     const prompt = promptInput.value.trim();
+    const isFreePage = !!document.getElementById('auth-btn');
+    const shouldBlur = isFreePage && !auth.currentUser && getGenerationCount() === (FREE_GENERATION_LIMIT - 1);
     
     imageGrid.innerHTML = '';
     messageBox.innerHTML = '';
@@ -380,17 +359,21 @@ async function generateImage(recaptchaToken = null) {
         const response = await fetch(imageUrl);
         lastGeneratedBlob = await response.blob();
         
-        currentImageUrlToSave = imageUrl;
+        if (shouldBlur) { 
+            // Don't set the main save URL if it's blurred, let the unlock handle it.
+        } else {
+            currentImageUrlToSave = imageUrl;
+        }
         
         imageGrid.classList.remove('md:grid-cols-3');
         imageGrid.classList.add('md:grid-cols-1');
 
-        displayImage(imageUrl, prompt, false);
+        displayImage(imageUrl, prompt, shouldBlur);
         
-        if (auth.currentUser) {
-            await updateUserCredits(auth.currentUser.uid, -1);
+        if (isFreePage) {
+            incrementTotalGenerations();
+            if (!auth.currentUser) { incrementGenerationCount(); }
         }
-
     } catch (error) {
         console.error('Image generation failed:', error);
         showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
@@ -398,7 +381,7 @@ async function generateImage(recaptchaToken = null) {
         stopTimer();
         loadingIndicator.classList.add('hidden');
         addBackButton();
-        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
+        if (isFreePage && typeof grecaptcha !== 'undefined') grecaptcha.reset();
     }
 }
 
@@ -448,11 +431,14 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
         imgContainer.classList.add('h-full');
     }
 
+    if (shouldBlur) imgContainer.classList.add('blurred-image-container');
+
     const img = document.createElement('img');
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
     if (isVariant) img.classList.add('h-full', 'object-cover');
+    if (shouldBlur) img.classList.add('blurred-image');
 
     const buttonContainer = document.createElement('div');
     const downloadButton = createActionButton('download', 'Download Original', () => {
@@ -467,7 +453,8 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
         proButtons.push(createActionButton('drive', 'Save to Drive', () => showDriveOptions(imageUrl)));
     }
 
-    if (selectedAspectRatio === '16:9') {
+    // UPDATED LOGIC: If aspect ratio is 16:9, buttons go below for single images AND variants.
+    if (selectedAspectRatio === '16:9' && !shouldBlur) {
         buttonContainer.className = 'flex items-center justify-center gap-3 mt-4';
         imgContainer.appendChild(img);
         cardWrapper.appendChild(imgContainer);
@@ -479,8 +466,16 @@ function displayImage(imageUrl, prompt, shouldBlur = false, isVariant = false) {
         buttonContainer.appendChild(downloadButton);
         proButtons.forEach(btn => buttonContainer.appendChild(btn));
         imgContainer.appendChild(img);
-        imgContainer.appendChild(buttonContainer);
+        if (!shouldBlur) imgContainer.appendChild(buttonContainer);
         cardWrapper.appendChild(imgContainer);
+    }
+
+    if (shouldBlur) {
+        const overlay = document.createElement('div');
+        overlay.className = 'unlock-overlay';
+        overlay.innerHTML = `<h3 class="text-xl font-semibold">Unlock Image</h3><p class="mt-2">Sign in to unlock this image and get unlimited generations.</p><button id="unlock-btn">Sign In to Unlock</button>`;
+        overlay.querySelector('#unlock-btn').onclick = () => { authModal.setAttribute('aria-hidden', 'false'); };
+        imgContainer.appendChild(overlay);
     }
     
     if (!isVariant) imageGrid.innerHTML = '';
@@ -503,7 +498,7 @@ function createActionButton(type, title, onClick) {
     return button;
 }
 
-// --- Authentication & Credits ---
+// --- Authentication ---
 function handleAuthAction() {
     if (auth.currentUser) {
         signOut(auth).catch(error => console.error("Sign Out Error:", error));
@@ -514,87 +509,40 @@ function handleAuthAction() {
 
 function signInWithGoogle() {
     signInWithPopup(auth, provider)
-        .catch(error => console.error("Authentication Error:", error.message));
+        .then(result => updateUIForAuthState(result.user))
+        .catch(error => console.error("Authentication Error:", error));
 }
 
-async function updateUIForAuthState(user) {
+function updateUIForAuthState(user) {
     if (user) {
+        const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
         authBtn.textContent = 'Sign Out';
         mobileAuthBtn.textContent = 'Sign Out';
-        authModal.classList.add('hidden');
-        
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (userDoc.exists()) {
-            currentUserCredits = userDoc.data().credits;
-        } else {
-            // New user, create their document with free credits
-            await setDoc(userDocRef, { 
-                email: user.email,
-                name: user.displayName,
-                credits: INITIAL_FREE_CREDITS 
+        generationCounterEl.textContent = welcomeText;
+        mobileGenerationCounterEl.textContent = welcomeText;
+        authModal.setAttribute('aria-hidden', 'true');
+        // Check if there's a blurred image to unlock
+        const blurredContainer = document.querySelector('.blurred-image-container');
+        if (blurredContainer) {
+            const img = blurredContainer.querySelector('img');
+            img.classList.remove('blurred-image');
+            const overlay = blurredContainer.querySelector('.unlock-overlay');
+            if (overlay) overlay.remove();
+            // Re-add the action buttons that were missing
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
+            const downloadButton = createActionButton('download', 'Download Original', () => {
+                const a = document.createElement('a'); a.href = img.src; a.download = `GenArt_Original_${Date.now()}.png`; a.click();
             });
-            currentUserCredits = INITIAL_FREE_CREDITS;
+            buttonContainer.appendChild(downloadButton);
+            blurredContainer.appendChild(buttonContainer);
         }
-        updateCreditCounter(currentUserCredits);
-        updateGenerateButtonState();
-
     } else {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
-        currentUserCredits = 0;
-        updateCreditCounter(null);
-        updateGenerateButtonState();
+        updateGenerationCounter();
     }
 }
-
-async function updateUserCredits(userId, amount) {
-    const userDocRef = doc(db, "users", userId);
-    await updateDoc(userDocRef, {
-        credits: increment(amount)
-    });
-    // Refetch the latest credit count to avoid race conditions
-    const updatedDoc = await getDoc(userDocRef);
-    if (updatedDoc.exists()) {
-        currentUserCredits = updatedDoc.data().credits;
-    }
-    updateCreditCounter(currentUserCredits);
-    updateGenerateButtonState();
-}
-
-
-function updateCreditCounter(credits) {
-    const user = auth.currentUser;
-    let displayText = '';
-
-    if (user && credits !== null) {
-        const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
-        const creditText = `Credits: ${credits}`;
-        displayText = `${welcomeText} | ${creditText}`;
-    }
-    // If user is null, displayText remains '', which is correct.
-
-    if(generationCounterEl) generationCounterEl.textContent = displayText;
-    if(mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = displayText;
-}
-
-
-function updateGenerateButtonState() {
-    if (!generateBtn) return; // Only run on pages with a generate button
-
-    if (!auth.currentUser) {
-        generateBtn.disabled = true;
-        generateBtn.title = "Please sign in to generate images.";
-    } else if (currentUserCredits <= 0) {
-        generateBtn.disabled = true;
-        generateBtn.title = "You have no credits left.";
-    } else {
-        generateBtn.disabled = false;
-        generateBtn.title = "Generate AI Image";
-    }
-}
-
 
 // --- Branding & Watermarking ---
 function openBrandingPanel() {
@@ -913,7 +861,20 @@ function startTimer() {
     }, 100);
 }
 function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
-
+function getGenerationCount() { return parseInt(localStorage.getItem('generationCount') || '0'); }
+function incrementGenerationCount() {
+    const newCount = getGenerationCount() + 1;
+    localStorage.setItem('generationCount', newCount);
+    updateGenerationCounter();
+}
+function updateGenerationCounter() {
+    if (auth.currentUser) return;
+    const count = getGenerationCount();
+    const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
+    const text = `${remaining} free generation${remaining !== 1 ? 's' : ''} left`;
+    if (generationCounterEl) generationCounterEl.textContent = text;
+    if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = text;
+}
 function handleImageUpload(event) {
     const file = event.target.files[0];
     if (!file || !file.type.startsWith('image/')) return;
@@ -933,7 +894,10 @@ function removeUploadedImage() {
     imagePreview.src = '';
     promptInput.placeholder = "An oil painting of a futuristic city skyline at dusk...";
 }
-
+async function incrementTotalGenerations() {
+    const counterRef = doc(db, "stats", "imageGenerations");
+    try { await setDoc(counterRef, { count: increment(1) }, { merge: true }); } catch (error) { console.error("Error incrementing generation count:", error); }
+}
 function showMessage(text, type = 'info') {
     if (!messageBox) return;
     const messageEl = document.createElement('div');
