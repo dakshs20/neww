@@ -47,14 +47,9 @@
         <header class="relative flex justify-between items-center py-5 px-2 fade-in-slide-up z-20">
             <a href="index.html"><img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo - Free and Fastest AI Image Generator" class="h-6 w-auto"></a>
             <div id="header-auth-section" class="hidden md:flex items-center space-x-6">
+                <!-- MODIFIED: Added classes for background and styling -->
                 <a href="for-teams.html" class="text-sm font-semibold text-[#42669C] bg-gray-100 hover:bg-gray-200 transition-colors px-4 py-2 rounded-full">For Teams</a>
-                
-                <!-- UPDATED: User Info Section -->
-                <div id="user-info-section" class="hidden items-center space-x-4">
-                    <span id="welcome-message" class="text-sm font-medium text-gray-700"></span>
-                    <span id="credit-counter" class="text-sm font-semibold bg-blue-100 text-blue-700 px-3 py-1 rounded-full"></span>
-                </div>
-                
+                <div id="generation-counter" class="text-sm font-medium text-gray-500"></div>
                 <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all duration-300">
                     Sign In
                 </button>
@@ -80,7 +75,7 @@
                 <div class="bg-gray-100/60 border border-gray-200/80 rounded-3xl p-6 sm:p-8 md:p-12 mt-8">
                     <div id="generator-ui" class="w-full fade-in-slide-up" style="animation-delay: 100ms;">
                         <h1 class="text-3xl sm:text-4xl md:text-5xl font-medium text-gray-900 mb-4">The Fastest & Free AI Image Generator</h1>
-                        <p class="text-base md:text-lg text-gray-500 mb-10">Create an account to get 5 free image generations.</p>
+                        <p class="text-base md:text-lg text-gray-500 mb-10">Create stunning art and images from text in seconds. Absolutely free.</p>
                         <div id="prompt-container" class="relative bg-white rounded-2xl border border-gray-200/80 shadow-sm transition-all duration-300 ease-in-out">
                             <div class="p-3">
                                 <div id="image-preview-container" class="hidden relative w-20 h-20 mb-2">
@@ -205,6 +200,11 @@
                 <a href="https://x.com/GenArtai_" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span class="sr-only">X</span></a>
             </div>
             <p class="text-xs text-gray-500">&copy; 2025 GenArt. All rights reserved.</p>
+            <p class="text-xs text-gray-400 mt-2">
+                This site is protected by reCAPTCHA and the Google
+                <a href="https://policies.google.com/privacy" class="underline hover:text-gray-600">Privacy Policy</a> and
+                <a href="https://policies.google.com/terms" class="underline hover:text-gray-600">Terms of Service</a> apply.
+            </p>
         </footer>
     </div>
 
@@ -225,26 +225,14 @@
     </div>
 
     <!-- Auth Modal -->
-    <div id="auth-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div id="auth-modal" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center fade-in-slide-up">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Welcome to GenArt</h2>
-            <p class="text-gray-500 mb-6">Please sign in or create an account to start generating images.</p>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Free Generations Used</h2>
+            <p class="text-gray-500 mb-6">Please sign in to continue with unlimited generations.</p>
             <button id="google-signin-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center space-x-2"><svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.571l6.19,5.238C41.38,36.16,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg><span>Sign In with Google</span></button>
-            <button id="close-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+            <button id="close-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Maybe later</button>
         </div>
     </div>
-
-    <!-- "Out of Credits" Modal -->
-    <div id="credits-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center fade-in-slide-up">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Out of Credits</h2>
-            <p class="text-gray-500 mb-6">You've used all your free credits. Please purchase a plan to continue generating images. (Paid plans coming soon!)</p>
-            <button id="close-credits-modal-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300">
-                Got it
-            </button>
-        </div>
-    </div>
-
 
     <script type="module" src="script.js"></script>
 </body>
