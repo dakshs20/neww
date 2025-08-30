@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Library | GenArt for Teams</title>
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
+        
+        <header class="relative flex justify-between items-center py-5 px-2 fade-in-slide-up z-20">
+            <a href="index.html"><img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto"></a>
+            <div class="hidden md:flex items-center space-x-4">
+                <span id="user-welcome" class="text-sm font-medium text-gray-600"></span>
+                 <a href="pro-generator.html" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-300">Generator</a>
+                <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all duration-300">
+                    Sign Out
+                </button>
+            </div>
+             <div class="md:hidden">
+                <button id="mobile-menu-btn" class="p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
+            <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-[#42669C] rounded-lg shadow-xl z-50">
+                <div class="p-2">
+                    <a href="pro-generator.html" class="block w-full text-left text-sm font-medium text-white px-4 py-2 rounded-md hover:bg-white/20 transition-all duration-300">Generator</a>
+                    <button id="mobile-auth-btn" class="w-full text-left text-sm font-medium text-white px-4 py-2 rounded-md hover:bg-white/20 transition-all duration-300">
+                        Sign Out
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow flex flex-col items-center p-4 transition-all duration-500 ease-in-out">
+            <div class="w-full text-center mb-12">
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-medium text-gray-900">Your Image Library</h1>
+                <p class="text-base md:text-lg text-gray-500 mt-4">All your saved creations in one place.</p>
+            </div>
+
+            <div id="library-grid" class="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Images will be loaded here by script.js -->
+            </div>
+
+            <div id="library-loader" class="text-center py-16">
+                <svg class="animate-spin h-8 w-8 text-gray-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <p class="mt-4 text-gray-600">Loading your library...</p>
+            </div>
+
+            <div id="empty-library-message" class="hidden text-center py-16">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h3 class="mt-4 text-lg font-medium text-gray-900">Your library is empty</h3>
+                <p class="mt-1 text-sm text-gray-500">Go to the generator to create and save your first image.</p>
+                <div class="mt-6">
+                  <a href="pro-generator.html" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#42669C] hover:bg-[#3a5a8a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#42669C]">
+                    Start Creating
+                  </a>
+                </div>
+              </div>
+
+        </main>
+
+        <footer class="text-center py-8 mt-auto border-t border-gray-200">
+            <p class="text-xs text-gray-500">&copy; 2025 GenArt. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
