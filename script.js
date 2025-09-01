@@ -325,7 +325,7 @@ function signInWithGoogle() {
 
 function updateUIForAuthState(user, userData) {
     if (user && userData) {
-        const creditText = `${userData.credits} credit${userData.credits !== 1 ? 's' : ''} left`;
+        const creditText = `Credits: ${userData.credits}`;
         authBtn.textContent = 'Sign Out';
         mobileAuthBtn.textContent = 'Sign Out';
         generationCounterEl.textContent = creditText;
