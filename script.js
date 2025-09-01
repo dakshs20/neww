@@ -1,7 +1,7 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, increment, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -21,7 +21,6 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // --- DOM Element References ---
-const appContainer = document.getElementById('app-container');
 const promptInput = document.getElementById('prompt-input');
 const generateBtn = document.getElementById('generate-btn');
 const resultContainer = document.getElementById('result-container');
@@ -42,7 +41,10 @@ const mobileAuthBtn = document.getElementById('mobile-auth-btn');
 const generationCounterEl = document.getElementById('generation-counter');
 const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
 const authModal = document.getElementById('auth-modal');
-const googleSignInBtn = document.getElementById('google-signin-btn');
+const authModalTitle = document.getElementById('auth-modal-title');
+const authModalMessage = document.getElementById('auth-modal-message');
+const authModalActionBtn = document.getElementById('auth-modal-action-btn');
+const authModalActionBtnText = document.getElementById('auth-modal-action-btn-text');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mobileMenu = document.getElementById('mobile-menu');
@@ -54,39 +56,45 @@ const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
 const copyPromptBtn = document.getElementById('copy-prompt-btn');
 const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
 
-
 let timerInterval;
 let uploadedImageData = null;
-let lastGeneratedImageUrl = null;
-let selectedAspectRatio = '1:1'; // Default aspect ratio
-let currentUserData = null; // To hold user's credit info
-let isGenerating = false; // Prevent multiple simultaneous generations
+let selectedAspectRatio = '1:1';
+let currentUserData = null;
+let isGenerating = false;
+let userListener = null; // To hold the Firestore listener unsubscribe function
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, async (user) => {
+        if (userListener) {
+            userListener(); // Unsubscribe from old listener
+        }
         if (user) {
             const userRef = doc(db, "users", user.uid);
-            const docSnap = await getDoc(userRef);
-
-            if (!docSnap.exists()) {
-                // First-time sign-in, create user document with 5 free credits
-                const newUser = {
-                    email: user.email,
-                    displayName: user.displayName,
-                    credits: 5,
-                    createdAt: serverTimestamp()
-                };
-                await setDoc(userRef, newUser);
-                currentUserData = newUser;
-            } else {
-                // Returning user, fetch their data
-                currentUserData = docSnap.data();
-            }
+            
+            // Set up a real-time listener for user data
+            userListener = onSnapshot(userRef, async (docSnap) => {
+                if (!docSnap.exists()) {
+                    // First-time sign-in, create user document
+                    const newUser = {
+                        email: user.email,
+                        displayName: user.displayName,
+                        credits: 5,
+                        createdAt: serverTimestamp()
+                    };
+                    await setDoc(userRef, newUser);
+                    currentUserData = newUser;
+                } else {
+                    // User data exists, update local state
+                    currentUserData = docSnap.data();
+                }
+                updateUIForAuthState(user, currentUserData);
+            });
         } else {
+            // User is signed out
             currentUserData = null;
+            updateUIForAuthState(null, null);
         }
-        updateUIForAuthState(user, currentUserData);
     });
 
     mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
@@ -97,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     authBtn.addEventListener('click', handleAuthAction);
     mobileAuthBtn.addEventListener('click', handleAuthAction);
-    googleSignInBtn.addEventListener('click', signInWithGoogle);
     closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
     examplePrompts.forEach(button => {
         button.addEventListener('click', () => {
@@ -109,25 +116,23 @@ document.addEventListener('DOMContentLoaded', () => {
     generateBtn.addEventListener('click', () => {
         const prompt = promptInput.value.trim();
         if (!prompt) {
-            showMessage('Please describe what you want to create or edit.', 'error');
+            showMessage('Please describe what you want to create.', 'error');
             return;
         }
         if (isGenerating) return;
 
-        if (auth.currentUser) {
-            // User is signed in
-            if (currentUserData && currentUserData.credits > 0) {
-                generateImage(false); // Generate without blur
-            } else {
-                showMessage("You’ve used all your free credits. Please buy a plan to continue generating images.", 'error');
-                // Redirect to pricing page after a short delay
-                setTimeout(() => {
-                    window.location.href = 'pricing.html';
-                }, 2000);
-            }
+        if (!auth.currentUser) {
+            // Not signed in: show sign-in modal
+            showSignInModal();
+            return;
+        }
+
+        if (currentUserData && currentUserData.credits > 0) {
+            // Signed in with credits: generate image
+            generateImage();
         } else {
-            // User is not signed in, generate with blur
-            generateImage(true);
+            // Signed in, no credits: show buy plan modal
+            showOutOfCreditsModal();
         }
     });
 
@@ -184,7 +189,25 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-async function generateImage(shouldBlur) {
+function showSignInModal() {
+    authModalTitle.textContent = 'Sign In For Free Credits';
+    authModalMessage.textContent = 'Please sign in with Google to get 5 free credits and start generating images.';
+    authModalActionBtnText.textContent = 'Sign In with Google';
+    authModalActionBtn.onclick = signInWithGoogle;
+    authModalActionBtn.querySelector('svg').style.display = 'block';
+    authModal.setAttribute('aria-hidden', 'false');
+}
+
+function showOutOfCreditsModal() {
+    authModalTitle.textContent = 'You’ve Used All Your Free Credits';
+    authModalMessage.textContent = 'Please buy a plan to continue generating images.';
+    authModalActionBtnText.textContent = 'Buy a Plan';
+    authModalActionBtn.onclick = () => { window.location.href = 'pricing.html'; };
+    authModalActionBtn.querySelector('svg').style.display = 'none';
+    authModal.setAttribute('aria-hidden', 'false');
+}
+
+async function generateImage() {
     isGenerating = true;
     const prompt = promptInput.value.trim();
     
@@ -197,15 +220,8 @@ async function generateImage(shouldBlur) {
 
     try {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, null, selectedAspectRatio);
-        
-        if (shouldBlur) {
-            lastGeneratedImageUrl = imageUrl;
-        } else if (auth.currentUser) {
-            await deductCredit(auth.currentUser.uid);
-        }
-        
-        displayImage(imageUrl, prompt, shouldBlur);
-        
+        await deductCredit(auth.currentUser.uid);
+        displayImage(imageUrl, prompt);
     } catch (error) {
         console.error('Image generation failed:', error);
         showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
@@ -222,9 +238,6 @@ async function deductCredit(userId) {
     await updateDoc(userRef, {
         credits: increment(-1)
     });
-    // Update local state to reflect the change immediately
-    currentUserData.credits--;
-    updateUIForAuthState(auth.currentUser, currentUserData);
 }
 
 function copyPrompt() {
@@ -233,27 +246,17 @@ function copyPrompt() {
         showMessage('There is no prompt to copy.', 'info');
         return;
     }
-    const textArea = document.createElement('textarea');
-    textArea.value = promptText;
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.position = "fixed";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    try {
-        document.execCommand('copy');
+    navigator.clipboard.writeText(promptText).then(() => {
         showMessage('Prompt copied to clipboard!', 'info');
         const originalIcon = copyPromptBtn.innerHTML;
         copyPromptBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
         setTimeout(() => {
             copyPromptBtn.innerHTML = originalIcon;
         }, 2000);
-    } catch (err) {
+    }).catch(err => {
         console.error('Failed to copy text: ', err);
         showMessage('Failed to copy prompt.', 'error');
-    }
-    document.body.removeChild(textArea);
+    });
 }
 
 async function handleEnhancePrompt() {
@@ -313,9 +316,11 @@ async function callApiToEnhance(prompt, maxRetries = 3) {
 
 
 function handleAuthAction() { if (auth.currentUser) signOut(auth); else signInWithGoogle(); }
+
 function signInWithGoogle() { 
-    signInWithPopup(auth, provider).catch(error => console.error("Authentication Error:", error));
-    authModal.setAttribute('aria-hidden', 'true');
+    signInWithPopup(auth, provider)
+      .then(() => authModal.setAttribute('aria-hidden', 'true'))
+      .catch(error => console.error("Authentication Error:", error));
 }
 
 function updateUIForAuthState(user, userData) {
@@ -325,35 +330,6 @@ function updateUIForAuthState(user, userData) {
         mobileAuthBtn.textContent = 'Sign Out';
         generationCounterEl.textContent = creditText;
         mobileGenerationCounterEl.textContent = creditText;
-        authModal.setAttribute('aria-hidden', 'true');
-        
-        // If there was a blurred image, unlock it now
-        if (lastGeneratedImageUrl) {
-            const blurredContainer = document.querySelector('.blurred-image-container');
-            if (blurredContainer) {
-                const img = blurredContainer.querySelector('img');
-                img.classList.remove('blurred-image');
-                const overlay = blurredContainer.querySelector('.unlock-overlay');
-                if (overlay) overlay.remove();
-                
-                // Add download button back
-                const downloadButton = document.createElement('button');
-                downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
-                downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-                downloadButton.ariaLabel = "Download Image";
-                downloadButton.onclick = () => {
-                    const a = document.createElement('a');
-                    a.href = lastGeneratedImageUrl;
-                    a.download = 'genart-image.png';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                };
-                blurredContainer.appendChild(downloadButton);
-
-            }
-            lastGeneratedImageUrl = null;
-        }
     } else {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
@@ -386,7 +362,6 @@ function removeUploadedImage() {
 async function generateImageWithRetry(prompt, imageData, token, aspectRatio, maxRetries = 3) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-            // NOTE: The 'recaptchaToken' is removed from the body as the backend doesn't use it anymore.
             const response = await fetch('/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -417,41 +392,29 @@ async function generateImageWithRetry(prompt, imageData, token, aspectRatio, max
     }
 }
 
-function displayImage(imageUrl, prompt, shouldBlur = false) {
+function displayImage(imageUrl, prompt) {
     const imgContainer = document.createElement('div');
     imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
-    if (shouldBlur) { imgContainer.classList.add('blurred-image-container'); }
     const img = document.createElement('img');
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
-    if (shouldBlur) { img.classList.add('blurred-image'); }
     
-    imgContainer.appendChild(img);
+    const downloadButton = document.createElement('button');
+    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
+    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+    downloadButton.ariaLabel = "Download Image";
+    downloadButton.onclick = () => {
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = 'genart-image.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
 
-    if (!shouldBlur) {
-        const downloadButton = document.createElement('button');
-        downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
-        downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-        downloadButton.ariaLabel = "Download Image";
-        downloadButton.onclick = () => {
-            const a = document.createElement('a');
-            a.href = imageUrl;
-            a.download = 'genart-image.png';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        };
-        imgContainer.appendChild(downloadButton);
-    }
-    
-    if (shouldBlur) {
-        const overlay = document.createElement('div');
-        overlay.className = 'unlock-overlay';
-        overlay.innerHTML = `<h3 class="text-xl font-semibold">Sign in to Unlock</h3><p class="mt-2">Sign in with Google to unlock 5 free credits and view this image.</p><button id="unlock-btn">Sign In with Google</button>`;
-        overlay.querySelector('#unlock-btn').onclick = signInWithGoogle;
-        imgContainer.appendChild(overlay);
-    }
+    imgContainer.appendChild(img);
+    imgContainer.appendChild(downloadButton);
     imageGrid.appendChild(imgContainer);
 }
 
