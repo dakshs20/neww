@@ -9,10 +9,9 @@ export default async function handler(req, res) {
 
     const { amount, userId, planId } = req.body;
     
-    // Amount is in dollars, convert to smallest currency unit (paise for INR)
-    // Assuming an exchange rate, e.g., 1 USD = 83 INR.
-    // NOTE: For a real application, you should use a real-time exchange rate API.
-    const amountInPaise = Math.round(parseFloat(amount) * 83); 
+    // The 'amount' is now sent directly from the client in the smallest currency unit (paise).
+    // No conversion is needed here, which is more reliable.
+    const amountInPaise = parseInt(amount, 10);
 
     const instance = new Razorpay({
         key_id: process.env.RAZORPAY_KEY_ID,
@@ -34,6 +33,7 @@ export default async function handler(req, res) {
         res.status(200).json(order);
     } catch (error) {
         console.error("Razorpay order creation error:", error);
-        res.status(500).json({ error: 'Failed to create payment order.' });
+        res.status(500).json({ error: 'Failed to create payment order.', details: error.message });
     }
 }
+
