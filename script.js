@@ -53,6 +53,8 @@ const cursorOutline = document.querySelector('.cursor-outline');
 const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
 const copyPromptBtn = document.getElementById('copy-prompt-btn');
 const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
+// --- NEW: Reference for AI Assist Suggestions ---
+const promptSuggestionsContainer = document.getElementById('prompt-suggestions');
 // --- NEW: References for regeneration UI ---
 const postGenerationControls = document.getElementById('post-generation-controls');
 const regeneratePromptInput = document.getElementById('regenerate-prompt-input');
@@ -145,6 +147,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     copyPromptBtn.addEventListener('click', copyPrompt);
     enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
+    
+    // --- NEW: Event listeners for AI Assist ---
+    let suggestionTimeout;
+    promptInput.addEventListener('input', () => {
+        clearTimeout(suggestionTimeout);
+        suggestionTimeout = setTimeout(updateSuggestions, 500); // Debounce for 500ms
+    });
+
+    promptInput.addEventListener('blur', () => {
+        // Use a short delay to allow clicking on a suggestion before it disappears
+        setTimeout(() => {
+            if (promptSuggestionsContainer) {
+                 promptSuggestionsContainer.classList.add('hidden');
+            }
+        }, 150);
+    });
+
 
     imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
     imageUploadInput.addEventListener('change', handleImageUpload);
@@ -180,6 +199,54 @@ document.addEventListener('DOMContentLoaded', () => {
         el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
     });
 });
+
+
+// --- NEW: AI Assist Suggestion Logic ---
+const suggestions = [
+    { text: "Try adding 'cinematic lighting'", trigger: "cinematic lighting", check: (p) => !/lighting/i.test(p) },
+    { text: "Include 'high detail' for sharpness", trigger: "high detail", check: (p) => !/detail|sharp|hd|8k|4k|realistic|quality/i.test(p) },
+    { text: "Consider a style like 'oil painting'", trigger: "oil painting", check: (p) => !/style|painting|drawing|sketch|photo/i.test(p) },
+    { text: "Add 'photorealistic' for realism", trigger: "photorealistic", check: (p) => !/photo|realistic/i.test(p) },
+    { text: "Use 'vibrant colors' for a pop", trigger: "vibrant colors", check: (p) => !/color|vibrant|monochrome|black and white/i.test(p) },
+    { text: "Describe a camera angle, like 'wide angle shot'", trigger: "wide angle shot", check: (p) => !/angle|shot|close-up|aerial|view/i.test(p) }
+];
+
+function updateSuggestions() {
+    const promptText = promptInput.value.trim().toLowerCase();
+    promptSuggestionsContainer.innerHTML = '';
+
+    if (promptText.length < 10) {
+        promptSuggestionsContainer.classList.add('hidden');
+        return;
+    }
+
+    const relevantSuggestions = suggestions
+        .filter(s => s.check(promptText)) // Find suggestions where the keyword is missing
+        .slice(0, 3); // Show a maximum of 3 suggestions
+
+    if (relevantSuggestions.length > 0) {
+        relevantSuggestions.forEach(suggestion => {
+            const btn = document.createElement('button');
+            btn.className = 'prompt-suggestion-btn';
+            btn.textContent = suggestion.text;
+            
+            // Use mousedown to trigger before the blur event hides the container
+            btn.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // Prevent input from losing focus
+                const currentPrompt = promptInput.value.trim();
+                // Append the trigger text intelligently
+                promptInput.value = currentPrompt + (currentPrompt.endsWith(',') ? ' ' : ', ') + suggestion.trigger;
+                promptInput.focus();
+                promptSuggestionsContainer.classList.add('hidden'); // Hide after clicking
+            });
+            promptSuggestionsContainer.appendChild(btn);
+        });
+        promptSuggestionsContainer.classList.remove('hidden');
+    } else {
+        promptSuggestionsContainer.classList.add('hidden');
+    }
+}
+
 
 // --- MODIFIED: generateImage handles both initial and regeneration flows ---
 async function generateImage(recaptchaToken) {
