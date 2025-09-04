@@ -53,6 +53,10 @@ const cursorOutline = document.querySelector('.cursor-outline');
 const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
 const copyPromptBtn = document.getElementById('copy-prompt-btn');
 const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
+const themeToggleBtn = document.getElementById('theme-toggle-btn');
+const mobileThemeToggleBtn = document.getElementById('mobile-theme-toggle-btn');
+const themeIconSun = document.getElementById('theme-icon-sun');
+const themeIconMoon = document.getElementById('theme-icon-moon');
 // --- NEW: Reference for AI Assist Suggestions ---
 const promptSuggestionsContainer = document.getElementById('prompt-suggestions');
 // --- NEW: References for regeneration UI ---
@@ -78,6 +82,19 @@ window.onRecaptchaSuccess = function(token) {
 
 // --- Main App Logic ---
 document.addEventListener('DOMContentLoaded', () => {
+    // --- THEME SETUP ---
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        updateThemeIcons(true);
+    } else {
+        document.documentElement.classList.remove('dark');
+        updateThemeIcons(false);
+    }
+    themeToggleBtn.addEventListener('click', toggleTheme);
+    mobileThemeToggleBtn.addEventListener('click', toggleTheme);
+    
+    // --- OTHER LISTENERS ---
     onAuthStateChanged(auth, user => {
         updateUIForAuthState(user);
     });
@@ -212,6 +229,21 @@ document.addEventListener('DOMContentLoaded', () => {
         el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
     });
 });
+
+// --- THEME SWITCHER FUNCTIONS ---
+function toggleTheme() {
+    const isDarkMode = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+    updateThemeIcons(isDarkMode);
+}
+
+function updateThemeIcons(isDarkMode) {
+   if (themeIconSun && themeIconMoon) {
+       themeIconSun.classList.toggle('hidden', isDarkMode);
+       themeIconMoon.classList.toggle('hidden', !isDarkMode);
+   }
+   // You can add similar logic for a separate mobile icon if needed
+}
 
 
 // --- REBUILT & RENAMED: AI Assist now calls our new API for smart suggestions ---
@@ -506,12 +538,12 @@ async function incrementTotalGenerations() {
 
 function displayImage(imageUrl, prompt, shouldBlur = false) {
     const imgContainer = document.createElement('div');
-    imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
+    imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80 dark:bg-gray-800 dark:border-gray-700';
     if (shouldBlur) { imgContainer.classList.add('blurred-image-container'); }
     
     const promptText = document.createElement('p');
     promptText.textContent = prompt;
-    promptText.className = 'p-4 text-sm text-left text-gray-700 bg-gray-50 border-b border-gray-200 line-clamp-3';
+    promptText.className = 'p-4 text-sm text-left text-gray-700 bg-gray-50 border-b border-gray-200 line-clamp-3 dark:bg-gray-900/50 dark:border-gray-700 dark:text-gray-300';
     
     const img = document.createElement('img');
     img.src = imageUrl;
@@ -570,7 +602,7 @@ function addNavigationButtons() {
     const startNewButton = document.createElement('button');
     startNewButton.id = 'start-new-btn';
     startNewButton.textContent = '← Start New';
-    startNewButton.className = 'text-sm sm:text-base mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
+    startNewButton.className = 'text-sm sm:text-base mt-4 text-blue-600 font-semibold hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors';
     startNewButton.onclick = () => {
         generatorUI.classList.remove('hidden');
         resultContainer.classList.add('hidden');
