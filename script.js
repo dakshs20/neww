@@ -148,12 +148,25 @@ document.addEventListener('DOMContentLoaded', () => {
     copyPromptBtn.addEventListener('click', copyPrompt);
     enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
 
-    // --- UPDATED: Event listeners for the new advanced AI Assist ---
+    // --- FASTER: Event listeners for a more responsive AI Assist ---
     let suggestionTimeout;
     promptInput.addEventListener('input', () => {
         clearTimeout(suggestionTimeout);
-        // Debounce the API call to avoid sending requests on every keystroke.
-        suggestionTimeout = setTimeout(updateSuggestions, 600); 
+        const promptText = promptInput.value.trim();
+
+        // If prompt is too short, hide suggestions and do nothing else.
+        if (promptText.length < 10) {
+            promptSuggestionsContainer.innerHTML = '';
+            promptSuggestionsContainer.classList.add('hidden');
+            return;
+        }
+
+        // INSTANTLY show loading state to give immediate feedback.
+        promptSuggestionsContainer.innerHTML = `<span class="text-sm text-gray-400 italic">AI is thinking of suggestions...</span>`;
+        promptSuggestionsContainer.classList.remove('hidden');
+        
+        // Debounce the ACTUAL API call to be efficient, but with a much shorter delay.
+        suggestionTimeout = setTimeout(() => fetchAiSuggestions(promptText), 300);
     });
 
     promptInput.addEventListener('blur', () => {
@@ -201,20 +214,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// --- REBUILT: AI Assist now calls our new API for smart suggestions ---
-async function updateSuggestions() {
-    const promptText = promptInput.value.trim();
-    
-    // Don't show suggestions for very short prompts.
-    if (promptText.length < 10) {
-        promptSuggestionsContainer.innerHTML = '';
-        promptSuggestionsContainer.classList.add('hidden');
+// --- REBUILT & RENAMED: AI Assist now calls our new API for smart suggestions ---
+async function fetchAiSuggestions(promptText) {
+    // If the prompt has changed since the timeout was set, abort.
+    if (promptText !== promptInput.value.trim()) {
         return;
     }
-
-    // Show a temporary loading state to the user for better UX.
-    promptSuggestionsContainer.innerHTML = `<span class="text-sm text-gray-400 italic">AI is thinking of suggestions...</span>`;
-    promptSuggestionsContainer.classList.remove('hidden');
 
     try {
         const response = await fetch('/api/suggest', {
@@ -223,7 +228,6 @@ async function updateSuggestions() {
             body: JSON.stringify({ prompt: promptText })
         });
 
-        // Silently hide the container on API error to avoid disrupting the user.
         if (!response.ok) {
             promptSuggestionsContainer.classList.add('hidden');
             console.error('Failed to fetch suggestions');
@@ -237,7 +241,6 @@ async function updateSuggestions() {
         promptSuggestionsContainer.innerHTML = '';
 
         if (relevantSuggestions && Array.isArray(relevantSuggestions) && relevantSuggestions.length > 0) {
-            // Display up to 3 suggestions returned by the AI.
             relevantSuggestions.slice(0, 3).forEach(suggestionText => {
                 if(typeof suggestionText !== 'string') return;
 
@@ -246,19 +249,16 @@ async function updateSuggestions() {
                 const cleanText = suggestionText.replace(/_/g, ' ').trim();
                 btn.textContent = `Add "${cleanText}"`;
                 
-                // Use mousedown to trigger before the blur event hides the container.
                 btn.addEventListener('mousedown', (e) => {
-                    e.preventDefault(); // Prevent the input from losing focus.
+                    e.preventDefault(); 
                     const currentPrompt = promptInput.value.trim();
-                    // Intelligently append the new suggestion with a comma.
                     promptInput.value = currentPrompt + (currentPrompt.endsWith(',') || currentPrompt.length === 0 ? ' ' : ', ') + cleanText;
                     promptInput.focus();
-                    promptSuggestionsContainer.classList.add('hidden'); // Hide after clicking.
+                    promptSuggestionsContainer.classList.add('hidden'); 
                 });
                 promptSuggestionsContainer.appendChild(btn);
             });
 
-            // Only show the container if we actually added suggestion buttons.
             if (promptSuggestionsContainer.children.length > 0) {
                 promptSuggestionsContainer.classList.remove('hidden');
             }
