@@ -148,11 +148,12 @@ document.addEventListener('DOMContentLoaded', () => {
     copyPromptBtn.addEventListener('click', copyPrompt);
     enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
     
-    // --- NEW: Event listeners for AI Assist ---
+    // --- UPDATED: Event listeners for the new advanced AI Assist ---
     let suggestionTimeout;
     promptInput.addEventListener('input', () => {
         clearTimeout(suggestionTimeout);
-        suggestionTimeout = setTimeout(updateSuggestions, 500); // Debounce for 500ms
+        // Debounce the API call to avoid sending requests on every keystroke.
+        suggestionTimeout = setTimeout(updateSuggestions, 600); 
     });
 
     promptInput.addEventListener('blur', () => {
@@ -201,48 +202,73 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// --- NEW: AI Assist Suggestion Logic ---
-const suggestions = [
-    { text: "Try adding 'cinematic lighting'", trigger: "cinematic lighting", check: (p) => !/lighting/i.test(p) },
-    { text: "Include 'high detail' for sharpness", trigger: "high detail", check: (p) => !/detail|sharp|hd|8k|4k|realistic|quality/i.test(p) },
-    { text: "Consider a style like 'oil painting'", trigger: "oil painting", check: (p) => !/style|painting|drawing|sketch|photo/i.test(p) },
-    { text: "Add 'photorealistic' for realism", trigger: "photorealistic", check: (p) => !/photo|realistic/i.test(p) },
-    { text: "Use 'vibrant colors' for a pop", trigger: "vibrant colors", check: (p) => !/color|vibrant|monochrome|black and white/i.test(p) },
-    { text: "Describe a camera angle, like 'wide angle shot'", trigger: "wide angle shot", check: (p) => !/angle|shot|close-up|aerial|view/i.test(p) }
-];
-
-function updateSuggestions() {
-    const promptText = promptInput.value.trim().toLowerCase();
-    promptSuggestionsContainer.innerHTML = '';
-
+// --- REBUILT: AI Assist now calls our new API for smart suggestions ---
+async function updateSuggestions() {
+    const promptText = promptInput.value.trim();
+    
+    // Don't show suggestions for very short prompts.
     if (promptText.length < 10) {
+        promptSuggestionsContainer.innerHTML = '';
         promptSuggestionsContainer.classList.add('hidden');
         return;
     }
 
-    const relevantSuggestions = suggestions
-        .filter(s => s.check(promptText)) // Find suggestions where the keyword is missing
-        .slice(0, 3); // Show a maximum of 3 suggestions
+    // Show a temporary loading state to the user for better UX.
+    promptSuggestionsContainer.innerHTML = `<span class="text-sm text-gray-400 italic">✨ AI is thinking of suggestions...</span>`;
+    promptSuggestionsContainer.classList.remove('hidden');
 
-    if (relevantSuggestions.length > 0) {
-        relevantSuggestions.forEach(suggestion => {
-            const btn = document.createElement('button');
-            btn.className = 'prompt-suggestion-btn';
-            btn.textContent = suggestion.text;
-            
-            // Use mousedown to trigger before the blur event hides the container
-            btn.addEventListener('mousedown', (e) => {
-                e.preventDefault(); // Prevent input from losing focus
-                const currentPrompt = promptInput.value.trim();
-                // Append the trigger text intelligently
-                promptInput.value = currentPrompt + (currentPrompt.endsWith(',') ? ' ' : ', ') + suggestion.trigger;
-                promptInput.focus();
-                promptSuggestionsContainer.classList.add('hidden'); // Hide after clicking
-            });
-            promptSuggestionsContainer.appendChild(btn);
+    try {
+        const response = await fetch('/api/suggest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: promptText })
         });
-        promptSuggestionsContainer.classList.remove('hidden');
-    } else {
+
+        // Silently hide the container on API error to avoid disrupting the user.
+        if (!response.ok) {
+            promptSuggestionsContainer.classList.add('hidden');
+            console.error('Failed to fetch suggestions');
+            return;
+        }
+
+        const data = await response.json();
+        const relevantSuggestions = data.suggestions;
+
+        // Clear loading state and prepare for new suggestions.
+        promptSuggestionsContainer.innerHTML = '';
+
+        if (relevantSuggestions && Array.isArray(relevantSuggestions) && relevantSuggestions.length > 0) {
+            // Display up to 3 suggestions returned by the AI.
+            relevantSuggestions.slice(0, 3).forEach(suggestionText => {
+                if(typeof suggestionText !== 'string') return;
+
+                const btn = document.createElement('button');
+                btn.className = 'prompt-suggestion-btn';
+                const cleanText = suggestionText.replace(/_/g, ' ').trim();
+                btn.textContent = `Add "${cleanText}"`;
+                
+                // Use mousedown to trigger before the blur event hides the container.
+                btn.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); // Prevent the input from losing focus.
+                    const currentPrompt = promptInput.value.trim();
+                    // Intelligently append the new suggestion with a comma.
+                    promptInput.value = currentPrompt + (currentPrompt.endsWith(',') || currentPrompt.length === 0 ? ' ' : ', ') + cleanText;
+                    promptInput.focus();
+                    promptSuggestionsContainer.classList.add('hidden'); // Hide after clicking.
+                });
+                promptSuggestionsContainer.appendChild(btn);
+            });
+
+            // Only show the container if we actually added suggestion buttons.
+            if (promptSuggestionsContainer.children.length > 0) {
+                promptSuggestionsContainer.classList.remove('hidden');
+            }
+        } else {
+            promptSuggestionsContainer.classList.add('hidden');
+        }
+
+    } catch (error) {
+        console.error('Error fetching or parsing suggestions:', error);
         promptSuggestionsContainer.classList.add('hidden');
     }
 }
@@ -577,3 +603,4 @@ function stopTimer() {
     clearInterval(timerInterval);
     progressBar.style.width = '100%';
 }
+
