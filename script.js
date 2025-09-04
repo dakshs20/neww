@@ -509,9 +509,11 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
     imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
     if (shouldBlur) { imgContainer.classList.add('blurred-image-container'); }
     
+    /* REMOVED THIS BLOCK
     const promptText = document.createElement('p');
     promptText.textContent = prompt;
     promptText.className = 'p-4 text-sm text-left text-gray-700 bg-gray-50 border-b border-gray-200 line-clamp-3';
+    */
     
     const img = document.createElement('img');
     img.src = imageUrl;
@@ -532,7 +534,7 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
         document.body.removeChild(a);
     };
 
-    imgContainer.appendChild(promptText);
+    // imgContainer.appendChild(promptText); // REMOVED THIS LINE
     imgContainer.appendChild(img);
 
     if (!shouldBlur) { imgContainer.appendChild(downloadButton); }
