@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     copyPromptBtn.addEventListener('click', copyPrompt);
     enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
-    
+
     // --- UPDATED: Event listeners for the new advanced AI Assist ---
     let suggestionTimeout;
     promptInput.addEventListener('input', () => {
@@ -164,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, 150);
     });
-
 
     imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
     imageUploadInput.addEventListener('change', handleImageUpload);
@@ -214,7 +213,7 @@ async function updateSuggestions() {
     }
 
     // Show a temporary loading state to the user for better UX.
-    promptSuggestionsContainer.innerHTML = `<span class="text-sm text-gray-400 italic">✨ AI is thinking of suggestions...</span>`;
+    promptSuggestionsContainer.innerHTML = `<span class="text-sm text-gray-400 italic">AI is thinking of suggestions...</span>`;
     promptSuggestionsContainer.classList.remove('hidden');
 
     try {
