@@ -124,6 +124,11 @@
                         <button id="generate-btn" class="absolute right-4 bottom-4 w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-gray-400" aria-label="Generate AI Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
                     </div>
 
+                    <!-- AI ASSIST PROMPT SUGGESTIONS -->
+                    <div id="prompt-suggestions" class="hidden mt-3 flex flex-wrap justify-center gap-2 px-2">
+                        <!-- Suggestions will be dynamically inserted here by script.js -->
+                    </div>
+
                     <div id="aspect-ratio-selector" class="mt-4 flex justify-center items-center gap-3">
                         <button class="aspect-ratio-btn selected" data-ratio="1:1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
@@ -315,4 +320,3 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
-
