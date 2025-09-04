@@ -157,11 +157,6 @@ textarea::-webkit-scrollbar-thumb:hover {
     gap: 4px;
 }
 
-.prompt-suggestion-btn::before {
-    content: '✨'; /* Sparkle emoji */
-    font-size: 12px;
-}
-
 .prompt-suggestion-btn:hover {
     background-color: #e0e7ff;
     border-color: #a5b4fc;
@@ -515,3 +510,4 @@ textarea::-webkit-scrollbar-thumb:hover {
         height: 56px;
     }
 }
+
