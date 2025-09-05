@@ -1,75 +1,103 @@
-// This should be an SDK like 'firebase-admin' for a real backend
-// For this example, we'll assume a helper function verifyFirebaseToken exists
-// and a prisma client is available.
+// Use require for Node.js server environments (like Vercel)
+const { initializeApp, cert, getApps } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
-// IMPORTANT: In a real server environment, you would use the Firebase Admin SDK
-// to securely verify the user's token.
+// --- IMPORTANT ---
+// This is your service account JSON.
+// You MUST set this as a `FIREBASE_SERVICE_ACCOUNT` environment variable
+// on your hosting platform (e.g., Vercel, Netlify).
+let serviceAccount;
+try {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+} catch (e) {
+    console.error('Firebase service account setup error: Make sure the FIREBASE_SERVICE_ACCOUNT environment variable is set correctly.', e);
+}
 
-// import { admin } from '../lib/firebase-admin';
-// import { prisma } from '../lib/prisma';
+// Initialize Firebase Admin SDK, but only if it hasn't been already.
+// This prevents re-initialization on hot reloads in a serverless environment.
+if (!getApps().length) {
+    try {
+        initializeApp({
+            credential: cert(serviceAccount)
+        });
+    } catch (e) {
+        console.error('Firebase Admin SDK initialization error.', e);
+    }
+}
+
+const db = getFirestore();
 
 export default async function handler(req, res) {
+    // Only allow POST requests
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
     try {
-        const { prompt, imageData, aspectRatio } = req.body;
-        const authHeader = req.headers.authorization;
-
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Unauthorized: No token provided' });
-        }
-        
-        // In a real app, you'd verify this token with Firebase Admin SDK
-        // const idToken = authHeader.split('Bearer ')[1];
-        // const decodedToken = await admin.auth().verifyIdToken(idToken);
-        // const userId = decodedToken.uid;
-        
-        // --- MOCKING a successful token verification for demonstration ---
-        const userId = "mock-user-id-replace-with-real-verification";
-        // ---
-
-        // In a real app, you would fetch user from your database
-        // const user = await prisma.user.findUnique({ where: { id: userId } });
-        const mockUser = { credits: 10 }; // MOCK user data
-        
-        if (!mockUser) {
-             return res.status(404).json({ error: 'User not found' });
-        }
-
-        if (mockUser.credits <= 0) {
-            return res.status(403).json({ error: 'You are out of credits.', code: 'NO_CREDITS' });
-        }
-
-        // --- Image Generation Logic (Unchanged) ---
+        const { prompt, aspectRatio, userId } = req.body;
         const apiKey = process.env.GOOGLE_API_KEY;
+
+        // 1. Validate all incoming data from the client
+        if (!userId) {
+            return res.status(401).json({ error: 'Authentication required. User ID is missing.' });
+        }
+        if (!prompt) {
+            return res.status(400).json({ error: 'A prompt is required.' });
+        }
         if (!apiKey) {
-            return res.status(500).json({ error: "Server configuration error: API key not found." });
+            console.error("Server config error: GOOGLE_API_KEY not found.");
+            return res.status(500).json({ error: "Server configuration error." });
+        }
+        if (!db || !getApps().length) {
+             console.error("Firestore database not initialized. Check service account.");
+             return res.status(500).json({ error: "Database connection error." });
         }
 
-        let apiUrl, payload;
-        // ... [Your existing logic for choosing API and building payload] ...
+        // 2. Securely check user credits on the server
+        const userDocRef = db.collection('users').doc(userId);
+        const userDoc = await userDocRef.get();
+
+        if (!userDoc.exists) {
+            return res.status(404).json({ error: 'User account not found in database.' });
+        }
+
+        const userData = userDoc.data();
+        if (userData.credits <= 0) {
+            return res.status(402).json({ error: "You don't have enough credits.", code: 'NO_CREDITS' });
+        }
+
+        // 3. Call the Google AI Image Generation API
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+        const payload = {
+            instances: [{ prompt }],
+            parameters: { "sampleCount": 1, "aspectRatio": aspectRatio || "1:1" }
+        };
         
-        // --- Mocking the API call for demonstration ---
-        console.log(`Generating image for user ${userId} with prompt: "${prompt}"`);
+        const apiResponse = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!apiResponse.ok) {
+            const errorText = await apiResponse.text();
+            console.error("Google API Error:", errorText);
+            return res.status(apiResponse.status).json({ error: `Image generation failed due to an API error.` });
+        }
+
+        const result = await apiResponse.json();
         
-        // Deduct credit after successful generation
-        // await prisma.user.update({
-        //     where: { id: userId },
-        //     data: { credits: { decrement: 1 } },
-        // });
-        console.log(`Credit deducted. User ${userId} now has ${mockUser.credits - 1} credits.`);
+        // 4. On successful image generation, deduct one credit from the user's account
+        await userDocRef.update({
+            credits: FieldValue.increment(-1)
+        });
         
-        // Return a mock image response
-        const mockBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
-        res.status(200).json({ predictions: [{ bytesBase64Encoded: mockBase64 }] });
+        // 5. Send the successful response back to the client
+        return res.status(200).json(result);
 
     } catch (error) {
         console.error("API function /api/generate crashed:", error);
-        if (error.code === 'auth/id-token-expired') {
-            return res.status(401).json({ error: 'Token expired, please sign in again.' });
-        }
-        res.status(500).json({ error: 'The API function crashed.', details: error.message });
+        return res.status(500).json({ error: 'An internal server error occurred. Please try again later.' });
     }
 }
+
