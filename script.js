@@ -368,11 +368,24 @@ function initializeMusicPlayer() {
 }
 
 function handleImageUpload(event) {
-    // ... (This function remains unchanged)
+    const file = event.target.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        uploadedImageData = { mimeType: file.type, data: reader.result.split(',')[1] };
+        document.getElementById('image-preview').src = reader.result;
+        document.getElementById('image-preview-container').classList.remove('hidden');
+        document.getElementById('prompt-input').placeholder = "Describe the edits you want to make...";
+    };
+    reader.readAsDataURL(file);
 }
 
 function removeUploadedImage() {
-    // ... (This function remains unchanged)
+    uploadedImageData = null;
+    document.getElementById('image-upload-input').value = '';
+    document.getElementById('image-preview-container').classList.add('hidden');
+    document.getElementById('image-preview').src = '';
+    document.getElementById('prompt-input').placeholder = "An oil painting of a futuristic city skyline at dusk...";
 }
 
 function displayImage(imageUrl, prompt) {
@@ -402,21 +415,82 @@ function displayImage(imageUrl, prompt) {
 }
 
 function showMessage(text, type = 'info') {
-    // ... (This function remains unchanged)
+    const messageBox = document.getElementById('message-box');
+    const messageEl = document.createElement('div');
+    messageEl.className = `p-4 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} fade-in-slide-up`;
+    messageEl.textContent = text;
+    messageBox.innerHTML = '';
+    messageBox.appendChild(messageEl);
+    setTimeout(() => {
+        if(messageBox.contains(messageEl)) {
+            messageBox.removeChild(messageEl);
+        }
+    }, 4000);
 }
 
 function addNavigationButtons() {
-    // ... (This function remains unchanged)
+    const messageBox = document.getElementById('message-box');
+    const existingButton = document.getElementById('start-new-btn');
+    if (existingButton) existingButton.remove();
+
+    const startNewButton = document.createElement('button');
+    startNewButton.id = 'start-new-btn';
+    startNewButton.textContent = '← Start New';
+    startNewButton.className = 'text-sm sm:text-base mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
+    startNewButton.onclick = () => {
+        document.getElementById('generator-ui').classList.remove('hidden');
+        document.getElementById('result-container').classList.add('hidden');
+        document.getElementById('image-grid').innerHTML = '';
+        document.getElementById('message-box').innerHTML = '';
+        document.getElementById('post-generation-controls').classList.add('hidden');
+        document.getElementById('prompt-input').value = '';
+        document.getElementById('regenerate-prompt-input').value = '';
+        removeUploadedImage();
+    };
+    messageBox.prepend(startNewButton);
 }
 
 function copyPrompt() {
-    // ... (This function remains unchanged)
+    const promptInput = document.getElementById('prompt-input');
+    const copyPromptBtn = document.getElementById('copy-prompt-btn');
+    const promptText = promptInput.value;
+    if (!promptText) {
+        showMessage('There is no prompt to copy.', 'info');
+        return;
+    }
+    navigator.clipboard.writeText(promptText).then(() => {
+        showMessage('Prompt copied to clipboard!', 'info');
+        const originalIcon = copyPromptBtn.innerHTML;
+        copyPromptBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        setTimeout(() => {
+            copyPromptBtn.innerHTML = originalIcon;
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+        showMessage('Failed to copy prompt.', 'error');
+    });
 }
 
 function startTimer() {
-    // ... (This function remains unchanged)
+    const timerEl = document.getElementById('timer');
+    const progressBar = document.getElementById('progress-bar');
+    let startTime = Date.now();
+    const maxTime = 17 * 1000;
+    progressBar.style.width = '0%';
+    timerInterval = setInterval(() => {
+        const elapsedTime = Date.now() - startTime;
+        const progress = Math.min(elapsedTime / maxTime, 1);
+        progressBar.style.width = `${progress * 100}%`;
+        timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
+        if (elapsedTime >= maxTime) {
+            timerEl.textContent = `17.0s / ~17s`;
+        }
+    }, 100);
 }
 
 function stopTimer() {
-    // ... (This function remains unchanged)
+    clearInterval(timerInterval);
+    const progressBar = document.getElementById('progress-bar');
+    if (progressBar) progressBar.style.width = '100%';
 }
+
