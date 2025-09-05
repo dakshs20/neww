@@ -6,108 +6,87 @@
     <title>Pricing - GenArt</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .plan-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .plan-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
-    <!-- NEW: Added custom cursor elements -->
-    <div class="cursor-dot"></div>
-    <div class="cursor-outline"></div>
 
     <div class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
-        <header class="flex justify-between items-center py-5 px-2 z-20">
-            <a href="/" aria-label="Back to home">
+        <header class="flex justify-between items-center py-5 px-2">
+            <a href="/" class="flex items-center space-x-2">
                 <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
             </a>
-            <a href="/" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all duration-300">
-                Generator
+            <a href="/" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all">
+                &larr; Back to Generator
             </a>
         </header>
 
         <main class="flex-grow flex flex-col items-center justify-center text-center p-4">
-            <div class="max-w-4xl w-full">
-                <h1 class="text-4xl sm:text-5xl font-medium text-gray-900 mb-4">Choose Your Plan</h1>
-                <p class="text-lg text-gray-500 mb-12">More credits, more creativity. Payment integration coming soon!</p>
+            <div class="w-full max-w-4xl mx-auto">
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Choose Your Plan</h1>
+                <p class="text-lg text-gray-600 mb-12">Unlock your creativity with our credit packs. More generations, more possibilities.</p>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <!-- Plan 1 -->
-                    <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-8 flex flex-col">
-                        <h2 class="text-2xl font-semibold text-gray-800">Starter Pack</h2>
-                        <p class="mt-4 text-4xl font-bold text-gray-900">$5 <span class="text-lg font-medium text-gray-500">/ one-time</span></p>
-                        <p class="mt-2 text-gray-600">Perfect for trying things out.</p>
-                        <ul class="mt-8 space-y-4 text-left">
-                            <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 50 Credits</li>
-                            <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Standard generation speed</li>
+                    <div class="plan-card bg-white rounded-2xl border border-gray-200 p-8 flex flex-col">
+                        <h2 class="text-2xl font-semibold text-gray-800">Starter</h2>
+                        <p class="text-gray-500 mt-2">Perfect for trying things out.</p>
+                        <div class="my-8">
+                            <span class="text-5xl font-bold text-gray-900">$10</span>
+                            <span class="text-gray-500">/ one-time</span>
+                        </div>
+                        <ul class="space-y-4 text-left text-gray-600">
+                            <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>100 Credits</li>
+                            <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Standard Speed Generations</li>
+                             <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Community Support</li>
                         </ul>
                         <button disabled class="mt-auto w-full bg-gray-300 text-gray-500 font-semibold py-3 px-4 rounded-lg cursor-not-allowed">Purchase (Coming Soon)</button>
                     </div>
 
                     <!-- Plan 2 (Most Popular) -->
-                    <div class="bg-white rounded-2xl border-2 border-blue-500 shadow-xl p-8 flex flex-col relative">
-                        <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
-                            <span class="bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">MOST POPULAR</span>
+                    <div class="plan-card bg-white rounded-2xl border-2 border-blue-500 p-8 flex flex-col relative">
+                         <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">MOST POPULAR</div>
+                        <h2 class="text-2xl font-semibold text-gray-800">Creator</h2>
+                        <p class="text-gray-500 mt-2">For frequent artists and creators.</p>
+                        <div class="my-8">
+                            <span class="text-5xl font-bold text-gray-900">$25</span>
+                            <span class="text-gray-500">/ one-time</span>
                         </div>
-                        <h2 class="text-2xl font-semibold text-gray-800">Creator Pack</h2>
-                        <p class="mt-4 text-4xl font-bold text-gray-900">$15 <span class="text-lg font-medium text-gray-500">/ one-time</span></p>
-                        <p class="mt-2 text-gray-600">For the active creator.</p>
-                        <ul class="mt-8 space-y-4 text-left">
-                           <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 200 Credits</li>
-                            <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Priority generation queue</li>
+                        <ul class="space-y-4 text-left text-gray-600">
+                            <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>300 Credits (+50 Bonus!)</li>
+                            <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Priority Speed Generations</li>
+                            <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Priority Support</li>
                         </ul>
-                         <button disabled class="mt-auto w-full bg-gray-300 text-gray-500 font-semibold py-3 px-4 rounded-lg cursor-not-allowed">Purchase (Coming Soon)</button>
+                        <button disabled class="mt-auto w-full bg-gray-300 text-gray-500 font-semibold py-3 px-4 rounded-lg cursor-not-allowed">Purchase (Coming Soon)</button>
                     </div>
 
                     <!-- Plan 3 -->
-                    <div class="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-8 flex flex-col">
-                        <h2 class="text-2xl font-semibold text-gray-800">Pro Pack</h2>
-                        <p class="mt-4 text-4xl font-bold text-gray-900">$40 <span class="text-lg font-medium text-gray-500">/ one-time</span></p>
-                        <p class="mt-2 text-gray-600">For heavy-duty usage.</p>
-                        <ul class="mt-8 space-y-4 text-left">
-                            <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> 1000 Credits</li>
-                            <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Priority generation queue</li>
+                    <div class="plan-card bg-white rounded-2xl border border-gray-200 p-8 flex flex-col">
+                        <h2 class="text-2xl font-semibold text-gray-800">Pro</h2>
+                        <p class="text-gray-500 mt-2">For power users and businesses.</p>
+                        <div class="my-8">
+                            <span class="text-5xl font-bold text-gray-900">$50</span>
+                             <span class="text-gray-500">/ one-time</span>
+                        </div>
+                        <ul class="space-y-4 text-left text-gray-600">
+                           <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>1000 Credits (+200 Bonus!)</li>
+                           <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Highest Priority Queue</li>
+                           <li class="flex items-center"><svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 -0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Dedicated Support</li>
                         </ul>
                          <button disabled class="mt-auto w-full bg-gray-300 text-gray-500 font-semibold py-3 px-4 rounded-lg cursor-not-allowed">Purchase (Coming Soon)</button>
                     </div>
                 </div>
+                <p class="text-xs text-gray-400 mt-8">Payments will be processed by Razorpay. Integration is coming soon.</p>
             </div>
         </main>
     </div>
 
-    <!-- NEW: Added self-contained script for custom cursor -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const cursorDot = document.querySelector('.cursor-dot');
-            const cursorOutline = document.querySelector('.cursor-outline');
-
-            if (cursorDot && cursorOutline) {
-                let mouseX = 0, mouseY = 0;
-                let outlineX = 0, outlineY = 0;
-
-                window.addEventListener('mousemove', (e) => {
-                    mouseX = e.clientX;
-                    mouseY = e.clientY;
-                });
-
-                const animateCursor = () => {
-                    if (cursorDot && cursorOutline) {
-                        cursorDot.style.left = `${mouseX}px`;
-                        cursorDot.style.top = `${mouseY}px`;
-                        
-                        const ease = 0.15;
-                        outlineX += (mouseX - outlineX) * ease;
-                        outlineY += (mouseY - outlineY) * ease;
-                        
-                        cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
-                    }
-                    requestAnimationFrame(animateCursor);
-                };
-                requestAnimationFrame(animateCursor);
-
-                const interactiveElements = document.querySelectorAll('a, button');
-                interactiveElements.forEach(el => {
-                    el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
-                    el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
-                });
-            }
-        });
-    </script>
 </body>
 </html>
