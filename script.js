@@ -82,7 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
     mobileAuthBtn.addEventListener('click', handleAuthAction);
     googleSignInBtn.addEventListener('click', signInWithGoogle);
     closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
-    closeCreditsModalBtn.addEventListener('click', () => creditsModal.setAttribute('aria-hidden', 'true'));
+    closeCreditsModalBtn.addEventListener('click', () => {
+        creditsModal.setAttribute('aria-hidden', 'true');
+        // NEW: Reset the UI to the main generator view when canceling
+        resetToGeneratorView();
+    });
     
     generateBtn.addEventListener('click', () => handleGeneration(false));
     regenerateBtn.addEventListener('click', () => handleGeneration(true));
@@ -294,6 +298,18 @@ function showMessage(text, type = 'info') {
     }, 5000);
 }
 
+// NEW: Created a dedicated function to reset the UI to the initial state
+function resetToGeneratorView() {
+    generatorUI.classList.remove('hidden');
+    resultContainer.classList.add('hidden');
+    imageGrid.innerHTML = '';
+    messageBox.innerHTML = '';
+    postGenerationControls.classList.add('hidden');
+    promptInput.value = '';
+    regeneratePromptInput.value = '';
+    removeUploadedImage();
+}
+
 function addNavigationButtons() {
     const existingButton = document.getElementById('start-new-btn');
     if (existingButton) return;
@@ -301,16 +317,8 @@ function addNavigationButtons() {
     startNewButton.id = 'start-new-btn';
     startNewButton.textContent = '← Start New';
     startNewButton.className = 'text-sm sm:text-base mt-4 text-blue-600 font-semibold hover:text-blue-800';
-    startNewButton.onclick = () => {
-        generatorUI.classList.remove('hidden');
-        resultContainer.classList.add('hidden');
-        imageGrid.innerHTML = '';
-        messageBox.innerHTML = '';
-        postGenerationControls.classList.add('hidden');
-        promptInput.value = '';
-        regeneratePromptInput.value = '';
-        removeUploadedImage();
-    };
+    // MODIFIED: Use the new reset function for cleaner code
+    startNewButton.onclick = resetToGeneratorView;
     messageBox.prepend(startNewButton);
 }
 
@@ -392,4 +400,5 @@ function setupCustomCursor() {
         });
     }
 }
+
 
