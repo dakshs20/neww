@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GenArt: Credit-Based AI Image Generator</title>
-    <meta name="description" content="Generate stunning, unique AI art, photos, and avatars in seconds with GenArt. Sign in to get free credits and turn your text prompts into high-quality images.">
-    
+    <title>GenArt: Free, Fast AI Image Generator & AI Art Creator</title>
+    <meta name="description" content="Generate stunning, unique AI art, photos, and avatars in seconds with GenArt, the world's fastest and free AI image generator.">
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
-    <!-- Removed reCAPTCHA script -->
 </head>
 <body>
+    <!-- Custom Cursor -->
     <div class="cursor-dot"></div>
     <div class="cursor-outline"></div>
 
+    <!-- Main App Container -->
     <div id="app-container" class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
         
-        <header class="relative flex justify-between items-center py-5 px-2 fade-in-slide-up z-20">
-            <a href="/"><img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto"></a>
-            <div id="header-auth-section" class="hidden md:flex items-center space-x-4">
-                <!-- NEW: Credit Display -->
-                <div id="credit-balance-display" class="hidden text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1.5 rounded-full"></div>
-                <a href="/pricing.html" id="buy-credits-btn" class="hidden text-sm font-medium bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">Buy Credits</a>
+        <header class="relative flex justify-between items-center py-5 px-2 z-20">
+            <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
+            <div id="header-auth-section" class="flex items-center space-x-4">
+                <!-- Desktop credit display -->
+                <div id="credit-balance-display" class="hidden text-sm font-medium text-gray-600"></div>
+                <a href="/pricing.html" id="buy-credits-btn" class="hidden text-sm font-medium bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-300">Buy Credits</a>
                 <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all duration-300">
                     Sign In
                 </button>
@@ -32,65 +32,55 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
             </div>
-            <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-[#42669C] rounded-lg shadow-xl z-50">
-                <div class="p-2 space-y-2">
-                    <div id="mobile-credit-balance-display" class="hidden text-sm text-center font-semibold text-white px-2 py-2"></div>
-                    <a href="/pricing.html" id="mobile-buy-credits-btn" class="hidden w-full text-center text-sm font-medium bg-white/90 text-[#42669C] px-4 py-2 rounded-md hover:bg-white transition-all">Buy Credits</a>
-                    <button id="mobile-auth-btn" class="w-full text-left text-sm font-medium text-white px-4 py-2 rounded-md hover:bg-white/20 transition-all">
-                        Sign In
-                    </button>
-                </div>
+            <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-50 p-2 space-y-2">
+                 <!-- Mobile credit display -->
+                <div id="mobile-credit-balance-display" class="hidden text-sm text-center font-medium text-gray-600 px-2 py-2"></div>
+                <a href="/pricing.html" id="mobile-buy-credits-btn" class="hidden w-full text-center text-sm font-medium bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-all duration-300">Buy Credits</a>
+                <button id="mobile-auth-btn" class="w-full text-left text-sm font-medium text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100 transition-all duration-300">
+                    Sign In
+                </button>
             </div>
         </header>
 
-        <main class="flex-grow flex flex-col items-center justify-center text-center p-4">
+        <main class="flex-grow flex flex-col items-center justify-center text-center p-4 transition-all duration-500 ease-in-out">
             <div class="w-full max-w-3xl">
-                <div id="generator-ui" class="w-full fade-in-slide-up" style="animation-delay: 100ms;">
+                <div id="generator-ui" class="w-full fade-in-slide-up">
                     <h1 class="text-3xl sm:text-4xl md:text-5xl font-medium text-gray-900 mb-4">The Fastest AI Image Generator</h1>
-                    <p class="text-base md:text-lg text-gray-500 mb-10">Sign in to claim your <span class="font-semibold text-gray-700">5 free credits</span> and bring your ideas to life.</p>
+                    <p class="text-base md:text-lg text-gray-500 mb-10">Create stunning AI art, photos, and images from text in seconds.</p>
                     
                     <div id="prompt-container" class="bg-white rounded-2xl border border-gray-200/80 shadow-sm transition-all duration-300 flex flex-col overflow-hidden">
                         <div class="p-3">
                             <div id="image-preview-container" class="hidden relative w-20 h-20 mb-2">
-                                <img id="image-preview" class="w-full h-full object-cover rounded-md" src="" alt="User uploaded image preview">
-                                <button id="remove-image-btn" class="absolute -top-2 -right-2 bg-gray-700 text-white rounded-full w-6 h-6">&times;</button>
+                                <img id="image-preview" class="w-full h-full object-cover rounded-md" src="" alt="User uploaded image preview for AI editing">
+                                <button id="remove-image-btn" class="absolute -top-2 -right-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-black">&times;</button>
                             </div>
                             <textarea id="prompt-input" rows="2.5" class="w-full p-3 bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none resize-none text-base" placeholder="An oil painting of a futuristic city skyline at dusk..."></textarea>
-                            <div id="prompt-suggestions" class="px-3 pt-1 flex flex-wrap gap-2 hidden"></div>
                         </div>
                         
                         <div class="flex justify-between items-center p-3 border-t border-gray-100 bg-white mt-auto rounded-b-2xl">
                             <div class="flex items-center space-x-1">
                                  <input type="file" id="image-upload-input" accept="image/png, image/jpeg" class="hidden">
                                  <button id="image-upload-btn" class="p-2 rounded-full hover:bg-gray-100" title="Add Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
-                                 <button id="copy-prompt-btn" class="p-2 rounded-full hover:bg-gray-100" title="Copy Prompt"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
-                                 <button id="enhance-prompt-btn" class="p-2 rounded-full hover:bg-gray-100" title="Enhance Prompt"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3L9.5 8.5 4 11l5.5 2.5L12 19l2.5-5.5L20 11l-5.5-2.5L12 3z"/><path d="M5 3l2 5"/><path d="M19 21l-2-5"/></svg></button>
                             </div>
                             <button id="generate-btn" class="w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black transition-all" aria-label="Generate AI Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
                         </div>
                     </div>
 
                     <div id="aspect-ratio-selector" class="mt-4 flex justify-center items-center gap-3">
-                        <button class="aspect-ratio-btn selected" data-ratio="1:1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg><span>1:1</span></button>
-                        <button class="aspect-ratio-btn" data-ratio="16:9"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect></svg><span>16:9</span></button>
-                        <button class="aspect-ratio-btn" data-ratio="9:16"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect></svg><span>9:16</span></button>
-                    </div>
-
-                    <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-left text-sm">
-                        <button class="example-prompt text-gray-500 hover:text-gray-900">Make an ad photo for my sneaker brand</button>
-                        <button class="example-prompt text-gray-500 hover:text-gray-900">Generate a dramatic aerial video shot of NYC</button>
+                         <button class="aspect-ratio-btn selected" data-ratio="1:1"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg><span>1:1</span></button>
+                         <button class="aspect-ratio-btn" data-ratio="16:9"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect></svg><span>16:9</span></button>
+                         <button class="aspect-ratio-btn" data-ratio="9:16"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect></svg><span>9:16</span></button>
                     </div>
                 </div>
-
                 <div id="result-container" class="w-full max-w-5xl mt-8 hidden">
                     <div id="loading-indicator" class="w-full max-w-sm mx-auto hidden">
-                        <p class="font-medium text-gray-700 mb-3">Generating your vision...</p>
+                        <p class="font-medium text-gray-700 mb-3">Generating your vision with AI...</p>
                         <div id="progress-bar-container"><div id="progress-bar"></div></div>
                         <p id="timer" class="text-sm text-gray-500 mt-3">0.0s / ~17s</p>
                     </div>
                     <div id="image-grid" class="mt-8 grid grid-cols-1 gap-6"></div>
                     <div id="post-generation-controls" class="w-full max-w-3xl mx-auto mt-6 hidden">
-                         <p class="text-sm font-medium text-gray-600 mb-2 text-left">Edit prompt and regenerate (1 credit):</p>
+                        <p class="text-sm font-medium text-gray-600 mb-2 text-left">Edit your prompt and regenerate:</p>
                         <div class="relative bg-white rounded-2xl border border-gray-200/80 shadow-sm">
                             <textarea id="regenerate-prompt-input" rows="3" class="w-full p-3 bg-transparent text-gray-800 focus:outline-none resize-none text-base"></textarea>
                             <button id="regenerate-btn" class="absolute right-4 bottom-4 w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black" aria-label="Regenerate Image">
@@ -108,22 +98,22 @@
         </footer>
     </div>
 
-    <!-- Modals -->
+    <!-- Sign In Modal -->
     <div id="auth-modal" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center fade-in-slide-up">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign in to Generate</h2>
-            <p class="text-gray-500 mb-6">Create an account to claim your free credits and start creating!</p>
-            <button id="google-signin-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 flex items-center justify-center space-x-2"><svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.571l6.19,5.238C41.38,36.16,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg><span>Sign In with Google</span></button>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In Required</h2>
+            <p class="text-gray-500 mb-6">Please sign in to generate images and claim your free credits.</p>
+            <button id="google-signin-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center space-x-2"><svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.571l6.19,5.238C41.38,36.16,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg><span>Sign In with Google</span></button>
             <button id="close-auth-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Maybe later</button>
         </div>
     </div>
-    
+
     <!-- NEW: Out of Credits Modal -->
     <div id="credits-modal" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center fade-in-slide-up">
             <h2 class="text-2xl font-semibold text-gray-800 mb-2">You're Out of Credits</h2>
             <p class="text-gray-500 mb-6">Please purchase more credits to continue generating images.</p>
-            <a href="/pricing.html" class="w-full block bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600">View Plans</a>
+            <a href="/pricing.html" class="block w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300">View Plans</a>
             <button id="close-credits-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
         </div>
     </div>
@@ -131,3 +121,4 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
