@@ -44,8 +44,10 @@ const mobileMenu = document.getElementById('mobile-menu');
 const regenerateBtn = document.getElementById('regenerate-btn');
 const regeneratePromptInput = document.getElementById('regenerate-prompt-input');
 const postGenerationControls = document.getElementById('post-generation-controls');
+const cursorDot = document.querySelector('.cursor-dot');
+const cursorOutline = document.querySelector('.cursor-outline');
 
-// --- NEW: Credit System UI References ---
+// --- Credit System UI References ---
 const creditBalanceDisplay = document.getElementById('credit-balance-display');
 const mobileCreditBalanceDisplay = document.getElementById('mobile-credit-balance-display');
 const buyCreditsBtn = document.getElementById('buy-credits-btn');
@@ -87,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Other event listeners
     setupOtherEventListeners();
+    setupCustomCursor();
 });
 
 function handleAuthAction() {
@@ -360,3 +363,33 @@ function removeUploadedImage() { /* Unchanged */
     imagePreviewContainer.classList.add('hidden');
     imagePreview.src = '';
 }
+
+function setupCustomCursor() {
+    if (cursorDot && cursorOutline) {
+        let mouseX = 0, mouseY = 0;
+        let outlineX = 0, outlineY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        const animateCursor = () => {
+            cursorDot.style.left = `${mouseX}px`;
+            cursorDot.style.top = `${mouseY}px`;
+            const ease = 0.15;
+            outlineX += (mouseX - outlineX) * ease;
+            outlineY += (mouseY - outlineY) * ease;
+            cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+            requestAnimationFrame(animateCursor);
+        };
+        requestAnimationFrame(animateCursor);
+
+        const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
+            el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
+        });
+    }
+}
+
