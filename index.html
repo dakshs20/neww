@@ -1,72 +1,20 @@
 <!DOCTYPE html>
-<!-- SEO: Specify the language for search engines -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- SEO: Optimized Title Tag. Crucial for ranking. Includes primary keywords and brand name. -->
     <title>GenArt: Free, Fast AI Image Generator & AI Art Creator</title>
-    
-    <!-- SEO: Optimized Meta Description. Compelling, keyword-rich summary to increase click-through rates from search results. -->
-    <meta name="description" content="Generate stunning, unique AI art, photos, and avatars in seconds with GenArt, the world's fastest and free AI image generator. Turn your text prompts into high-quality images instantly.">
-    
-    <!-- SEO: Expanded Meta Keywords. While less important for Google, it helps other search engines and provides a keyword focus. -->
-    <meta name="keywords" content="AI image generator, free AI image generator, fastest AI image generator, GenArt, AI art generator, text to image AI, create AI art, generative art, AI photo generator, AI avatar generator, DALL-E alternative, Midjourney free, Stable Diffusion online">
-    
-    <!-- SEO: Canonical Tag. Prevents duplicate content issues by specifying the preferred URL. -->
+    <meta name="description" content="Generate stunning, unique AI art, photos, and avatars in seconds with GenArt, the world's fastest and free AI image generator.">
     <link rel="canonical" href="https://www.genartml.com/" />
-
-    <!-- SEO: Open Graph (OG) tags for social media sharing. Ensures posts look great on platforms like Facebook. -->
     <meta property="og:title" content="GenArt: Free & Fast AI Image Generator">
-    <meta property="og:description" content="Turn text into incredible AI-generated art, photos, and avatars for free with GenArt. The fastest way to bring your imagination to life.">
-    <meta property="og:image" content="https://iili.io/FsAoG2I.md.png"> <!-- SEO: Use a descriptive image for sharing -->
+    <meta property="og:description" content="Turn text into incredible AI-generated art, photos, and avatars for free with GenArt.">
+    <meta property="og:image" content="https://iili.io/FsAoG2I.md.png">
     <meta property="og:url" content="https://www.genartml.com/">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="GenArt">
-
-    <!-- SEO: Twitter Card tags for sharing on Twitter. -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="GenArt: Free & Fast AI Image Generator">
-    <meta name="twitter:description" content="Create stunning visuals from text in seconds. Experience the fastest free AI image and art generator.">
-    <meta name="twitter:image" content="https://iili.io/FsAoG2I.md.png">
-
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
-
-    <!-- SEO: Expanded JSON-LD Structured Data (Schema). Helps Google understand your site's content for rich results. -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "GenArt AI Image Generator",
-      "applicationCategory": "DesignApplication",
-      "operatingSystem": "Web",
-      "description": "GenArt is the fastest and completely free AI image generator and AI art creator. It allows users to create stunning visuals, photos, and avatars from text prompts and edit images in under 17 seconds.",
-      "featureList": [
-        "AI Image Generation",
-        "Text-to-Image AI",
-        "AI Photo Editing",
-        "AI Avatar Creation",
-        "Fast AI Art Generation",
-        "Generative AI Art",
-        "Free to use"
-      ],
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "reviewCount": "1250"
-      },
-      "url": "https://www.genartml.com/"
-    }
-    </script>
-    <!-- REMOVED reCAPTCHA as it's not needed with user accounts -->
 </head>
 <body>
     <!-- Custom Cursor -->
@@ -77,267 +25,128 @@
     <div id="app-container" class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
         
         <header class="relative flex justify-between items-center py-5 px-2 fade-in-slide-up z-20">
-            <!-- SEO: Alt text is descriptive and includes keywords. -->
             <a href="index.html">
-                 <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo - Free and Fastest AI Image Generator" class="h-6 w-auto">
+                 <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
             </a>
-            <div id="header-auth-section" class="hidden md:flex items-center space-x-6">
-                 <a href="pricing.html" class="text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors">Pricing</a>
-                <!-- UPDATED: Added a container for the credits display -->
-                <div id="generation-counter" class="text-sm font-medium text-gray-500"></div>
-                <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all duration-300">
+            <div class="hidden md:flex items-center space-x-4">
+                 <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Pricing</a>
+                <!-- CREDIT DISPLAY AREA -->
+                <div id="credit-display" class="flex items-center space-x-2"></div>
+                <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all">
                     Sign In
                 </button>
             </div>
             <div class="md:hidden">
-                <button id="mobile-menu-btn" class="p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                <button id="mobile-menu-btn" class="p-2 rounded-md text-gray-500 hover:text-gray-800">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                 </button>
             </div>
             <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-50 border">
                 <div class="p-2">
-                    <a href="pricing.html" class="block w-full text-left text-sm font-medium text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100 transition-colors">Pricing</a>
+                    <a href="pricing.html" class="block w-full text-left text-sm text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100">Pricing</a>
                     <div class="border-t my-1"></div>
-                     <!-- UPDATED: Added a container for the mobile credits display -->
-                    <div id="mobile-generation-counter" class="text-sm text-center font-medium text-gray-600 px-2 py-2"></div>
-                    <button id="mobile-auth-btn" class="w-full text-left text-sm font-medium text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100 transition-colors">
+                    <div id="mobile-credit-display" class="text-sm text-center font-medium text-gray-600 px-2 py-2"></div>
+                    <button id="mobile-auth-btn" class="w-full text-left text-sm text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100">
                         Sign In
                     </button>
                 </div>
             </div>
         </header>
 
-        <main class="flex-grow flex flex-col items-center justify-center text-center p-4 transition-all duration-500 ease-in-out">
+        <main class="flex-grow flex flex-col items-center justify-center text-center p-4">
             <div class="w-full max-w-3xl">
-                <div id="generator-ui" class="w-full fade-in-slide-up" style="animation-delay: 100ms;">
-                    <!-- SEO: H1 is the most important heading. It clearly states what the page is about using primary keywords. -->
+                <div id="generator-ui" class="w-full fade-in-slide-up">
                     <h1 class="text-3xl sm:text-4xl md:text-5xl font-medium text-gray-900 mb-4">The Fastest & Free AI Image Generator</h1>
-                    <!-- SEO: Sub-heading text supports the H1 with more keywords. -->
-                    <p class="text-base md:text-lg text-gray-500 mb-10">Create stunning AI art, photos, and images from text in seconds. Absolutely free.</p>
+                    <p class="text-base md:text-lg text-gray-500 mb-10">Create stunning AI art, photos, and images from text in seconds.</p>
                     
-                    <div id="prompt-container" class="bg-white rounded-2xl border border-gray-200/80 shadow-sm transition-all duration-300 ease-in-out flex flex-col overflow-hidden">
-                        <!-- Main content area for textarea and suggestions -->
+                    <div id="prompt-container" class="bg-white rounded-2xl border border-gray-200/80 shadow-sm flex flex-col">
                         <div class="p-3">
                             <div id="image-preview-container" class="hidden relative w-20 h-20 mb-2">
-                                <img id="image-preview" class="w-full h-full object-cover rounded-md" src="" alt="User uploaded image preview for AI editing">
-                                <button id="remove-image-btn" class="absolute -top-2 -right-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-black">&times;</button>
+                                <img id="image-preview" class="w-full h-full object-cover rounded-md" src="" alt="Image preview">
+                                <button id="remove-image-btn" class="absolute -top-2 -right-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center">&times;</button>
                             </div>
-                            <textarea id="prompt-input" rows="2.5" class="w-full p-3 bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none resize-none text-base" placeholder="An oil painting of a futuristic city skyline at dusk..."></textarea>
-                            <div id="prompt-suggestions" class="px-3 pt-1 flex flex-wrap gap-2 hidden">
-                                <!-- AI suggestions will be injected here -->
-                            </div>
+                            <textarea id="prompt-input" rows="2" class="w-full p-3 bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none resize-none text-base" placeholder="An oil painting of a futuristic city skyline at dusk..."></textarea>
                         </div>
-                        
-                        <!-- FIX: Added 'rounded-b-2xl' to the footer to match the parent container's rounded corners -->
                         <div class="flex justify-between items-center p-3 border-t border-gray-100 bg-white mt-auto rounded-b-2xl">
                             <div class="flex items-center space-x-1">
                                  <input type="file" id="image-upload-input" accept="image/png, image/jpeg" class="hidden">
-                                 <button id="image-upload-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Add file" title="Add Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-gray-600 transition-colors"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
-                                 <button id="copy-prompt-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Copy prompt" title="Copy Prompt"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 transition-colors"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
-                                 <button id="enhance-prompt-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Enhance prompt" title="Enhance Prompt"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 transition-colors"><path d="M12 3L9.5 8.5 4 11l5.5 2.5L12 19l2.5-5.5L20 11l-5.5-2.5L12 3z"/><path d="M5 3l2 5"/><path d="M19 21l-2-5"/></svg></button>
+                                 <button id="image-upload-btn" title="Add Image" class="p-2 rounded-full hover:bg-gray-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+                                 <button id="copy-prompt-btn" title="Copy Prompt" class="p-2 rounded-full hover:bg-gray-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+                                 <button id="enhance-prompt-btn" title="Enhance Prompt" class="p-2 rounded-full hover:bg-gray-100"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400"><path d="M12 3L9.5 8.5 4 11l5.5 2.5L12 19l2.5-5.5L20 11l-5.5-2.5L12 3z"/><path d="M5 3l2 5"/><path d="M19 21l-2-5"/></svg></button>
                             </div>
-                            <button id="generate-btn" class="w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-gray-400" aria-label="Generate AI Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
+                            <button id="generate-btn" aria-label="Generate AI Image" class="w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black transition-all"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
                         </div>
                     </div>
-
-                    <div id="aspect-ratio-selector" class="mt-4 flex justify-center items-center gap-3">
+                     <div id="aspect-ratio-selector" class="mt-4 flex justify-center items-center gap-3">
                         <button class="aspect-ratio-btn selected" data-ratio="1:1">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect></svg>
                             <span>1:1</span>
                         </button>
                         <button class="aspect-ratio-btn" data-ratio="16:9">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect></svg>
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"></rect></svg>
                             <span>16:9</span>
                         </button>
                         <button class="aspect-ratio-btn" data-ratio="9:16">
-                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect></svg>
+                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg>
                             <span>9:16</span>
                         </button>
-                    </div>
-
-                    <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-left text-sm">
-                        <button class="example-prompt text-gray-500 hover:text-gray-900 transition-colors text-left">Make an ad photo for my sneaker brand</button>
-                        <button class="example-prompt text-gray-500 hover:text-gray-900 transition-colors text-left">Generate a dramatic aerial video shot of NYC</button>
                     </div>
                 </div>
                 <div id="result-container" class="w-full max-w-5xl mt-8 hidden">
                     <div id="loading-indicator" class="w-full max-w-sm mx-auto hidden">
-                        <p class="font-medium text-gray-700 mb-3">Generating your vision with AI...</p>
+                        <p class="font-medium text-gray-700 mb-3">Generating your vision...</p>
                         <div id="progress-bar-container"><div id="progress-bar"></div></div>
                         <p id="timer" class="text-sm text-gray-500 mt-3">0.0s / ~17s</p>
                     </div>
                     <div id="image-grid" class="mt-8 grid grid-cols-1 gap-6"></div>
-                    <!-- NEW: Post-generation controls for editing and regenerating -->
                     <div id="post-generation-controls" class="w-full max-w-3xl mx-auto mt-6 hidden">
-                        <p class="text-sm font-medium text-gray-600 mb-2 text-left">Edit your prompt and regenerate:</p>
-                        <div class="relative bg-white rounded-2xl border border-gray-200/80 shadow-sm transition-all duration-300 ease-in-out">
-                            <textarea id="regenerate-prompt-input" rows="3" class="w-full p-3 bg-transparent text-gray-800 focus:outline-none resize-none text-base" placeholder="Edit your prompt to regenerate..."></textarea>
-                            <button id="regenerate-btn" class="absolute right-4 bottom-4 w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-gray-400" aria-label="Regenerate Image">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M21 21v-5h-5"></path></svg>
+                        <p class="text-sm font-medium text-gray-600 mb-2 text-left">Edit and regenerate:</p>
+                        <div class="relative bg-white rounded-2xl border border-gray-200/80 shadow-sm">
+                            <textarea id="regenerate-prompt-input" rows="3" class="w-full p-3 bg-transparent text-gray-800 focus:outline-none resize-none text-base"></textarea>
+                            <button id="regenerate-btn" class="absolute right-4 bottom-4 w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path><path d="M21 21v-5h-5"></path></svg>
                             </button>
                         </div>
                     </div>
                     <div id="message-box" class="mt-4 text-center"></div>
                 </div>
             </div>
-
-            <div class="mt-24 text-center max-w-2xl mx-auto fade-in-slide-up" style="animation-delay: 300ms;">
-                <!-- SEO: H2 for section headings. Uses secondary keywords. -->
-                <h2 class="text-3xl font-medium text-[#42669C] mb-4">Technology for Creating Any AI Image</h2>
-                <p class="text-lg text-gray-600">
-                    GenArt is an applied AI research company building the next generation of creative tools. Our work is dedicated to building multimodal AI systems that enable new forms of storytelling and AI art creation from simple text prompts.
-                </p>
-            </div>
-
-            <section id="cinematic-section" class="relative w-full py-24 md:py-32 my-16 rounded-2xl overflow-hidden">
-                <div id="stars-container">
-                    <div id="stars"></div>
-                    <div id="stars2"></div>
-                    <div id="stars3"></div>
-                </div>
-                <div class="relative z-10 text-center px-4">
-                    <h2 class="text-4xl md:text-5xl font-bold text-white mb-4 cinematic-text">Blazing-Fast AI Generation</h2>
-                    <p class="text-lg md:text-xl text-gray-300 max-w-xl mx-auto mb-8 cinematic-text" style="animation-delay: 0.2s;">
-                        Our foundational models are engineered for unparalleled speed and quality, bringing your ideas to life with our fast AI image generator.
-                    </p>
-                    <div class="inline-block bg-white/10 backdrop-blur-sm text-white font-semibold py-3 px-6 rounded-lg cinematic-text" style="animation-delay: 0.4s;">
-                        Average Generation Time: Under 17 Seconds
-                    </div>
-                </div>
-            </section>
-
-            <section id="gen0-section" class="relative w-full py-24 md:py-32 my-16 rounded-2xl overflow-hidden">
-                <div class="relative z-10 text-center px-4">
-                    <h3 class="text-lg md:text-xl text-blue-400 font-semibold mb-4 cinematic-text">COMING SOON</h3>
-                    <h2 class="text-4xl md:text-6xl font-bold text-white mb-6 cinematic-text" style="animation-delay: 0.2s;">Introducing Gen-0</h2>
-                    <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto cinematic-text" style="animation-delay: 0.4s;">
-                        A revolutionary leap in generative AI. Experience unparalleled quality and generate stunning visuals in under <span class="font-bold text-white">5 seconds</span> with our next-gen text to image AI.
-                    </p>
-                </div>
-            </section>
-
-            <section id="gallery-section" class="w-full py-16 overflow-hidden">
-                <div class="text-center mb-12">
-                    <h2 class="text-3xl font-medium text-gray-800 fade-in-slide-up">Creations from the GenArt AI Image Generator</h2>
-                </div>
-                <div class="marquee">
-                    <div class="marquee-content">
-                        <!-- SEO: Alt text for images are descriptive and include keywords. -->
-                        <img src="https://iili.io/FiiqmhB.md.png" alt="Futuristic city skyline generated by GenArt AI image generator" class="gallery-image">
-                        <img src="https://iili.io/FiiC8VS.md.png" alt="AI generated art of a woman with neon lights created with text to image AI" class="gallery-image">
-                        <img src="https://iili.io/FiizC0P.md.png" alt="Surreal landscape created by the GenArt free AI art generator" class="gallery-image">
-                        <img src="https://iili.io/FiiT4UP.md.png" alt="Fantasy creature concept art from the GenArt AI generator" class="gallery-image">
-                        <img src="https://iili.io/FiiA23B.md.png" alt="Abstract pattern made with generative AI art tool" class="gallery-image">
-                        <img src="https://iili.io/Fii52mF.md.png" alt="Photorealistic animal portrait from the fastest AI image generator" class="gallery-image">
-                        <img src="https://iili.io/Fii7T3Q.md.png" alt="Cyberpunk character design using GenArt AI photo generator" class="gallery-image">
-                    </div>
-            
-                    <div class="marquee-content" aria-hidden="true">
-                        <img src="https://iili.io/FiiqmhB.md.png" alt="Futuristic city skyline generated by GenArt AI image generator" class="gallery-image">
-                        <img src="https://iili.io/FiiC8VS.md.png" alt="AI generated art of a woman with neon lights created with text to image AI" class="gallery-image">
-                        <img src="https://iili.io/FiizC0P.md.png" alt="Surreal landscape created by the GenArt free AI art generator" class="gallery-image">
-                        <img src="https://iili.io/FiiT4UP.md.png" alt="Fantasy creature concept art from the GenArt AI generator" class="gallery-image">
-                        <img src="https://iili.io/FiiA23B.md.png" alt="Abstract pattern made with generative AI art tool" class="gallery-image">
-                        <img src="https://iili.io/Fii52mF.md.png" alt="Photorealistic animal portrait from the fastest AI image generator" class="gallery-image">
-                        <img src="https://iili.io/Fii7T3Q.md.png" alt="Cyberpunk character design using GenArt AI photo generator" class="gallery-image">
-                    </div>
-                </div>
-            </section>
-            
-            <!-- SEO: NEW FAQ Section. Adds valuable, keyword-rich content to the page to answer user questions and improve rankings. -->
-            <section id="faq-section" class="w-full max-w-3xl mx-auto py-16 text-left">
-                <div class="text-center mb-12">
-                    <h2 class="text-3xl font-medium text-gray-800 fade-in-slide-up">AI Image Generation FAQs</h2>
-                </div>
-                <div class="space-y-4">
-                    <details class="group p-4 bg-white rounded-lg border border-gray-200/80 cursor-pointer">
-                        <summary class="flex justify-between items-center font-medium text-gray-900">
-                            What is an AI Image Generator?
-                            <svg class="w-5 h-5 transition-transform duration-300 group-open:rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </summary>
-                        <p class="mt-3 text-gray-600">
-                            An AI image generator is a tool that uses artificial intelligence, specifically generative AI models, to create unique images from text descriptions (prompts). GenArt is a powerful text to image AI that allows you to type what you want to see, and our AI will generate the art for you instantly.
-                        </p>
-                    </details>
-                    <details class="group p-4 bg-white rounded-lg border border-gray-200/80 cursor-pointer">
-                        <summary class="flex justify-between items-center font-medium text-gray-900">
-                            Is the GenArt AI Art Generator really free?
-                            <svg class="w-5 h-5 transition-transform duration-300 group-open:rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </summary>
-                        <p class="mt-3 text-gray-600">
-                            Yes! GenArt offers a set number of free AI image generations so you can try out the tool. For unlimited access, you can simply sign in with your Google account. We believe in making powerful creative tools accessible to everyone.
-                        </p>
-                    </details>
-                    <details class="group p-4 bg-white rounded-lg border border-gray-200/80 cursor-pointer">
-                        <summary class="flex justify-between items-center font-medium text-gray-900">
-                            What makes GenArt the fastest AI image generator?
-                            <svg class="w-5 h-5 transition-transform duration-300 group-open:rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </summary>
-                        <p class="mt-3 text-gray-600">
-                            Our AI models and infrastructure are highly optimized for speed without sacrificing quality. We've engineered our system to process prompts and generate high-resolution images in an average of under 17 seconds, making us one of the fastest AI image generators available online.
-                        </p>
-                    </details>
-                </div>
-            </section>
-
         </main>
-
-        <footer class="text-center py-8 mt-auto border-t border-gray-200 fade-in-slide-up" style="animation-delay: 200ms;">
-            <div class="flex justify-center items-center space-x-6 mb-4">
-                <a href="https://www.instagram.com/genartlabs/" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 012.153 2.153c.247.636.416 1.363.465 2.427.048 1.024.06 1.378.06 3.808s-.012 2.784-.06 3.808c-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-2.153 2.153c-.636.247-1.363.416-2.427.465-1.024.048-1.378.06-3.808.06s-2.784-.013-3.808-.06c-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-2.153-2.153c-.247-.636-.416-1.363-.465-2.427-.048-1.024-.06-1.378-.06-3.808s.012-2.784.06-3.808c.049 1.064.218 1.791.465 2.427a4.902 4.902 0 012.153-2.153c.636-.247 1.363.416 2.427.465C9.53 2.013 9.884 2 12.315 2zm0 1.62c-2.403 0-2.741.01-3.701.058-1.009.046-1.594.208-2.039.384a3.278 3.278 0 00-1.48 1.48c-.176.445-.338 1.03-.384 2.039-.049.96-.058 1.299-.058 3.701s.01 2.741.058 3.701c.046 1.009.208 1.594.384 2.039a3.278 3.278 0 001.48 1.48c.445.176 1.03.338 2.039.384.96.049 1.299.058 3.701.058s2.741-.01 3.701-.058c1.009-.046 1.594-.208 2.039-.384a3.278 3.278 0 001.48-1.48c.176-.445.338-1.03.384-2.039.049-.96.058-1.299.058-3.701s-.01-2.741-.058-3.701c-.046-1.009-.208-1.594-.384-2.039a3.278 3.278 0 00-1.48-1.48c-.445-.176-1.03-.338-2.039-.384C15.056 3.63 14.717 3.62 12.315 3.62zM12 7.18c-2.649 0-4.795 2.146-4.795 4.795s2.146 4.795 4.795 4.795 4.795-2.146 4.795-4.795S14.649 7.18 12 7.18zm0 7.96c-1.742 0-3.165-1.423-3.165-3.165S10.258 8.81 12 8.81s3.165 1.423 3.165 3.165S13.742 15.14 12 15.14zM18.81 5.99a1.38 1.38 0 100 2.76 1.38 1.38 0 000-2.76z" clip-rule="evenodd" /></svg><span class="sr-only">Instagram</span></a>
-                <a href="https://x.com/GenArtai_" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span class="sr-only">X</span></a>
-            </div>
+        
+        <footer class="text-center py-8 mt-auto border-t border-gray-200">
             <p class="text-xs text-gray-500">&copy; 2025 GenArt. All rights reserved.</p>
-            <p class="text-xs text-gray-400 mt-2">
-                This site is protected by reCAPTCHA and the Google
-                <a href="https://policies.google.com/privacy" class="underline hover:text-gray-600">Privacy Policy</a> and
-                <a href="https://policies.google.com/terms" class="underline hover:text-gray-600">Terms of Service</a> apply.
-            </p>
         </footer>
     </div>
 
+    <!-- Music Player, Auth Modal, etc. -->
     <div id="music-player">
         <audio id="lofi-music" loop src="https://files.catbox.moe/ucqs06.mp3"></audio>
-        <button id="music-btn" title="Play/Pause Music">
-            <div class="icon-container">
-                <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5.14v14l11-7-11-7z"/></svg>
-                <svg class="icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-            </div>
-            <div class="waves-container">
-                <div class="wave"></div>
-                <div class="wave"></div>
-                <div class="wave"></div>
-            </div>
-        </button>
+        <button id="music-btn" title="Play/Pause Music"><div class="icon-container"><svg class="icon-play" viewBox="0 0 24 24"><path d="M8 5.14v14l11-7-11-7z"/></svg><svg class="icon-pause" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></div><div class="waves-container"><div class="wave"></div><div class="wave"></div><div class="wave"></div></div></button>
     </div>
 
-    <!-- MODAL for Sign In -->
-    <div id="auth-modal" aria-hidden="true" class="modal-container">
-        <div class="modal-content">
+    <!-- Auth Modal -->
+    <div id="auth-modal" aria-hidden="true" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
             <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In Required</h2>
-            <p class="text-gray-500 mb-6">Please sign in to generate images and manage your credits.</p>
-            <button id="google-signin-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center space-x-2"><svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.571l6.19,5.238C41.38,36.16,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg><span>Sign In with Google</span></button>
+            <p class="text-gray-500 mb-6">Please sign in to generate images and get your free credits.</p>
+            <button id="google-signin-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 flex items-center justify-center space-x-2"><svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.571l6.19,5.238C41.38,36.16,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg><span>Sign In with Google</span></button>
             <button id="close-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Maybe later</button>
         </div>
     </div>
     
-    <!-- NEW: MODAL for Out of Credits -->
-    <div id="no-credits-modal" aria-hidden="true" class="modal-container">
-        <div class="modal-content">
+    <!-- No Credits Modal -->
+    <div id="no-credits-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
             <h2 class="text-2xl font-semibold text-gray-800 mb-2">You're out of credits!</h2>
-            <p class="text-gray-500 mb-6">Please buy more credits to continue creating amazing art.</p>
-            <a href="/pricing.html" id="buy-now-btn" class="w-full block bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300">Buy Now</a>
-            <button id="close-no-credits-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+            <p class="text-gray-500 mb-6">Please purchase more credits to continue creating images.</p>
+            <div class="flex flex-col space-y-3">
+                <a href="pricing.html" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors">Buy Credits</a>
+                <button id="close-no-credits-modal-btn" class="text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+            </div>
         </div>
     </div>
-
 
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
