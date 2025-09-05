@@ -8,6 +8,10 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-50">
+    <!-- NEW: Added custom cursor elements -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
     <div class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
         <header class="flex justify-between items-center py-5 px-2 z-20">
             <a href="/" aria-label="Back to home">
@@ -66,5 +70,44 @@
             </div>
         </main>
     </div>
+
+    <!-- NEW: Added self-contained script for custom cursor -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cursorDot = document.querySelector('.cursor-dot');
+            const cursorOutline = document.querySelector('.cursor-outline');
+
+            if (cursorDot && cursorOutline) {
+                let mouseX = 0, mouseY = 0;
+                let outlineX = 0, outlineY = 0;
+
+                window.addEventListener('mousemove', (e) => {
+                    mouseX = e.clientX;
+                    mouseY = e.clientY;
+                });
+
+                const animateCursor = () => {
+                    if (cursorDot && cursorOutline) {
+                        cursorDot.style.left = `${mouseX}px`;
+                        cursorDot.style.top = `${mouseY}px`;
+                        
+                        const ease = 0.15;
+                        outlineX += (mouseX - outlineX) * ease;
+                        outlineY += (mouseY - outlineY) * ease;
+                        
+                        cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+                    }
+                    requestAnimationFrame(animateCursor);
+                };
+                requestAnimationFrame(animateCursor);
+
+                const interactiveElements = document.querySelectorAll('a, button');
+                interactiveElements.forEach(el => {
+                    el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
+                    el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
+                });
+            }
+        });
+    </script>
 </body>
 </html>
