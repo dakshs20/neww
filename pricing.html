@@ -11,7 +11,7 @@
     <link rel="canonical" href="https://www.genartml.com/pricing" />
 
     <meta property="og:title" content="Pricing - GenArt">
-    <meta property="og:description" content="Explore the upcoming pricing plans for GenArt and get ready to unlock advanced AI image generation capabilities.">
+    <meta property="og:description" content="Explore the pricing plans for GenArt and get credits to unlock advanced AI image generation capabilities.">
     <meta property="og:image" content="https://iili.io/FsAoG2I.md.png">
     <meta property="og:url" content="https://www.genartml.com/pricing">
     <meta property="og:type" content="website">
@@ -19,14 +19,14 @@
 
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Pricing - GenArt">
-    <meta name="twitter:description" content="Get ready for our new pricing plans. Unlock more credits and advanced features with GenArt.">
+    <meta name="twitter:description" content="Purchase credits and unlock advanced features with GenArt's flexible pricing plans.">
     <meta name="twitter:image" content="https://iili.io/FsAoG2I.md.png">
 
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- ADDED: Razorpay checkout script -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <link rel="stylesheet" href="style.css">
+    <!-- NEW: Razorpay Checkout Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
     <!-- Custom Cursor -->
@@ -40,9 +40,10 @@
             <a href="index.html">
                  <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo - Free and Fastest AI Image Generator" class="h-6 w-auto">
             </a>
-            <div id="header-auth-section" class="hidden md:flex items-center space-x-6">
+            <div id="header-auth-section" class="hidden md:flex items-center space-x-4">
                 <a href="pricing.html" class="text-sm font-medium text-gray-900 hover:text-gray-800 transition-colors">Pricing</a>
-                <div id="generation-counter" class="text-sm font-medium text-gray-500"></div>
+                <!-- MODIFIED: Container for credit display -->
+                 <div id="credit-display" class="flex items-center space-x-3"></div>
                 <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all duration-300">
                     Sign In
                 </button>
@@ -56,7 +57,8 @@
                 <div class="p-2">
                     <a href="pricing.html" class="block w-full text-left text-sm font-medium text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100 transition-colors">Pricing</a>
                     <div class="border-t my-1"></div>
-                    <div id="mobile-generation-counter" class="text-sm text-center font-medium text-gray-600 px-2 py-2"></div>
+                    <!-- MODIFIED: Container for mobile credit display -->
+                    <div id="mobile-credit-display" class="text-sm text-center font-medium text-gray-600 px-2 py-2"></div>
                     <button id="mobile-auth-btn" class="w-full text-left text-sm font-medium text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100 transition-colors">
                         Sign In
                     </button>
@@ -66,8 +68,8 @@
 
         <main class="flex-grow flex flex-col items-center justify-center text-center p-4">
             <div class="w-full max-w-3xl fade-in-slide-up">
-                <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Choose Your Plan</h1>
-                <p class="text-lg md:text-xl text-gray-500 mb-10">Fuel your creativity with more credits.</p>
+                <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Get More Credits</h1>
+                <p class="text-lg md:text-xl text-gray-500 mb-10">Choose a plan that fits your creative needs. One credit equals one image generation.</p>
                 
                 <div class="grid md:grid-cols-3 gap-8 text-left">
                     <!-- Pricing Card 1 -->
@@ -75,8 +77,8 @@
                         <h2 class="text-2xl font-semibold text-gray-800 mb-2">Starter</h2>
                         <p class="text-4xl font-bold text-gray-900 mb-4">$6</p>
                         <p class="text-gray-500 mb-6 font-semibold">600 Credits</p>
-                        <!-- UPDATED: Button is now functional -->
-                        <button class="buy-btn w-full bg-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-black transition-colors" data-plan="Starter" data-amount="600">Buy Now</button>
+                        <!-- MODIFIED: "Coming Soon" button replaced with functional "Buy Now" button -->
+                        <button class="buy-now-btn w-full bg-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-black transition-colors" data-plan="Starter" data-amount="6" data-credits="600">Buy Now</button>
                     </div>
 
                     <!-- Pricing Card 2 -->
@@ -85,8 +87,8 @@
                         <h2 class="text-2xl font-semibold text-gray-800 mb-2">Pro</h2>
                         <p class="text-4xl font-bold text-gray-900 mb-4">$12</p>
                         <p class="text-gray-500 mb-6 font-semibold">1200 Credits</p>
-                        <!-- UPDATED: Button is now functional -->
-                        <button class="buy-btn w-full bg-blue-500 text-white font-semibold py-3 rounded-lg hover:bg-blue-600 transition-colors" data-plan="Pro" data-amount="1200">Buy Now</button>
+                         <!-- MODIFIED: "Coming Soon" button replaced with functional "Buy Now" button -->
+                        <button class="buy-now-btn w-full bg-blue-500 text-white font-semibold py-3 rounded-lg hover:bg-blue-600 transition-colors" data-plan="Pro" data-amount="12" data-credits="1200">Buy Now</button>
                     </div>
 
                     <!-- Pricing Card 3 -->
@@ -94,12 +96,12 @@
                         <h2 class="text-2xl font-semibold text-gray-800 mb-2">Mega</h2>
                         <p class="text-4xl font-bold text-gray-900 mb-4">$35</p>
                         <p class="text-gray-500 mb-6 font-semibold">4000 Credits</p>
-                        <!-- UPDATED: Button is now functional -->
-                        <button class="buy-btn w-full bg-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-black transition-colors" data-plan="Mega" data-amount="3500">Buy Now</button>
+                         <!-- MODIFIED: "Coming Soon" button replaced with functional "Buy Now" button -->
+                        <button class="buy-now-btn w-full bg-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-black transition-colors" data-plan="Mega" data-amount="35" data-credits="4000">Buy Now</button>
                     </div>
                 </div>
                 
-                <p class="mt-12 text-gray-400 italic">Payments are processed securely via Razorpay.</p>
+                <p class="mt-12 text-gray-400 italic">Payments are processed securely through Razorpay.</p>
             </div>
         </main>
 
@@ -109,40 +111,20 @@
                 <a href="https://x.com/GenArtai_" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-800 transition-colors"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span class="sr-only">X</span></a>
             </div>
             <p class="text-xs text-gray-500">&copy; 2025 GenArt. All rights reserved.</p>
-            <p class="text-xs text-gray-400 mt-2">
-                This site is protected by reCAPTCHA and the Google
-                <a href="https://policies.google.com/privacy" class="underline hover:text-gray-600">Privacy Policy</a> and
-                <a href="https://policies.google.com/terms" class="underline hover:text-gray-600">Terms of Service</a> apply.
-            </p>
         </footer>
     </div>
-
-    <div id="music-player">
-        <audio id="lofi-music" loop src="https://files.catbox.moe/ucqs06.mp3"></audio>
-        <button id="music-btn" title="Play/Pause Music">
-            <div class="icon-container">
-                <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M8 5.14v14l11-7-11-7z"/></svg>
-                <svg class="icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-            </div>
-            <div class="waves-container">
-                <div class="wave"></div>
-                <div class="wave"></div>
-                <div class="wave"></div>
-            </div>
-        </button>
-    </div>
-
+    
+    <!-- This modal is now handled by the new pricing.js script -->
     <div id="auth-modal" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center fade-in-slide-up">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In</h2>
-            <p class="text-gray-500 mb-6">Sign in to buy credits and access all features.</p>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In to Purchase</h2>
+            <p class="text-gray-500 mb-6">You need to be signed in to buy credits. It's quick and easy!</p>
             <button id="google-signin-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 transition-colors duration-300 flex items-center justify-center space-x-2"><svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.571l6.19,5.238C41.38,36.16,44,30.638,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg><span>Sign In with Google</span></button>
-            <button id="close-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Maybe later</button>
+            <button id="close-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
         </div>
     </div>
-
-    <!-- ADDED: linking the two new JS files -->
-    <script type="module" src="script.js"></script>
+    
+    <!-- NEW: Script for this page -->
     <script type="module" src="pricing.js"></script>
 </body>
 </html>
