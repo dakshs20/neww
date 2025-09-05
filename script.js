@@ -1,7 +1,7 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -21,306 +21,109 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // --- Global State ---
-let timerInterval;
-let uploadedImageData = null;
-let selectedAspectRatio = '1:1';
-let isRegenerating = false;
-let lastPrompt = '';
 let currentUser = null;
 let userCredits = 0;
 let userUnsubscribe = null; // To hold the listener unsubscribe function
+let isGenerating = false;
 
-// --- Initialization ---
+// --- DOM Ready ---
 document.addEventListener('DOMContentLoaded', () => {
-    initializeUniversalScripts();
-
-    // Page-specific initialization
-    if (document.getElementById('generator-ui')) {
-        initializeGeneratorPage();
-    }
-});
-
-/**
- * Initializes scripts that run on every page (e.g., header, auth, cursor).
- */
-function initializeUniversalScripts() {
-    // --- DOM Element References ---
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const mobileMenu = document.getElementById('mobile-menu');
+    // Universal scripts for header, auth, modals
     const authBtn = document.getElementById('auth-btn');
     const mobileAuthBtn = document.getElementById('mobile-auth-btn');
-    const authModal = document.getElementById('auth-modal');
     const googleSignInBtn = document.getElementById('google-signin-btn');
     const closeModalBtn = document.getElementById('close-modal-btn');
+    const closeNoCreditsModalBtn = document.getElementById('close-no-credits-modal-btn');
     
-    // --- Event Listeners ---
+    if (authBtn) authBtn.addEventListener('click', handleAuthAction);
+    if (mobileAuthBtn) mobileAuthBtn.addEventListener('click', handleAuthAction);
+    if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', () => toggleModal('auth-modal', false));
+    if (closeNoCreditsModalBtn) closeNoCreditsModalBtn.addEventListener('click', () => toggleModal('no-credits-modal', false));
+
+    // Page-specific initialization for the generator
+    if (document.getElementById('generator-ui')) {
+        const generateBtn = document.getElementById('generate-btn');
+        const regenerateBtn = document.getElementById('regenerate-btn');
+        if (generateBtn) generateBtn.addEventListener('click', () => handleGenerationClick(false));
+        if (regenerateBtn) regenerateBtn.addEventListener('click', () => handleGenerationClick(true));
+    }
+
+    // Auth state listener
     onAuthStateChanged(auth, user => {
         if (user) {
             currentUser = user;
             setupUserListener(user.uid);
+            toggleModal('auth-modal', false); // Close sign-in modal if open
         } else {
             currentUser = null;
             userCredits = 0;
-            if (userUnsubscribe) {
-                userUnsubscribe(); // Detach the listener
-                userUnsubscribe = null;
-            }
-            updateUIForAuthState(false);
+            if (userUnsubscribe) userUnsubscribe(); // Stop listening to old user's data
+            updateUICredits(false);
         }
     });
+});
 
-    if (mobileMenuBtn && mobileMenu) {
-        mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+function toggleModal(modalId, show) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        if (show) {
+            modal.classList.remove('hidden');
+            modal.setAttribute('aria-hidden', 'false');
+        } else {
+            modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true');
+        }
     }
-
-    if (authBtn) authBtn.addEventListener('click', handleAuthAction);
-    if (mobileAuthBtn) mobileAuthBtn.addEventListener('click', handleAuthAction);
-    if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
-    if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
-
-    initializeCursor();
-    initializeMusicPlayer();
 }
 
-/**
- * Sets up a real-time listener for the user's data in Firestore.
- * @param {string} userId The Firebase user ID.
- */
 function setupUserListener(userId) {
+    if (userUnsubscribe) userUnsubscribe(); // Unsubscribe from previous listener if any
+
     const userDocRef = doc(db, "users", userId);
-    
     userUnsubscribe = onSnapshot(userDocRef, async (docSnap) => {
         if (docSnap.exists()) {
-            // User document exists, update credits
+            // User document exists, update credits from database
             const userData = docSnap.data();
             userCredits = userData.credits;
-            updateUIForAuthState(true);
+            updateUICredits(true);
         } else {
-            // First sign-in, create the user document with free credits
+            // This is the user's first sign-in. Create their document with 5 free credits.
             try {
                 await setDoc(userDocRef, {
                     email: currentUser.email,
                     displayName: currentUser.displayName,
-                    credits: 5, // Grant 5 free credits
+                    credits: 5,
                     createdAt: serverTimestamp()
                 });
-                console.log("New user document created with 5 free credits.");
-                // The listener will automatically pick up the new data, so no manual update is needed here.
+                // After creating, the listener will automatically pick up the new data.
             } catch (error) {
                 console.error("Error creating user document:", error);
+                alert("There was an error setting up your account. Please try again.");
             }
         }
     }, (error) => {
-        console.error("Error listening to user document:", error);
+        console.error("Firestore listener error:", error);
+        alert("Could not connect to the database to get your credit balance.");
     });
 }
 
-
-/**
- * Initializes scripts specific to the main generator page.
- */
-function initializeGeneratorPage() {
-    // --- DOM Element References ---
-    const promptInput = document.getElementById('prompt-input');
-    const generateBtn = document.getElementById('generate-btn');
-    const examplePrompts = document.querySelectorAll('.example-prompt');
-    const imageUploadBtn = document.getElementById('image-upload-btn');
-    const imageUploadInput = document.getElementById('image-upload-input');
-    const removeImageBtn = document.getElementById('remove-image-btn');
-    const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
-    const copyPromptBtn = document.getElementById('copy-prompt-btn');
-    const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
-    const regenerateBtn = document.getElementById('regenerate-btn');
-    const noCreditsModal = document.getElementById('no-credits-modal');
-    const closeNoCreditsModalBtn = document.getElementById('close-no-credits-modal-btn');
-    
-    // --- Event Listeners ---
-    if(generateBtn) generateBtn.addEventListener('click', handleGenerationClick);
-    if(regenerateBtn) regenerateBtn.addEventListener('click', () => handleGenerationClick(true));
-    if(closeNoCreditsModalBtn) closeNoCreditsModalBtn.addEventListener('click', () => noCreditsModal.classList.add('hidden'));
-
-    if (promptInput) {
-        promptInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                generateBtn.click();
-            }
-        });
-    }
-
-    if(examplePrompts) {
-        examplePrompts.forEach(button => {
-            button.addEventListener('click', () => {
-                promptInput.value = button.innerText.trim();
-                promptInput.focus();
-            });
-        });
-    }
-
-    if(aspectRatioBtns) {
-        aspectRatioBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                aspectRatioBtns.forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                selectedAspectRatio = btn.dataset.ratio;
-            });
-        });
-    }
-
-    if(copyPromptBtn) copyPromptBtn.addEventListener('click', copyPrompt);
-    if(enhancePromptBtn) enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
-
-    if(imageUploadBtn) imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
-    if(imageUploadInput) imageUploadInput.addEventListener('change', handleImageUpload);
-    if(removeImageBtn) removeImageBtn.addEventListener('click', removeUploadedImage);
-}
-
-/**
- * Handles the logic for the generate and regenerate buttons.
- * @param {boolean} isRegen - True if regenerating.
- */
-function handleGenerationClick(isRegen = false) {
-    const authModal = document.getElementById('auth-modal');
-    const noCreditsModal = document.getElementById('no-credits-modal');
-
-    // 1. Check if signed in
-    if (!currentUser) {
-        authModal.setAttribute('aria-hidden', 'false');
-        return;
-    }
-
-    // 2. Check for credits
-    if (userCredits <= 0) {
-        noCreditsModal.classList.remove('hidden');
-        noCreditsModal.setAttribute('aria-hidden', 'false');
-        return;
-    }
-    
-    // 3. Check for prompt
-    const promptInput = isRegen ? document.getElementById('regenerate-prompt-input') : document.getElementById('prompt-input');
-    const prompt = promptInput.value.trim();
-    if (!prompt) {
-        showMessage('Please describe what you want to create.', 'error');
-        return;
-    }
-
-    // All checks passed, proceed to generate
-    isRegenerating = isRegen;
-    generateImage(prompt);
-}
-
-
-// --- AI & Generation Logic ---
-
-async function handleEnhancePrompt() {
-    // ... (This function remains unchanged)
-}
-
-async function generateImage(prompt) {
-    lastPrompt = prompt;
-    
-    // UI updates for generation start
-    const imageGrid = document.getElementById('image-grid');
-    const messageBox = document.getElementById('message-box');
-    const loadingIndicator = document.getElementById('loading-indicator');
-    const postGenerationControls = document.getElementById('post-generation-controls');
-    const resultContainer = document.getElementById('result-container');
-    const generatorUI = document.getElementById('generator-ui');
-
-    imageGrid.innerHTML = '';
-    messageBox.innerHTML = '';
-    if (isRegenerating) {
-        loadingIndicator.classList.remove('hidden');
-        postGenerationControls.classList.add('hidden');
-    } else {
-        resultContainer.classList.remove('hidden');
-        loadingIndicator.classList.remove('hidden');
-        generatorUI.classList.add('hidden');
-    }
-    startTimer();
-
-    try {
-        const result = await generateImageWithRetry(prompt, uploadedImageData, selectedAspectRatio, currentUser.uid);
-        displayImage(result.imageUrl, prompt);
-        // Credit display will update automatically via the Firestore listener
-        console.log(`Image generated. Credits remaining: ${result.remainingCredits}`);
-    } catch (error) {
-        console.error('Image generation failed:', error);
-        showMessage(`Sorry, generation failed. ${error.message}`, 'error');
-    } finally {
-        stopTimer();
-        loadingIndicator.classList.add('hidden');
-        document.getElementById('regenerate-prompt-input').value = lastPrompt;
-        postGenerationControls.classList.remove('hidden');
-        addNavigationButtons();
-        isRegenerating = false;
-    }
-}
-
-async function generateImageWithRetry(prompt, imageData, aspectRatio, userId, maxRetries = 2) {
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-        try {
-            const response = await fetch('/api/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, imageData, aspectRatio, userId }) // Pass userId to API
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                if (result.code === 'NO_CREDITS') {
-                    // Handle specific no credits error
-                    document.getElementById('no-credits-modal').classList.remove('hidden');
-                }
-                throw new Error(result.error || `API Error: ${response.status}`);
-            }
-
-            const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
-            if (!base64Data) throw new Error("No image data received from API.");
-            
-            return {
-                imageUrl: `data:image/png;base64,${base64Data}`,
-                remainingCredits: result.remainingCredits
-            };
-
-        } catch (error) {
-            if (attempt >= maxRetries - 1) throw error;
-            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-        }
-    }
-}
-
-
-// --- Authentication & User State ---
-
-function handleAuthAction() { if (currentUser) signOut(auth); else signInWithGoogle(); }
-
-function signInWithGoogle() { 
-    const authModal = document.getElementById('auth-modal');
-    signInWithPopup(auth, provider)
-        .then(() => {
-            if (authModal) authModal.setAttribute('aria-hidden', 'true');
-        })
-        .catch(error => console.error("Authentication Error:", error)); 
-}
-
-function updateUIForAuthState(isLoggedIn) {
-    const authBtn = document.getElementById('auth-btn');
-    const mobileAuthBtn = document.getElementById('mobile-auth-btn');
+function updateUICredits(isLoggedIn) {
     const creditDisplay = document.getElementById('credit-display');
     const mobileCreditDisplay = document.getElementById('mobile-credit-display');
-    
-    if (isLoggedIn) {
+    const authBtn = document.getElementById('auth-btn');
+    const mobileAuthBtn = document.getElementById('mobile-auth-btn');
+
+    if (isLoggedIn && currentUser) {
         authBtn.textContent = 'Sign Out';
         mobileAuthBtn.textContent = 'Sign Out';
-        
+        // Desktop Header
         creditDisplay.innerHTML = `
             <span class="text-sm font-medium text-gray-700">Credits: ${userCredits}</span>
-            ${userCredits <= 0 ? `<a href="pricing.html" class="text-sm font-semibold text-white bg-blue-500 px-3 py-1.5 rounded-md hover:bg-blue-600 transition-colors">Buy Credits</a>` : ''}
+            ${userCredits <= 0 ? `<a href="pricing.html" class="ml-2 text-sm font-semibold text-white bg-blue-500 px-3 py-1.5 rounded-md hover:bg-blue-600 transition-colors">Buy Credits</a>` : ''}
         `;
-        mobileCreditDisplay.innerHTML = `Credits: ${userCredits}`;
-        
+        // Mobile Menu
+        mobileCreditDisplay.textContent = `Credits: ${userCredits}`;
     } else {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
@@ -329,168 +132,127 @@ function updateUIForAuthState(isLoggedIn) {
     }
 }
 
-// --- UI & Utility Functions ---
-
-function initializeCursor() {
-    const cursorDot = document.querySelector('.cursor-dot');
-    const cursorOutline = document.querySelector('.cursor-outline');
-    if (!cursorDot || !cursorOutline) return;
-    
-    let mouseX = 0, mouseY = 0;
-    window.addEventListener('mousemove', (e) => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-    });
-    
-    const animateCursor = () => {
-        cursorDot.style.left = `${mouseX}px`;
-        cursorDot.style.top = `${mouseY}px`;
-        cursorOutline.style.transform = `translate(calc(${mouseX}px - 50%), calc(${mouseY}px - 50%))`;
-        requestAnimationFrame(animateCursor);
-    };
-    requestAnimationFrame(animateCursor);
+function handleAuthAction() {
+    if (currentUser) {
+        signOut(auth).catch(error => console.error("Sign out error:", error));
+    } else {
+        signInWithGoogle();
+    }
 }
 
-function initializeMusicPlayer() {
-    const musicBtn = document.getElementById('music-btn');
-    const lofiMusic = document.getElementById('lofi-music');
-    if (!musicBtn || !lofiMusic) return;
+function signInWithGoogle() {
+    signInWithPopup(auth, provider)
+        .catch(error => {
+            console.error("Authentication Error:", error);
+            alert("Could not sign in with Google. Please try again.");
+        });
+}
 
-    musicBtn.addEventListener('click', () => {
-        const isPlaying = musicBtn.classList.contains('playing');
-        if (isPlaying) {
-            lofiMusic.pause();
-        } else {
-            lofiMusic.play().catch(error => console.error("Audio playback failed:", error));
+function handleGenerationClick(isRegen = false) {
+    if (isGenerating) return; // Prevent multiple clicks while generating
+
+    if (!currentUser) {
+        toggleModal('auth-modal', true);
+        return;
+    }
+
+    if (userCredits <= 0) {
+        toggleModal('no-credits-modal', true);
+        return;
+    }
+
+    const promptInput = document.getElementById(isRegen ? 'regenerate-prompt-input' : 'prompt-input');
+    const prompt = promptInput.value.trim();
+
+    if (!prompt) {
+        alert('Please describe what you want to create.');
+        return;
+    }
+
+    generateImage(prompt);
+}
+
+async function generateImage(prompt) {
+    isGenerating = true;
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const generateBtn = document.getElementById('generate-btn');
+    const regenerateBtn = document.getElementById('regenerate-btn');
+    
+    // UI updates for loading state
+    document.getElementById('generator-ui').classList.add('hidden');
+    document.getElementById('result-container').classList.remove('hidden');
+    document.getElementById('image-grid').innerHTML = ''; // Clear old results
+    document.getElementById('post-generation-controls').classList.add('hidden');
+    loadingIndicator.classList.remove('hidden');
+    if (generateBtn) generateBtn.disabled = true;
+    if (regenerateBtn) regenerateBtn.disabled = true;
+
+    try {
+        const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                prompt: prompt,
+                aspectRatio: document.querySelector('.aspect-ratio-btn.selected')?.dataset.ratio || '1:1',
+                userId: currentUser.uid // CRITICAL: Send user ID for server-side verification
+            })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            // Handle specific error codes from the server
+            if (result.code === 'NO_CREDITS') {
+                toggleModal('no-credits-modal', true);
+            }
+            throw new Error(result.error || 'An unknown error occurred during generation.');
         }
-        musicBtn.classList.toggle('playing');
-    });
-}
 
-function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-        uploadedImageData = { mimeType: file.type, data: reader.result.split(',')[1] };
-        document.getElementById('image-preview').src = reader.result;
-        document.getElementById('image-preview-container').classList.remove('hidden');
-        document.getElementById('prompt-input').placeholder = "Describe the edits you want to make...";
-    };
-    reader.readAsDataURL(file);
-}
+        const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
+        if (!base64Data) {
+            throw new Error("No image data was received from the API.");
+        }
 
-function removeUploadedImage() {
-    uploadedImageData = null;
-    document.getElementById('image-upload-input').value = '';
-    document.getElementById('image-preview-container').classList.add('hidden');
-    document.getElementById('image-preview').src = '';
-    document.getElementById('prompt-input').placeholder = "An oil painting of a futuristic city skyline at dusk...";
+        const imageUrl = `data:image/png;base64,${base64Data}`;
+        displayImage(imageUrl, prompt);
+        document.getElementById('regenerate-prompt-input').value = prompt;
+        document.getElementById('post-generation-controls').classList.remove('hidden');
+
+    } catch (error) {
+        console.error('Image Generation Failed:', error);
+        alert(`Sorry, the image could not be generated: ${error.message}`);
+        // Revert UI to initial state on failure
+        document.getElementById('generator-ui').classList.remove('hidden');
+        document.getElementById('result-container').classList.add('hidden');
+    } finally {
+        // Reset UI from loading state
+        isGenerating = false;
+        loadingIndicator.classList.add('hidden');
+        if (generateBtn) generateBtn.disabled = false;
+        if (regenerateBtn) regenerateBtn.disabled = false;
+    }
 }
 
 function displayImage(imageUrl, prompt) {
     const imageGrid = document.getElementById('image-grid');
+    imageGrid.innerHTML = ''; // Clear previous image or loader
     const imgContainer = document.createElement('div');
-    imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
+    imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl';
     
     const img = document.createElement('img');
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
     
-    const downloadButton = document.createElement('button');
-    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
-    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-    downloadButton.ariaLabel = "Download Image";
-    downloadButton.onclick = () => {
-        const a = document.createElement('a');
-        a.href = imageUrl;
-        a.download = 'genart-image.png';
-        a.click();
-    };
+    // Add a download button
+    const downloadButton = document.createElement('a');
+    downloadButton.href = imageUrl;
+    downloadButton.download = 'genart-image.png';
+    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity';
+    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
 
     imgContainer.appendChild(img);
     imgContainer.appendChild(downloadButton);
     imageGrid.appendChild(imgContainer);
-}
-
-function showMessage(text, type = 'info') {
-    const messageBox = document.getElementById('message-box');
-    const messageEl = document.createElement('div');
-    messageEl.className = `p-4 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} fade-in-slide-up`;
-    messageEl.textContent = text;
-    messageBox.innerHTML = '';
-    messageBox.appendChild(messageEl);
-    setTimeout(() => {
-        if(messageBox.contains(messageEl)) {
-            messageBox.removeChild(messageEl);
-        }
-    }, 4000);
-}
-
-function addNavigationButtons() {
-    const messageBox = document.getElementById('message-box');
-    const existingButton = document.getElementById('start-new-btn');
-    if (existingButton) existingButton.remove();
-
-    const startNewButton = document.createElement('button');
-    startNewButton.id = 'start-new-btn';
-    startNewButton.textContent = '← Start New';
-    startNewButton.className = 'text-sm sm:text-base mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
-    startNewButton.onclick = () => {
-        document.getElementById('generator-ui').classList.remove('hidden');
-        document.getElementById('result-container').classList.add('hidden');
-        document.getElementById('image-grid').innerHTML = '';
-        document.getElementById('message-box').innerHTML = '';
-        document.getElementById('post-generation-controls').classList.add('hidden');
-        document.getElementById('prompt-input').value = '';
-        document.getElementById('regenerate-prompt-input').value = '';
-        removeUploadedImage();
-    };
-    messageBox.prepend(startNewButton);
-}
-
-function copyPrompt() {
-    const promptInput = document.getElementById('prompt-input');
-    const copyPromptBtn = document.getElementById('copy-prompt-btn');
-    const promptText = promptInput.value;
-    if (!promptText) {
-        showMessage('There is no prompt to copy.', 'info');
-        return;
-    }
-    navigator.clipboard.writeText(promptText).then(() => {
-        showMessage('Prompt copied to clipboard!', 'info');
-        const originalIcon = copyPromptBtn.innerHTML;
-        copyPromptBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-        setTimeout(() => {
-            copyPromptBtn.innerHTML = originalIcon;
-        }, 2000);
-    }).catch(err => {
-        console.error('Failed to copy text: ', err);
-        showMessage('Failed to copy prompt.', 'error');
-    });
-}
-
-function startTimer() {
-    const timerEl = document.getElementById('timer');
-    const progressBar = document.getElementById('progress-bar');
-    let startTime = Date.now();
-    const maxTime = 17 * 1000;
-    progressBar.style.width = '0%';
-    timerInterval = setInterval(() => {
-        const elapsedTime = Date.now() - startTime;
-        const progress = Math.min(elapsedTime / maxTime, 1);
-        progressBar.style.width = `${progress * 100}%`;
-        timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
-        if (elapsedTime >= maxTime) {
-            timerEl.textContent = `17.0s / ~17s`;
-        }
-    }, 100);
-}
-
-function stopTimer() {
-    clearInterval(timerInterval);
-    const progressBar = document.getElementById('progress-bar');
-    if (progressBar) progressBar.style.width = '100%';
 }
 
