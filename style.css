@@ -115,16 +115,40 @@ textarea::-webkit-scrollbar-thumb:hover {
     transition: width 0.2s linear; 
 }
 
-#auth-modal { 
-    transition: opacity 0.3s ease, visibility 0.3s ease; 
+/* NEW: Generic Modal Styles */
+.modal-container {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.6); /* bg-slate-900/60 */
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 50;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
-#auth-modal[aria-hidden="true"] { 
-    opacity: 0; 
-    visibility: hidden; 
+
+.modal-container[aria-hidden="true"] {
+    opacity: 0;
+    visibility: hidden;
 }
-#auth-modal[aria-hidden="false"] { 
-    opacity: 1; 
-    visibility: visible; 
+
+.modal-container[aria-hidden="false"] {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 1rem; /* rounded-2xl */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* shadow-2xl */
+    padding: 2rem; /* p-8 */
+    max-width: 24rem; /* max-w-sm */
+    width: 100%;
+    text-align: center;
+    /* This will apply the fade-in animation when the modal becomes visible */
+    animation: fadeInSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .blurred-image-container {
