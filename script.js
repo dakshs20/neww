@@ -360,7 +360,6 @@ async function generateImage(recaptchaToken) {
         const imageDataUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
         if (shouldBlur) { lastGeneratedImageUrl = imageDataUrl; }
         displayImage(imageDataUrl, prompt, shouldBlur);
-        // REMOVED: Automatic saving is no longer done here.
         incrementTotalGenerations();
         if (!auth.currentUser) { incrementGenerationCount(); }
     } catch (error) {
@@ -497,7 +496,6 @@ async function saveImageToGallery(imageDataUrl, prompt) {
         console.log("Image metadata saved to Firestore with ID: ", docRef.id);
     } catch (e) {
         console.error("Error saving image to gallery: ", e);
-        // Re-throw the error to be caught by the button's click handler
         throw e;
     }
 }
@@ -509,17 +507,16 @@ function loadGalleryImages() {
 
     const q = query(collection(db, "gallery"), orderBy("createdAt", "desc"));
     
-    // Use onSnapshot for real-time updates
     onSnapshot(q, (querySnapshot) => {
         if (querySnapshot.empty) {
             loadingIndicator.textContent = "No creations yet. Be the first!";
             loadingIndicator.classList.remove('hidden');
-            galleryGrid.innerHTML = ''; // Clear grid if it becomes empty
+            galleryGrid.innerHTML = '';
             return;
         }
 
         loadingIndicator.classList.add('hidden');
-        galleryGrid.innerHTML = ''; // Clear grid to prevent duplicates on update
+        galleryGrid.innerHTML = '';
 
         querySnapshot.forEach((doc) => {
             const data = doc.data();
@@ -597,11 +594,9 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
     img.className = 'w-full h-auto object-contain';
     if (shouldBlur) { img.classList.add('blurred-image'); }
     
-    // --- Create a container for the buttons ---
     const buttonsContainer = document.createElement('div');
     buttonsContainer.className = 'absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
 
-    // --- Download Button ---
     const downloadButton = document.createElement('button');
     downloadButton.className = 'bg-black/50 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-white';
     downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
@@ -615,22 +610,23 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
         document.body.removeChild(a);
     };
 
-    // --- Save to Gallery Button ---
     const saveButton = document.createElement('button');
     saveButton.className = 'bg-black/50 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-white';
     saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`;
     saveButton.title = "Save to Gallery";
     saveButton.onclick = async () => {
-        saveButton.disabled = true; // Disable immediately
+        saveButton.disabled = true;
         try {
             await saveImageToGallery(imageUrl, prompt);
-            // Visual feedback for success
             saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
             saveButton.title = "Saved!";
         } catch (error) {
             console.error("Failed to save to gallery:", error);
+            showMessage('Failed to save. Check permissions in Firebase.', 'error'); // <-- ADDED THIS LINE
             saveButton.title = "Failed to save";
-            saveButton.disabled = false; // Re-enable if save fails
+            saveButton.disabled = false;
+             saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-400"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`;
+
         }
     };
 
