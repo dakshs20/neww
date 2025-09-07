@@ -469,11 +469,11 @@ textarea::-webkit-scrollbar-thumb:hover {
     transform: translateY(-1px);
 }
 
-/* --- NEW: Prompt of the Day Styles (REVISED FOR RESPONSIVENESS) --- */
+/* --- NEW: Prompt of the Day Styles (REVISED FOR RELIABILITY & RESPONSIVENESS) --- */
 #prompt-of-the-day-popup {
     position: fixed;
-    bottom: 1.5rem;
-    left: 1.5rem;
+    bottom: 2rem;
+    left: 2rem;
     z-index: 1000;
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
@@ -484,7 +484,8 @@ textarea::-webkit-scrollbar-thumb:hover {
     max-width: 380px;
     opacity: 0;
     transform: translateY(20px);
-    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    visibility: hidden; /* Start hidden from screen readers and interactions */
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -492,10 +493,7 @@ textarea::-webkit-scrollbar-thumb:hover {
 #prompt-of-the-day-popup.visible {
     opacity: 1;
     transform: translateY(0);
-}
-
-#prompt-of-the-day-popup.hidden {
-    display: none;
+    visibility: visible; /* Make it visible and interactive */
 }
 
 .potd-header {
@@ -592,25 +590,26 @@ textarea::-webkit-scrollbar-thumb:hover {
         bottom: 1rem;
         width: auto;
         max-width: none;
-        padding: 0.75rem; /* Reduced padding */
+        padding: 0.875rem; /* 14px */
     }
 
     .potd-header {
-        margin-bottom: 0.5rem; /* Reduced margin */
+        margin-bottom: 0.5rem;
     }
     
     .potd-title {
-        font-size: 0.875rem; /* Smaller title */
+        font-size: 0.875rem; /* 14px */
     }
 
     .potd-text {
-        font-size: 0.8rem; /* Smaller text */
-        margin-bottom: 0.75rem; /* Reduced margin */
+        font-size: 0.8125rem; /* 13px */
+        line-height: 1.4;
+        margin-bottom: 0.75rem;
     }
 
     .potd-try-btn {
-        padding: 0.5rem 0.75rem; /* Smaller button padding */
-        font-size: 0.875rem; /* Smaller button text */
+        padding: 0.625rem; /* 10px */
+        font-size: 0.875rem; /* 14px */
     }
 }
 
