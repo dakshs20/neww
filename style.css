@@ -439,7 +439,7 @@ textarea::-webkit-scrollbar-thumb:hover {
     display: block;
 }
 
-/* NEW: Style for prompt text clamping */
+/* Style for prompt text clamping */
 .line-clamp-3 {
     overflow: hidden;
     display: -webkit-box;
@@ -447,7 +447,7 @@ textarea::-webkit-scrollbar-thumb:hover {
     -webkit-line-clamp: 3;
 }
 
-/* NEW: AI Prompt Suggestion Buttons */
+/* AI Prompt Suggestion Buttons */
 .prompt-suggestion-btn {
     padding: 6px 12px;
     background-color: #eef2ff; /* Light indigo background */
@@ -469,92 +469,16 @@ textarea::-webkit-scrollbar-thumb:hover {
     transform: translateY(-1px);
 }
 
-/* --- NEW: Prompt of the Day Styles (REVISED FOR RELIABILITY & RESPONSIVENESS) --- */
-#prompt-of-the-day-popup {
-    position: fixed;
-    bottom: 2rem;
-    left: 2rem;
-    z-index: 1000;
-    background-color: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 1rem;
-    padding: 1.25rem;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    width: 100%;
-    max-width: 380px;
+/* NEW: Gallery Page Styles */
+.gallery-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: fadeInSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     opacity: 0;
-    transform: translateY(20px);
-    visibility: hidden; /* Start hidden from screen readers and interactions */
-    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
 }
 
-#prompt-of-the-day-popup.visible {
-    opacity: 1;
-    transform: translateY(0);
-    visibility: visible; /* Make it visible and interactive */
-}
-
-.potd-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.potd-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #111827;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.potd-title svg {
-    color: #4f46e5;
-}
-
-.potd-dismiss-btn {
-    background: none;
-    border: none;
-    padding: 0.25rem;
-    cursor: pointer;
-    color: #9ca3af;
-    border-radius: 9999px;
-    transition: color 0.2s, background-color 0.2s;
-}
-
-.potd-dismiss-btn:hover {
-    color: #111827;
-    background-color: #f3f4f6;
-}
-
-.potd-text {
-    font-size: 0.875rem;
-    line-height: 1.5;
-    color: #4b5563;
-    margin-bottom: 1rem;
-    word-wrap: break-word; /* Ensure long words don't overflow */
-}
-
-.potd-try-btn {
-    width: 100%;
-    padding: 0.625rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    background-color: #4f46e5;
-    color: #ffffff;
-    border: none;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.2s ease;
-}
-
-.potd-try-btn:hover {
-    background-color: #4338ca;
-    transform: translateY(-1px);
+.gallery-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
 @media (max-width: 768px) {
@@ -583,10 +507,4 @@ textarea::-webkit-scrollbar-thumb:hover {
         width: 56px;
         height: 56px;
     }
-
-    /* HIDE PROMPT OF THE DAY ON MOBILE */
-    #prompt-of-the-day-popup {
-        display: none;
-    }
 }
-
