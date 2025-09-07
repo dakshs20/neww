@@ -469,19 +469,19 @@ textarea::-webkit-scrollbar-thumb:hover {
     transform: translateY(-1px);
 }
 
-/* --- NEW: Prompt of the Day Styles --- */
+/* --- NEW: Prompt of the Day Styles (REVISED FOR RESPONSIVENESS) --- */
 #prompt-of-the-day-popup {
     position: fixed;
-    bottom: 2rem;
-    left: 2rem;
+    bottom: 1.5rem;
+    left: 1.5rem;
     z-index: 1000;
     background-color: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 1rem; /* Increased rounding */
-    padding: 1rem;
+    border-radius: 1rem;
+    padding: 1.25rem;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    width: calc(100% - 2rem);
-    max-width: 360px;
+    width: 100%;
+    max-width: 380px;
     opacity: 0;
     transform: translateY(20px);
     transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
@@ -538,6 +538,7 @@ textarea::-webkit-scrollbar-thumb:hover {
     line-height: 1.5;
     color: #4b5563;
     margin-bottom: 1rem;
+    word-wrap: break-word; /* Ensure long words don't overflow */
 }
 
 .potd-try-btn {
@@ -591,5 +592,16 @@ textarea::-webkit-scrollbar-thumb:hover {
         bottom: 1rem;
         width: auto;
         max-width: none;
+        padding: 1rem;
+    }
+
+    .potd-text {
+        font-size: 0.9rem; /* Slightly larger text on mobile for readability */
+    }
+
+    .potd-try-btn {
+        padding: 0.75rem 1rem; /* Larger tap target for mobile */
+        font-size: 1rem;
     }
 }
+
