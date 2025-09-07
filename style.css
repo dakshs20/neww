@@ -584,32 +584,38 @@ textarea::-webkit-scrollbar-thumb:hover {
         height: 56px;
     }
 
+    /* RE-ENGINEERED FOR MOBILE */
     #prompt-of-the-day-popup {
-        left: 1rem;
-        right: 1rem;
-        bottom: 1rem;
-        width: auto;
-        max-width: none;
-        padding: 0.875rem; /* 14px */
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-width: 100%;
+        border-radius: 1.25rem 1.25rem 0 0; /* Rounded top corners for bottom-sheet effect */
+        padding: 1.25rem 1.25rem 1.5rem; /* Generous padding for mobile */
+        box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.1), 0 -10px 10px -5px rgba(0, 0, 0, 0.04); /* Shadow on top */
+        transform: translateY(100%); /* Start fully off-screen at the bottom */
     }
 
     .potd-header {
-        margin-bottom: 0.5rem;
-    }
-    
-    .potd-title {
-        font-size: 0.875rem; /* 14px */
-    }
-
-    .potd-text {
-        font-size: 0.8125rem; /* 13px */
-        line-height: 1.4;
         margin-bottom: 0.75rem;
     }
 
+    .potd-title {
+        font-size: 1rem;
+    }
+
+    .potd-text {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        margin-bottom: 1.25rem;
+    }
+
     .potd-try-btn {
-        padding: 0.625rem; /* 10px */
-        font-size: 0.875rem; /* 14px */
+        padding: 0.875rem;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 0.75rem;
     }
 }
 
