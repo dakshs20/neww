@@ -1,7 +1,7 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, increment, collection, addDoc, serverTimestamp, query, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -44,6 +44,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Page-specific initialization
     if (document.getElementById('generator-ui')) {
         initializeGeneratorPage();
+    }
+    if (document.getElementById('gallery-grid')) {
+        loadGalleryImages();
     }
 });
 
@@ -232,125 +235,6 @@ function initializeGeneratorPage() {
     if(imageUploadBtn) imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
     if(imageUploadInput) imageUploadInput.addEventListener('change', handleImageUpload);
     if(removeImageBtn) removeImageBtn.addEventListener('click', removeUploadedImage);
-
-    // --- NEW: Initialize Prompt of the Day ---
-    initializePromptOfTheDay();
-}
-
-// --- NEW: Prompt of the Day Logic ---
-function initializePromptOfTheDay() {
-    const prompts = [
-        "A bioluminescent forest at twilight, with glowing mushrooms and ethereal creatures.",
-        "An astronaut discovering an ancient alien artifact on a desolate moon.",
-        "A steampunk city powered by clockwork and steam, with airships in the sky.",
-        "A close-up portrait of a majestic lion with a crown made of stars.",
-        "A hidden waterfall in a lush, tropical jungle, rendered in a hyperrealistic style.",
-        "A cyberpunk street scene in a rainy, neon-lit city of the future.",
-        "A whimsical treehouse built into a giant, ancient oak tree.",
-        "An epic fantasy battle between a knight and a fire-breathing dragon.",
-        "A serene Japanese zen garden with a koi pond and cherry blossoms.",
-        "A surrealist painting of a clock melting over a desert landscape.",
-        "A robot artist painting a masterpiece in its futuristic studio.",
-        "A magical library with floating books and enchanted scrolls.",
-        "A polar bear family under the shimmering aurora borealis.",
-        "A futuristic high-speed train traveling through a mountain pass.",
-        "An underwater city inhabited by mermaids and mermen.",
-        "A brave adventurer exploring a forgotten, treasure-filled tomb.",
-        "A portrait of a wise old wizard with a long white beard and a pointed hat.",
-        "A cozy, snow-covered cabin in the woods during a blizzard.",
-        "A vibrant coral reef teeming with colorful fish and marine life.",
-        "A giant, moss-covered golem awakening in an ancient forest.",
-        "A retro-futuristic car from the 1950s, but with hovering capabilities.",
-        "A beautiful elven queen in her ethereal, nature-inspired throne room.",
-        "A detective investigating a mysterious crime in a foggy, 1940s film noir setting.",
-        "A bustling marketplace in a fantastical medieval city.",
-        "A lone samurai warrior standing on a cliff, overlooking a stormy sea.",
-        "A tiny fairy sipping nectar from a giant, glowing flower.",
-        "A majestic griffin soaring through a dramatic, cloud-filled sky.",
-        "A post-apocalyptic survivor scavenging in the ruins of a modern city.",
-        "A secret agent in a high-stakes chase through the streets of Monaco.",
-        "A group of friendly robots having a picnic in a sunny park.",
-        "A surreal landscape where the ground is made of clouds and islands float in the sky.",
-        "A powerful sorceress casting a complex spell, with magical energy swirling around her.",
-        "A child discovering a hidden door to a magical world in their bedroom.",
-        "A family of red pandas playing in a bamboo forest.",
-        "An Art Deco style skyscraper that reaches into the clouds.",
-        "A ghostly pirate ship emerging from a mysterious fog.",
-        "A scientist in a high-tech laboratory making a groundbreaking discovery.",
-        "A whimsical illustration of animals operating a busy coffee shop.",
-        "A lone tree on a hill, silhouetted against a spectacular sunset.",
-        "A knight's shiny, ornate suit of armor displayed in a castle hall.",
-        "An alien planet with two suns and bizarre, colorful flora.",
-        "A phoenix rising from the ashes, with fiery, magnificent wings.",
-        "A jazz club in the 1920s, full of energy and cool musicians.",
-        "A cute, fluffy creature that is a hybrid of a cat and a butterfly.",
-        "A tranquil scene of a canoe on a perfectly still, mirror-like lake at dawn.",
-        "A medieval alchemist's workshop, filled with strange potions and bubbling concoctions.",
-        "A vibrant, abstract painting representing the feeling of joy.",
-        "A crystal cave with giant, glowing crystals of every color imaginable.",
-        "A close-up of a hummingbird in flight, its wings a blur of motion.",
-        "A futuristic soldier in advanced power armor, ready for battle."
-    ];
-
-    const popup = document.getElementById('prompt-of-the-day-popup');
-    if (!popup) return;
-
-    // Use sessionStorage to track dismissal only for the current visit.
-    const wasDismissedInSession = sessionStorage.getItem('potdDismissed');
-
-    // If dismissed in this session, do nothing.
-    if (wasDismissedInSession === 'true') {
-        return;
-    }
-
-    // Timezone-safe function to calculate the day of the year based on EST/EDT.
-    // This ensures the prompt changes at midnight in New York for all users.
-    const getDayOfYearEst = () => {
-        const now = new Date();
-        // Create a date object that represents the current time in the target timezone
-        const estDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-        const startOfYear = new Date(estDate.getFullYear(), 0, 0);
-        const diff = estDate - startOfYear;
-        const oneDay = 1000 * 60 * 60 * 24;
-        return Math.floor(diff / oneDay);
-    };
-
-    const dayOfYear = getDayOfYearEst();
-    const promptIndex = dayOfYear % prompts.length;
-    const dailyPrompt = prompts[promptIndex];
-
-    const promptTextEl = document.getElementById('potd-text');
-    const tryBtn = document.getElementById('potd-try-btn');
-    const dismissBtn = document.getElementById('potd-dismiss-btn');
-    const promptInput = document.getElementById('prompt-input');
-
-    if (!promptTextEl || !tryBtn || !dismissBtn || !promptInput) {
-        console.error("One or more 'Prompt of the Day' elements are missing.");
-        return;
-    }
-
-    promptTextEl.textContent = dailyPrompt;
-
-    const dismissPopup = () => {
-        popup.classList.remove('visible');
-        // Set the flag in sessionStorage for this visit only.
-        sessionStorage.setItem('potdDismissed', 'true');
-    };
-
-    tryBtn.addEventListener('click', () => {
-        promptInput.value = dailyPrompt;
-        promptInput.dispatchEvent(new Event('input', { bubbles: true }));
-        promptInput.dispatchEvent(new Event('change', { bubbles: true }));
-        promptInput.focus();
-        dismissPopup();
-    });
-
-    dismissBtn.addEventListener('click', dismissPopup);
-
-    // Show the popup after a short delay by adding the 'visible' class
-    setTimeout(() => {
-        popup.classList.add('visible');
-    }, 1500);
 }
 
 
@@ -474,6 +358,7 @@ async function generateImage(recaptchaToken) {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
         if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
         displayImage(imageUrl, prompt, shouldBlur);
+        await saveImageToGallery(imageUrl, prompt); // Save image to gallery
         incrementTotalGenerations();
         if (!auth.currentUser) { incrementGenerationCount(); }
     } catch (error) {
@@ -580,6 +465,74 @@ function updateGenerationCounter() {
     const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
     if (generationCounterEl) generationCounterEl.textContent = text;
     if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = text;
+}
+
+
+// --- Gallery Functions ---
+
+async function saveImageToGallery(imageUrl, prompt) {
+    try {
+        const docRef = await addDoc(collection(db, "gallery"), {
+            imageUrl: imageUrl,
+            prompt: prompt,
+            createdAt: serverTimestamp(),
+            author: auth.currentUser ? auth.currentUser.displayName : "Anonymous"
+        });
+        console.log("Image saved to gallery with ID: ", docRef.id);
+    } catch (e) {
+        console.error("Error adding document: ", e);
+    }
+}
+
+async function loadGalleryImages() {
+    const galleryGrid = document.getElementById('gallery-grid');
+    const loadingIndicator = document.getElementById('gallery-loading');
+    if (!galleryGrid || !loadingIndicator) return;
+
+    try {
+        const q = query(collection(db, "gallery"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+            loadingIndicator.textContent = "No creations yet. Be the first!";
+            return;
+        }
+
+        loadingIndicator.classList.add('hidden');
+        galleryGrid.innerHTML = ''; // Clear existing content
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const card = document.createElement('div');
+            card.className = 'gallery-card bg-white rounded-lg shadow-md overflow-hidden group';
+
+            const img = document.createElement('img');
+            img.src = data.imageUrl;
+            img.alt = data.prompt;
+            img.className = 'w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300';
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'p-4';
+
+            const promptP = document.createElement('p');
+            promptP.className = 'text-sm text-gray-700 line-clamp-3';
+            promptP.textContent = data.prompt;
+            
+            const authorP = document.createElement('p');
+            authorP.className = 'text-xs text-gray-400 mt-2';
+            authorP.textContent = `By: ${data.author || 'Anonymous'}`;
+
+            infoDiv.appendChild(promptP);
+            infoDiv.appendChild(authorP);
+            card.appendChild(img);
+            card.appendChild(infoDiv);
+
+            galleryGrid.appendChild(card);
+        });
+    } catch (error) {
+        console.error("Error loading gallery images:", error);
+        loadingIndicator.textContent = "Could not load gallery.";
+    }
 }
 
 
@@ -729,4 +682,3 @@ function stopTimer() {
     const progressBar = document.getElementById('progress-bar');
     if (progressBar) progressBar.style.width = '100%';
 }
-
