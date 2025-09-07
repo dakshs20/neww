@@ -1,4 +1,236 @@
-// ... existing code ... */
+// Import Firebase modules
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
+    authDomain: "genart-a693a.firebaseapp.com",
+    projectId: "genart-a693a",
+    storageBucket: "genart-a693a.appspot.com",
+    messagingSenderId: "96958671615",
+    appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
+    measurementId: "G-EDCW8VYXY6"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+// --- Global State ---
+let timerInterval;
+const FREE_GENERATION_LIMIT = 3;
+let uploadedImageData = null;
+let lastGeneratedImageUrl = null;
+let selectedAspectRatio = '1:1';
+let isRegenerating = false;
+let lastPrompt = '';
+
+
+// --- reCAPTCHA Callback ---
+window.onRecaptchaSuccess = function(token) {
+    console.log("Invisible reCAPTCHA check passed. Proceeding with image generation.");
+    generateImage(token);
+};
+
+
+// --- Initialization ---
+document.addEventListener('DOMContentLoaded', () => {
+    initializeUniversalScripts();
+
+    // Page-specific initialization
+    if (document.getElementById('generator-ui')) {
+        initializeGeneratorPage();
+    }
+});
+
+
+/**
+ * Initializes scripts that run on every page (e.g., header, auth, cursor).
+ */
+function initializeUniversalScripts() {
+    // --- DOM Element References ---
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const authBtn = document.getElementById('auth-btn');
+    const mobileAuthBtn = document.getElementById('mobile-auth-btn');
+    const authModal = document.getElementById('auth-modal');
+    const googleSignInBtn = document.getElementById('google-signin-btn');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const musicBtn = document.getElementById('music-btn');
+    const lofiMusic = document.getElementById('lofi-music');
+    const cursorDot = document.querySelector('.cursor-dot');
+    const cursorOutline = document.querySelector('.cursor-outline');
+    
+    // --- Event Listeners ---
+    onAuthStateChanged(auth, user => updateUIForAuthState(user));
+
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        document.addEventListener('click', (event) => {
+            if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+    }
+
+    if (authBtn) authBtn.addEventListener('click', handleAuthAction);
+    if (mobileAuthBtn) mobileAuthBtn.addEventListener('click', handleAuthAction);
+    if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
+    if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
+
+    if (musicBtn && lofiMusic) {
+        musicBtn.addEventListener('click', () => {
+            const isPlaying = musicBtn.classList.contains('playing');
+            if (isPlaying) {
+                lofiMusic.pause();
+            } else {
+                lofiMusic.play().catch(error => console.error("Audio playback failed:", error));
+            }
+            musicBtn.classList.toggle('playing');
+        });
+    }
+
+    if (cursorDot && cursorOutline) {
+        let mouseX = 0, mouseY = 0;
+        let outlineX = 0, outlineY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        const animateCursor = () => {
+            cursorDot.style.left = `${mouseX}px`;
+            cursorDot.style.top = `${mouseY}px`;
+            const ease = 0.15;
+            outlineX += (mouseX - outlineX) * ease;
+            outlineY += (mouseY - outlineY) * ease;
+            cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+            requestAnimationFrame(animateCursor);
+        };
+        requestAnimationFrame(animateCursor);
+
+        const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
+            el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
+        });
+    }
+}
+
+
+/**
+ * Initializes scripts specific to the main generator page.
+ */
+function initializeGeneratorPage() {
+    // --- DOM Element References ---
+    const promptInput = document.getElementById('prompt-input');
+    const generateBtn = document.getElementById('generate-btn');
+    const examplePrompts = document.querySelectorAll('.example-prompt');
+    const imageUploadBtn = document.getElementById('image-upload-btn');
+    const imageUploadInput = document.getElementById('image-upload-input');
+    const removeImageBtn = document.getElementById('remove-image-btn');
+    const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
+    const copyPromptBtn = document.getElementById('copy-prompt-btn');
+    const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
+    const regenerateBtn = document.getElementById('regenerate-btn');
+    const promptSuggestionsContainer = document.getElementById('prompt-suggestions');
+
+    // --- Event Listeners ---
+    if(examplePrompts) {
+        examplePrompts.forEach(button => {
+            button.addEventListener('click', () => {
+                promptInput.value = button.innerText.trim();
+                promptInput.focus();
+            });
+        });
+    }
+
+    if (generateBtn) {
+        generateBtn.addEventListener('click', () => {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                showMessage('Please describe what you want to create or edit.', 'error');
+                return;
+            }
+            const count = getGenerationCount();
+            const authModal = document.getElementById('auth-modal');
+            if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
+                if (authModal) authModal.setAttribute('aria-hidden', 'false');
+                return;
+            }
+            isRegenerating = false;
+            grecaptcha.execute();
+        });
+    }
+
+    if (regenerateBtn) {
+        regenerateBtn.addEventListener('click', () => {
+            const regeneratePromptInput = document.getElementById('regenerate-prompt-input');
+            const prompt = regeneratePromptInput.value.trim();
+            if (!prompt) {
+                showMessage('Please enter a prompt to regenerate.', 'error');
+                return;
+            }
+            const count = getGenerationCount();
+            const authModal = document.getElementById('auth-modal');
+            if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
+                if (authModal) authModal.setAttribute('aria-hidden', 'false');
+                return;
+            }
+            isRegenerating = true;
+            grecaptcha.execute();
+        });
+    }
+
+    if (promptInput) {
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generateBtn.click();
+            }
+        });
+
+        let suggestionTimeout;
+        promptInput.addEventListener('input', () => {
+            clearTimeout(suggestionTimeout);
+            const promptText = promptInput.value.trim();
+            if (promptText.length < 10) {
+                promptSuggestionsContainer.innerHTML = '';
+                promptSuggestionsContainer.classList.add('hidden');
+                return;
+            }
+            promptSuggestionsContainer.innerHTML = `<span class="text-sm text-gray-400 italic">AI is thinking of suggestions...</span>`;
+            promptSuggestionsContainer.classList.remove('hidden');
+            suggestionTimeout = setTimeout(() => fetchAiSuggestions(promptText), 300);
+        });
+
+        promptInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (promptSuggestionsContainer) {
+                    promptSuggestionsContainer.classList.add('hidden');
+                }
+            }, 150);
+        });
+    }
+
+    if(aspectRatioBtns) {
+        aspectRatioBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                aspectRatioBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedAspectRatio = btn.dataset.ratio;
+            });
+        });
+    }
+
+    if(copyPromptBtn) copyPromptBtn.addEventListener('click', copyPrompt);
+    if(enhancePromptBtn) enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
+
+    if(imageUploadBtn) imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
+    if(imageUploadInput) imageUploadInput.addEventListener('change', handleImageUpload);
     if(removeImageBtn) removeImageBtn.addEventListener('click', removeUploadedImage);
 
     // --- NEW: Initialize Prompt of the Day ---
@@ -63,16 +295,11 @@ function initializePromptOfTheDay() {
     const popup = document.getElementById('prompt-of-the-day-popup');
     if (!popup) return;
 
-    // Timezone-safe function to get the current date string in EST/EDT
-    const getEstDateString = () => {
-        return new Date().toLocaleDateString("en-US", { timeZone: "America/New_York" });
-    };
+    // Use sessionStorage to track dismissal only for the current visit.
+    const wasDismissedInSession = sessionStorage.getItem('potdDismissed');
 
-    const todayEst = getEstDateString();
-    const lastDismissed = localStorage.getItem('potdDismissedDate');
-
-    // If dismissed today, do nothing.
-    if (lastDismissed === todayEst) {
+    // If dismissed in this session, do nothing.
+    if (wasDismissedInSession === 'true') {
         return;
     }
 
@@ -105,8 +332,9 @@ function initializePromptOfTheDay() {
     promptTextEl.textContent = dailyPrompt;
 
     const dismissPopup = () => {
-        popup.classList.remove('visible'); // Simple class removal for hiding
-        localStorage.setItem('potdDismissedDate', todayEst);
+        popup.classList.remove('visible');
+        // Set the flag in sessionStorage for this visit only.
+        sessionStorage.setItem('potdDismissed', 'true');
     };
 
     tryBtn.addEventListener('click', () => {
