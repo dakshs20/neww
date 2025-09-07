@@ -601,34 +601,40 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
     downloadButton.className = 'bg-black/50 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-white';
     downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
     downloadButton.title = "Download Image";
-    downloadButton.onclick = () => {
+    
+    downloadButton.addEventListener('click', () => {
         const a = document.createElement('a');
         a.href = imageUrl;
         a.download = 'genart-image.png';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-    };
+    });
 
     const saveButton = document.createElement('button');
     saveButton.className = 'bg-black/50 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-white';
     saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`;
     saveButton.title = "Save to Gallery";
-    saveButton.onclick = async () => {
+
+    saveButton.addEventListener('click', async () => {
+        // INSTANT visual feedback
+        saveButton.classList.add('saving-pulse');
         saveButton.disabled = true;
+
         try {
             await saveImageToGallery(imageUrl, prompt);
             saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
             saveButton.title = "Saved!";
+            saveButton.classList.remove('saving-pulse');
         } catch (error) {
             console.error("Failed to save to gallery:", error);
-            showMessage('Failed to save. Check permissions in Firebase.', 'error'); // <-- ADDED THIS LINE
+            showMessage('Failed to save. Please check Firebase permissions.', 'error');
             saveButton.title = "Failed to save";
             saveButton.disabled = false;
-             saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-400"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`;
-
+            saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-400"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+            saveButton.classList.remove('saving-pulse');
         }
-    };
+    });
 
     imgContainer.appendChild(img);
 
@@ -640,7 +646,9 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
         const overlay = document.createElement('div');
         overlay.className = 'unlock-overlay';
         overlay.innerHTML = `<h3 class="text-xl font-semibold">Unlock Image</h3><p class="mt-2">Sign in to unlock this image and get unlimited generations.</p><button id="unlock-btn">Sign In to Unlock</button>`;
-        overlay.querySelector('#unlock-btn').onclick = () => { document.getElementById('auth-modal').setAttribute('aria-hidden', 'false'); };
+        overlay.querySelector('#unlock-btn').addEventListener('click', () => {
+             document.getElementById('auth-modal').setAttribute('aria-hidden', 'false');
+        });
         imgContainer.appendChild(overlay);
     }
     imageGrid.appendChild(imgContainer);
@@ -657,7 +665,7 @@ function showMessage(text, type = 'info') {
         if(messageBox.contains(messageEl)) {
             messageBox.removeChild(messageEl);
         }
-    }, 4000);
+    }, 5000);
 }
 
 function addNavigationButtons() {
