@@ -1,7 +1,7 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, increment, collection, addDoc, serverTimestamp, query, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, increment, collection, addDoc, serverTimestamp, query, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
 // Your web app's Firebase configuration
@@ -502,22 +502,24 @@ async function saveImageToGallery(imageDataUrl, prompt) {
     }
 }
 
-async function loadGalleryImages() {
+function loadGalleryImages() {
     const galleryGrid = document.getElementById('gallery-grid');
     const loadingIndicator = document.getElementById('gallery-loading');
     if (!galleryGrid || !loadingIndicator) return;
 
-    try {
-        const q = query(collection(db, "gallery"), orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
-        
+    const q = query(collection(db, "gallery"), orderBy("createdAt", "desc"));
+    
+    // Use onSnapshot for real-time updates
+    onSnapshot(q, (querySnapshot) => {
         if (querySnapshot.empty) {
             loadingIndicator.textContent = "No creations yet. Be the first!";
+            loadingIndicator.classList.remove('hidden');
+            galleryGrid.innerHTML = ''; // Clear grid if it becomes empty
             return;
         }
 
         loadingIndicator.classList.add('hidden');
-        galleryGrid.innerHTML = ''; // Clear existing content
+        galleryGrid.innerHTML = ''; // Clear grid to prevent duplicates on update
 
         querySnapshot.forEach((doc) => {
             const data = doc.data();
@@ -547,10 +549,11 @@ async function loadGalleryImages() {
 
             galleryGrid.appendChild(card);
         });
-    } catch (error) {
+    }, (error) => {
         console.error("Error loading gallery images:", error);
         loadingIndicator.textContent = "Could not load gallery.";
-    }
+        loadingIndicator.classList.remove('hidden');
+    });
 }
 
 
