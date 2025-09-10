@@ -33,8 +33,8 @@ export default async function handler(req, res) {
         if (uploadedFile) {
             const lastUserMessage = requestContents[requestContents.length - 1];
             if (uploadedFile.isText) {
-                // Decode base64 text file content before sending to the model.
-                const textContent = atob(uploadedFile.content);
+                // Decode base64 text file content using Node.js Buffer for server-side reliability.
+                const textContent = Buffer.from(uploadedFile.content, 'base64').toString('utf-8');
                 lastUserMessage.parts.push({ text: `\n\n--- Start of File Content ---\n${textContent}\n--- End of File Content ---` });
             } else {
                 // Add image data directly.
@@ -83,3 +83,4 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'The Verse API function crashed.', details: error.message });
     }
 }
+
