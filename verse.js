@@ -98,7 +98,7 @@ function initializeVersePage() {
 // --- CORE FUNCTIONS ---
 
 /**
- * **[NEW]** Renders the entire chat UI based on the chatHistory array.
+ * Renders the entire chat UI based on the chatHistory array.
  * This is the single source of truth for what is displayed.
  */
 function renderChat() {
@@ -126,7 +126,7 @@ async function handleSendMessage() {
     if (!prompt && !attachedFile) return;
 
     isAwaitingResponse = true;
-    updateSendButton(true);
+    updateInputState(true);
 
     const userQueryText = prompt || `File attached: ${attachedFile.name}`;
     let userQueryParts = [{ text: prompt }];
@@ -201,7 +201,7 @@ async function handleSendMessage() {
         renderChat();
     } finally {
         isAwaitingResponse = false;
-        updateSendButton(false);
+        updateInputState(false);
     }
 }
 
@@ -284,24 +284,30 @@ async function typeWriter(text, element) {
 // --- UTILITY & HELPER FUNCTIONS ---
 
 /**
- * Toggles the send button state between active and loading.
+ * Toggles the input elements' state between active and loading.
  * @param {boolean} isLoading - The loading state.
  */
-function updateSendButton(isLoading) {
+function updateInputState(isLoading) {
     const sendBtn = document.getElementById('send-btn');
     const sendIcon = document.getElementById('send-icon');
     const spinner = document.getElementById('spinner');
+    const promptInput = document.getElementById('prompt-input');
 
     if (isLoading) {
         sendBtn.disabled = true;
+        promptInput.disabled = true;
+        promptInput.placeholder = 'Verse is thinking...';
         sendBtn.classList.add('generating');
         sendIcon.classList.add('hidden');
         spinner.classList.remove('hidden');
     } else {
         sendBtn.disabled = false;
+        promptInput.disabled = false;
+        promptInput.placeholder = 'Ask Verse anything...';
         sendBtn.classList.remove('generating');
         sendIcon.classList.remove('hidden');
         spinner.classList.add('hidden');
+        promptInput.focus();
     }
 }
 
