@@ -115,14 +115,14 @@ textarea::-webkit-scrollbar-thumb:hover {
     transition: width 0.2s linear; 
 }
 
-#auth-modal { 
+#auth-modal, #settings-modal { 
     transition: opacity 0.3s ease, visibility 0.3s ease; 
 }
-#auth-modal[aria-hidden="true"] { 
+#auth-modal[aria-hidden="true"], #settings-modal[aria-hidden="true"] { 
     opacity: 0; 
     visibility: hidden; 
 }
-#auth-modal[aria-hidden="false"] { 
+#auth-modal[aria-hidden="false"], #settings-modal[aria-hidden="false"] { 
     opacity: 1; 
     visibility: visible; 
 }
@@ -469,7 +469,7 @@ textarea::-webkit-scrollbar-thumb:hover {
     transform: translateY(-1px);
 }
 
-/* --- VERSE AI CHAT STYLES --- */
+/* --- VERSE AI CHAT STYLES (UPGRADED) --- */
 #chat-container {
     display: flex;
     flex-direction: column;
@@ -511,6 +511,7 @@ textarea::-webkit-scrollbar-thumb:hover {
     padding: 0.75rem 1.25rem;
     border-radius: 1.25rem;
     line-height: 1.6;
+    word-wrap: break-word;
 }
 
 .user-message .message-content {
@@ -582,8 +583,10 @@ textarea::-webkit-scrollbar-thumb:hover {
     padding: 0;
 }
 
-
 /* Typing Indicator */
+#typing-indicator .message-content {
+    padding: 0.75rem 1rem;
+}
 #typing-indicator .typing-dots {
     display: flex;
     gap: 4px;
@@ -617,6 +620,61 @@ textarea::-webkit-scrollbar-thumb:hover {
     to { transform: rotate(360deg); }
 }
 
+/* Answer Length Buttons */
+.answer-length-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 9999px;
+    border: 1px solid #d1d5db;
+    color: #6b7280;
+    background-color: white;
+    transition: all 0.2s ease;
+}
+.answer-length-btn:hover {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}
+.answer-length-btn.selected {
+    background-color: #e0e7ff;
+    color: #4338ca;
+    border-color: #a5b4fc;
+}
+
+/* Typing speed slider styles */
+#typing-speed-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: #d1d5db;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+    border-radius: 3px;
+}
+#typing-speed-slider:hover {
+    opacity: 1;
+}
+#typing-speed-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #3b82f6;
+    cursor: pointer;
+    border-radius: 50%;
+}
+#typing-speed-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #3b82f6;
+    cursor: pointer;
+    border-radius: 50%;
+    border: none;
+}
+
 
 @media (max-width: 768px) {
     body {
@@ -645,3 +703,4 @@ textarea::-webkit-scrollbar-thumb:hover {
         height: 56px;
     }
 }
+
