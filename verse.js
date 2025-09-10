@@ -1,244 +1,265 @@
-// --- Verse AI Page Specific Logic ---
+// File: verse.js
+// This file contains all the client-side logic for the Verse AI chat interface.
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Check if we are on the verse.html page
-    if (document.getElementById('verse-container')) {
-        initializeVersePage();
-    }
-});
-
-function initializeVersePage() {
-    // --- DOM Elements ---
-    const chatHistory = document.getElementById('chat-history');
-    const promptInput = document.getElementById('prompt-input');
-    const sendBtn = document.getElementById('send-btn');
-    const fileUpload = document.getElementById('file-upload');
+    // --- DOM Element References ---
+    const chatWindow = document.getElementById('verse-chat-window');
+    const messageInput = document.getElementById('verse-input');
+    const sendBtn = document.getElementById('verse-send-btn');
+    const fileUploadBtn = document.getElementById('verse-upload-btn');
+    const fileUploadInput = document.getElementById('verse-file-input');
     const filePreviewContainer = document.getElementById('file-preview-container');
-    const fileInfo = document.getElementById('file-info');
+    const filePreviewName = document.getElementById('file-preview-name');
     const removeFileBtn = document.getElementById('remove-file-btn');
-    const lengthButtons = document.querySelectorAll('.answer-length-btn');
-
-    // --- State ---
+    const lengthSelector = document.getElementById('length-selector');
+    
+    // --- State Management ---
     let conversationHistory = [];
-    let uploadedFile = null;
-    let responseLength = 'Medium'; // Default length
-
-    // --- Pre-programmed Responses ---
-    const preProgrammedResponses = {
+    let uploadedFile = null; 
+    let isAwaitingResponse = false;
+    
+    // --- Pre-programmed GenArt Questions ---
+    const genArtKnowledge = {
         "who is the founder of genart?": "Daksh Suthar.",
-        "who created you?": "GenArt ML Technologies developed me."
+        "who created you?": "GenArt ML Technologies developed me.",
+        "who developed you?": "I was developed by GenArt ML Technologies."
+    };
+
+    // --- Core Functions ---
+
+    /**
+     * Handles sending a user's message.
+     */
+    const sendMessage = () => {
+        const rawMessage = messageInput.value.trim();
+        if (!rawMessage && !uploadedFile) return;
+        if (isAwaitingResponse) return;
+
+        // Check for pre-programmed answers
+        const lowerCaseMessage = rawMessage.toLowerCase().replace(/[^\w\s]/gi, '');
+        if (genArtKnowledge[lowerCaseMessage]) {
+            addUserMessage(rawMessage);
+            addBotMessage(genArtKnowledge[lowerCaseMessage]);
+            resetInput();
+            return;
+        }
+
+        addUserMessage(rawMessage);
+        
+        // Prepare for AI response
+        isAwaitingResponse = true;
+        setUiLoadingState(true);
+        addTypingIndicator();
+
+        // Get AI response from our new backend
+        getAiResponse();
+    };
+
+    /**
+     * Fetches a response from the AI model via our backend API.
+     */
+    const getAiResponse = async () => {
+        try {
+            const responseLength = lengthSelector.value;
+            
+            // This now calls our own backend endpoint
+            const response = await fetch('/api/verse', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ conversationHistory, uploadedFile, responseLength })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `API Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const aiText = data.text;
+
+            // Add AI response to history for context
+            conversationHistory.push({ role: 'model', parts: [{ text: aiText }] });
+
+            // Update UI with the response
+            removeTypingIndicator();
+            addBotMessage(aiText);
+
+        } catch (error) {
+            console.error('Error fetching AI response:', error);
+            removeTypingIndicator();
+            addBotMessage(`Sorry, something went wrong. Please try again. Error: ${error.message}`, true);
+        } finally {
+            isAwaitingResponse = false;
+            setUiLoadingState(false);
+            resetInput();
+        }
+    };
+    
+    // --- UI Update Functions ---
+
+    /**
+     * Adds a user's message to the chat window.
+     * @param {string} message - The text of the message.
+     */
+    const addUserMessage = (message) => {
+        // Add user message to conversation history for context
+        const userParts = [{ text: message }];
+        conversationHistory.push({ role: 'user', parts: userParts });
+
+        const messageElement = document.createElement('div');
+        messageElement.className = 'verse-message verse-user-message';
+        
+        let contentHTML = `<div class="prose max-w-none text-white">${message}</div>`;
+        
+        if (uploadedFile) {
+            const previewHTML = uploadedFile.isText
+                ? `<div class="mt-2 p-2 bg-gray-700 rounded-md text-sm text-gray-300">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="inline-block mr-2" viewBox="0 0 16 16"><path d="M4 0h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2zm0 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H4z"/><path d="M4.5 12.5A.5.5 0 0 1 5 12h3a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0-2A.5.5 0 0 1 5 10h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0-2A.5.5 0 0 1 5 8h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0-2A.5.5 0 0 1 5 6h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm0-2A.5.5 0 0 1 5 4h6a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5z"/></svg>
+                     <span>${uploadedFile.name}</span>
+                   </div>`
+                : `<div class="mt-2"><img src="data:${uploadedFile.type};base64,${uploadedFile.content}" alt="${uploadedFile.name}" class="max-w-xs rounded-lg"/></div>`;
+            contentHTML += previewHTML;
+        }
+
+        messageElement.innerHTML = contentHTML;
+        chatWindow.appendChild(messageElement);
+        scrollToBottom();
+    };
+
+    /**
+     * Adds a bot's message to the chat window with a typing animation.
+     * @param {string} message - The text of the message.
+     * @param {boolean} isError - If true, formats as an error message.
+     */
+    const addBotMessage = (message, isError = false) => {
+        const messageElement = document.createElement('div');
+        messageElement.className = isError ? 'verse-message verse-bot-message-error' : 'verse-message verse-bot-message';
+        
+        const contentElement = document.createElement('div');
+        contentElement.className = 'prose prose-invert max-w-none';
+        messageElement.appendChild(contentElement);
+        chatWindow.appendChild(messageElement);
+        
+        // Typing animation logic
+        let currentText = '';
+        let wordIndex = 0;
+        const words = message.split(' ');
+
+        function typeWord() {
+            if (wordIndex < words.length) {
+                currentText += (wordIndex > 0 ? ' ' : '') + words[wordIndex];
+                 // Basic markdown support for bold, italics, lists
+                let formattedText = currentText
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/^- (.*$)/gm, '<ul><li>$1</li></ul>')
+                    .replace(/(\d+)\. (.*$)/gm, '<ol><li>$2</li></ol>')
+                    .replace(/\n/g, '<br>');
+
+                contentElement.innerHTML = formattedText;
+                wordIndex++;
+                scrollToBottom();
+                setTimeout(typeWord, 50); 
+            }
+        }
+        typeWord();
+    };
+
+    /**
+     * Shows or hides the typing indicator.
+     */
+    const addTypingIndicator = () => {
+        const indicator = document.createElement('div');
+        indicator.id = 'typing-indicator';
+        indicator.className = 'verse-message verse-bot-message';
+        indicator.innerHTML = `
+            <div class="flex items-center space-x-1">
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0s;"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style="animation-delay: 0.4s;"></div>
+            </div>`;
+        chatWindow.appendChild(indicator);
+        scrollToBottom();
+    };
+
+    const removeTypingIndicator = () => {
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) indicator.remove();
+    };
+
+    /**
+     * Resets the input field and file attachment.
+     */
+    const resetInput = () => {
+        messageInput.value = '';
+        uploadedFile = null;
+        fileUploadInput.value = '';
+        filePreviewContainer.classList.add('hidden');
+        messageInput.style.height = 'auto';
+    };
+    
+    /**
+     * Sets the loading state for UI elements.
+     * @param {boolean} isLoading - The loading state.
+     */
+    const setUiLoadingState = (isLoading) => {
+        sendBtn.disabled = isLoading;
+        sendBtn.innerHTML = isLoading 
+            ? '<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>';
+    };
+
+    const scrollToBottom = () => {
+        chatWindow.scrollTop = chatWindow.scrollHeight;
     };
     
     // --- Event Listeners ---
+
     sendBtn.addEventListener('click', sendMessage);
-    promptInput.addEventListener('keydown', (e) => {
+    messageInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
         }
     });
 
-    promptInput.addEventListener('input', () => {
-        // Auto-resize textarea
-        promptInput.style.height = 'auto';
-        promptInput.style.height = (promptInput.scrollHeight) + 'px';
+    // Auto-resize textarea
+    messageInput.addEventListener('input', () => {
+        messageInput.style.height = 'auto';
+        messageInput.style.height = (messageInput.scrollHeight) + 'px';
     });
 
-    fileUpload.addEventListener('change', handleFileUpload);
-    removeFileBtn.addEventListener('click', removeFile);
-
-    lengthButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            lengthButtons.forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            responseLength = btn.dataset.length;
-        });
-    });
-
-    // --- Functions ---
-    function displayMessage(sender, message) {
-        const bubble = document.createElement('div');
-        bubble.className = `chat-bubble ${sender === 'user' ? 'user-bubble' : 'bot-bubble'}`;
-        
-        const proseContainer = document.createElement('div');
-        proseContainer.className = 'prose max-w-none';
-        
-        if (sender === 'user') {
-            proseContainer.textContent = message;
-        } else {
-             // Basic markdown to HTML conversion
-            let htmlContent = message
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')       // Italics
-                .replace(/(\r\n|\n|\r)/g, '<br>');      // Line breaks
-            proseContainer.innerHTML = htmlContent;
-        }
-
-        bubble.appendChild(proseContainer);
-        chatHistory.appendChild(bubble);
-        chatHistory.scrollTop = chatHistory.scrollHeight; // Auto-scroll to bottom
-        return bubble;
-    }
-
-    function showTypingIndicator() {
-        const indicator = document.createElement('div');
-        indicator.className = 'chat-bubble bot-bubble typing-indicator';
-        indicator.innerHTML = '<span></span><span></span><span></span>';
-        chatHistory.appendChild(indicator);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-        return indicator;
-    }
-
-    async function handleFileUpload(event) {
-        const file = event.target.files[0];
+    fileUploadBtn.addEventListener('click', () => fileUploadInput.click());
+    fileUploadInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
         if (!file) return;
 
-        // Supported file types
-        const supportedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        const supportedTextTypes = ['text/plain'];
+        const reader = new FileReader();
+        reader.onload = (readEvent) => {
+            const base64Content = readEvent.target.result.split(',')[1];
+            const isText = file.type.startsWith('text/') || 
+                           ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.type);
 
-        if (supportedImageTypes.includes(file.type) || supportedTextTypes.includes(file.type)) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                uploadedFile = {
-                    name: file.name,
-                    type: file.type,
-                    content: e.target.result.split(',')[1], // Base64 content
-                    isText: supportedTextTypes.includes(file.type)
-                };
-                fileInfo.textContent = `File attached: ${file.name}`;
-                filePreviewContainer.classList.remove('hidden');
+            uploadedFile = {
+                name: file.name,
+                type: file.type,
+                content: base64Content,
+                isText: isText
             };
-             reader.readAsDataURL(file);
-        } else {
-            alert("File type not supported. Please upload an image (JPG, PNG) or a plain text (.txt) file.");
-            fileUpload.value = ''; // Reset file input
-        }
-    }
+            
+            filePreviewName.textContent = file.name;
+            filePreviewContainer.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    });
 
-    function removeFile() {
+    removeFileBtn.addEventListener('click', () => {
         uploadedFile = null;
-        fileUpload.value = '';
+        fileUploadInput.value = '';
         filePreviewContainer.classList.add('hidden');
-    }
+    });
 
-    async function sendMessage() {
-        const prompt = promptInput.value.trim();
-        if (!prompt && !uploadedFile) return;
+    // Initial welcome message
+    addBotMessage("Hello! I'm Verse, your AI assistant from GenArt. How can I help you today?");
+});
 
-        // --- 1. Display User Message ---
-        let userMessage = prompt;
-        if (uploadedFile) {
-            userMessage = `[File: ${uploadedFile.name}] ${prompt}`;
-        }
-        displayMessage('user', userMessage);
-        
-        // Add user prompt to conversation history
-        conversationHistory.push({ role: 'user', parts: [{ text: userMessage }] });
-
-        promptInput.value = '';
-        promptInput.style.height = 'auto';
-        
-        // --- 2. Check for Pre-programmed Responses ---
-        const lowerCasePrompt = prompt.toLowerCase().replace(/[?.]/g, '');
-        if (preProgrammedResponses[lowerCasePrompt]) {
-            const response = preProgrammedResponses[lowerCasePrompt];
-            displayMessage('bot', response);
-            conversationHistory.push({ role: 'model', parts: [{ text: response }] });
-            removeFile(); // Clear file after sending
-            return;
-        }
-        
-        // --- 3. Handle AI Generation ---
-        const typingIndicator = showTypingIndicator();
-        
-        try {
-            // --- Prepare API Payload ---
-            const apiKey = ""; // Leave empty, will be handled by the environment
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-            const systemInstruction = {
-                parts: [{ text: `You are Verse, a helpful AI assistant from GenArt. Provide a ${responseLength} response.` }]
-            };
-            
-            let requestContents = [...conversationHistory];
-
-            // If a file is uploaded, add it to the last user message
-            if (uploadedFile) {
-                 const lastUserMessage = requestContents[requestContents.length - 1];
-                 if(uploadedFile.isText){
-                     // Decode base64 text file content
-                     const textContent = atob(uploadedFile.content);
-                     lastUserMessage.parts.push({ text: `\n\nFile Content:\n${textContent}`});
-                 } else {
-                    lastUserMessage.parts.push({
-                        inlineData: {
-                            mimeType: uploadedFile.type,
-                            data: uploadedFile.content
-                        }
-                    });
-                 }
-            }
-
-
-            const payload = {
-                contents: requestContents,
-                systemInstruction: systemInstruction,
-            };
-
-            // --- Fetch API ---
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                throw new Error(`API Error: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-            const aiResponseText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-
-            if (!aiResponseText) {
-                throw new Error("Received an empty response from the AI.");
-            }
-
-            // --- 4. Display AI Response with Typing Animation ---
-            chatHistory.removeChild(typingIndicator);
-            const botBubble = displayMessage('bot', ''); // Create empty bubble
-            typeAnimation(botBubble.querySelector('.prose'), aiResponseText);
-            
-            // Add AI response to history for context
-            conversationHistory.push({ role: 'model', parts: [{ text: aiResponseText }] });
-
-        } catch (error) {
-            console.error("Verse AI Error:", error);
-            chatHistory.removeChild(typingIndicator);
-            displayMessage('bot', `Sorry, something went wrong. Please try again. Error: ${error.message}`);
-        } finally {
-            removeFile();
-        }
-    }
-
-    function typeAnimation(element, text) {
-        let i = 0;
-        element.innerHTML = "";
-        const speed = 20; // milliseconds
-
-        function typeWriter() {
-            if (i < text.length) {
-                // Basic markdown to HTML conversion during typing
-                let char = text.charAt(i);
-                if (char === '\n') {
-                    element.innerHTML += '<br>';
-                } else {
-                    element.innerHTML += char;
-                }
-                i++;
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-                setTimeout(typeWriter, speed);
-            }
-        }
-        typeWriter();
-    }
-}
