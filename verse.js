@@ -19,7 +19,6 @@ let isAwaitingResponse = false; // Prevents multiple submissions
 // --- INITIALIZATION ---
 function initializeVersePage() {
     // --- DOM Element References ---
-    const chatContainer = document.getElementById('chat-container');
     const promptInput = document.getElementById('prompt-input');
     const sendBtn = document.getElementById('send-btn');
     const fileUploadBtn = document.getElementById('file-upload-btn');
@@ -35,13 +34,17 @@ function initializeVersePage() {
     const speedValue = document.getElementById('typing-speed-value');
 
     // --- EVENT LISTENERS ---
-    sendBtn.addEventListener('click', handleSendMessage);
-    promptInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSendMessage();
-        }
-    });
+    if (sendBtn && promptInput) {
+        sendBtn.addEventListener('click', handleSendMessage);
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+            }
+        });
+    } else {
+        console.error("Critical UI elements (send button or prompt input) not found.");
+    }
 
     fileUploadBtn.addEventListener('click', () => fileUploadInput.click());
     fileUploadInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
@@ -99,10 +102,10 @@ function initializeVersePage() {
 
 /**
  * Renders the entire chat UI based on the chatHistory array.
- * This is the single source of truth for what is displayed.
  */
 function renderChat() {
     const chatContainer = document.getElementById('chat-container');
+    if (!chatContainer) return;
     chatContainer.innerHTML = ''; // Clear the container before rendering
 
     chatHistory.forEach(message => {
@@ -117,39 +120,46 @@ function renderChat() {
 
 /**
  * Handles the logic for sending a user's prompt to the backend.
+ * This function is now structured to be more resilient to errors.
  */
 async function handleSendMessage() {
+    const promptInput = document.getElementById('prompt-input');
+    if (!promptInput) {
+        console.error("Could not find prompt input element.");
+        return;
+    }
+    
     if (isAwaitingResponse) return;
 
-    const promptInput = document.getElementById('prompt-input');
     const prompt = promptInput.value.trim();
     if (!prompt && !attachedFile) return;
 
-    isAwaitingResponse = true;
-    updateInputState(true);
-
-    const userQueryText = prompt || `File attached: ${attachedFile.name}`;
-    let userQueryParts = [{ text: prompt }];
-
-    // Add user message to history and re-render the chat
-    chatHistory.push({ role: 'user', parts: [{ text: userQueryText }] });
-    renderChat();
+    let typingIndicator;
     
-    // Reset input fields
-    promptInput.value = '';
-    promptInput.style.height = 'auto';
-
-    let fileData = null;
-    if (attachedFile) {
-        fileData = await readFileAsBase64(attachedFile);
-        userQueryParts.push({ inlineData: { mimeType: fileData.mimeType, data: fileData.content } });
-        removeAttachedFile();
-    }
-    
-    const typingIndicator = displayTypingIndicator();
-
     try {
-        const apiHistory = chatHistory.slice(0, -1); // Send history *before* the current question
+        // --- START of the process. Lock the input immediately inside the try block. ---
+        isAwaitingResponse = true;
+        updateInputState(true);
+
+        const userQueryText = prompt || `File attached: ${attachedFile.name}`;
+        
+        // Add user message to history and re-render the chat
+        chatHistory.push({ role: 'user', parts: [{ text: userQueryText }] });
+        renderChat();
+        
+        // Reset input fields
+        promptInput.value = '';
+        promptInput.style.height = 'auto';
+
+        let fileData = null;
+        if (attachedFile) {
+            fileData = await readFileAsBase64(attachedFile);
+            removeAttachedFile();
+        }
+        
+        typingIndicator = displayTypingIndicator();
+
+        const apiHistory = chatHistory.slice(0, -1); 
 
         const response = await fetch('/api/verse', {
             method: 'POST',
@@ -174,25 +184,21 @@ async function handleSendMessage() {
         const result = await response.json();
         const responseText = result.text;
         
-        // Add a placeholder for the AI message, then render it
         const aiMessagePlaceholder = { role: 'model', parts: [{ text: '' }] };
         chatHistory.push(aiMessagePlaceholder);
         renderChat();
 
-        // Find the last message element (the empty one we just created) to type into
         const allMessages = document.querySelectorAll('.ai-message, .user-message');
         const lastMessageElement = allMessages[allMessages.length - 1];
         const lastMessageContent = lastMessageElement.querySelector('.message-content');
 
         await typeWriter(responseText, lastMessageContent);
         
-        // Once typing is done, update the history with the final text
         aiMessagePlaceholder.parts[0].text = responseText;
 
     } catch (error) {
         console.error('Verse API Error:', error);
         if(typingIndicator) typingIndicator.remove();
-        // Add error to history and re-render
         chatHistory.push({
             role: 'model',
             parts: [{ text: `Sorry, something went wrong: ${error.message}` }],
@@ -200,6 +206,7 @@ async function handleSendMessage() {
         });
         renderChat();
     } finally {
+        // --- END of the process. This will ALWAYS run to unlock the input. ---
         isAwaitingResponse = false;
         updateInputState(false);
     }
@@ -207,10 +214,6 @@ async function handleSendMessage() {
 
 /**
  * Creates and returns a message DOM element.
- * @param {string} sender - 'user' or 'ai' ('model').
- * @param {string} text - The message content.
- * @param {boolean} isError - If the message is an error.
- * @returns {HTMLElement} The message wrapper element.
  */
 function createMessageElement(sender, text, isError = false) {
     const role = (sender === 'ai' || sender === 'model') ? 'model' : 'user';
@@ -236,7 +239,6 @@ function createMessageElement(sender, text, isError = false) {
 
 /**
  * Displays the typing indicator in the chat.
- * @returns {HTMLElement} The indicator element.
  */
 function displayTypingIndicator() {
     const chatContainer = document.getElementById('chat-container');
@@ -256,11 +258,8 @@ function displayTypingIndicator() {
 
 /**
  * Simulates a typewriter effect for the AI's response.
- * @param {string} text - The full text to type.
- * @param {HTMLElement} element - The element to type into.
  */
 async function typeWriter(text, element) {
-    // Use marked.lexer to split by Markdown tokens for better word separation
     const tokens = marked.lexer(text);
     const words = [];
     marked.walkTokens(tokens, token => {
@@ -277,7 +276,6 @@ async function typeWriter(text, element) {
         element.innerHTML = DOMPurify.sanitize(marked.parse(currentContent));
         await new Promise(resolve => setTimeout(resolve, currentTypingSpeed));
     }
-    // Final parse to ensure all markdown is correctly rendered
     element.innerHTML = DOMPurify.sanitize(marked.parse(text));
 }
 
@@ -285,13 +283,14 @@ async function typeWriter(text, element) {
 
 /**
  * Toggles the input elements' state between active and loading.
- * @param {boolean} isLoading - The loading state.
  */
 function updateInputState(isLoading) {
     const sendBtn = document.getElementById('send-btn');
+    const promptInput = document.getElementById('prompt-input');
+    if (!sendBtn || !promptInput) return;
+    
     const sendIcon = document.getElementById('send-icon');
     const spinner = document.getElementById('spinner');
-    const promptInput = document.getElementById('prompt-input');
 
     if (isLoading) {
         sendBtn.disabled = true;
@@ -313,7 +312,6 @@ function updateInputState(isLoading) {
 
 /**
  * Handles the selection of a file for upload.
- * @param {File} file - The file selected by the user.
  */
 function handleFileSelect(file) {
     if (!file) return;
@@ -342,8 +340,6 @@ function removeAttachedFile() {
 
 /**
  * Reads a file and returns its Base64 encoded content.
- * @param {File} file - The file to read.
- * @returns {Promise<Object>} An object containing file content, name, and mimeType.
  */
 function readFileAsBase64(file) {
     return new Promise((resolve, reject) => {
