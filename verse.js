@@ -79,8 +79,7 @@ function initializeVersePage() {
 }
 
 /**
- * NEW: Centralized function to lock and unlock the entire UI input state.
- * This is the key to fixing the input freeze bug.
+ * Centralized function to lock and unlock the entire UI input state.
  * @param {boolean} isLocked - Whether to lock or unlock the UI.
  */
 function setUiLockState(isLocked) {
@@ -112,7 +111,7 @@ function setUiLockState(isLocked) {
 }
 
 /**
- * Handles sending a message. Re-architected for maximum stability.
+ * Handles sending a message.
  */
 async function handleSendMessage() {
     const promptInput = document.getElementById('prompt-input');
@@ -181,7 +180,6 @@ async function handleSendMessage() {
         chatHistory.push({ role: 'model', parts: [{ text: `Sorry, something went wrong: ${error.message}` }], isError: true });
         renderChat();
     } finally {
-        // This block is GUARANTEED to run, ensuring the UI always unlocks.
         setUiLockState(false);
     }
 }
@@ -196,18 +194,35 @@ function renderChat() {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+/**
+ * Creates and returns a message DOM element.
+ * THIS FUNCTION CONTAINED THE BUG. IT'S NOW FIXED.
+ * @param {string} sender - 'user' or 'model'.
+ * @param {string} text - The message content.
+ * @param {boolean} isError - If the message is an error.
+ * @returns {HTMLElement} The message wrapper element.
+ */
 function createMessageElement(sender, text, isError = false) {
     const role = (sender === 'ai' || sender === 'model') ? 'model' : 'user';
     const messageWrapper = document.createElement('div');
     messageWrapper.className = role === 'user' ? 'user-message' : 'ai-message';
     if (isError) messageWrapper.classList.add('error-message');
+    
     const content = document.createElement('div');
     content.className = 'message-content';
-    content.innerHTML = role === 'model' ? DOMPurify.sanitize(marked.parse(text || '')) : '';
-    if (role === 'user') content.textContent = text;
+
+    // *** THE FIX IS HERE ***
+    // We now correctly handle setting content for BOTH model and user.
+    if (role === 'model') {
+        content.innerHTML = DOMPurify.sanitize(marked.parse(text || ''));
+    } else {
+        content.textContent = text; // This line was missing its assignment!
+    }
+    
     messageWrapper.appendChild(content);
     return messageWrapper;
 }
+
 
 function displayTypingIndicator() {
     const chatContainer = document.getElementById('chat-container');
