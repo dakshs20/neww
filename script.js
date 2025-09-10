@@ -1,8 +1,7 @@
 // Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, increment, collection, addDoc, serverTimestamp, query, getDocs, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { getStorage, ref, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -19,7 +18,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
 // --- Global State ---
@@ -46,9 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Page-specific initialization
     if (document.getElementById('generator-ui')) {
         initializeGeneratorPage();
-    }
-    if (document.getElementById('gallery-grid')) {
-        loadGalleryImages();
     }
 });
 
@@ -357,9 +352,9 @@ async function generateImage(recaptchaToken) {
     startTimer();
 
     try {
-        const imageDataUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
-        if (shouldBlur) { lastGeneratedImageUrl = imageDataUrl; }
-        displayImage(imageDataUrl, prompt, shouldBlur);
+        const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
+        if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
+        displayImage(imageUrl, prompt, shouldBlur);
         incrementTotalGenerations();
         if (!auth.currentUser) { incrementGenerationCount(); }
     } catch (error) {
@@ -469,91 +464,6 @@ function updateGenerationCounter() {
 }
 
 
-// --- Gallery Functions ---
-
-async function uploadImageToStorage(imageDataUrl) {
-    const fileName = `gallery/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.png`;
-    const storageRef = ref(storage, fileName);
-    try {
-        const snapshot = await uploadString(storageRef, imageDataUrl, 'data_url');
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        return downloadURL;
-    } catch (error) {
-        console.error("Upload failed", error);
-        throw new Error("Could not upload image to storage.");
-    }
-}
-
-async function saveImageToGallery(imageDataUrl, prompt) {
-    try {
-        const publicImageUrl = await uploadImageToStorage(imageDataUrl);
-        const docRef = await addDoc(collection(db, "gallery"), {
-            imageUrl: publicImageUrl,
-            prompt: prompt,
-            createdAt: serverTimestamp(),
-            author: auth.currentUser ? auth.currentUser.displayName : "Anonymous"
-        });
-        console.log("Image metadata saved to Firestore with ID: ", docRef.id);
-    } catch (e) {
-        console.error("Error saving image to gallery: ", e);
-        throw e;
-    }
-}
-
-function loadGalleryImages() {
-    const galleryGrid = document.getElementById('gallery-grid');
-    const loadingIndicator = document.getElementById('gallery-loading');
-    if (!galleryGrid || !loadingIndicator) return;
-
-    const q = query(collection(db, "gallery"), orderBy("createdAt", "desc"));
-    
-    onSnapshot(q, (querySnapshot) => {
-        if (querySnapshot.empty) {
-            loadingIndicator.textContent = "No creations yet. Be the first!";
-            loadingIndicator.classList.remove('hidden');
-            galleryGrid.innerHTML = '';
-            return;
-        }
-
-        loadingIndicator.classList.add('hidden');
-        galleryGrid.innerHTML = '';
-
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            const card = document.createElement('div');
-            card.className = 'gallery-card bg-white rounded-lg shadow-md overflow-hidden group';
-
-            const img = document.createElement('img');
-            img.src = data.imageUrl;
-            img.alt = data.prompt;
-            img.className = 'w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300';
-            
-            const infoDiv = document.createElement('div');
-            infoDiv.className = 'p-4';
-
-            const promptP = document.createElement('p');
-            promptP.className = 'text-sm text-gray-700 line-clamp-3';
-            promptP.textContent = data.prompt;
-            
-            const authorP = document.createElement('p');
-            authorP.className = 'text-xs text-gray-400 mt-2';
-            authorP.textContent = `By: ${data.author || 'Anonymous'}`;
-
-            infoDiv.appendChild(promptP);
-            infoDiv.appendChild(authorP);
-            card.appendChild(img);
-            card.appendChild(infoDiv);
-
-            galleryGrid.appendChild(card);
-        });
-    }, (error) => {
-        console.error("Error loading gallery images:", error);
-        loadingIndicator.textContent = "Could not load gallery.";
-        loadingIndicator.classList.remove('hidden');
-    });
-}
-
-
 // --- UI & Utility Functions ---
 
 function handleImageUpload(event) {
@@ -594,61 +504,28 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
     img.className = 'w-full h-auto object-contain';
     if (shouldBlur) { img.classList.add('blurred-image'); }
     
-    const buttonsContainer = document.createElement('div');
-    buttonsContainer.className = 'absolute top-4 right-4 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300';
-
     const downloadButton = document.createElement('button');
-    downloadButton.className = 'bg-black/50 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-white';
+    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
     downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-    downloadButton.title = "Download Image";
-    
-    downloadButton.addEventListener('click', () => {
+    downloadButton.ariaLabel = "Download Image";
+    downloadButton.onclick = () => {
         const a = document.createElement('a');
         a.href = imageUrl;
         a.download = 'genart-image.png';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-    });
-
-    const saveButton = document.createElement('button');
-    saveButton.className = 'bg-black/50 text-white p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-white';
-    saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`;
-    saveButton.title = "Save to Gallery";
-
-    saveButton.addEventListener('click', async () => {
-        // INSTANT visual feedback
-        saveButton.classList.add('saving-pulse');
-        saveButton.disabled = true;
-
-        try {
-            await saveImageToGallery(imageUrl, prompt);
-            saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-            saveButton.title = "Saved!";
-            saveButton.classList.remove('saving-pulse');
-        } catch (error) {
-            console.error("Failed to save to gallery:", error);
-            showMessage('Failed to save. Please check Firebase permissions.', 'error');
-            saveButton.title = "Failed to save";
-            saveButton.disabled = false;
-            saveButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-400"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-            saveButton.classList.remove('saving-pulse');
-        }
-    });
+    };
 
     imgContainer.appendChild(img);
 
     if (!shouldBlur) { 
-        buttonsContainer.appendChild(downloadButton);
-        buttonsContainer.appendChild(saveButton);
-        imgContainer.appendChild(buttonsContainer);
+        imgContainer.appendChild(downloadButton); 
     } else {
         const overlay = document.createElement('div');
         overlay.className = 'unlock-overlay';
         overlay.innerHTML = `<h3 class="text-xl font-semibold">Unlock Image</h3><p class="mt-2">Sign in to unlock this image and get unlimited generations.</p><button id="unlock-btn">Sign In to Unlock</button>`;
-        overlay.querySelector('#unlock-btn').addEventListener('click', () => {
-             document.getElementById('auth-modal').setAttribute('aria-hidden', 'false');
-        });
+        overlay.querySelector('#unlock-btn').onclick = () => { document.getElementById('auth-modal').setAttribute('aria-hidden', 'false'); };
         imgContainer.appendChild(overlay);
     }
     imageGrid.appendChild(imgContainer);
@@ -665,7 +542,7 @@ function showMessage(text, type = 'info') {
         if(messageBox.contains(messageEl)) {
             messageBox.removeChild(messageEl);
         }
-    }, 5000);
+    }, 4000);
 }
 
 function addNavigationButtons() {
@@ -733,4 +610,3 @@ function stopTimer() {
     const progressBar = document.getElementById('progress-bar');
     if (progressBar) progressBar.style.width = '100%';
 }
-
