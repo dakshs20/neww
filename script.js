@@ -1,40 +1,18 @@
-// Import Firebase modules
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// Import authentication and payment functions
+import { auth, onAuthStateChange, signInWithGoogle, signOutUser, deductCredits, initiatePayment } from './auth.js';
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
-    authDomain: "genart-a693a.firebaseapp.com",
-    projectId: "genart-a693a",
-    storageBucket: "genart-a693a.appspot.com",
-    messagingSenderId: "96958671615",
-    appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
-    measurementId: "G-EDCW8VYXY6"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
+// Import other necessary Firebase modules
+import { doc, setDoc, increment, getFirestore, initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // --- Global State ---
 let timerInterval;
-const FREE_GENERATION_LIMIT = 3;
 let uploadedImageData = null;
 let lastGeneratedImageUrl = null;
 let selectedAspectRatio = '1:1';
 let isRegenerating = false;
 let lastPrompt = '';
-
-
-// --- reCAPTCHA Callback ---
-window.onRecaptchaSuccess = function(token) {
-    console.log("Invisible reCAPTCHA check passed. Proceeding with image generation.");
-    generateImage(token);
-};
+let currentUser = null;
+let currentUserData = null;
 
 
 // --- Initialization ---
@@ -44,6 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Page-specific initialization
     if (document.getElementById('generator-ui')) {
         initializeGeneratorPage();
+    }
+    if (document.getElementById('buy-starter')) {
+        initializePricingPage();
     }
 });
 
@@ -66,7 +47,11 @@ function initializeUniversalScripts() {
     const cursorOutline = document.querySelector('.cursor-outline');
     
     // --- Event Listeners ---
-    onAuthStateChanged(auth, user => updateUIForAuthState(user));
+    onAuthStateChange((user, userData) => {
+        currentUser = user;
+        currentUserData = userData;
+        updateUIForAuthState(user, userData);
+    });
 
     if (mobileMenuBtn && mobileMenu) {
         mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
@@ -79,7 +64,10 @@ function initializeUniversalScripts() {
 
     if (authBtn) authBtn.addEventListener('click', handleAuthAction);
     if (mobileAuthBtn) mobileAuthBtn.addEventListener('click', handleAuthAction);
-    if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
+    if (googleSignInBtn) googleSignInBtn.addEventListener('click', () => {
+        signInWithGoogle();
+        if(authModal) authModal.setAttribute('aria-hidden', 'true');
+    });
     if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
 
     if (musicBtn && lofiMusic) {
@@ -120,6 +108,15 @@ function initializeUniversalScripts() {
     }
 }
 
+/**
+ * Initializes scripts for the pricing page.
+ */
+function initializePricingPage() {
+    document.getElementById('buy-starter').addEventListener('click', () => initiatePayment('starter', currentUser));
+    document.getElementById('buy-pro').addEventListener('click', () => initiatePayment('pro', currentUser));
+    document.getElementById('buy-mega').addEventListener('click', () => initiatePayment('mega', currentUser));
+}
+
 
 /**
  * Initializes scripts specific to the main generator page.
@@ -148,42 +145,48 @@ function initializeGeneratorPage() {
         });
     }
 
-    if (generateBtn) {
-        generateBtn.addEventListener('click', () => {
-            const prompt = promptInput.value.trim();
-            if (!prompt) {
-                showMessage('Please describe what you want to create or edit.', 'error');
-                return;
-            }
-            const count = getGenerationCount();
-            const authModal = document.getElementById('auth-modal');
-            if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
-                if (authModal) authModal.setAttribute('aria-hidden', 'false');
-                return;
-            }
-            isRegenerating = false;
-            grecaptcha.execute();
-        });
-    }
+    const handleGenerateClick = () => {
+        const prompt = promptInput.value.trim();
+        if (!prompt) {
+            showMessage('Please describe what you want to create.', 'error');
+            return;
+        }
+        if (!currentUser) {
+            document.getElementById('auth-modal').setAttribute('aria-hidden', 'false');
+            showMessage('Please sign in to generate images.', 'info');
+            return;
+        }
+        if (currentUserData.credits < 1) {
+            showMessage('You have no credits left. Please buy a plan.', 'error');
+            setTimeout(() => { window.location.href = 'pricing.html'; }, 2000);
+            return;
+        }
+        isRegenerating = false;
+        generateImage();
+    };
+    
+    const handleRegenerateClick = () => {
+        const regeneratePromptInput = document.getElementById('regenerate-prompt-input');
+        const prompt = regeneratePromptInput.value.trim();
+        if (!prompt) {
+            showMessage('Please enter a prompt to regenerate.', 'error');
+            return;
+        }
+        if (!currentUser) {
+            document.getElementById('auth-modal').setAttribute('aria-hidden', 'false');
+            return;
+        }
+        if (currentUserData.credits < 1) {
+            showMessage('You have no credits left. Please buy a plan.', 'error');
+             setTimeout(() => { window.location.href = 'pricing.html'; }, 2000);
+            return;
+        }
+        isRegenerating = true;
+        generateImage();
+    };
 
-    if (regenerateBtn) {
-        regenerateBtn.addEventListener('click', () => {
-            const regeneratePromptInput = document.getElementById('regenerate-prompt-input');
-            const prompt = regeneratePromptInput.value.trim();
-            if (!prompt) {
-                showMessage('Please enter a prompt to regenerate.', 'error');
-                return;
-            }
-            const count = getGenerationCount();
-            const authModal = document.getElementById('auth-modal');
-            if (!auth.currentUser && count >= FREE_GENERATION_LIMIT) {
-                if (authModal) authModal.setAttribute('aria-hidden', 'false');
-                return;
-            }
-            isRegenerating = true;
-            grecaptcha.execute();
-        });
-    }
+    if (generateBtn) generateBtn.addEventListener('click', handleGenerateClick);
+    if (regenerateBtn) regenerateBtn.addEventListener('click', handleRegenerateClick);
 
     if (promptInput) {
         promptInput.addEventListener('keydown', (e) => {
@@ -323,13 +326,11 @@ async function handleEnhancePrompt() {
     }
 }
 
-async function generateImage(recaptchaToken) {
+async function generateImage() {
     const prompt = isRegenerating 
         ? document.getElementById('regenerate-prompt-input').value.trim() 
         : document.getElementById('prompt-input').value.trim();
     lastPrompt = prompt;
-    
-    const shouldBlur = !auth.currentUser && getGenerationCount() === (FREE_GENERATION_LIMIT - 1);
     
     // UI updates for generation start
     const imageGrid = document.getElementById('image-grid');
@@ -350,13 +351,13 @@ async function generateImage(recaptchaToken) {
         generatorUI.classList.add('hidden');
     }
     startTimer();
+    
+    await deductCredits(currentUser.uid, 1);
 
     try {
-        const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
-        if (shouldBlur) { lastGeneratedImageUrl = imageUrl; }
-        displayImage(imageUrl, prompt, shouldBlur);
-        incrementTotalGenerations();
-        if (!auth.currentUser) { incrementGenerationCount(); }
+        const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, selectedAspectRatio);
+        displayImage(imageUrl, prompt);
+        // No longer need to increment local storage count
     } catch (error) {
         console.error('Image generation failed:', error);
         showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
@@ -366,18 +367,17 @@ async function generateImage(recaptchaToken) {
         document.getElementById('regenerate-prompt-input').value = lastPrompt;
         postGenerationControls.classList.remove('hidden');
         addNavigationButtons();
-        grecaptcha.reset();
         isRegenerating = false;
     }
 }
 
-async function generateImageWithRetry(prompt, imageData, token, aspectRatio, maxRetries = 3) {
+async function generateImageWithRetry(prompt, imageData, aspectRatio, maxRetries = 3) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             const response = await fetch('/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, imageData, recaptchaToken: token, aspectRatio: aspectRatio })
+                body: JSON.stringify({ prompt, imageData, aspectRatio: aspectRatio })
             });
             if (!response.ok) {
                 const errorResult = await response.json();
@@ -402,67 +402,41 @@ async function generateImageWithRetry(prompt, imageData, token, aspectRatio, max
 
 // --- Authentication & User State ---
 
-function handleAuthAction() { if (auth.currentUser) signOut(auth); else signInWithGoogle(); }
-
-function signInWithGoogle() { 
-    const authModal = document.getElementById('auth-modal');
-    signInWithPopup(auth, provider)
-        .then(result => {
-            updateUIForAuthState(result.user);
-            if (authModal) authModal.setAttribute('aria-hidden', 'true');
-        })
-        .catch(error => console.error("Authentication Error:", error)); 
-}
-
-function updateUIForAuthState(user) {
-    const authBtn = document.getElementById('auth-btn');
-    const mobileAuthBtn = document.getElementById('mobile-auth-btn');
-    const generationCounterEl = document.getElementById('generation-counter');
-    const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
-    
-    if (user) {
-        const welcomeText = `Welcome, ${user.displayName.split(' ')[0]}`;
-        authBtn.textContent = 'Sign Out';
-        mobileAuthBtn.textContent = 'Sign Out';
-        generationCounterEl.textContent = welcomeText;
-        mobileGenerationCounterEl.textContent = welcomeText;
-        
-        if (lastGeneratedImageUrl) {
-            const blurredContainer = document.querySelector('.blurred-image-container');
-            if (blurredContainer) {
-                const img = blurredContainer.querySelector('img');
-                img.classList.remove('blurred-image');
-                const overlay = blurredContainer.querySelector('.unlock-overlay');
-                if (overlay) overlay.remove();
-            }
-            lastGeneratedImageUrl = null;
-        }
+function handleAuthAction() { 
+    if (currentUser) {
+        signOutUser();
     } else {
-        authBtn.textContent = 'Sign In';
-        mobileAuthBtn.textContent = 'Sign In';
-        updateGenerationCounter();
+        signInWithGoogle();
     }
 }
 
-function getGenerationCount() { return parseInt(localStorage.getItem('generationCount') || '0'); }
 
-function incrementGenerationCount() {
-    const newCount = getGenerationCount() + 1;
-    localStorage.setItem('generationCount', newCount);
-    updateGenerationCounter();
+function updateUIForAuthState(user, userData) {
+    const authBtn = document.getElementById('auth-btn');
+    const mobileAuthBtn = document.getElementById('mobile-auth-btn');
+    const creditCounterEl = document.getElementById('credit-counter');
+    const mobileCreditCounterEl = document.getElementById('mobile-credit-counter');
+    const welcomeMessageEl = document.getElementById('welcome-message');
+    const userInfoContainer = document.getElementById('user-info-container');
+    
+    if (user && userData) {
+        authBtn.textContent = 'Sign Out';
+        mobileAuthBtn.textContent = 'Sign Out';
+        userInfoContainer.classList.remove('hidden');
+        userInfoContainer.classList.add('flex');
+        
+        welcomeMessageEl.textContent = `Welcome, ${user.displayName.split(' ')[0]}`;
+        creditCounterEl.textContent = `Credits: ${userData.credits}`;
+        mobileCreditCounterEl.textContent = `Credits: ${userData.credits}`;
+    } else {
+        authBtn.textContent = 'Sign In';
+        mobileAuthBtn.textContent = 'Sign In';
+        userInfoContainer.classList.add('hidden');
+        welcomeMessageEl.textContent = '';
+        creditCounterEl.textContent = '';
+        mobileCreditCounterEl.textContent = '';
+    }
 }
-
-function updateGenerationCounter() {
-    if (auth.currentUser) return;
-    const count = getGenerationCount();
-    const remaining = Math.max(0, FREE_GENERATION_LIMIT - count);
-    const text = `${remaining} free generation${remaining !== 1 ? 's' : ''} left`;
-    const generationCounterEl = document.getElementById('generation-counter');
-    const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
-    if (generationCounterEl) generationCounterEl.textContent = text;
-    if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = text;
-}
-
 
 // --- UI & Utility Functions ---
 
@@ -487,22 +461,15 @@ function removeUploadedImage() {
     document.getElementById('prompt-input').placeholder = "An oil painting of a futuristic city skyline at dusk...";
 }
 
-async function incrementTotalGenerations() {
-    const counterRef = doc(db, "stats", "imageGenerations");
-    try { await setDoc(counterRef, { count: increment(1) }, { merge: true }); } catch (error) { console.error("Error incrementing generation count:", error); }
-}
-
-function displayImage(imageUrl, prompt, shouldBlur = false) {
+function displayImage(imageUrl, prompt) {
     const imageGrid = document.getElementById('image-grid');
     const imgContainer = document.createElement('div');
     imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
-    if (shouldBlur) { imgContainer.classList.add('blurred-image-container'); }
     
     const img = document.createElement('img');
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
-    if (shouldBlur) { img.classList.add('blurred-image'); }
     
     const downloadButton = document.createElement('button');
     downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
@@ -518,16 +485,7 @@ function displayImage(imageUrl, prompt, shouldBlur = false) {
     };
 
     imgContainer.appendChild(img);
-
-    if (!shouldBlur) { 
-        imgContainer.appendChild(downloadButton); 
-    } else {
-        const overlay = document.createElement('div');
-        overlay.className = 'unlock-overlay';
-        overlay.innerHTML = `<h3 class="text-xl font-semibold">Unlock Image</h3><p class="mt-2">Sign in to unlock this image and get unlimited generations.</p><button id="unlock-btn">Sign In to Unlock</button>`;
-        overlay.querySelector('#unlock-btn').onclick = () => { document.getElementById('auth-modal').setAttribute('aria-hidden', 'false'); };
-        imgContainer.appendChild(overlay);
-    }
+    imgContainer.appendChild(downloadButton);
     imageGrid.appendChild(imgContainer);
 }
 
