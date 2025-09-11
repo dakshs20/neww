@@ -121,46 +121,109 @@ function initializeUniversalScripts() {
 }
 
 function initializeGeneratorPage() {
-    // ... (All generator page event listeners remain largely the same)
-    document.getElementById('generate-btn').addEventListener('click', () => {
-        const prompt = document.getElementById('prompt-input').value.trim();
-        if (!prompt) return showMessage('Please describe what you want to create.', 'error');
-        isRegenerating = false;
-        triggerImageGeneration();
-    });
+    const promptInput = document.getElementById('prompt-input');
+    const generateBtn = document.getElementById('generate-btn');
+    const examplePrompts = document.querySelectorAll('.example-prompt');
+    const imageUploadBtn = document.getElementById('image-upload-btn');
+    const imageUploadInput = document.getElementById('image-upload-input');
+    const removeImageBtn = document.getElementById('remove-image-btn');
+    const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
+    const copyPromptBtn = document.getElementById('copy-prompt-btn');
+    const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
+    const regenerateBtn = document.getElementById('regenerate-btn');
+    const promptSuggestionsContainer = document.getElementById('prompt-suggestions');
+
+    if(examplePrompts) {
+        examplePrompts.forEach(button => {
+            button.addEventListener('click', () => {
+                promptInput.value = button.innerText.trim();
+                promptInput.focus();
+            });
+        });
+    }
+
+    if (generateBtn) {
+        generateBtn.addEventListener('click', () => {
+            const prompt = promptInput.value.trim();
+            if (!prompt) return showMessage('Please describe what you want to create.', 'error');
+            isRegenerating = false;
+            triggerImageGeneration();
+        });
+    }
     
-    document.getElementById('regenerate-btn').addEventListener('click', () => {
-        const prompt = document.getElementById('regenerate-prompt-input').value.trim();
-        if (!prompt) return showMessage('Please enter a prompt to regenerate.', 'error');
-        isRegenerating = true;
-        triggerImageGeneration();
-    });
-    // ... other listeners like enhance, copy, aspect ratio etc.
+    if (regenerateBtn) {
+        regenerateBtn.addEventListener('click', () => {
+            const prompt = document.getElementById('regenerate-prompt-input').value.trim();
+            if (!prompt) return showMessage('Please enter a prompt to regenerate.', 'error');
+            isRegenerating = true;
+            triggerImageGeneration();
+        });
+    }
+
+    if (promptInput) {
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generateBtn.click();
+            }
+        });
+
+        let suggestionTimeout;
+        promptInput.addEventListener('input', () => {
+            clearTimeout(suggestionTimeout);
+            const promptText = promptInput.value.trim();
+            if (promptText.length < 10) {
+                promptSuggestionsContainer.innerHTML = '';
+                promptSuggestionsContainer.classList.add('hidden');
+                return;
+            }
+            promptSuggestionsContainer.innerHTML = `<span class="text-sm text-gray-400 italic">AI is thinking of suggestions...</span>`;
+            promptSuggestionsContainer.classList.remove('hidden');
+            suggestionTimeout = setTimeout(() => fetchAiSuggestions(promptText), 300);
+        });
+
+        promptInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (promptSuggestionsContainer) {
+                    promptSuggestionsContainer.classList.add('hidden');
+                }
+            }, 150);
+        });
+    }
+
+    if(aspectRatioBtns) {
+        aspectRatioBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                aspectRatioBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedAspectRatio = btn.dataset.ratio;
+            });
+        });
+    }
+
+    if(copyPromptBtn) copyPromptBtn.addEventListener('click', copyPrompt);
+    if(enhancePromptBtn) enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
+    if(imageUploadBtn) imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
+    if(imageUploadInput) imageUploadInput.addEventListener('change', handleImageUpload);
+    if(removeImageBtn) removeImageBtn.addEventListener('click', removeUploadedImage);
 }
 
 
 // --- Authentication & User State ---
-
 async function handleUserLogin(user) {
     const userRef = doc(db, "users", user.uid);
-    
-    // Unsubscribe from previous listener if it exists
     if (unsubscribeUserDoc) {
         unsubscribeUserDoc();
     }
-
-    // Check if user document exists, create if not
     const userDoc = await getDoc(userRef);
     if (!userDoc.exists()) {
         await setDoc(userRef, {
             email: user.email,
             displayName: user.displayName,
             createdAt: new Date(),
-            credits: 5 // Give 5 free credits on first sign-up
+            credits: 5
         });
     }
-
-    // Listen for real-time updates to the user's document
     unsubscribeUserDoc = onSnapshot(userRef, (doc) => {
         if (doc.exists()) {
             const userData = doc.data();
@@ -169,7 +232,6 @@ async function handleUserLogin(user) {
             updateGenerateButtonState();
         }
     });
-
     updateUIForAuthState(user);
 }
 
@@ -206,7 +268,7 @@ function updateUIForAuthState(user) {
     } else {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
-        updateUICredits(); // Will show "Sign in for credits"
+        updateUICredits();
     }
 }
 
@@ -240,23 +302,104 @@ function updateGenerateButtonState() {
     }
 }
 
-// --- Image Generation Logic ---
+
+// --- AI & Generation Logic ---
+async function fetchAiSuggestions(promptText) {
+    const promptInput = document.getElementById('prompt-input');
+    const promptSuggestionsContainer = document.getElementById('prompt-suggestions');
+    if (promptText !== promptInput.value.trim()) return;
+
+    try {
+        const response = await fetch('/api/suggest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: promptText })
+        });
+        if (!response.ok) {
+            promptSuggestionsContainer.classList.add('hidden');
+            return;
+        }
+        const data = await response.json();
+        const relevantSuggestions = data.suggestions;
+        promptSuggestionsContainer.innerHTML = '';
+        if (relevantSuggestions && Array.isArray(relevantSuggestions) && relevantSuggestions.length > 0) {
+            relevantSuggestions.slice(0, 3).forEach(suggestionText => {
+                if(typeof suggestionText !== 'string') return;
+                const btn = document.createElement('button');
+                btn.className = 'prompt-suggestion-btn';
+                const cleanText = suggestionText.replace(/_/g, ' ').trim();
+                btn.textContent = `Add "${cleanText}"`;
+                btn.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); 
+                    const currentPrompt = promptInput.value.trim();
+                    promptInput.value = currentPrompt + (currentPrompt.endsWith(',') || currentPrompt.length === 0 ? ' ' : ', ') + cleanText;
+                    promptInput.focus();
+                    promptSuggestionsContainer.classList.add('hidden'); 
+                });
+                promptSuggestionsContainer.appendChild(btn);
+            });
+            if (promptSuggestionsContainer.children.length > 0) {
+                promptSuggestionsContainer.classList.remove('hidden');
+            }
+        } else {
+            promptSuggestionsContainer.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        promptSuggestionsContainer.classList.add('hidden');
+    }
+}
+
+async function handleEnhancePrompt() {
+    const promptInput = document.getElementById('prompt-input');
+    const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
+    const promptText = promptInput.value.trim();
+    if (!promptText) {
+        showMessage('Please enter a prompt to enhance.', 'info');
+        return;
+    }
+    const originalIcon = enhancePromptBtn.innerHTML;
+    const spinner = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+    enhancePromptBtn.innerHTML = spinner;
+    enhancePromptBtn.disabled = true;
+    try {
+        const response = await fetch('/api/enhance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: promptText })
+        });
+        if (!response.ok) {
+            const errorResult = await response.json();
+            throw new Error(errorResult.error || `API Error: ${response.status}`);
+        }
+        const result = await response.json();
+        if (result.text) {
+            promptInput.value = result.text;
+            promptInput.style.height = 'auto';
+            promptInput.style.height = (promptInput.scrollHeight) + 'px';
+        } else {
+            throw new Error("Unexpected response from enhancement API.");
+        }
+    } catch (error) {
+        console.error('Failed to enhance prompt:', error);
+        showMessage('Sorry, the prompt could not be enhanced.', 'error');
+    } finally {
+        enhancePromptBtn.innerHTML = originalIcon;
+        enhancePromptBtn.disabled = false;
+    }
+}
 
 async function triggerImageGeneration() {
     const user = auth.currentUser;
-
     if (!user) {
         document.getElementById('auth-modal')?.setAttribute('aria-hidden', 'false');
         return;
     }
-
     if (currentUserCredits <= 0) {
         showMessage('You are out of credits! Please purchase a plan to continue.', 'error');
-        // Maybe redirect to pricing page after a delay
         setTimeout(() => window.location.href = 'pricing.html', 2000);
         return;
     }
-
     const idToken = await user.getIdToken();
     generateImage(idToken);
 }
@@ -266,7 +409,6 @@ async function generateImage(idToken) {
         ? document.getElementById('regenerate-prompt-input').value.trim() 
         : document.getElementById('prompt-input').value.trim();
     
-    // UI updates for generation start
     const imageGrid = document.getElementById('image-grid');
     const messageBox = document.getElementById('message-box');
     const loadingIndicator = document.getElementById('loading-indicator');
@@ -297,12 +439,10 @@ async function generateImage(idToken) {
                 aspectRatio: selectedAspectRatio 
             })
         });
-
         if (!response.ok) {
             const errorResult = await response.json();
             throw new Error(errorResult.error || `API Error: ${response.status}`);
         }
-
         const result = await response.json();
         let base64Data;
         if (uploadedImageData) {
@@ -310,11 +450,8 @@ async function generateImage(idToken) {
         } else {
             base64Data = result.predictions?.[0]?.bytesBase64Encoded;
         }
-        
         if (!base64Data) throw new Error("No image data received from API.");
-        
         displayImage(`data:image/png;base64,${base64Data}`, lastPrompt);
-
     } catch (error) {
         console.error('Image generation failed:', error);
         showMessage(`Generation failed: ${error.message}`, 'error');
@@ -323,13 +460,33 @@ async function generateImage(idToken) {
         loadingIndicator.classList.add('hidden');
         document.getElementById('regenerate-prompt-input').value = lastPrompt;
         postGenerationControls.classList.remove('hidden');
+        addNavigationButtons();
         isRegenerating = false;
     }
 }
 
 
-// --- UI & Utility Functions (Largely Unchanged) ---
-// Note: Removed reCAPTCHA, localStorage, and blurring logic.
+// --- UI & Utility Functions ---
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        uploadedImageData = { mimeType: file.type, data: reader.result.split(',')[1] };
+        document.getElementById('image-preview').src = reader.result;
+        document.getElementById('image-preview-container').classList.remove('hidden');
+        document.getElementById('prompt-input').placeholder = "Describe the edits you want to make...";
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeUploadedImage() {
+    uploadedImageData = null;
+    document.getElementById('image-upload-input').value = '';
+    document.getElementById('image-preview-container').classList.add('hidden');
+    document.getElementById('image-preview').src = '';
+    document.getElementById('prompt-input').placeholder = "An oil painting of a futuristic city skyline at dusk...";
+}
 
 function displayImage(imageUrl, prompt) {
     const imageGrid = document.getElementById('image-grid');
@@ -358,8 +515,62 @@ function displayImage(imageUrl, prompt) {
 function showMessage(text, type = 'info') {
     const messageBox = document.getElementById('message-box');
     const color = type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700';
-    messageBox.innerHTML = `<div class="p-4 rounded-lg ${color} fade-in-slide-up">${text}</div>`;
-    setTimeout(() => messageBox.innerHTML = '', 5000);
+    const messageEl = document.createElement('div');
+    messageEl.className = `p-4 rounded-lg ${color} fade-in-slide-up`;
+    messageEl.textContent = text;
+    
+    // Clear previous messages before showing a new one
+    messageBox.innerHTML = '';
+    messageBox.appendChild(messageEl);
+
+    setTimeout(() => {
+        if(messageBox.contains(messageEl)) {
+             messageEl.remove();
+        }
+    }, 5000);
+}
+
+function addNavigationButtons() {
+    const messageBox = document.getElementById('message-box');
+    const existingButton = document.getElementById('start-new-btn');
+    if (existingButton) existingButton.remove();
+
+    const startNewButton = document.createElement('button');
+    startNewButton.id = 'start-new-btn';
+    startNewButton.textContent = '← Start New';
+    startNewButton.className = 'text-sm sm:text-base mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
+    startNewButton.onclick = () => {
+        document.getElementById('generator-ui').classList.remove('hidden');
+        document.getElementById('result-container').classList.add('hidden');
+        document.getElementById('image-grid').innerHTML = '';
+        document.getElementById('message-box').innerHTML = '';
+        document.getElementById('post-generation-controls').classList.add('hidden');
+        document.getElementById('prompt-input').value = '';
+        document.getElementById('regenerate-prompt-input').value = '';
+        removeUploadedImage();
+    };
+    messageBox.prepend(startNewButton);
+}
+
+function copyPrompt() {
+    const promptInput = document.getElementById('prompt-input');
+    const copyPromptBtn = document.getElementById('copy-prompt-btn');
+    const promptText = promptInput.value;
+    if (!promptText) {
+        showMessage('There is no prompt to copy.', 'info');
+        return;
+    }
+    navigator.clipboard.writeText(promptText).then(() => {
+        showMessage('Prompt copied to clipboard!', 'info');
+        const originalIcon = copyPromptBtn.innerHTML;
+        copyPromptBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        setTimeout(() => {
+            copyPromptBtn.innerHTML = originalIcon;
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+        showMessage('Failed to copy prompt.', 'error');
+    });
 }
 
 function startTimer() {
@@ -380,6 +591,4 @@ function stopTimer() {
     clearInterval(timerInterval);
     document.getElementById('progress-bar').style.width = '100%';
 }
-
-// ... (Add back other utility functions like handleImageUpload, enhancePrompt, etc. as they are unchanged)
 
