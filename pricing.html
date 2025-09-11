@@ -58,34 +58,34 @@
             <section class="w-full max-w-4xl fade-in-slide-up">
                 <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Get More Credits</h1>
                 <p class="text-lg md:text-xl text-gray-500 mb-12">Choose a plan to continue creating with GenArt. One credit equals one image generation.</p>
-                
-                <div id="pricing-plans-container" class="grid md:grid-cols-3 gap-8 text-left">
-                    <!-- Starter Plan -->
+                <div class="grid md:grid-cols-3 gap-8 text-left">
+                    <!-- Pricing Card 1 -->
                     <div class="bg-white p-8 rounded-2xl border border-gray-200/80 shadow-lg transform hover:scale-105 transition-transform duration-300">
                         <h2 class="text-2xl font-semibold text-gray-800 mb-2">Starter</h2>
-                        <p class="text-4xl font-bold text-gray-900 mb-4">$6</p>
+                        <p class="text-4xl font-bold text-gray-900 mb-4">₹499</p>
                         <p class="text-gray-500 mb-6 font-semibold">600 Credits</p>
-                        <button class="purchase-btn w-full bg-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-black transition-colors" data-plan="starter" data-credits="600">Purchase Plan</button>
+                        <button data-plan="starter" class="purchase-btn w-full bg-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-black transition-colors duration-300">Buy Now</button>
                     </div>
 
-                    <!-- Pro Plan -->
+                    <!-- Pricing Card 2 -->
                     <div class="bg-white p-8 rounded-2xl border-2 border-blue-500 shadow-xl transform hover:scale-105 transition-transform duration-300 relative">
                         <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">POPULAR</div>
                         <h2 class="text-2xl font-semibold text-gray-800 mb-2">Pro</h2>
-                        <p class="text-4xl font-bold text-gray-900 mb-4">$12</p>
+                        <p class="text-4xl font-bold text-gray-900 mb-4">₹999</p>
                         <p class="text-gray-500 mb-6 font-semibold">1200 Credits</p>
-                        <button class="purchase-btn w-full bg-blue-500 text-white font-semibold py-3 rounded-lg hover:bg-blue-600 transition-colors" data-plan="pro" data-credits="1200">Purchase Plan</button>
+                        <button data-plan="pro" class="purchase-btn w-full bg-blue-500 text-white font-semibold py-3 rounded-lg hover:bg-blue-600 transition-colors duration-300">Buy Now</button>
                     </div>
 
-                    <!-- Mega Plan -->
+                    <!-- Pricing Card 3 -->
                      <div class="bg-white p-8 rounded-2xl border border-gray-200/80 shadow-lg transform hover:scale-105 transition-transform duration-300">
                         <h2 class="text-2xl font-semibold text-gray-800 mb-2">Mega</h2>
-                        <p class="text-4xl font-bold text-gray-900 mb-4">$35</p>
+                        <p class="text-4xl font-bold text-gray-900 mb-4">₹2999</p>
                         <p class="text-gray-500 mb-6 font-semibold">4000 Credits</p>
-                        <button class="purchase-btn w-full bg-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-black transition-colors" data-plan="mega" data-credits="4000">Purchase Plan</button>
+                        <button data-plan="mega" class="purchase-btn w-full bg-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-black transition-colors duration-300">Buy Now</button>
                     </div>
                 </div>
-                <div id="pricing-message" class="mt-8 text-center"></div>
+                
+                <p class="mt-12 text-gray-400 italic">You will be redirected to our secure payment gateway.</p>
             </section>
         </main>
 
@@ -102,3 +102,4 @@
     <script type="module" src="pricing.js"></script>
 </body>
 </html>
+
