@@ -4,8 +4,15 @@
 
 import { admin } from './firebase-admin-config.js';
 import Razorpay from 'razorpay';
+import { randomBytes } from 'crypto';
 
 export default async function handler(req, res) {
+    // Add a check to ensure Firebase Admin initialized correctly.
+    if (!admin.apps.length) {
+        console.error("Firebase Admin SDK is not initialized.");
+        return res.status(500).json({ error: 'Server configuration error.' });
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
@@ -28,10 +35,13 @@ export default async function handler(req, res) {
             key_secret: process.env.RAZORPAY_KEY_SECRET,
         });
 
+        // CORE FIX: Generate a shorter receipt ID to stay within Razorpay's 40-character limit.
+        const shortReceiptId = `rcpt_${randomBytes(8).toString('hex')}`;
+
         const options = {
-            amount: amount * 100, // CORE FIX: Convert amount (e.g., ₹499) to smallest unit (49900 paisa)
-            currency: 'INR',      // CORE FIX: Set currency to INR to match your Razorpay account
-            receipt: `receipt_${uid}_${Date.now()}`,
+            amount: amount * 100, // Convert amount (e.g., ₹499) to smallest unit (49900 paisa)
+            currency: 'INR',      // Set currency to INR to match your Razorpay account
+            receipt: shortReceiptId,
             notes: {
                 userId: uid,
                 planName: name
