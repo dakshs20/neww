@@ -1,10 +1,9 @@
-// --- UPDATED ---
-// This file now correctly converts the dollar amount to cents for Razorpay.
-// It also includes more detailed server-side error logging.
+// --- UPDATED & FINAL ---
+// This file correctly uses INR as the currency and converts the amount to the 
+// smallest unit (paisa) to align with Razorpay's requirements.
 
 import { admin } from './firebase-admin-config.js';
 import Razorpay from 'razorpay';
-import crypto from 'crypto';
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -19,19 +18,19 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Missing required parameters.' });
         }
         
-        // This is a critical step: Verify the user's token with Firebase Admin
+        // Securely verify the user's identity with Firebase Admin SDK
         const decodedToken = await admin.auth().verifyIdToken(idToken);
         const uid = decodedToken.uid;
         
-        // Initialize Razorpay
+        // Initialize Razorpay with server-side credentials
         const razorpay = new Razorpay({
             key_id: process.env.RAZORPAY_KEY_ID,
             key_secret: process.env.RAZORPAY_KEY_SECRET,
         });
 
         const options = {
-            amount: amount * 100, // FIX: Convert amount to the smallest currency unit (cents)
-            currency: 'USD',
+            amount: amount * 100, // CORE FIX: Convert amount (e.g., ₹499) to smallest unit (49900 paisa)
+            currency: 'INR',      // CORE FIX: Set currency to INR to match your Razorpay account
             receipt: `receipt_${uid}_${Date.now()}`,
             notes: {
                 userId: uid,
@@ -39,22 +38,26 @@ export default async function handler(req, res) {
             }
         };
         
-        // Await the order creation from Razorpay
         const order = await razorpay.orders.create(options);
         
         if (!order) {
-            console.error("Razorpay order creation failed: No order returned.");
+            console.error("Razorpay order creation failed: No order object was returned from the API.");
             return res.status(500).json({ error: 'Razorpay order creation failed.' });
         }
         
+        // Send the complete order details back to the frontend
         res.status(200).json(order);
 
     } catch (error) {
-        // Log the detailed error on the server for debugging
-        console.error("Error in /api/create-order:", error);
+        console.error("Critical Error in /api/create-order:", error);
         
-        // Send a generic error message to the client
-        res.status(500).json({ error: 'Could not create order.', details: error.message });
+        // Provide more specific feedback if Razorpay gives a detailed error
+        if (error.error && error.error.description) {
+             return res.status(500).json({ error: `Razorpay Error: ${error.error.description}` });
+        }
+        
+        // Generic fallback error
+        res.status(500).json({ error: 'Could not create payment order.', details: error.message });
     }
 }
 
