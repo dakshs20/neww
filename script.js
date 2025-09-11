@@ -53,16 +53,71 @@ function initializeUniversalScripts() {
         }
     });
 
-    // ... (rest of universal scripts like mobile menu, cursor, music player remain the same)
+    // Mobile menu logic
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const mobileMenu = document.getElementById('mobile-menu');
     if (mobileMenuBtn && mobileMenu) {
         mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        document.addEventListener('click', (event) => {
+            if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
     }
+
+    // Auth buttons
     document.getElementById('auth-btn')?.addEventListener('click', handleAuthAction);
     document.getElementById('mobile-auth-btn')?.addEventListener('click', handleAuthAction);
     document.getElementById('google-signin-btn')?.addEventListener('click', signInWithGoogle);
     document.getElementById('close-modal-btn')?.addEventListener('click', () => document.getElementById('auth-modal')?.setAttribute('aria-hidden', 'true'));
+
+    // Music Player Logic
+    const musicBtn = document.getElementById('music-btn');
+    const lofiMusic = document.getElementById('lofi-music');
+     if (musicBtn && lofiMusic) {
+        musicBtn.addEventListener('click', () => {
+            const isPlaying = musicBtn.classList.contains('playing');
+            if (isPlaying) {
+                lofiMusic.pause();
+            } else {
+                lofiMusic.play().catch(error => console.error("Audio playback failed:", error));
+            }
+            musicBtn.classList.toggle('playing');
+        });
+    }
+
+    // Custom Cursor Logic
+    const cursorDot = document.querySelector('.cursor-dot');
+    const cursorOutline = document.querySelector('.cursor-outline');
+
+    if (cursorDot && cursorOutline) {
+        let mouseX = 0, mouseY = 0;
+        let outlineX = 0, outlineY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        const animateCursor = () => {
+            cursorDot.style.left = `${mouseX}px`;
+            cursorDot.style.top = `${mouseY}px`;
+
+            const ease = 0.15;
+            outlineX += (mouseX - outlineX) * ease;
+            outlineY += (mouseY - outlineY) * ease;
+            cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+
+            requestAnimationFrame(animateCursor);
+        };
+        requestAnimationFrame(animateCursor);
+
+        const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
+            el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
+        });
+    }
 }
 
 function initializeGeneratorPage() {
@@ -327,3 +382,4 @@ function stopTimer() {
 }
 
 // ... (Add back other utility functions like handleImageUpload, enhancePrompt, etc. as they are unchanged)
+
