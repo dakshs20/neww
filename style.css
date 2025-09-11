@@ -469,100 +469,6 @@ textarea::-webkit-scrollbar-thumb:hover {
     transform: translateY(-1px);
 }
 
-/* --- VERSE PAGE STYLES --- */
-#chat-history {
-    scrollbar-width: thin;
-    scrollbar-color: #d1d5db #f9fafb;
-}
-
-#chat-history::-webkit-scrollbar {
-    width: 8px;
-}
-
-#chat-history::-webkit-scrollbar-track {
-    background: #f9fafb;
-}
-
-#chat-history::-webkit-scrollbar-thumb {
-    background-color: #d1d5db;
-    border-radius: 10px;
-    border: 3px solid #f9fafb;
-}
-
-.chat-bubble {
-    max-width: 80%;
-    padding: 0.75rem 1rem;
-    border-radius: 1rem;
-    text-align: left;
-    word-wrap: break-word;
-}
-
-.user-bubble {
-    background-color: #e5e7eb;
-    color: #1f2937;
-    margin-left: auto;
-    border-bottom-right-radius: 0.25rem;
-}
-
-.bot-bubble {
-    background-color: #eff6ff;
-    color: #1e40af;
-    margin-right: auto;
-    border-bottom-left-radius: 0.25rem;
-}
-
-/* Typing Indicator */
-.typing-indicator span {
-    height: 8px;
-    width: 8px;
-    background-color: #93c5fd;
-    border-radius: 50%;
-    display: inline-block;
-    animation: bounce 1.4s infinite ease-in-out both;
-}
-
-.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1.0); }
-}
-
-/* Prose styles for bot messages */
-.prose {
-    font-size: 1rem;
-    line-height: 1.6;
-}
-.prose p { margin: 0.5em 0; }
-.prose h1, .prose h2, .prose h3 { margin: 1em 0 0.5em; font-weight: 600; }
-.prose ul, .prose ol { margin: 1em 0; padding-left: 1.5em; }
-.prose li > p { margin: 0.2em 0; }
-.prose strong { font-weight: 600; }
-.prose em { font-style: italic; }
-.prose a { color: #2563eb; text-decoration: underline; }
-
-/* Answer Length Buttons */
-.answer-length-btn {
-    padding: 4px 12px;
-    border-radius: 9999px;
-    border: 1px solid #e5e7eb;
-    background-color: #ffffff;
-    color: #6b7280;
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-.answer-length-btn:hover {
-    border-color: #d1d5db;
-    color: #111827;
-}
-.answer-length-btn.selected {
-    border-color: #3b82f6;
-    background-color: #eff6ff;
-    color: #2563eb;
-}
-
 
 @media (max-width: 768px) {
     body {
@@ -590,9 +496,4 @@ textarea::-webkit-scrollbar-thumb:hover {
         width: 56px;
         height: 56px;
     }
-
-    .chat-bubble {
-        max-width: 90%;
-    }
 }
-
