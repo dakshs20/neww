@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Your web app's Firebase configuration
+// Your web app's Firebase configuration - REPLACE WITH YOURS
 const firebaseConfig = {
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
     authDomain: "genart-a693a.firebaseapp.com",
@@ -36,9 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-/**
- * Initializes scripts that run on every page (e.g., header, auth, cursor).
- */
 function initializeUniversalScripts() {
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const mobileMenu = document.getElementById('mobile-menu');
@@ -79,10 +76,7 @@ function initializeUniversalScripts() {
 
     if (cursorDot && cursorOutline) {
         let mouseX = 0, mouseY = 0, outlineX = 0, outlineY = 0;
-        window.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX;
-            mouseY = e.clientY;
-        });
+        window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
         const animateCursor = () => {
             cursorDot.style.left = `${mouseX}px`;
             cursorDot.style.top = `${mouseY}px`;
@@ -93,7 +87,6 @@ function initializeUniversalScripts() {
             requestAnimationFrame(animateCursor);
         };
         requestAnimationFrame(animateCursor);
-
         document.querySelectorAll('a, button, textarea, input, label').forEach(el => {
             el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
             el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
@@ -123,7 +116,6 @@ function initializeGeneratorPage() {
                 generateBtn.click();
             }
         });
-        // ... (suggestion logic remains the same)
     }
 
     document.querySelectorAll('.aspect-ratio-btn').forEach(btn => {
@@ -159,9 +151,13 @@ async function updateUIForAuthState(user) {
         document.getElementById('auth-modal').setAttribute('aria-hidden', 'true');
 
         try {
-            const idToken = await user.getIdToken();
+            const idToken = await user.getIdToken(true); // Force refresh
             const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${idToken}` } });
-            if (!response.ok) throw new Error('Failed to fetch credits');
+            if (!response.ok) {
+                 const errorBody = await response.text();
+                 console.error("Credit fetch failed with status:", response.status, "and body:", errorBody);
+                 throw new Error('Failed to fetch credits');
+            }
             const data = await response.json();
             userCredits = data.credits;
             updateCreditDisplay();
@@ -195,14 +191,11 @@ function handleImageGenerationRequest(isRegen) {
     }
 
     if (userCredits <= 0) {
-        // FIX: Always reset to the main view first.
         resetToGeneratorView();
-
-        // Then, show the persistent error message in the main view's message box.
         setTimeout(() => {
             const messageContent = `You're out of credits. <a href="pricing.html" class="font-bold underline hover:text-red-800">Buy more</a> to continue creating.`;
             showMessage(messageContent, 'error', true);
-        }, 100); // Timeout allows the DOM to update.
+        }, 100);
         return;
     }
 
@@ -236,14 +229,15 @@ async function generateImage(prompt) {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, idToken, selectedAspectRatio);
         displayImage(imageUrl, prompt);
 
-        userCredits--;
+        userCredits--; // Deduct locally first for UI speed
         updateCreditDisplay();
         incrementTotalGenerations();
 
     } catch (error) {
         console.error('Image generation failed:', error);
         showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
-        if (auth.currentUser) updateUIForAuthState(auth.currentUser); // Refresh credits on failure
+        // If generation failed, refresh credits from server to ensure sync
+        if (auth.currentUser) updateUIForAuthState(auth.currentUser);
     } finally {
         stopTimer();
         loadingIndicator.classList.add('hidden');
@@ -280,7 +274,7 @@ function showMessage(htmlContent, type = 'info', persistent = false) {
     const messageBox = document.getElementById('message-box');
     const messageEl = document.createElement('div');
     messageEl.className = `p-4 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} fade-in-slide-up`;
-    messageEl.innerHTML = htmlContent; // Use innerHTML to render the link
+    messageEl.innerHTML = htmlContent;
     messageBox.innerHTML = '';
     messageBox.appendChild(messageEl);
 
@@ -301,15 +295,12 @@ function resetToGeneratorView() {
     document.getElementById('prompt-input').value = '';
     document.getElementById('regenerate-prompt-input').value = '';
     removeUploadedImage();
-    // Do not clear the message box here, as it might be used for the credits error.
 }
 
 function updateCreditDisplay() {
     const creditText = `Credits: ${userCredits}`;
-    const generationCounterEl = document.getElementById('generation-counter');
-    const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
-    if (generationCounterEl) generationCounterEl.textContent = creditText;
-    if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = creditText;
+    document.getElementById('generation-counter').textContent = creditText;
+    document.getElementById('mobile-generation-counter').textContent = creditText;
 }
 
 function handleImageUpload(event) {
@@ -341,28 +332,21 @@ async function incrementTotalGenerations() {
 function displayImage(imageUrl, prompt) {
     const imageGrid = document.getElementById('image-grid');
     const imgContainer = document.createElement('div');
-    imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
-
+    imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border';
     const img = document.createElement('img');
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
-
     const downloadButton = document.createElement('button');
-    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
-    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-    downloadButton.ariaLabel = "Download Image";
+    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100';
+    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
     downloadButton.onclick = () => {
         const a = document.createElement('a');
         a.href = imageUrl;
         a.download = 'genart-image.png';
-        document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
     };
-
-    imgContainer.appendChild(img);
-    imgContainer.appendChild(downloadButton);
+    imgContainer.append(img, downloadButton);
     imageGrid.appendChild(imgContainer);
 }
 
@@ -374,10 +358,10 @@ function addNavigationButtons() {
     const startNewButton = document.createElement('button');
     startNewButton.id = 'start-new-btn';
     startNewButton.textContent = '← Start New';
-    startNewButton.className = 'text-sm sm:text-base mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
+    startNewButton.className = 'text-sm sm:text-base mt-4 text-blue-600 font-semibold hover:text-blue-800';
     startNewButton.onclick = () => {
         resetToGeneratorView();
-        messageBox.innerHTML = ''; // Clear message box when starting new
+        messageBox.innerHTML = '';
     };
     messageBox.prepend(startNewButton);
 }
@@ -385,12 +369,11 @@ function addNavigationButtons() {
 function copyPrompt() {
     const promptInput = document.getElementById('prompt-input');
     const copyPromptBtn = document.getElementById('copy-prompt-btn');
-    const promptText = promptInput.value;
-    if (!promptText) return;
-    navigator.clipboard.writeText(promptText).then(() => {
-        showMessage('Prompt copied to clipboard!', 'info');
+    if (!promptInput.value) return;
+    navigator.clipboard.writeText(promptInput.value).then(() => {
+        showMessage('Prompt copied!', 'info');
         const originalIcon = copyPromptBtn.innerHTML;
-        copyPromptBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        copyPromptBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
         setTimeout(() => { copyPromptBtn.innerHTML = originalIcon; }, 2000);
     });
 }
@@ -399,7 +382,7 @@ function startTimer() {
     const timerEl = document.getElementById('timer');
     const progressBar = document.getElementById('progress-bar');
     let startTime = Date.now();
-    const maxTime = 17 * 1000;
+    const maxTime = 17000;
     progressBar.style.width = '0%';
     timerInterval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
@@ -411,79 +394,32 @@ function startTimer() {
 
 function stopTimer() {
     clearInterval(timerInterval);
-    const progressBar = document.getElementById('progress-bar');
-    if (progressBar) progressBar.style.width = '100%';
+    document.getElementById('progress-bar').style.width = '100%';
 }
 
 async function handleEnhancePrompt() {
     const promptInput = document.getElementById('prompt-input');
     const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
-    const promptText = promptInput.value.trim();
-    if (!promptText) {
-        showMessage('Please enter a prompt to enhance.', 'info');
-        return;
-    }
+    if (!promptInput.value.trim()) return showMessage('Please enter a prompt to enhance.', 'info');
+    
     const originalIcon = enhancePromptBtn.innerHTML;
-    const spinner = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24" 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
-    enhancePromptBtn.innerHTML = spinner;
+    enhancePromptBtn.innerHTML = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
     enhancePromptBtn.disabled = true;
+
     try {
         const response = await fetch('/api/enhance', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: promptText })
+            body: JSON.stringify({ prompt: promptInput.value })
         });
-        if (!response.ok) throw new Error('Failed to enhance prompt');
+        if (!response.ok) throw new Error('API request failed');
         const result = await response.json();
-        if (result.text) {
-            promptInput.value = result.text;
-            promptInput.style.height = 'auto';
-            promptInput.style.height = (promptInput.scrollHeight) + 'px';
-        }
+        promptInput.value = result.text;
     } catch (error) {
-        console.error('Failed to enhance prompt:', error);
-        showMessage('Sorry, the prompt could not be enhanced right now.', 'error');
+        showMessage('Could not enhance prompt.', 'error');
     } finally {
         enhancePromptBtn.innerHTML = originalIcon;
         enhancePromptBtn.disabled = false;
-    }
-}
-
-// Dummy fetchAiSuggestions function if not present
-async function fetchAiSuggestions(promptText) {
-    const promptSuggestionsContainer = document.getElementById('prompt-suggestions');
-    try {
-        const response = await fetch('/api/suggest', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: promptText })
-        });
-        if (!response.ok) {
-            promptSuggestionsContainer.classList.add('hidden');
-            return;
-        }
-        const data = await response.json();
-        const suggestions = data.suggestions;
-        promptSuggestionsContainer.innerHTML = '';
-        if (suggestions && suggestions.length > 0) {
-            suggestions.forEach(suggestion => {
-                const btn = document.createElement('button');
-                btn.className = 'prompt-suggestion-btn';
-                btn.textContent = `Add "${suggestion}"`;
-                btn.onclick = () => {
-                    const promptInput = document.getElementById('prompt-input');
-                    promptInput.value += `, ${suggestion}`;
-                    promptSuggestionsContainer.classList.add('hidden');
-                };
-                promptSuggestionsContainer.appendChild(btn);
-            });
-            promptSuggestionsContainer.classList.remove('hidden');
-        } else {
-            promptSuggestionsContainer.classList.add('hidden');
-        }
-    } catch (error) {
-        console.error('Error fetching suggestions:', error);
-        promptSuggestionsContainer.classList.add('hidden');
     }
 }
 
