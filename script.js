@@ -26,7 +26,7 @@ let uploadedImageData = null;
 let selectedAspectRatio = '1:1';
 let isRegenerating = false;
 let lastPrompt = '';
-let userCredits = 0; // NEW: Variable to hold user's credit balance
+let userCredits = 0;
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -71,8 +71,14 @@ function initializeUniversalScripts() {
     if (mobileAuthBtn) mobileAuthBtn.addEventListener('click', handleAuthAction);
     if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
     if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
-    if (closeCreditsModalBtn && outOfCreditsModal) closeCreditsModalBtn.addEventListener('click', () => outOfCreditsModal.setAttribute('aria-hidden', 'true'));
-
+    
+    // UPDATED LOGIC: When closing the credits modal, go back to the main generator UI.
+    if (closeCreditsModalBtn && outOfCreditsModal) {
+        closeCreditsModalBtn.addEventListener('click', () => {
+            outOfCreditsModal.setAttribute('aria-hidden', 'true');
+            resetToGeneratorView(); // Go back to the main screen
+        });
+    }
 
     if (musicBtn && lofiMusic) {
         musicBtn.addEventListener('click', () => {
@@ -183,7 +189,6 @@ function initializeGeneratorPage() {
 
     if(copyPromptBtn) copyPromptBtn.addEventListener('click', copyPrompt);
     if(enhancePromptBtn) enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
-
     if(imageUploadBtn) imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
     if(imageUploadInput) imageUploadInput.addEventListener('change', handleImageUpload);
     if(removeImageBtn) removeImageBtn.addEventListener('click', removeUploadedImage);
@@ -212,7 +217,7 @@ async function updateUIForAuthState(user) {
             const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${idToken}` } });
             if (!response.ok) throw new Error('Failed to fetch credits');
             const data = await response.json();
-            userCredits = data.credits; // Store credits
+            userCredits = data.credits;
             const creditText = `Credits: ${userCredits}`;
             if (generationCounterEl) generationCounterEl.textContent = creditText;
             if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = creditText;
@@ -225,7 +230,7 @@ async function updateUIForAuthState(user) {
     } else {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
-        userCredits = 0; // Reset credits on sign out
+        userCredits = 0;
         const defaultText = 'Sign in for credits';
         if (generationCounterEl) generationCounterEl.textContent = defaultText;
         if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = defaultText;
@@ -244,7 +249,6 @@ function handleImageGenerationRequest(isRegen) {
         return;
     }
 
-    // CORE LOGIC: Check auth and credits before generating
     if (!auth.currentUser) {
         document.getElementById('auth-modal').setAttribute('aria-hidden', 'false');
         return;
@@ -255,7 +259,6 @@ function handleImageGenerationRequest(isRegen) {
         return;
     }
     
-    // If all checks pass, proceed to generate the image
     generateImage(prompt);
 }
 
@@ -287,7 +290,6 @@ async function generateImage(prompt) {
         const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, idToken, selectedAspectRatio);
         displayImage(imageUrl, prompt);
         
-        // Update credits locally and on UI immediately for responsiveness
         userCredits--;
         updateCreditDisplay();
         
@@ -296,7 +298,6 @@ async function generateImage(prompt) {
     } catch (error) {
         console.error('Image generation failed:', error);
         showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
-        // If generation fails, refresh credits from server to ensure accuracy
         if (auth.currentUser) updateUIForAuthState(auth.currentUser);
     } finally {
         stopTimer();
@@ -315,7 +316,7 @@ async function generateImageWithRetry(prompt, imageData, token, aspectRatio, max
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` // Send auth token
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ prompt, imageData, aspectRatio: aspectRatio })
             });
@@ -339,7 +340,6 @@ async function generateImageWithRetry(prompt, imageData, token, aspectRatio, max
     }
 }
 
-// ... Rest of the functions (fetchAiSuggestions, handleEnhancePrompt, UI functions etc.) remain the same
 async function fetchAiSuggestions(promptText) {
     const promptInput = document.getElementById('prompt-input');
     const promptSuggestionsContainer = document.getElementById('prompt-suggestions');
@@ -421,6 +421,21 @@ async function handleEnhancePrompt() {
 }
 
 // --- UI & Utility Functions ---
+
+/**
+ * NEW: A reusable function to reset the UI to the main generator screen.
+ */
+function resetToGeneratorView() {
+    document.getElementById('generator-ui').classList.remove('hidden');
+    document.getElementById('result-container').classList.add('hidden');
+    document.getElementById('image-grid').innerHTML = '';
+    document.getElementById('message-box').innerHTML = '';
+    document.getElementById('post-generation-controls').classList.add('hidden');
+    document.getElementById('prompt-input').value = '';
+    document.getElementById('regenerate-prompt-input').value = '';
+    removeUploadedImage();
+}
+
 
 function updateCreditDisplay() {
     const creditText = `Credits: ${userCredits}`;
@@ -507,16 +522,7 @@ function addNavigationButtons() {
     startNewButton.id = 'start-new-btn';
     startNewButton.textContent = '← Start New';
     startNewButton.className = 'text-sm sm:text-base mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
-    startNewButton.onclick = () => {
-        document.getElementById('generator-ui').classList.remove('hidden');
-        document.getElementById('result-container').classList.add('hidden');
-        document.getElementById('image-grid').innerHTML = '';
-        document.getElementById('message-box').innerHTML = '';
-        document.getElementById('post-generation-controls').classList.add('hidden');
-        document.getElementById('prompt-input').value = '';
-        document.getElementById('regenerate-prompt-input').value = '';
-        removeUploadedImage();
-    };
+    startNewButton.onclick = resetToGeneratorView; // Use the new reusable function
     messageBox.prepend(startNewButton);
 }
 
