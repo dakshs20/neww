@@ -1,113 +1,103 @@
+import admin from 'firebase-admin';
 import crypto from 'crypto';
-import { getAuth } from 'firebase-admin/auth';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
 
-// Initialize Firebase Admin SDK
+// --- Secure Firebase Admin Initialization ---
+// This code block ensures that your connection to the Firebase database is
+// initialized only once per server instance. This is a critical step for
+// performance and to prevent errors in a serverless environment.
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-if (!getApps().length) {
-  initializeApp({
-    credential: cert(serviceAccount)
-  });
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+  } catch (error) {
+    console.error('Firebase admin initialization error', error.stack);
+  }
 }
 
-// PayU Configuration from Environment Variables
-const PAYU_KEY = process.env.PAYU_CLIENT_ID;
-const PAYU_SALT = process.env.PAYU_SECRET_KEY;
-// Use the production URL. For testing, you would use 'https://test.payu.in/_payment'
-const PAYU_API_URL = 'https://secure.payu.in/_payment'; 
-const SURL = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/payu-callback?status=success`;
-const FURL = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/payu-callback?status=failure`;
-
+// The main function that handles all incoming requests to this API endpoint.
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
+  // We only allow POST requests, as this is a secure action.
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  try {
+    // --- STEP 1: Verify the User is Signed In (Security) ---
+    // This is a crucial security check. We get the user's ID token from the
+    // request header and use Firebase Admin to verify that it's a valid token
+    // from a real, signed-in user. This prevents unauthorized payment attempts.
+    const { authorization } = req.headers;
+    if (!authorization || !authorization.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized: No token provided.' });
+    }
+    const idToken = authorization.split('Bearer ')[1];
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { uid } = decodedToken;
+
+    // --- STEP 2: Get Payment Details from the Frontend ---
+    // We receive the plan details (amount, credits) and user details
+    // that the frontend sent in its request.
+    const { amount, credits, firstname, email } = req.body;
+    if (!amount || !credits || !firstname || !email) {
+      return res.status(400).json({ error: 'Missing required payment information.' });
     }
 
-    // Check for essential environment variables
-    if (!PAYU_KEY || !PAYU_SALT || !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-        console.error("Missing required server environment variables (PayU or Firebase).");
-        return res.status(500).json({ error: "Server configuration error." });
+    // --- STEP 3: Prepare All Details for the PayU Transaction ---
+    // We get your secret PayU keys from the secure environment variables.
+    const key = process.env.PAYU_CLIENT_ID;
+    const salt = process.env.PAYU_SECRET_KEY;
+    
+    // Create a unique transaction ID. This is essential for tracking the payment.
+    const txnid = `txn-${uid}-${Date.now()}`;
+    
+    // We create a 'productinfo' string that includes the number of credits and the user's ID.
+    // This is how we'll know who to give credits to when PayU sends us a success signal.
+    const productinfo = `${credits}_${uid}_${email}`;
+    
+    // These are the URLs PayU will use to send the user back to our site after the payment.
+    const surl = `${req.headers.origin}/api/payu-callback`; // Success URL
+    const furl = `${req.headers.origin}/api/payu-callback`; // Failure URL
+
+    // --- STEP 4: Generate the Secure Hash (The Most Critical Step) ---
+    // PayU requires a 'hash' to be sent with every payment request. This hash is a
+    // unique signature created using your secret key and the transaction details.
+    // It proves that the request is legitimate and hasn't been tampered with.
+    // This MUST be done on the server, never on the frontend.
+    const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
+    const hash = crypto.createHash('sha512').update(hashString).digest('hex');
+
+    // --- STEP 5: Send the Complete Payment Package to the Frontend ---
+    // We package up all the data PayU needs, including the secure hash, and
+    // send it back to the `pricing.js` script in the browser.
+    const paymentData = {
+      paymentUrl: 'https://secure.payu.in/_payment', // PayU's live payment server URL
+      params: {
+        key: key,
+        txnid: txnid,
+        amount: amount,
+        productinfo: productinfo,
+        firstname: firstname,
+        email: email,
+        phone: '9999999999', // A placeholder phone number is required by PayU
+        surl: surl,
+        furl: furl,
+        hash: hash,
+      }
+    };
+
+    // The frontend will now use this data to redirect the user to PayU.
+    res.status(200).json(paymentData);
+
+  } catch (error) {
+    // This block catches any errors, like an invalid user token or a server issue,
+    // and sends back a proper error message.
+    console.error('Error in /api/payu:', error);
+    if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
+        return res.status(401).json({ error: 'Unauthorized: Invalid or expired token.' });
     }
-
-    try {
-        const { amount, productinfo, firstname, email } = req.body;
-        const idToken = req.headers.authorization?.split('Bearer ')[1];
-
-        if (!idToken) {
-            return res.status(401).json({ error: 'User not authenticated' });
-        }
-
-        // Verify the user's token using Firebase Admin SDK
-        const decodedToken = await getAuth().verifyIdToken(idToken);
-        const uid = decodedToken.uid;
-        
-        // Generate a unique transaction ID
-        const txnid = `TXN-${uid.slice(0, 5)}-${Date.now()}`;
-
-        // Create the hash string in the correct format required by PayU
-        const hashString = `${PAYU_KEY}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${PAYU_SALT}`;
-        const hash = crypto.createHash('sha512').update(hashString).digest('hex');
-
-        // Construct the form data to be sent to PayU
-        const paymentData = {
-            key: PAYU_KEY,
-            txnid,
-            amount,
-            productinfo,
-            firstname,
-            email,
-            phone: '9999999999', // A placeholder phone number is often required
-            surl: SURL,
-            furl: FURL,
-            hash,
-        };
-        
-        // **CRUCIAL CHANGE: We don't fetch an API. We need to send the user to PayU with the data.**
-        // PayU's standard integration requires POSTing a form from the client or redirecting.
-        // A server-to-server API call might not return a redirect URL.
-        // Instead, we will send back the payment data and the URL, and let the frontend create and submit a form.
-        // This is a more compatible and standard way to integrate.
-
-        // Create a temporary form on the frontend to post to PayU
-        const formBody = Object.entries(paymentData)
-            .map(([key, value]) => `<input type="hidden" name="${key}" value="${value}" />`)
-            .join('');
-
-        const formHtml = `
-            <html>
-                <head>
-                    <title>Redirecting to PayU...</title>
-                </head>
-                <body>
-                    <p>Please wait while we redirect you to the payment page...</p>
-                    <form action="${PAYU_API_URL}" method="post" id="payuForm">
-                        ${formBody}
-                    </form>
-                    <script type="text/javascript">
-                        document.getElementById('payuForm').submit();
-                    </script>
-                </body>
-            </html>
-        `;
-        
-        // Instead of a JSON with redirectUrl, we send back HTML to perform the redirect.
-        // Let's adjust the logic slightly. The BEST way is to send the parameters back to the client
-        // and have the client build the form.
-        
-        res.status(200).json({
-            success: true,
-            redirect: false, // The client will handle the form submission
-            paymentData,
-            paymentUrl: PAYU_API_URL
-        });
-
-
-    } catch (error) {
-        console.error("Error in /api/payu:", error);
-        if (error.code === 'auth/id-token-expired') {
-            return res.status(401).json({ error: 'Authentication token has expired. Please sign in again.' });
-        }
-        res.status(500).json({ error: 'An internal server error occurred.', details: error.message });
-    }
+    return res.status(500).json({ error: 'An internal server error occurred.' });
+  }
 }
 
