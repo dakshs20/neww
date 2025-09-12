@@ -23,40 +23,21 @@ const provider = new GoogleAuthProvider();
 // --- Global State ---
 let timerInterval;
 let uploadedImageData = null;
-let lastGeneratedImageUrl = null;
 let selectedAspectRatio = '1:1';
 let isRegenerating = false;
 let lastPrompt = '';
-let userCredits = 0; // Tracks the user's current credit balance
-
-// --- reCAPTCHA Callback ---
-window.onRecaptchaSuccess = function(token) {
-    // This function is called by reCAPTCHA on success and triggers the generation process
-    handleImageGenerationRequest(token);
-};
-
+let userCredits = 0; // NEW: Variable to hold user's credit balance
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     initializeUniversalScripts();
-
-    // Page-specific initialization
     if (document.getElementById('generator-ui')) {
         initializeGeneratorPage();
     }
-
-    // Check for payment status from URL on page load
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('payment') === 'success') {
-        showMessage('Payment successful! Your credits have been added.', 'info');
-    } else if (urlParams.get('payment') === 'failed' || urlParams.get('payment') === 'error') {
-        showMessage('Payment failed or was cancelled. Please try again.', 'error');
-    }
 });
 
-
 /**
- * Initializes scripts that run on every page (e.g., header, auth, modals).
+ * Initializes scripts that run on every page (e.g., header, auth, cursor).
  */
 function initializeUniversalScripts() {
     // --- DOM Element References ---
@@ -67,7 +48,7 @@ function initializeUniversalScripts() {
     const authModal = document.getElementById('auth-modal');
     const googleSignInBtn = document.getElementById('google-signin-btn');
     const closeModalBtn = document.getElementById('close-modal-btn');
-    const creditsModal = document.getElementById('credits-modal');
+    const outOfCreditsModal = document.getElementById('out-of-credits-modal');
     const closeCreditsModalBtn = document.getElementById('close-credits-modal-btn');
     const musicBtn = document.getElementById('music-btn');
     const lofiMusic = document.getElementById('lofi-music');
@@ -79,13 +60,18 @@ function initializeUniversalScripts() {
 
     if (mobileMenuBtn && mobileMenu) {
         mobileMenuBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        document.addEventListener('click', (event) => {
+            if (!mobileMenu.contains(event.target) && !mobileMenuBtn.contains(event.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
     }
 
     if (authBtn) authBtn.addEventListener('click', handleAuthAction);
     if (mobileAuthBtn) mobileAuthBtn.addEventListener('click', handleAuthAction);
     if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
     if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
-    if (closeCreditsModalBtn) closeCreditsModalBtn.addEventListener('click', () => creditsModal.setAttribute('aria-hidden', 'true'));
+    if (closeCreditsModalBtn && outOfCreditsModal) closeCreditsModalBtn.addEventListener('click', () => outOfCreditsModal.setAttribute('aria-hidden', 'true'));
 
 
     if (musicBtn && lofiMusic) {
@@ -101,21 +87,58 @@ function initializeUniversalScripts() {
     }
 
     if (cursorDot && cursorOutline) {
-       // Your existing cursor logic here...
+        let mouseX = 0, mouseY = 0;
+        let outlineX = 0, outlineY = 0;
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        const animateCursor = () => {
+            cursorDot.style.left = `${mouseX}px`;
+            cursorDot.style.top = `${mouseY}px`;
+            const ease = 0.15;
+            outlineX += (mouseX - outlineX) * ease;
+            outlineY += (mouseY - outlineY) * ease;
+            cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+            requestAnimationFrame(animateCursor);
+        };
+        requestAnimationFrame(animateCursor);
+
+        const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
+            el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
+        });
     }
 }
-
 
 /**
  * Initializes scripts specific to the main generator page.
  */
 function initializeGeneratorPage() {
-    const generateBtn = document.getElementById('generate-btn');
-    const regenerateBtn = document.getElementById('regenerate-btn');
     const promptInput = document.getElementById('prompt-input');
+    const generateBtn = document.getElementById('generate-btn');
+    const examplePrompts = document.querySelectorAll('.example-prompt');
+    const imageUploadBtn = document.getElementById('image-upload-btn');
+    const imageUploadInput = document.getElementById('image-upload-input');
+    const removeImageBtn = document.getElementById('remove-image-btn');
+    const aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
+    const copyPromptBtn = document.getElementById('copy-prompt-btn');
+    const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
+    const regenerateBtn = document.getElementById('regenerate-btn');
+    const promptSuggestionsContainer = document.getElementById('prompt-suggestions');
 
-    if (generateBtn) generateBtn.addEventListener('click', () => grecaptcha.execute());
-    if (regenerateBtn) regenerateBtn.addEventListener('click', () => grecaptcha.execute());
+    if (generateBtn) generateBtn.addEventListener('click', () => handleImageGenerationRequest(false));
+    if (regenerateBtn) regenerateBtn.addEventListener('click', () => handleImageGenerationRequest(true));
+    
+    if(examplePrompts) {
+        examplePrompts.forEach(button => {
+            button.addEventListener('click', () => {
+                promptInput.value = button.innerText.trim();
+                promptInput.focus();
+            });
+        });
+    }
     
     if (promptInput) {
         promptInput.addEventListener('keydown', (e) => {
@@ -124,201 +147,177 @@ function initializeGeneratorPage() {
                 generateBtn.click();
             }
         });
-        // Your other prompt input listeners (e.g., for suggestions) can go here
-    }
-    // All other generator page specific initializations...
-}
 
-
-/**
- * Main gatekeeper for starting an image generation.
- * Checks auth and credits before proceeding.
- */
-async function handleImageGenerationRequest(recaptchaToken) {
-    if (!auth.currentUser) {
-        document.getElementById('auth-modal').setAttribute('aria-hidden', 'false');
-        grecaptcha.reset();
-        return;
-    }
-
-    if (userCredits <= 0) {
-        document.getElementById('credits-modal').setAttribute('aria-hidden', 'false');
-        grecaptcha.reset();
-        return;
-    }
-
-    // Deduct credit on the backend FIRST
-    try {
-        const idToken = await auth.currentUser.getIdToken();
-        const response = await fetch('/api/credits', {
-            method: 'PATCH',
-            headers: { 'Authorization': `Bearer ${idToken}` }
+        let suggestionTimeout;
+        promptInput.addEventListener('input', () => {
+            clearTimeout(suggestionTimeout);
+            const promptText = promptInput.value.trim();
+            if (promptText.length < 10) {
+                promptSuggestionsContainer.innerHTML = '';
+                promptSuggestionsContainer.classList.add('hidden');
+                return;
+            }
+            promptSuggestionsContainer.innerHTML = `<span class="text-sm text-gray-400 italic">AI is thinking...</span>`;
+            promptSuggestionsContainer.classList.remove('hidden');
+            suggestionTimeout = setTimeout(() => fetchAiSuggestions(promptText), 300);
         });
 
-        if (!response.ok) {
-            if (response.status === 402) { // 402 Payment Required
-                document.getElementById('credits-modal').setAttribute('aria-hidden', 'false');
-            } else {
-                showMessage('Error connecting to credit server. Please try again.', 'error');
-            }
-            grecaptcha.reset();
-            return;
-        }
-
-        const data = await response.json();
-        userCredits = data.newBalance;
-        updateCreditDisplay();
-
-        // If deduction is successful, proceed to generate the image
-        await generateImage(recaptchaToken);
-
-    } catch (error) {
-        console.error('Credit deduction failed:', error);
-        showMessage('Could not process request due to a credit system error.', 'error');
-        grecaptcha.reset();
+        promptInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (promptSuggestionsContainer) {
+                    promptSuggestionsContainer.classList.add('hidden');
+                }
+            }, 150);
+        });
     }
+
+    if(aspectRatioBtns) {
+        aspectRatioBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                aspectRatioBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedAspectRatio = btn.dataset.ratio;
+            });
+        });
+    }
+
+    if(copyPromptBtn) copyPromptBtn.addEventListener('click', copyPrompt);
+    if(enhancePromptBtn) enhancePromptBtn.addEventListener('click', handleEnhancePrompt);
+
+    if(imageUploadBtn) imageUploadBtn.addEventListener('click', () => imageUploadInput.click());
+    if(imageUploadInput) imageUploadInput.addEventListener('change', handleImageUpload);
+    if(removeImageBtn) removeImageBtn.addEventListener('click', removeUploadedImage);
 }
 
-/**
- * Executes the actual API call to generate an image.
- */
-async function generateImage(recaptchaToken) {
-    const prompt = isRegenerating 
-        ? document.getElementById('regenerate-prompt-input').value.trim() 
-        : document.getElementById('prompt-input').value.trim();
-    lastPrompt = prompt;
-    
-    // UI updates for generation start
-    const imageGrid = document.getElementById('image-grid');
-    const messageBox = document.getElementById('message-box');
-    const loadingIndicator = document.getElementById('loading-indicator');
-    const resultContainer = document.getElementById('result-container');
-    const generatorUI = document.getElementById('generator-ui');
+// --- Authentication & User State ---
+function handleAuthAction() { if (auth.currentUser) signOut(auth); else signInWithGoogle(); }
 
-    imageGrid.innerHTML = '';
-    messageBox.innerHTML = '';
-    loadingIndicator.classList.remove('hidden');
-    resultContainer.classList.remove('hidden');
-    generatorUI.classList.add('hidden');
-    startTimer();
-
-    try {
-        const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, recaptchaToken, selectedAspectRatio);
-        displayImage(imageUrl, prompt, false);
-        incrementTotalGenerations();
-    } catch (error) {
-        console.error('Image generation failed:', error);
-        showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
-        await refundCredit(); // IMPORTANT: Refund credit on failure
-    } finally {
-        stopTimer();
-        loadingIndicator.classList.add('hidden');
-        document.getElementById('regenerate-prompt-input').value = lastPrompt;
-        document.getElementById('post-generation-controls').classList.remove('hidden');
-        addNavigationButtons();
-        grecaptcha.reset();
-        isRegenerating = false;
-    }
-}
-
-
-// --- Authentication & Credit Management ---
-
-function handleAuthAction() {
-    if (auth.currentUser) {
-        signOut(auth);
-    } else {
-        signInWithGoogle();
-    }
-}
-
-function signInWithGoogle() {
-    const authModal = document.getElementById('auth-modal');
-    signInWithPopup(auth, provider)
-        .then(() => {
-            if (authModal) authModal.setAttribute('aria-hidden', 'true');
-        })
-        .catch(error => console.error("Authentication Error:", error));
+function signInWithGoogle() { 
+    signInWithPopup(auth, provider).catch(error => console.error("Auth Error:", error)); 
 }
 
 async function updateUIForAuthState(user) {
     const authBtn = document.getElementById('auth-btn');
     const mobileAuthBtn = document.getElementById('mobile-auth-btn');
-    const creditDisplay = document.getElementById('generation-counter');
-    const mobileCreditDisplay = document.getElementById('mobile-generation-counter');
+    const generationCounterEl = document.getElementById('generation-counter');
+    const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
     
     if (user) {
         authBtn.textContent = 'Sign Out';
         mobileAuthBtn.textContent = 'Sign Out';
-        await fetchUserCredits();
+        document.getElementById('auth-modal').setAttribute('aria-hidden', 'true');
+        
+        try {
+            const idToken = await user.getIdToken();
+            const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${idToken}` } });
+            if (!response.ok) throw new Error('Failed to fetch credits');
+            const data = await response.json();
+            userCredits = data.credits; // Store credits
+            const creditText = `Credits: ${userCredits}`;
+            if (generationCounterEl) generationCounterEl.textContent = creditText;
+            if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = creditText;
+        } catch (error) {
+            console.error("Credit fetch error:", error);
+            const errorText = 'Credits: Error';
+            if (generationCounterEl) generationCounterEl.textContent = errorText;
+            if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = errorText;
+        }
     } else {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
-        userCredits = 0;
-        const text = 'Sign in for credits';
-        if (creditDisplay) creditDisplay.textContent = text;
-        if (mobileCreditDisplay) mobileCreditDisplay.textContent = text;
+        userCredits = 0; // Reset credits on sign out
+        const defaultText = 'Sign in for credits';
+        if (generationCounterEl) generationCounterEl.textContent = defaultText;
+        if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = defaultText;
     }
 }
 
-async function fetchUserCredits() {
-    if (!auth.currentUser) return;
+// --- AI & Generation Logic ---
+
+function handleImageGenerationRequest(isRegen) {
+    isRegenerating = isRegen;
+    const promptInput = isRegenerating ? document.getElementById('regenerate-prompt-input') : document.getElementById('prompt-input');
+    const prompt = promptInput.value.trim();
+    
+    if (!prompt) {
+        showMessage('Please describe what you want to create or edit.', 'error');
+        return;
+    }
+
+    // CORE LOGIC: Check auth and credits before generating
+    if (!auth.currentUser) {
+        document.getElementById('auth-modal').setAttribute('aria-hidden', 'false');
+        return;
+    }
+
+    if (userCredits <= 0) {
+        document.getElementById('out-of-credits-modal').setAttribute('aria-hidden', 'false');
+        return;
+    }
+    
+    // If all checks pass, proceed to generate the image
+    generateImage(prompt);
+}
+
+
+async function generateImage(prompt) {
+    lastPrompt = prompt;
+    
+    const imageGrid = document.getElementById('image-grid');
+    const messageBox = document.getElementById('message-box');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const postGenerationControls = document.getElementById('post-generation-controls');
+    const resultContainer = document.getElementById('result-container');
+    const generatorUI = document.getElementById('generator-ui');
+
+    imageGrid.innerHTML = '';
+    messageBox.innerHTML = '';
+    if (isRegenerating) {
+        loadingIndicator.classList.remove('hidden');
+        postGenerationControls.classList.add('hidden');
+    } else {
+        resultContainer.classList.remove('hidden');
+        loadingIndicator.classList.remove('hidden');
+        generatorUI.classList.add('hidden');
+    }
+    startTimer();
+
     try {
         const idToken = await auth.currentUser.getIdToken();
-        const response = await fetch('/api/credits', {
-            headers: { 'Authorization': `Bearer ${idToken}` }
-        });
-        if (!response.ok) throw new Error('Failed to fetch credits');
-        const data = await response.json();
-        userCredits = data.credits;
+        const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, idToken, selectedAspectRatio);
+        displayImage(imageUrl, prompt);
+        
+        // Update credits locally and on UI immediately for responsiveness
+        userCredits--;
         updateCreditDisplay();
+        
+        incrementTotalGenerations();
+
     } catch (error) {
-        console.error('Error fetching credits:', error);
-        const creditDisplay = document.getElementById('generation-counter');
-        if (creditDisplay) creditDisplay.textContent = 'Credits: Error';
+        console.error('Image generation failed:', error);
+        showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
+        // If generation fails, refresh credits from server to ensure accuracy
+        if (auth.currentUser) updateUIForAuthState(auth.currentUser);
+    } finally {
+        stopTimer();
+        loadingIndicator.classList.add('hidden');
+        document.getElementById('regenerate-prompt-input').value = lastPrompt;
+        postGenerationControls.classList.remove('hidden');
+        addNavigationButtons();
+        isRegenerating = false;
     }
 }
-
-function updateCreditDisplay() {
-    const text = `Credits: ${userCredits}`;
-    const creditDisplay = document.getElementById('generation-counter');
-    const mobileCreditDisplay = document.getElementById('mobile-generation-counter');
-    if (creditDisplay) creditDisplay.textContent = text;
-    if (mobileCreditDisplay) mobileCreditDisplay.textContent = text;
-}
-
-async function refundCredit() {
-    if (!auth.currentUser) return;
-    try {
-        const idToken = await auth.currentUser.getIdToken();
-        const response = await fetch('/api/credits', {
-            method: 'POST',
-            headers: { 
-                'Authorization': `Bearer ${idToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ amount: 1 }) // Add 1 credit back
-        });
-        if (response.ok) {
-            await fetchUserCredits(); // Refetch credits to ensure sync
-            showMessage("Image generation failed. Your credit has been refunded.", "info");
-        }
-    } catch (error) {
-        console.error("Failed to refund credit:", error);
-    }
-}
-
-
-// --- All other existing functions (generateImageWithRetry, displayImage, showMessage, etc.) ---
-// --- Note: The old localStorage-based generation counter logic has been removed. ---
 
 async function generateImageWithRetry(prompt, imageData, token, aspectRatio, maxRetries = 3) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             const response = await fetch('/api/generate', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, imageData, recaptchaToken: token, aspectRatio: aspectRatio })
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` // Send auth token
+                },
+                body: JSON.stringify({ prompt, imageData, aspectRatio: aspectRatio })
             });
             if (!response.ok) {
                 const errorResult = await response.json();
@@ -340,6 +339,123 @@ async function generateImageWithRetry(prompt, imageData, token, aspectRatio, max
     }
 }
 
+// ... Rest of the functions (fetchAiSuggestions, handleEnhancePrompt, UI functions etc.) remain the same
+async function fetchAiSuggestions(promptText) {
+    const promptInput = document.getElementById('prompt-input');
+    const promptSuggestionsContainer = document.getElementById('prompt-suggestions');
+    if (promptText !== promptInput.value.trim()) return;
+
+    try {
+        const response = await fetch('/api/suggest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: promptText })
+        });
+        if (!response.ok) {
+            promptSuggestionsContainer.classList.add('hidden');
+            return;
+        }
+        const data = await response.json();
+        const relevantSuggestions = data.suggestions;
+        promptSuggestionsContainer.innerHTML = '';
+        if (relevantSuggestions && Array.isArray(relevantSuggestions) && relevantSuggestions.length > 0) {
+            relevantSuggestions.slice(0, 3).forEach(suggestionText => {
+                if(typeof suggestionText !== 'string') return;
+                const btn = document.createElement('button');
+                btn.className = 'prompt-suggestion-btn';
+                const cleanText = suggestionText.replace(/_/g, ' ').trim();
+                btn.textContent = `Add "${cleanText}"`;
+                btn.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); 
+                    const currentPrompt = promptInput.value.trim();
+                    promptInput.value = currentPrompt + (currentPrompt.endsWith(',') || currentPrompt.length === 0 ? ' ' : ', ') + cleanText;
+                    promptInput.focus();
+                    promptSuggestionsContainer.classList.add('hidden'); 
+                });
+                promptSuggestionsContainer.appendChild(btn);
+            });
+            if (promptSuggestionsContainer.children.length > 0) {
+                promptSuggestionsContainer.classList.remove('hidden');
+            }
+        } else {
+            promptSuggestionsContainer.classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        promptSuggestionsContainer.classList.add('hidden');
+    }
+}
+
+async function handleEnhancePrompt() {
+    const promptInput = document.getElementById('prompt-input');
+    const enhancePromptBtn = document.getElementById('enhance-prompt-btn');
+    const promptText = promptInput.value.trim();
+    if (!promptText) {
+        showMessage('Please enter a prompt to enhance.', 'info');
+        return;
+    }
+    const originalIcon = enhancePromptBtn.innerHTML;
+    const spinner = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+    enhancePromptBtn.innerHTML = spinner;
+    enhancePromptBtn.disabled = true;
+    try {
+        const response = await fetch('/api/enhance', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: promptText })
+        });
+        if (!response.ok) throw new Error('Failed to enhance prompt');
+        const result = await response.json();
+        if (result.text) {
+            promptInput.value = result.text;
+            promptInput.style.height = 'auto';
+            promptInput.style.height = (promptInput.scrollHeight) + 'px';
+        }
+    } catch (error) {
+        console.error('Failed to enhance prompt:', error);
+        showMessage('Sorry, the prompt could not be enhanced right now.', 'error');
+    } finally {
+        enhancePromptBtn.innerHTML = originalIcon;
+        enhancePromptBtn.disabled = false;
+    }
+}
+
+// --- UI & Utility Functions ---
+
+function updateCreditDisplay() {
+    const creditText = `Credits: ${userCredits}`;
+    const generationCounterEl = document.getElementById('generation-counter');
+    const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
+    if (generationCounterEl) generationCounterEl.textContent = creditText;
+    if (mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = creditText;
+}
+
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        uploadedImageData = { mimeType: file.type, data: reader.result.split(',')[1] };
+        document.getElementById('image-preview').src = reader.result;
+        document.getElementById('image-preview-container').classList.remove('hidden');
+        document.getElementById('prompt-input').placeholder = "Describe the edits you want to make...";
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeUploadedImage() {
+    uploadedImageData = null;
+    document.getElementById('image-upload-input').value = '';
+    document.getElementById('image-preview-container').classList.add('hidden');
+    document.getElementById('image-preview').src = '';
+    document.getElementById('prompt-input').placeholder = "An oil painting of a futuristic city skyline at dusk...";
+}
+
+async function incrementTotalGenerations() {
+    const counterRef = doc(db, "stats", "imageGenerations");
+    try { await setDoc(counterRef, { count: increment(1) }, { merge: true }); } catch (error) { console.error("Error incrementing gen count:", error); }
+}
+
 function displayImage(imageUrl, prompt) {
     const imageGrid = document.getElementById('image-grid');
     const imgContainer = document.createElement('div');
@@ -358,25 +474,34 @@ function displayImage(imageUrl, prompt) {
         const a = document.createElement('a');
         a.href = imageUrl;
         a.download = 'genart-image.png';
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
     };
 
-    imgContainer.append(img, downloadButton);
+    imgContainer.appendChild(img);
+    imgContainer.appendChild(downloadButton);
     imageGrid.appendChild(imgContainer);
 }
 
 function showMessage(text, type = 'info') {
-    const messageBox = document.getElementById('message-box') || document.body;
+    const messageBox = document.getElementById('message-box');
     const messageEl = document.createElement('div');
-    messageEl.className = `p-4 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} fade-in-slide-up fixed top-5 right-5 z-50`;
+    messageEl.className = `p-4 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} fade-in-slide-up`;
     messageEl.textContent = text;
-    document.body.appendChild(messageEl);
-    setTimeout(() => messageEl.remove(), 4000);
+    messageBox.innerHTML = '';
+    messageBox.appendChild(messageEl);
+    setTimeout(() => {
+        if(messageBox.contains(messageEl)) {
+            messageBox.removeChild(messageEl);
+        }
+    }, 4000);
 }
 
 function addNavigationButtons() {
     const messageBox = document.getElementById('message-box');
-    if (document.getElementById('start-new-btn')) return;
+    const existingButton = document.getElementById('start-new-btn');
+    if (existingButton) existingButton.remove();
 
     const startNewButton = document.createElement('button');
     startNewButton.id = 'start-new-btn';
@@ -385,8 +510,27 @@ function addNavigationButtons() {
     startNewButton.onclick = () => {
         document.getElementById('generator-ui').classList.remove('hidden');
         document.getElementById('result-container').classList.add('hidden');
+        document.getElementById('image-grid').innerHTML = '';
+        document.getElementById('message-box').innerHTML = '';
+        document.getElementById('post-generation-controls').classList.add('hidden');
+        document.getElementById('prompt-input').value = '';
+        document.getElementById('regenerate-prompt-input').value = '';
+        removeUploadedImage();
     };
     messageBox.prepend(startNewButton);
+}
+
+function copyPrompt() {
+    const promptInput = document.getElementById('prompt-input');
+    const copyPromptBtn = document.getElementById('copy-prompt-btn');
+    const promptText = promptInput.value;
+    if (!promptText) return;
+    navigator.clipboard.writeText(promptText).then(() => {
+        showMessage('Prompt copied to clipboard!', 'info');
+        const originalIcon = copyPromptBtn.innerHTML;
+        copyPromptBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        setTimeout(() => { copyPromptBtn.innerHTML = originalIcon; }, 2000);
+    });
 }
 
 function startTimer() {
@@ -400,9 +544,6 @@ function startTimer() {
         const progress = Math.min(elapsedTime / maxTime, 1);
         progressBar.style.width = `${progress * 100}%`;
         timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
-        if (elapsedTime >= maxTime) {
-            timerEl.textContent = `17.0s / ~17s`;
-        }
     }, 100);
 }
 
@@ -410,11 +551,5 @@ function stopTimer() {
     clearInterval(timerInterval);
     const progressBar = document.getElementById('progress-bar');
     if (progressBar) progressBar.style.width = '100%';
-}
-
-async function incrementTotalGenerations() {
-    const counterRef = doc(db, "stats", "imageGenerations");
-    try { await setDoc(counterRef, { count: increment(1) }, { merge: true }); } 
-    catch (error) { console.error("Error incrementing total generation count:", error); }
 }
 
