@@ -72,11 +72,11 @@ function initializeUniversalScripts() {
     if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
     if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
     
-    // UPDATED LOGIC: When closing the credits modal, go back to the main generator UI.
+    // FIXED LOGIC: When closing the credits modal, go back to the main generator UI.
     if (closeCreditsModalBtn && outOfCreditsModal) {
         closeCreditsModalBtn.addEventListener('click', () => {
             outOfCreditsModal.setAttribute('aria-hidden', 'true');
-            resetToGeneratorView(); // Go back to the main screen
+            resetToGeneratorView(); // This function resets the view to the main page.
         });
     }
 
@@ -423,7 +423,7 @@ async function handleEnhancePrompt() {
 // --- UI & Utility Functions ---
 
 /**
- * NEW: A reusable function to reset the UI to the main generator screen.
+ * A reusable function to reset the UI to the main generator screen.
  */
 function resetToGeneratorView() {
     document.getElementById('generator-ui').classList.remove('hidden');
