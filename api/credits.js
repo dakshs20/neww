@@ -1,59 +1,83 @@
 import admin from 'firebase-admin';
 
-// --- Firebase Admin Initialization ---
-// This ensures we only initialize the app ONCE, preventing errors in a serverless environment.
+// This is the service account key you generate from Firebase > Project Settings > Service Accounts
+// It MUST be stored as an environment variable (e.g., in Vercel/Netlify) and not directly in the code.
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+
+// --- Secure Firebase Admin Initialization ---
+// This check prevents the app from crashing in a serverless environment by ensuring
+// Firebase Admin is only initialized once.
 if (!admin.apps.length) {
   try {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
   } catch (error) {
-    console.error('Firebase Admin Initialization Error:', error);
+    console.error('Firebase admin initialization error', error.stack);
   }
 }
 
 const db = admin.firestore();
 
 export default async function handler(req, res) {
-    if (req.method !== 'GET') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
+  // 1. --- Verify User Authentication ---
+  const { authorization } = req.headers;
+  if (!authorization || !authorization.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided.' });
+  }
+  const idToken = authorization.split('Bearer ')[1];
+
+  let decodedToken;
+  try {
+    decodedToken = await admin.auth().verifyIdToken(idToken);
+  } catch (error) {
+    console.error('Error verifying Firebase ID token:', error);
+    return res.status(401).json({ error: 'Unauthorized: Invalid token.' });
+  }
+
+  const { uid } = decodedToken;
+  const userDocRef = db.collection('users').doc(uid);
+
+  // 2. --- Handle Request based on Method ---
+  try {
+    if (req.method === 'GET') {
+      // --- Get User Credits ---
+      const docSnap = await userDocRef.get();
+
+      if (!docSnap.exists) {
+        // If user document doesn't exist, create it with 25 initial credits.
+        await userDocRef.set({ credits: 25 });
+        return res.status(200).json({ credits: 25 });
+      } else {
+        // If user exists, return their current credit balance.
+        return res.status(200).json({ credits: docSnap.data().credits });
+      }
+
+    } else if (req.method === 'POST') {
+      // --- Deduct One Credit ---
+      const docSnap = await userDocRef.get();
+      
+      if (!docSnap.exists || docSnap.data().credits <= 0) {
+        // Prevent deduction if user has no document or no credits.
+        return res.status(400).json({ error: 'Insufficient credits.' });
+      }
+
+      // Atomically decrement the credit count by 1.
+      await userDocRef.update({
+        credits: admin.firestore.FieldValue.increment(-1)
+      });
+      
+      const updatedSnap = await userDocRef.get();
+      return res.status(200).json({ success: true, newCredits: updatedSnap.data().credits });
+
+    } else {
+      // Handle unsupported HTTP methods
+      res.setHeader('Allow', ['GET', 'POST']);
+      return res.status(405).end(`Method ${req.method} Not Allowed`);
     }
-
-    // Check if the Firebase Admin SDK was initialized correctly
-    if (!admin.apps.length) {
-        return res.status(500).json({ error: 'Firebase Admin SDK not initialized. Check server logs.' });
-    }
-
-    try {
-        const { authorization } = req.headers;
-        if (!authorization || !authorization.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'Unauthorized: No token provided' });
-        }
-
-        const idToken = authorization.split('Bearer ')[1];
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
-        const uid = decodedToken.uid;
-
-        const userDocRef = db.collection('users').doc(uid);
-        const userDoc = await userDoc.get();
-
-        if (!userDoc.exists) {
-            // New user: Grant 25 free credits
-            await userDocRef.set({ credits: 25 });
-            return res.status(200).json({ credits: 25 });
-        } else {
-            // Existing user: Return their current credits
-            const credits = userDoc.data().credits || 0;
-            return res.status(200).json({ credits: credits });
-        }
-
-    } catch (error) {
-        console.error('Error fetching credits:', error);
-        if (error.code === 'auth/id-token-expired') {
-            return res.status(401).json({ error: 'Unauthorized: Token expired' });
-        }
-        return res.status(500).json({ error: 'Internal Server Error', details: error.message });
-    }
+  } catch (error) {
+    console.error('API Error in /api/credits:', error);
+    return res.status(500).json({ error: 'An internal server error occurred.' });
+  }
 }
 
