@@ -72,10 +72,9 @@ function initializeUniversalScripts() {
     if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
     if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
     
-    // FIXED LOGIC: When closing the credits modal, redirect to the main page.
-    if (closeCreditsModalBtn && outOfCreditsModal) {
+    // FINAL FIX: When "Not now" is clicked, force a redirect to the main page.
+    if (closeCreditsModalBtn) {
         closeCreditsModalBtn.addEventListener('click', () => {
-            // This forces a page reload to the main generator screen.
             window.location.href = 'index.html'; 
         });
     }
@@ -421,10 +420,6 @@ async function handleEnhancePrompt() {
 }
 
 // --- UI & Utility Functions ---
-
-/**
- * A reusable function to reset the UI to the main generator screen.
- */
 function resetToGeneratorView() {
     document.getElementById('generator-ui').classList.remove('hidden');
     document.getElementById('result-container').classList.add('hidden');
@@ -522,7 +517,7 @@ function addNavigationButtons() {
     startNewButton.id = 'start-new-btn';
     startNewButton.textContent = '← Start New';
     startNewButton.className = 'text-sm sm:text-base mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
-    startNewButton.onclick = resetToGeneratorView; // Use the new reusable function
+    startNewButton.onclick = resetToGeneratorView;
     messageBox.prepend(startNewButton);
 }
 
