@@ -1,11 +1,7 @@
-// --- UPDATED & FINAL ---
-// This version implements the "Out of Credits" modal popup logic.
-// It checks the user's credits on the frontend for immediate feedback
-// and also handles the 403 error from the backend for robustness.
-
+// Import Firebase modules
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -27,16 +23,19 @@ const provider = new GoogleAuthProvider();
 // --- Global State ---
 let timerInterval;
 let uploadedImageData = null;
+let lastGeneratedImageUrl = null;
 let selectedAspectRatio = '1:1';
 let isRegenerating = false;
 let lastPrompt = '';
-let userCredits = null; // To hold the user's current credit count.
-let unsubscribeUserCredits; // To hold the listener unsub function.
+let currentUserCredits = 0;
+let unsubscribeCreditsListener = null;
+
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     initializeUniversalScripts();
 
+    // Page-specific initialization
     if (document.getElementById('generator-ui')) {
         initializeGeneratorPage();
     }
@@ -60,10 +59,6 @@ function initializeUniversalScripts() {
     const cursorDot = document.querySelector('.cursor-dot');
     const cursorOutline = document.querySelector('.cursor-outline');
     
-    // Add references for the new credits modal
-    const creditsModal = document.getElementById('credits-modal');
-    const closeCreditsModalBtn = document.getElementById('close-credits-modal-btn');
-
     // --- Event Listeners ---
     onAuthStateChanged(auth, user => updateUIForAuthState(user));
 
@@ -80,11 +75,6 @@ function initializeUniversalScripts() {
     if (mobileAuthBtn) mobileAuthBtn.addEventListener('click', handleAuthAction);
     if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
     if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
-    
-    // Add event listener to close the credits modal
-    if (closeCreditsModalBtn && creditsModal) {
-        closeCreditsModalBtn.addEventListener('click', () => creditsModal.setAttribute('aria-hidden', 'true'));
-    }
 
     if (musicBtn && lofiMusic) {
         musicBtn.addEventListener('click', () => {
@@ -97,8 +87,7 @@ function initializeUniversalScripts() {
             musicBtn.classList.toggle('playing');
         });
     }
-    
-    // --- Custom Cursor Logic ---
+
     if (cursorDot && cursorOutline) {
         let mouseX = 0, mouseY = 0;
         let outlineX = 0, outlineY = 0;
@@ -153,8 +142,30 @@ function initializeGeneratorPage() {
         });
     }
 
-    if (generateBtn) generateBtn.addEventListener('click', () => handleGenerateClick(false));
-    if (regenerateBtn) regenerateBtn.addEventListener('click', () => handleGenerateClick(true));
+    if (generateBtn) {
+        generateBtn.addEventListener('click', () => {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                showMessage('Please describe what you want to create or edit.', 'error');
+                return;
+            }
+            isRegenerating = false;
+            handleGenerationRequest();
+        });
+    }
+
+    if (regenerateBtn) {
+        regenerateBtn.addEventListener('click', () => {
+            const regeneratePromptInput = document.getElementById('regenerate-prompt-input');
+            const prompt = regeneratePromptInput.value.trim();
+            if (!prompt) {
+                showMessage('Please enter a prompt to regenerate.', 'error');
+                return;
+            }
+            isRegenerating = true;
+            handleGenerationRequest();
+        });
+    }
     
     if (promptInput) {
         promptInput.addEventListener('keydown', (e) => {
@@ -173,7 +184,7 @@ function initializeGeneratorPage() {
                 promptSuggestionsContainer.classList.add('hidden');
                 return;
             }
-            promptSuggestionsContainer.innerHTML = `<span class="text-sm text-gray-400 italic">AI is thinking...</span>`;
+            promptSuggestionsContainer.innerHTML = `<span class="text-sm text-gray-400 italic">AI is thinking of suggestions...</span>`;
             promptSuggestionsContainer.classList.remove('hidden');
             suggestionTimeout = setTimeout(() => fetchAiSuggestions(promptText), 300);
         });
@@ -208,31 +219,25 @@ function initializeGeneratorPage() {
 
 // --- AI & Generation Logic ---
 
-async function handleGenerateClick(isRegen) {
-    isRegenerating = isRegen;
-    const promptInput = isRegenerating ? document.getElementById('regenerate-prompt-input') : document.getElementById('prompt-input');
-    const prompt = promptInput.value.trim();
-    
-    if (!prompt) {
-        showMessage(`Please describe what you want to ${isRegenerating ? 'regenerate' : 'create'}.`, 'error');
-        return;
-    }
-    
-    // Check authentication and credits before proceeding
+/**
+ * Checks user authentication and credit status before proceeding with image generation.
+ */
+function handleGenerationRequest() {
     if (!auth.currentUser) {
-        document.getElementById('auth-modal').setAttribute('aria-hidden', 'false');
+        const authModal = document.getElementById('auth-modal');
+        if (authModal) authModal.setAttribute('aria-hidden', 'false');
+        showMessage("Please sign in to generate images.", "info");
         return;
     }
 
-    // Check if the user has credits before making an API call for instant feedback.
-    if (userCredits !== null && userCredits <= 0) {
-        document.getElementById('credits-modal').setAttribute('aria-hidden', 'false');
-        return; // Stop the generation process
+    if (currentUserCredits <= 0) {
+        showMessage("You have 0 credits. Please visit the Pricing page to get more.", "error");
+        return;
     }
-    
-    generateImage(prompt);
-}
 
+    // If checks pass, proceed with generation.
+    generateImage();
+}
 
 async function fetchAiSuggestions(promptText) {
     const promptInput = document.getElementById('prompt-input');
@@ -320,7 +325,10 @@ async function handleEnhancePrompt() {
     }
 }
 
-async function generateImage(prompt) {
+async function generateImage() {
+    const prompt = isRegenerating 
+        ? document.getElementById('regenerate-prompt-input').value.trim() 
+        : document.getElementById('prompt-input').value.trim();
     lastPrompt = prompt;
     
     // UI updates for generation start
@@ -344,64 +352,55 @@ async function generateImage(prompt) {
     startTimer();
 
     try {
-        const idToken = await auth.currentUser.getIdToken();
-        const response = await fetch('/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                prompt, 
-                imageData: uploadedImageData, 
-                aspectRatio: selectedAspectRatio,
-                idToken
-            })
-        });
-
-        if (!response.ok) {
-            const errorResult = await response.json();
-            // Robustly handle the specific 403 (Forbidden) error from the backend.
-            if (response.status === 403) {
-                 document.getElementById('credits-modal').setAttribute('aria-hidden', 'false');
-                 // Reset the UI since generation failed.
-                 stopTimer();
-                 loadingIndicator.classList.add('hidden');
-                 postGenerationControls.classList.add('hidden');
-                 resultContainer.classList.add('hidden');
-                 generatorUI.classList.remove('hidden');
-                 return; // Stop execution
-            }
-            throw new Error(errorResult.error || `API Error: ${response.status}`);
-        }
-
-        const result = await response.json();
-        let base64Data;
-        if (uploadedImageData) { // check if it was an image-to-image request
-            base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-        } else { // text-to-image
-            base64Data = result.predictions?.[0]?.bytesBase64Encoded;
-        }
-        if (!base64Data) throw new Error("No image data received from API.");
+        const imageUrl = await generateImageWithRetry(prompt, uploadedImageData, selectedAspectRatio);
+        displayImage(imageUrl, prompt, false);
+        incrementTotalGenerations();
         
-        displayImage(`data:image/png;base64,${base64Data}`, prompt);
-
+        // Deduct credit from the user's account
+        if (auth.currentUser) {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            await updateDoc(userRef, {
+                credits: increment(-1)
+            });
+        }
     } catch (error) {
         console.error('Image generation failed:', error);
         showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
-        // Also reset UI on general failure
-        stopTimer();
-        loadingIndicator.classList.add('hidden');
-        postGenerationControls.classList.add('hidden');
-        resultContainer.classList.add('hidden');
-        generatorUI.classList.remove('hidden');
-
     } finally {
         stopTimer();
-        if(document.getElementById('result-container').classList.contains('hidden') === false) {
-             loadingIndicator.classList.add('hidden');
-             document.getElementById('regenerate-prompt-input').value = lastPrompt;
-             postGenerationControls.classList.remove('hidden');
-             addNavigationButtons();
-        }
+        loadingIndicator.classList.add('hidden');
+        document.getElementById('regenerate-prompt-input').value = lastPrompt;
+        postGenerationControls.classList.remove('hidden');
+        addNavigationButtons();
         isRegenerating = false;
+    }
+}
+
+async function generateImageWithRetry(prompt, imageData, aspectRatio, maxRetries = 3) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt, imageData, aspectRatio: aspectRatio })
+            });
+            if (!response.ok) {
+                const errorResult = await response.json();
+                throw new Error(errorResult.error || `API Error: ${response.status}`);
+            }
+            const result = await response.json();
+            let base64Data;
+            if (imageData) {
+                base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+            } else {
+                base64Data = result.predictions?.[0]?.bytesBase64Encoded;
+            }
+            if (!base64Data) throw new Error("No image data received from API.");
+            return `data:image/png;base64,${base64Data}`;
+        } catch (error) {
+            if (attempt >= maxRetries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
     }
 }
 
@@ -411,7 +410,26 @@ async function generateImage(prompt) {
 function handleAuthAction() { if (auth.currentUser) signOut(auth); else signInWithGoogle(); }
 
 function signInWithGoogle() { 
-    signInWithPopup(auth, provider).catch(error => console.error("Authentication Error:", error)); 
+    const authModal = document.getElementById('auth-modal');
+    signInWithPopup(auth, provider)
+        .then(async (result) => {
+            const user = result.user;
+            const userRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(userRef);
+
+            if (!docSnap.exists()) {
+                // New user, give them 100 credits.
+                await setDoc(userRef, { 
+                    email: user.email,
+                    displayName: user.displayName,
+                    credits: 100 
+                });
+            }
+            
+            updateUIForAuthState(user); // This will set up the credit listener
+            if (authModal) authModal.setAttribute('aria-hidden', 'true');
+        })
+        .catch(error => console.error("Authentication Error:", error)); 
 }
 
 function updateUIForAuthState(user) {
@@ -419,59 +437,50 @@ function updateUIForAuthState(user) {
     const mobileAuthBtn = document.getElementById('mobile-auth-btn');
     const generationCounterEl = document.getElementById('generation-counter');
     const mobileGenerationCounterEl = document.getElementById('mobile-generation-counter');
-    const generateBtn = document.getElementById('generate-btn');
-    const authModal = document.getElementById('auth-modal');
-
-    // Clean up previous user's credit listener
-    if (unsubscribeUserCredits) {
-        unsubscribeUserCredits();
-        unsubscribeUserCredits = null;
+    
+    if (unsubscribeCreditsListener) {
+        unsubscribeCreditsListener();
+        unsubscribeCreditsListener = null;
     }
-    userCredits = null;
 
     if (user) {
         authBtn.textContent = 'Sign Out';
         mobileAuthBtn.textContent = 'Sign Out';
-        if (authModal) authModal.setAttribute('aria-hidden', 'true');
-
-        const userRef = doc(db, "users", user.uid);
         
-        // Listen for real-time updates to the user's document (especially credits)
-        unsubscribeUserCredits = onSnapshot(userRef, (doc) => {
-            if (doc.exists()) {
-                const userData = doc.data();
-                userCredits = userData.credits;
-                const creditText = `Credits: ${userCredits}`;
-                generationCounterEl.textContent = creditText;
-                mobileGenerationCounterEl.textContent = creditText;
-
-                // Enable/disable button based on credits
-                if (generateBtn) {
-                    generateBtn.disabled = userCredits <= 0;
-                    generateBtn.title = userCredits <= 0 ? "You have no credits left" : "Generate AI Image";
-                }
-
+        const userRef = doc(db, "users", user.uid);
+        unsubscribeCreditsListener = onSnapshot(userRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const userData = docSnap.data();
+                currentUserCredits = userData.credits;
+                const creditText = `Credits: ${currentUserCredits}`;
+                if(generationCounterEl) generationCounterEl.textContent = creditText;
+                if(mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = creditText;
             } else {
-                // First sign-in, create user document with free credits
-                setDoc(userRef, {
-                    email: user.email,
-                    displayName: user.displayName,
-                    credits: 5 // Initial free credits
-                }).catch(error => console.error("Error creating user document:", error));
+                console.error("User document not found for logged-in user.");
+                const errorText = "Credits: Error";
+                if(generationCounterEl) generationCounterEl.textContent = errorText;
+                if(mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = errorText;
             }
         });
+        
+        if (lastGeneratedImageUrl) {
+            const blurredContainer = document.querySelector('.blurred-image-container');
+            if (blurredContainer) {
+                const img = blurredContainer.querySelector('img');
+                img.classList.remove('blurred-image');
+                const overlay = blurredContainer.querySelector('.unlock-overlay');
+                if (overlay) overlay.remove();
+            }
+            lastGeneratedImageUrl = null;
+        }
     } else {
         authBtn.textContent = 'Sign In';
         mobileAuthBtn.textContent = 'Sign In';
-        generationCounterEl.textContent = '';
-        mobileGenerationCounterEl.textContent = '';
-        if (generateBtn) {
-            generateBtn.disabled = false;
-            generateBtn.title = "Generate AI Image";
-        }
+        currentUserCredits = 0;
+        if(generationCounterEl) generationCounterEl.textContent = '';
+        if(mobileGenerationCounterEl) mobileGenerationCounterEl.textContent = '';
     }
 }
-
 
 // --- UI & Utility Functions ---
 
@@ -496,15 +505,22 @@ function removeUploadedImage() {
     document.getElementById('prompt-input').placeholder = "An oil painting of a futuristic city skyline at dusk...";
 }
 
-function displayImage(imageUrl, prompt) {
+async function incrementTotalGenerations() {
+    const counterRef = doc(db, "stats", "imageGenerations");
+    try { await setDoc(counterRef, { count: increment(1) }, { merge: true }); } catch (error) { console.error("Error incrementing generation count:", error); }
+}
+
+function displayImage(imageUrl, prompt, shouldBlur = false) {
     const imageGrid = document.getElementById('image-grid');
     const imgContainer = document.createElement('div');
     imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
+    if (shouldBlur) { imgContainer.classList.add('blurred-image-container'); }
     
     const img = document.createElement('img');
     img.src = imageUrl;
     img.alt = prompt;
     img.className = 'w-full h-auto object-contain';
+    if (shouldBlur) { img.classList.add('blurred-image'); }
     
     const downloadButton = document.createElement('button');
     downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
@@ -520,7 +536,16 @@ function displayImage(imageUrl, prompt) {
     };
 
     imgContainer.appendChild(img);
-    imgContainer.appendChild(downloadButton);
+
+    if (!shouldBlur) { 
+        imgContainer.appendChild(downloadButton); 
+    } else {
+        const overlay = document.createElement('div');
+        overlay.className = 'unlock-overlay';
+        overlay.innerHTML = `<h3 class="text-xl font-semibold">Unlock Image</h3><p class="mt-2">Sign in to unlock this image and get unlimited generations.</p><button id="unlock-btn">Sign In to Unlock</button>`;
+        overlay.querySelector('#unlock-btn').onclick = () => { document.getElementById('auth-modal').setAttribute('aria-hidden', 'false'); };
+        imgContainer.appendChild(overlay);
+    }
     imageGrid.appendChild(imgContainer);
 }
 
@@ -603,4 +628,3 @@ function stopTimer() {
     const progressBar = document.getElementById('progress-bar');
     if (progressBar) progressBar.style.width = '100%';
 }
-
