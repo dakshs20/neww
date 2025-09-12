@@ -72,11 +72,11 @@ function initializeUniversalScripts() {
     if (googleSignInBtn) googleSignInBtn.addEventListener('click', signInWithGoogle);
     if (closeModalBtn) closeModalBtn.addEventListener('click', () => authModal.setAttribute('aria-hidden', 'true'));
     
-    // FIXED LOGIC: When closing the credits modal, go back to the main generator UI.
+    // FIXED LOGIC: When closing the credits modal, redirect to the main page.
     if (closeCreditsModalBtn && outOfCreditsModal) {
         closeCreditsModalBtn.addEventListener('click', () => {
-            outOfCreditsModal.setAttribute('aria-hidden', 'true');
-            resetToGeneratorView(); // This function resets the view to the main page.
+            // This forces a page reload to the main generator screen.
+            window.location.href = 'index.html'; 
         });
     }
 
