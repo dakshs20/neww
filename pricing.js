@@ -28,10 +28,13 @@ const authBtn = document.getElementById('auth-btn');
 const mobileAuthBtn = document.getElementById('mobile-auth-btn');
 const generationCounter = document.getElementById('generation-counter');
 const mobileGenerationCounter = document.getElementById('mobile-generation-counter');
-
+const cursorDot = document.querySelector('.cursor-dot');
+const cursorOutline = document.querySelector('.cursor-outline');
 
 // --- Event Listeners ---
 document.addEventListener('DOMContentLoaded', () => {
+    initializeCustomCursor();
+
     onAuthStateChanged(auth, user => {
         updateUIForAuthState(user);
         
@@ -68,7 +71,6 @@ async function updateUIForAuthState(user) {
         mobileAuthBtn.textContent = 'Sign Out';
         authModal.setAttribute('aria-hidden', 'true');
         
-        // Fetch and display credits
         try {
             const idToken = await user.getIdToken();
             const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${idToken}` } });
@@ -104,7 +106,7 @@ async function handlePurchase(button, user) {
     const credits = button.dataset.credits;
 
     paymentSpinner.classList.remove('hidden');
-    buyButtons.forEach(btn => btn.disabled = true); // Disable all buy buttons
+    buyButtons.forEach(btn => btn.disabled = true);
 
     try {
         const idToken = await user.getIdToken();
@@ -130,17 +132,61 @@ async function handlePurchase(button, user) {
 
         const data = await response.json();
 
-        if (data.redirectUrl) {
-            window.location.href = data.redirectUrl;
+        if (data.success && data.paymentData && data.paymentUrl) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = data.paymentUrl;
+            
+            for (const key in data.paymentData) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = data.paymentData[key];
+                form.appendChild(input);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
         } else {
-            throw new Error('No redirect URL received from server.');
+            throw new Error('Invalid response received from server.');
         }
 
     } catch (error) {
         console.error('Payment Initiation Error:', error);
         alert(`Could not start the payment process: ${error.message}. Please try again.`);
         paymentSpinner.classList.add('hidden');
-        buyButtons.forEach(btn => btn.disabled = false); // Re-enable all buy buttons
+        buyButtons.forEach(btn => btn.disabled = false);
+    }
+}
+
+function initializeCustomCursor() {
+    if (cursorDot && cursorOutline) {
+        let mouseX = 0, mouseY = 0;
+        let outlineX = 0, outlineY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        const animateCursor = () => {
+            cursorDot.style.left = `${mouseX}px`;
+            cursorDot.style.top = `${mouseY}px`;
+            
+            const ease = 0.15;
+            outlineX += (mouseX - outlineX) * ease;
+            outlineY += (mouseY - outlineY) * ease;
+            cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+            
+            requestAnimationFrame(animateCursor);
+        };
+        requestAnimationFrame(animateCursor);
+
+        const interactiveElements = document.querySelectorAll('a, button, textarea, input, label');
+        interactiveElements.forEach(el => {
+            el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
+            el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
+        });
     }
 }
 
