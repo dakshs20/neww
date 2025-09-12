@@ -1,61 +1,78 @@
-// File: /api/payu-callback.js
-// This endpoint handles the response from PayU after a transaction.
-
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import admin from 'firebase-admin';
 import crypto from 'crypto';
 
-// --- Firebase Admin SDK Initialization ---
+// --- Secure Firebase Admin Initialization ---
+// This ensures Firebase Admin is initialized only once in a serverless environment.
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-
-if (!getApps().length) {
-  initializeApp({
-    credential: cert(serviceAccount)
-  });
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+  } catch (error) {
+    console.error('Firebase admin initialization error', error.stack);
+  }
 }
 
-const db = getFirestore();
+const db = admin.firestore();
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method Not Allowed' });
-    }
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
 
-    const { status, txnid, amount, productinfo } = req.body;
-    const salt = process.env.PAYU_SECRET_KEY || 'c909c9b9ab0e4f84dcbadde5f5d9829773a90ffcb92e9282341d40af723241b6';
-    const key = process.env.PAYU_CLIENT_ID || 'a10828505233b1d8a3112837184c40bb63078a637ebebef0d75ba9724f11e511';
-
-    // --- Verify the hash to ensure the request is from PayU ---
-    // Note: The hash calculation for the response is different.
-    // Please refer to PayU documentation for the exact reverse hash string format.
-    // This is a simplified example.
+  try {
+    const { txnid, status, amount, productinfo, hash } = req.body;
     
-    if (status === 'success') {
-        try {
-            const userId = txnid.split('-')[1]; // Extract userId from txnid
-            const userRef = db.collection('users').doc(userId);
+    // --- 1. Verify the Hash ---
+    // This is a critical security step to ensure the response is genuinely from PayU.
+    const secretKey = process.env.PAYU_SECRET_KEY;
+    
+    // The string to hash must be in the exact format PayU expects.
+    const hashString = `${secretKey}|${status}|||||||||||${productinfo.split('_')[2]}|${req.body.email}|${req.body.firstname}|${productinfo}|${amount}|${txnid}|${process.env.PAYU_CLIENT_ID}`;
+    
+    const calculatedHash = crypto.createHash('sha512').update(hashString).digest('hex');
 
-            // Determine credits to add based on product info
-            let creditsToAdd = 0;
-            if (productinfo === 'Starter Pack') creditsToAdd = 600;
-            else if (productinfo === 'Pro Pack') creditsToAdd = 1200;
-            else if (productinfo === 'Mega Pack') creditsToAdd = 4000;
-
-            if (creditsToAdd > 0) {
-                await userRef.update({
-                    credits: FieldValue.increment(creditsToAdd)
-                });
-            }
-            
-            // Redirect to the main page with a success message
-            res.redirect('/?payment=success');
-
-        } catch (error) {
-            console.error("Callback Error - DB Update Failed:", error);
-            res.redirect('/?payment=error');
-        }
-    } else {
-        // Handle failed or cancelled transaction
-        res.redirect('/?payment=failed');
+    if (calculatedHash !== hash) {
+      console.error("Hash mismatch. Tampered or invalid response.");
+      // Redirect to a failure page or show an error.
+      // For simplicity, we redirect to the main page.
+      return res.redirect(302, '/');
     }
+
+    // --- 2. Process the Transaction ---
+    if (status === 'success') {
+      // The productinfo field format is "credits_UID_email"
+      const [credits, uid] = productinfo.split('_');
+      const creditsToAdd = parseInt(credits, 10);
+      
+      if (!uid || isNaN(creditsToAdd)) {
+        throw new Error("Invalid productinfo received from PayU.");
+      }
+
+      const userDocRef = db.collection('users').doc(uid);
+
+      // Atomically increment the user's credits.
+      await userDocRef.update({
+        credits: admin.firestore.FieldValue.increment(creditsToAdd)
+      });
+      
+      console.log(`Successfully added ${creditsToAdd} credits to user ${uid}.`);
+      
+      // Redirect to the main page after successful payment.
+      return res.redirect(302, '/');
+
+    } else {
+      // If status is 'failure' or any other state.
+      console.log(`Payment failed for transaction ID: ${txnid} with status: ${status}`);
+      // Redirect user back to the main page.
+      return res.redirect(302, '/');
+    }
+
+  } catch (error) {
+    console.error('Error in PayU callback:', error);
+    // In case of any server error, redirect the user back to the homepage.
+    return res.redirect(302, '/');
+  }
 }
+
