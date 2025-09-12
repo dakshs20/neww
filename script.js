@@ -367,8 +367,9 @@ async function generateImage() {
         console.error('Image generation failed:', error);
         showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
     } finally {
-        stopTimer();
+        // Hide the loading indicator first to make it disappear instantly
         loadingIndicator.classList.add('hidden');
+        stopTimer();
         document.getElementById('regenerate-prompt-input').value = lastPrompt;
         postGenerationControls.classList.remove('hidden');
         addNavigationButtons();
@@ -628,3 +629,4 @@ function stopTimer() {
     const progressBar = document.getElementById('progress-bar');
     if (progressBar) progressBar.style.width = '100%';
 }
+
