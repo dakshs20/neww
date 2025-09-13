@@ -37,9 +37,9 @@ export default async function handler(req, res) {
         // IMPORTANT: Define pricing on the server to prevent client-side manipulation.
         // The keys ('starter', 'pro', 'mega') must exactly match the `data-plan` attributes in pricing.html.
         const pricing = {
-            starter: { amount: '6.00', credits: 600 },
-            pro: { amount: '12.00', credits: 1200 },
-            mega: { amount: '35.00', credits: 4000 }
+            starter: { amount: '499.00', credits: 600 },
+            pro:     { amount: '999.00', credits: 1200 },
+            mega:    { amount: '2500.00', credits: 4000 }
         };
 
         if (!pricing[plan]) {
