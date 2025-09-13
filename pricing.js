@@ -1,7 +1,6 @@
 // --- Firebase and Auth Initialization ---
-// We import the necessary Firebase modules to interact with Firebase services.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // Your web app's Firebase configuration.
 const firebaseConfig = {
@@ -17,68 +16,136 @@ const firebaseConfig = {
 // Initialize Firebase services.
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
 // --- Global State & DOM Element Caching ---
-// We store the current user's state globally for easy access.
 let currentUser = null;
-// Caching DOM elements improves performance by avoiding repeated lookups.
 const DOMElements = {};
 
 // --- Main Setup Function ---
-// This runs once the entire HTML document has been loaded.
 document.addEventListener('DOMContentLoaded', () => {
-    // Find and store references to all the important HTML elements.
+    // Cache DOM elements for better performance and cleaner code.
     DOMElements.purchaseBtns = document.querySelectorAll('.purchase-btn');
     DOMElements.authModal = document.getElementById('auth-modal');
     DOMElements.closeModalBtn = document.getElementById('close-modal-btn');
+    DOMElements.googleSignInBtn = document.getElementById('google-signin-btn');
+    DOMElements.authBtn = document.getElementById('auth-btn');
+    DOMElements.mobileAuthBtn = document.getElementById('mobile-auth-btn');
+    DOMElements.generationCounter = document.getElementById('generation-counter');
+    DOMElements.mobileGenerationCounter = document.getElementById('mobile-generation-counter');
     DOMElements.cursorDot = document.querySelector('.cursor-dot');
     DOMElements.cursorOutline = document.querySelector('.cursor-outline');
 
-    // Set up a listener that continuously checks if a user is signed in or out.
+    // Set up a listener that watches for user sign-in or sign-out events.
     onAuthStateChanged(auth, user => {
-        currentUser = user; // Update the global currentUser variable.
+        currentUser = user;
+        updateHeaderUI(user); // Update the header whenever the auth state changes.
     });
 
     // Attach a click event listener to every "Buy Now" button.
     DOMElements.purchaseBtns.forEach(btn => {
         btn.addEventListener('click', (event) => {
-            // If the user is not logged in, show the "Sign In" pop-up.
+            // If the user is not signed in, show the sign-in modal.
             if (!currentUser) {
-                if (DOMElements.authModal) {
-                    DOMElements.authModal.classList.remove('opacity-0', 'invisible');
-                }
-                return; // Stop the function here.
+                toggleModal(DOMElements.authModal, true);
+                return; // Stop the process here.
             }
-            // If the user IS logged in, proceed to the purchase process.
-            const clickedButton = event.currentTarget; // Get the specific button that was clicked.
+            // If the user is signed in, proceed with the purchase.
+            const clickedButton = event.currentTarget;
             const plan = clickedButton.dataset.plan;
             const amount = clickedButton.dataset.amount;
             const credits = clickedButton.dataset.credits;
-            handlePurchase(clickedButton, plan, amount, credits); // Start the purchase.
+            handlePurchase(clickedButton, plan, amount, credits);
         });
     });
 
-    // Add a listener to the "Cancel" button on the sign-in modal.
-    DOMElements.closeModalBtn?.addEventListener('click', () => {
-        if (DOMElements.authModal) {
-            DOMElements.authModal.classList.add('opacity-0', 'invisible');
-        }
-    });
+    // Add listeners for modal and header buttons.
+    DOMElements.closeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.authModal, false));
+    DOMElements.googleSignInBtn?.addEventListener('click', signInWithGoogle);
+    [DOMElements.authBtn, DOMElements.mobileAuthBtn].forEach(btn => btn?.addEventListener('click', handleAuthAction));
 
-    initializeCursor(); // Set up the custom cursor effect.
+    initializeCursor();
 });
 
 /**
- * Handles the entire process of initiating a payment.
- * @param {HTMLButtonElement} purchaseBtn - The specific button that was clicked.
- * @param {string} plan - The name of the plan (e.g., 'Starter').
+ * Shows or hides a modal dialog.
+ * @param {HTMLElement} modal - The modal element to toggle.
+ * @param {boolean} show - True to show the modal, false to hide it.
+ */
+function toggleModal(modal, show) {
+    if (modal) {
+        if (show) {
+            modal.classList.remove('opacity-0', 'invisible');
+        } else {
+            modal.classList.add('opacity-0', 'invisible');
+        }
+    }
+}
+
+/**
+ * Handles the main authentication action (Sign In or Sign Out).
+ */
+function handleAuthAction() {
+    if (currentUser) {
+        signOut(auth).catch(error => console.error("Sign out error:", error));
+    } else {
+        toggleModal(DOMElements.authModal, true);
+    }
+}
+
+/**
+ * Initiates the Google Sign-In popup flow.
+ */
+function signInWithGoogle() {
+    signInWithPopup(auth, provider)
+        .then(() => toggleModal(DOMElements.authModal, false))
+        .catch(error => console.error("Authentication Error:", error));
+}
+
+/**
+ * Updates the header UI to reflect the user's login status and credit balance.
+ * @param {object|null} user - The current Firebase user object or null.
+ */
+async function updateHeaderUI(user) {
+    if (user) {
+        // If user is signed in, show "Sign Out" and fetch their credits.
+        DOMElements.authBtn.textContent = 'Sign Out';
+        DOMElements.mobileAuthBtn.textContent = 'Sign Out';
+        try {
+            const token = await user.getIdToken();
+            const response = await fetch('/api/credits', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Failed to fetch credits');
+            const data = await response.json();
+            const text = `Credits: ${data.credits}`;
+            DOMElements.generationCounter.textContent = text;
+            DOMElements.mobileGenerationCounter.textContent = text;
+        } catch (error) {
+            console.error("Credit fetch error:", error);
+            DOMElements.generationCounter.textContent = "Error";
+            DOMElements.mobileGenerationCounter.textContent = "Error";
+        }
+    } else {
+        // If user is signed out, show "Sign In" and clear credit display.
+        DOMElements.authBtn.textContent = 'Sign In';
+        DOMElements.mobileAuthBtn.textContent = 'Sign In';
+        DOMElements.generationCounter.textContent = '';
+        DOMElements.mobileGenerationCounter.textContent = '';
+    }
+}
+
+/**
+ * Handles the secure payment initiation process.
+ * @param {HTMLButtonElement} purchaseBtn - The specific "Buy Now" button that was clicked.
+ * @param {string} plan - The name of the plan.
  * @param {string} amount - The cost of the plan.
- * @param {string} credits - The number of credits in the plan.
+ * @param {string} credits - The number of credits to be purchased.
  */
 async function handlePurchase(purchaseBtn, plan, amount, credits) {
-    const originalText = purchaseBtn.innerHTML; // Save the button's original text.
+    const originalText = purchaseBtn.innerHTML;
     
-    // --- FIX: Disable the specific button to prevent multiple clicks and show a loading spinner.
+    // Disable the button and show a processing indicator to prevent multiple clicks.
     purchaseBtn.disabled = true;
     purchaseBtn.innerHTML = `
         <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -89,15 +156,13 @@ async function handlePurchase(purchaseBtn, plan, amount, credits) {
     `;
 
     try {
-        // Get the user's secure authentication token from Firebase.
         const token = await currentUser.getIdToken();
-        
-        // Call our secure backend API to prepare the payment.
+        // Call our secure backend API to prepare the payment details.
         const response = await fetch('/api/payu', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // Send the token for verification.
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ plan, amount, credits })
         });
@@ -109,11 +174,11 @@ async function handlePurchase(purchaseBtn, plan, amount, credits) {
 
         const paymentData = await response.json();
         
-        // The backend sends back all the data needed for PayU.
-        // We create a hidden form, fill it with this data, and submit it.
+        // Create a hidden form with the data from the backend and submit it
+        // to redirect the user to the PayU payment page.
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = paymentData.action; // This is the PayU payment URL.
+        form.action = paymentData.action; 
         document.body.appendChild(form);
 
         for (const key in paymentData.params) {
@@ -124,20 +189,19 @@ async function handlePurchase(purchaseBtn, plan, amount, credits) {
             form.appendChild(input);
         }
         
-        form.submit(); // This redirects the user to the PayU website to complete the payment.
+        form.submit();
 
     } catch (error) {
         console.error('Could not start the payment process:', error.message);
         alert(`Could not start the payment process: ${error.message}. Please try again.`);
-        
-        // If anything goes wrong, re-enable the button and restore its text.
+        // If an error occurs, re-enable the button.
         purchaseBtn.disabled = false;
         purchaseBtn.innerHTML = originalText;
     }
 }
 
 /**
- * Initializes the custom cursor effect for a consistent UI.
+ * Initializes the custom cursor effect.
  */
 function initializeCursor() {
     if (!DOMElements.cursorDot || !DOMElements.cursorOutline) return;
