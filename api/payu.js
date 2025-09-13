@@ -1,11 +1,10 @@
 import { auth } from 'firebase-admin';
 import crypto from 'crypto';
 
-// Initialize Firebase Admin SDK (ensure it's initialized only once to prevent errors in serverless environments)
+// Initialize Firebase Admin SDK (ensures it's initialized only once in a serverless environment)
 import admin from 'firebase-admin';
 if (!admin.apps.length) {
     try {
-        // The service account key is securely stored as an environment variable.
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount)
@@ -35,8 +34,7 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: 'Invalid user token. Authentication failed.' });
         }
 
-        // IMPORTANT: Define the pricing structure on the server.
-        // This prevents users from changing the price on the frontend.
+        // IMPORTANT: Define pricing on the server to prevent client-side manipulation.
         // The keys ('starter', 'pro', 'mega') must exactly match the `data-plan` attributes in pricing.html.
         const pricing = {
             starter: { amount: '6.00', credits: 600 },
@@ -45,7 +43,6 @@ export default async function handler(req, res) {
         };
 
         if (!pricing[plan]) {
-            // This check prevents the "Invalid plan selected" error.
             return res.status(400).json({ error: 'Invalid plan selected.' });
         }
 
@@ -58,31 +55,28 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Server payment configuration error.' });
         }
         
-        // Create a unique transaction ID for every single request.
-        // This helps prevent "Too many requests" errors from PayU.
+        // Create a unique transaction ID for every request to prevent rate-limiting issues.
         const txnid = `GENART-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
         
-        // Prepare user and product information required by PayU.
         const productinfo = `GenArt Credits - ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan`;
         const firstname = user.name || 'GenArt User';
         const email = user.email || '';
         
-        // CRITICAL STEP: Securely pass the user's unique Firebase ID (uid) to PayU.
-        // This is stored in the `udf1` (user-defined field) and is essential for the callback
-        // to identify which user's account to add credits to.
+        // CRITICAL: Securely pass the user's unique Firebase ID (uid) to PayU.
+        // This is stored in `udf1` (user-defined field 1) and is essential for the callback
+        // to identify which user's account to add credits to after a successful payment.
         const udf1 = user.uid; 
         
-        // Define the URLs PayU will use to redirect the user after the transaction.
-        // It dynamically uses the website's domain, so it works on any environment.
+        // Dynamically create the callback URLs based on the request's origin.
         const surl = `${req.headers.origin}/api/payu-callback`; // Success URL
         const furl = `${req.headers.origin}/api/payu-callback`; // Failure URL
 
-        // Construct the hash string in the exact order required by PayU's documentation for security.
+        // Construct the hash string in the exact order required by PayU for security.
         const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|${udf1}||||||||||${salt}`;
         const hash = crypto.createHash('sha512').update(hashString).digest('hex');
 
-        // Package all the data to be sent back to the frontend.
-        // The frontend script (`pricing.js`) will use this data to build a form and submit it to PayU.
+        // Package all the necessary data to be sent back to the frontend.
+        // The `pricing.js` script will use this data to build a form and submit it to PayU.
         const paymentData = {
             key,
             txnid,
@@ -93,7 +87,7 @@ export default async function handler(req, res) {
             surl,
             furl,
             hash,
-            udf1, // This must be included in the data sent back to the form.
+            udf1, // This must be included in the form data.
         };
 
         res.status(200).json({ paymentData });
