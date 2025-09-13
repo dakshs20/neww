@@ -48,7 +48,8 @@ function initializeEventListeners() {
     DOMElements.mobileMenuBtn?.addEventListener('click', () => DOMElements.mobileMenu.classList.toggle('hidden'));
 
     DOMElements.buyNowBtns.forEach(btn => {
-        btn.addEventListener('click', (event) => handlePurchase(event));
+        // --- FIXED --- Using 'mousedown' for better compatibility with touch devices (like iPhones).
+        btn.addEventListener('mousedown', (event) => handlePurchase(event));
     });
 }
 
@@ -142,7 +143,6 @@ async function handlePurchase(event) {
     } catch (error) {
         console.error('Payment initiation failed:', error);
         alert(`Could not start the payment process: ${error.message}. Please try again.`);
-        // Restore the button to its original state on failure
         clickedButton.disabled = false;
         clickedButton.innerHTML = originalButtonText;
     }
@@ -151,7 +151,6 @@ async function handlePurchase(event) {
 function redirectToPayU(data) {
     const form = document.createElement('form');
     form.method = 'POST';
-    // UPDATED: This now points to the official LIVE PayU server for real payments.
     form.action = 'https://secure.payu.in/_payment'; 
 
     for (const key in data) {
@@ -194,5 +193,4 @@ function initializeCursor() {
         el.addEventListener('mouseout', () => DOMElements.cursorOutline.classList.remove('cursor-hover'));
     });
 }
-
 
