@@ -1,119 +1,96 @@
+import { auth } from 'firebase-admin';
+import crypto from 'crypto';
+
+// Initialize Firebase Admin SDK (ensure it's initialized only once)
 import admin from 'firebase-admin';
-import crypto from 'crypto'; // Node.js module for cryptographic functions like hashing
-
-// --- Bulletproof Firebase Admin Initialization ---
-// This pattern ensures that Firebase Admin is initialized only once per server instance,
-// which is crucial for performance and stability in serverless environments.
-let auth;
-try {
-  // A critical check to ensure the Firebase service account key is available as an environment variable.
-  if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-    throw new Error('CRITICAL: FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.');
-  }
-  
-  // Parse the JSON string from the environment variable into a JavaScript object.
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-
-  // Initialize the app only if no other apps have been initialized.
-  if (!admin.apps.length) {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount)
-    });
-    console.log('Firebase Admin Initialized Successfully in payu.js');
-  }
-  auth = admin.auth(); // Get the authentication service instance.
-} catch (error) {
-  // If initialization fails, log a detailed error. This is vital for debugging setup issues.
-  console.error('CRITICAL: Firebase admin initialization failed in payu.js.', error);
+if (!admin.apps.length) {
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+    } catch (error) {
+        console.error("Firebase Admin Initialization Error in payu.js:", error);
+    }
 }
 
-// The main handler for the API endpoint (e.g., /api/payu).
 export default async function handler(req, res) {
-  // We only accept POST requests for creating a payment.
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
-  // If Firebase failed to initialize, the API cannot function.
-  if (!auth) {
-    return res.status(500).json({ error: 'Server configuration error. Firebase service is not available.' });
-  }
-
-  // --- Step 1: Authenticate the User ---
-  const { authorization } = req.headers;
-  if (!authorization || !authorization.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized: No Firebase authentication token provided.' });
-  }
-  
-  const idToken = authorization.split('Bearer ')[1];
-  let decodedToken;
-  try {
-    // Verify the token with Firebase. This confirms the user is who they say they are.
-    decodedToken = await auth.verifyIdToken(idToken);
-  } catch (error) {
-    return res.status(403).json({ error: 'Forbidden: The provided authentication token is invalid or has expired.' });
-  }
-
-  // --- Step 2: Prepare Payment Data ---
-  try {
-    const { amount, plan, credits } = req.body;
-    const { name, email, uid } = decodedToken;
-
-    // Retrieve PayU credentials securely from environment variables.
-    const key = process.env.PAYU_CLIENT_ID;
-    const salt = process.env.PAYU_SECRET_KEY;
-    
-    if (!key || !salt) {
-        console.error("CRITICAL: PayU credentials (PAYU_CLIENT_ID or PAYU_SECRET_KEY) are not set in environment variables.");
-        return res.status(500).json({ error: "Payment gateway is not configured correctly on the server." });
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
-    // --- FIX: Create a more unique transaction ID to prevent "Too many Requests" errors.
-    const randomComponent = crypto.randomBytes(4).toString('hex');
-    const txnid = `T${Date.now()}-${uid.slice(0, 5)}-${randomComponent}`;
+    try {
+        const { plan } = req.body;
+        const idToken = req.headers.authorization?.split('Bearer ')[1];
 
-    const productinfo = `${credits} Credits Pack (${plan})`;
-    const firstname = name ? name.split(' ')[0] : 'User'; // Use the first name or a default.
+        if (!idToken) {
+            return res.status(401).json({ error: 'User not authenticated. No token provided.' });
+        }
+        
+        const user = await auth().verifyIdToken(idToken);
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid user token. Authentication failed.' });
+        }
 
-    // These URLs tell PayU where to redirect the user after the transaction.
-    // `req.headers.origin` dynamically gets your website's domain (e.g., https://www.yourdomain.com).
-    const surl = `${req.headers.origin}/api/payu-callback`; // Success URL
-    const furl = `${req.headers.origin}/api/payu-callback`; // Failure URL
+        // Define the pricing structure on the server to prevent manipulation from the client-side.
+        const pricing = {
+            starter: { amount: '6.00', credits: 600 },
+            pro: { amount: '12.00', credits: 1200 },
+            mega: { amount: '35.00', credits: 4000 }
+        };
 
-    // --- Step 3: Create the Security Hash ---
-    // This is a security measure to ensure the payment data is not tampered with.
-    // The hash string must be created in the exact order specified by PayU's documentation.
-    const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|${uid}|${plan}|${credits}||||||||${salt}`;
-    const hash = crypto.createHash('sha512').update(hashString).digest('hex');
+        if (!pricing[plan]) {
+            return res.status(400).json({ error: 'Invalid plan selected.' });
+        }
 
-    // --- Step 4: Send the Prepared Data to the Frontend ---
-    const paymentData = {
-      action: 'https://secure.payu.in/_payment', // PayU's production payment URL.
-      params: {
-        key: key,
-        txnid: txnid,
-        amount: amount,
-        productinfo: productinfo,
-        firstname: firstname,
-        email: email,
-        phone: '9999999999', // A placeholder phone number is often required by PayU.
-        surl: surl,
-        furl: furl,
-        hash: hash,
-        // We use User Defined Fields (udf) to pass our internal data through PayU's system.
-        // We will get this data back in the callback to identify the user and credit their account.
-        udf1: uid,
-        udf2: plan,
-        udf3: credits,
-      }
-    };
+        const { amount } = pricing[plan];
+        const key = process.env.PAYU_CLIENT_ID;
+        const salt = process.env.PAYU_SECRET_KEY;
 
-    // Send the complete payment package to the frontend script (pricing.js).
-    res.status(200).json(paymentData);
+        if (!key || !salt) {
+            console.error("PayU credentials (KEY or SALT) are not set in environment variables.");
+            return res.status(500).json({ error: 'Server payment configuration error.' });
+        }
+        
+        // Create a unique transaction ID for every request to prevent rate-limiting issues.
+        const txnid = `GENART-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
+        
+        // Prepare user and product information for PayU.
+        const productinfo = `GenArt Credits - ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan`;
+        const firstname = user.name || 'GenArt User';
+        const email = user.email || '';
+        
+        // CRITICAL STEP: Securely pass the user's unique Firebase ID to PayU.
+        // This is essential for the callback to identify which user to give credits to.
+        const udf1 = user.uid; 
+        
+        // Define the URLs PayU will use to redirect the user after payment.
+        const surl = `${req.headers.origin}/api/payu-callback`; // Success URL
+        const furl = `${req.headers.origin}/api/payu-callback`; // Failure URL
 
-  } catch (error) {
-    console.error('Error during PayU transaction preparation:', error);
-    res.status(500).json({ error: 'An internal error occurred while preparing the transaction.' });
-  }
+        // Construct the hash string in the exact order required by PayU for security.
+        const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|${udf1}||||||||||${salt}`;
+        const hash = crypto.createHash('sha512').update(hashString).digest('hex');
+
+        // Package all the data to be sent back to the frontend.
+        const paymentData = {
+            key,
+            txnid,
+            amount,
+            productinfo,
+            firstname,
+            email,
+            surl,
+            furl,
+            hash,
+            udf1, // This must be included in the data sent back to the form.
+        };
+
+        res.status(200).json({ paymentData });
+
+    } catch (error) {
+        console.error("PayU API Error:", error);
+        res.status(500).json({ error: 'Could not start the payment process due to a server error.' });
+    }
 }
 
