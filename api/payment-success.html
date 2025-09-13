@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - GenArt</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <div id="app-container" class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
+        <header class="relative flex justify-between items-center py-5 px-2">
+            <a href="index.html">
+                 <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
+            </a>
+        </header>
+
+        <main class="flex-grow flex flex-col items-center justify-center text-center p-4">
+            <div class="w-full max-w-lg fade-in-slide-up bg-white p-8 sm:p-12 rounded-2xl shadow-lg border border-gray-200/80">
+                <svg class="w-16 h-16 mx-auto text-green-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
+                <p id="success-message" class="text-lg text-gray-600 mb-8">Your credits have been added to your account.</p>
+                <a href="index.html" class="w-full max-w-xs mx-auto bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg hover:bg-black transition-colors duration-300">
+                    Start Creating
+                </a>
+            </div>
+        </main>
+
+        <footer class="text-center py-8 mt-auto border-t border-gray-200">
+            <p class="text-xs text-gray-500">&copy; 2025 GenArt. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // This script reads the number of credits from the URL and displays it.
+            const urlParams = new URLSearchParams(window.location.search);
+            const creditsAdded = urlParams.get('credits_added');
+            const error = urlParams.get('error');
+            const messageEl = document.getElementById('success-message');
+            const headingEl = document.querySelector('h1');
+
+            if (error) {
+                headingEl.textContent = 'Transaction Complete';
+                messageEl.textContent = 'There was an issue adding credits to your account. Please contact support.';
+                messageEl.classList.add('text-red-600');
+            } else if (creditsAdded && messageEl && parseInt(creditsAdded) > 0) {
+                messageEl.textContent = `${creditsAdded} credits have been successfully added to your account.`;
+            }
+
+            // Initialize the custom cursor
+            const cursorDot = document.querySelector('.cursor-dot');
+            const cursorOutline = document.querySelector('.cursor-outline');
+            if (cursorDot && cursorOutline) {
+                let mouseX = 0, mouseY = 0, outlineX = 0, outlineY = 0;
+                window.addEventListener('mousemove', e => {
+                    mouseX = e.clientX;
+                    mouseY = e.clientY;
+                });
+                const animate = () => {
+                    cursorDot.style.left = `${mouseX}px`;
+                    cursorDot.style.top = `${mouseY}px`;
+                    const ease = 0.15;
+                    outlineX += (mouseX - outlineX) * ease;
+                    outlineY += (mouseY - outlineY) * ease;
+                    cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+                    requestAnimationFrame(animate);
+                };
+                requestAnimationFrame(animate);
+            }
+        });
+    </script>
+</body>
+</html>
