@@ -120,11 +120,14 @@ function initializeEventListeners() {
 
 // --- UI & State Management ---
 
+// --- FIXED --- This function is now more robust for showing and hiding modals.
 function toggleModal(modal, show) {
     if (!modal) return;
     if (show) {
+        modal.setAttribute('aria-hidden', 'false');
         modal.classList.remove('opacity-0', 'invisible');
     } else {
+        modal.setAttribute('aria-hidden', 'true');
         modal.classList.add('opacity-0', 'invisible');
     }
 }
@@ -147,7 +150,7 @@ async function updateUIForAuthState(user) {
             updateCreditDisplay();
         } catch (error) {
             console.error("Credit fetch error:", error);
-            currentUserCredits = 0; // Default to 0 on error
+            currentUserCredits = 0;
             updateCreditDisplay();
             showMessage("Could not fetch your credit balance.", "error");
         }
@@ -227,14 +230,13 @@ async function generateImage(prompt, isRegenerate) {
     try {
         const token = await auth.currentUser.getIdToken();
         
-        // Step 1: Securely deduct credit on the backend before generation.
         const deductResponse = await fetch('/api/credits', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (!deductResponse.ok) {
-            if(deductResponse.status === 402) { // 402 Payment Required
+            if(deductResponse.status === 402) {
                  toggleModal(DOMElements.outOfCreditsModal, true);
             } else {
                  throw new Error('Failed to deduct credit.');
@@ -247,7 +249,6 @@ async function generateImage(prompt, isRegenerate) {
         currentUserCredits = deductData.newCredits;
         updateCreditDisplay();
 
-        // Step 2: If credit deduction was successful, proceed to generate the image.
         const generateResponse = await fetch('/api/generate', {
             method: 'POST',
             headers: {
@@ -272,7 +273,6 @@ async function generateImage(prompt, isRegenerate) {
     } catch (error) {
         console.error('Image generation failed:', error);
         showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
-        // On failure, refresh the user's state to ensure credit count is accurate.
         updateUIForAuthState(auth.currentUser); 
     } finally {
         stopLoadingUI();
@@ -370,7 +370,6 @@ function removeUploadedImage() {
 }
 
 async function handleEnhancePrompt() {
-    // This function can be filled in later if needed.
     showMessage("Prompt enhancement is coming soon!", "info");
 }
 
