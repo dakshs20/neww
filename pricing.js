@@ -48,7 +48,8 @@ function initializeEventListeners() {
     DOMElements.mobileMenuBtn?.addEventListener('click', () => DOMElements.mobileMenu.classList.toggle('hidden'));
 
     DOMElements.buyNowBtns.forEach(btn => {
-        // --- FIXED --- Using 'mousedown' for better compatibility with touch devices (like iPhones).
+        // --- FIXED FOR IPHONES ---
+        // Using 'mousedown' fires the event immediately on touch, making it more reliable on iOS/Safari.
         btn.addEventListener('mousedown', (event) => handlePurchase(event));
     });
 }
