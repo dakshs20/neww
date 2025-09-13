@@ -42,7 +42,7 @@ export default async function handler(req, res) {
                 console.log(`New user detected: ${user.uid}. Creating account with 25 free credits.`);
                 await userRef.set({
                     email: user.email,
-                    credits: 25,
+                    credits: 5,
                     createdAt: admin.firestore.FieldValue.serverTimestamp()
                 });
                 return res.status(200).json({ credits: 25 });
