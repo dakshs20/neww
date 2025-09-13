@@ -1,78 +1,90 @@
 import admin from 'firebase-admin';
-import crypto from 'crypto';
+import crypto from 'crypto'; // Import the crypto module for generating unique IDs and hashes
 
-// --- Secure Firebase Admin Initialization ---
-// This code block ensures that your connection to the Firebase database is
-// initialized only once per server instance. This is a critical step for
-// performance and to prevent errors in a serverless environment.
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-if (!admin.apps.length) {
-  try {
+// --- Bulletproof Firebase Admin Initialization ---
+// This ensures Firebase is initialized only once in a serverless environment.
+let auth;
+try {
+  // Check if the crucial environment variable is set.
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+    throw new Error('CRITICAL: FIREBASE_SERVICE_ACCOUNT_KEY is not set.');
+  }
+  // Parse the service account key from the environment variable.
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+
+  // Initialize the app only if it hasn't been initialized already.
+  if (!admin.apps.length) {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount)
     });
-  } catch (error) {
-    console.error('Firebase admin initialization error', error.stack);
   }
+  auth = admin.auth();
+  console.log('Firebase Admin Initialized Successfully in payu.js');
+} catch (error) {
+  // Log a critical error if initialization fails. This is crucial for debugging.
+  console.error('CRITICAL: Firebase admin initialization failed in payu.js.', error);
 }
 
-// The main function that handles all incoming requests to this API endpoint.
+// Main handler function for the API endpoint.
 export default async function handler(req, res) {
-  // We only allow POST requests, as this is a secure action.
+  // Only allow POST requests.
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  // If Firebase initialization failed, the server cannot proceed.
+  if (!auth) {
+    return res.status(500).json({ error: 'Server configuration error. Firebase not available.' });
+  }
+
+  // --- Authenticate the User ---
+  const { authorization } = req.headers;
+  if (!authorization || !authorization.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: No Firebase token provided.' });
+  }
+  const idToken = authorization.split('Bearer ')[1];
+  let decodedToken;
   try {
-    // --- STEP 1: Verify the User is Signed In (Security) ---
-    // This is a crucial security check. We get the user's ID token from the
-    // request header and use Firebase Admin to verify that it's a valid token
-    // from a real, signed-in user. This prevents unauthorized payment attempts.
-    const { authorization } = req.headers;
-    if (!authorization || !authorization.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Unauthorized: No token provided.' });
-    }
-    const idToken = authorization.split('Bearer ')[1];
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const { uid } = decodedToken;
+    // Verify the token with Firebase to get user details.
+    decodedToken = await auth.verifyIdToken(idToken);
+  } catch (error) {
+    return res.status(403).json({ error: 'Forbidden: Invalid or expired token.' });
+  }
 
-    // --- STEP 2: Get Payment Details from the Frontend ---
-    // We receive the plan details (amount, credits) and user details
-    // that the frontend sent in its request.
-    const { amount, credits, firstname, email } = req.body;
-    if (!amount || !credits || !firstname || !email) {
-      return res.status(400).json({ error: 'Missing required payment information.' });
-    }
+  // --- Prepare Payment Data ---
+  try {
+    const { amount, plan, credits } = req.body;
+    const { name, email, uid } = decodedToken;
 
-    // --- STEP 3: Prepare All Details for the PayU Transaction ---
-    // We get your secret PayU keys from the secure environment variables.
     const key = process.env.PAYU_CLIENT_ID;
     const salt = process.env.PAYU_SECRET_KEY;
     
-    // Create a unique transaction ID. This is essential for tracking the payment.
-    const txnid = `txn-${uid}-${Date.now()}`;
-    
-    // We create a 'productinfo' string that includes the number of credits and the user's ID.
-    // This is how we'll know who to give credits to when PayU sends us a success signal.
-    const productinfo = `${credits}_${uid}_${email}`;
-    
-    // These are the URLs PayU will use to send the user back to our site after the payment.
+    // Ensure PayU credentials are set on the server.
+    if (!key || !salt) {
+        console.error("PayU credentials (PAYU_CLIENT_ID or PAYU_SECRET_KEY) are not set in environment variables.");
+        return res.status(500).json({ error: "Payment gateway misconfiguration on server." });
+    }
+
+    // --- FIX: Create a more unique transaction ID to prevent rate-limiting errors ---
+    const randomComponent = crypto.randomBytes(4).toString('hex');
+    const txnid = `T${Date.now()}-${uid.slice(0, 5)}-${randomComponent}`;
+
+    const productinfo = `${credits} Credits Pack (${plan})`;
+    const firstname = name ? name.split(' ')[0] : 'User';
+
+    // These URLs tell PayU where to redirect the user after payment.
+    // `req.headers.origin` dynamically gets your website's domain.
     const surl = `${req.headers.origin}/api/payu-callback`; // Success URL
     const furl = `${req.headers.origin}/api/payu-callback`; // Failure URL
 
-    // --- STEP 4: Generate the Secure Hash (The Most Critical Step) ---
-    // PayU requires a 'hash' to be sent with every payment request. This hash is a
-    // unique signature created using your secret key and the transaction details.
-    // It proves that the request is legitimate and hasn't been tampered with.
-    // This MUST be done on the server, never on the frontend.
-    const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|||||||||||${salt}`;
+    // --- Create the Security Hash ---
+    // The hash string must be in the exact order specified by PayU documentation.
+    const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|${uid}|${plan}|${credits}||||||||${salt}`;
     const hash = crypto.createHash('sha512').update(hashString).digest('hex');
 
-    // --- STEP 5: Send the Complete Payment Package to the Frontend ---
-    // We package up all the data PayU needs, including the secure hash, and
-    // send it back to the `pricing.js` script in the browser.
+    // --- Return All Necessary Payment Parameters to the Frontend ---
     const paymentData = {
-      paymentUrl: 'https://secure.payu.in/_payment', // PayU's live payment server URL
+      action: 'https://secure.payu.in/_payment', // PayU's production payment URL
       params: {
         key: key,
         txnid: txnid,
@@ -80,24 +92,23 @@ export default async function handler(req, res) {
         productinfo: productinfo,
         firstname: firstname,
         email: email,
-        phone: '9999999999', // A placeholder phone number is required by PayU
+        phone: '9999999999', // A placeholder phone number is often required.
         surl: surl,
         furl: furl,
         hash: hash,
+        // User-defined fields (udf) are used to pass our internal data through PayU.
+        // We will get these back in the callback to identify the user and what they bought.
+        udf1: uid,
+        udf2: plan,
+        udf3: credits,
       }
     };
 
-    // The frontend will now use this data to redirect the user to PayU.
     res.status(200).json(paymentData);
 
   } catch (error) {
-    // This block catches any errors, like an invalid user token or a server issue,
-    // and sends back a proper error message.
-    console.error('Error in /api/payu:', error);
-    if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
-        return res.status(401).json({ error: 'Unauthorized: Invalid or expired token.' });
-    }
-    return res.status(500).json({ error: 'An internal server error occurred.' });
+    console.error('Error preparing PayU transaction:', error);
+    res.status(500).json({ error: 'Could not prepare the transaction.' });
   }
 }
 
