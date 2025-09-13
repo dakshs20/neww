@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - GenArt</title>
+    <meta name="robots" content="noindex, nofollow"> <!-- Prevents search engines from indexing this page -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="favicon.png">
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
+        
+        <header class="relative flex justify-between items-center py-5 px-2 fade-in-slide-up z-20">
+            <a href="index.html">
+                 <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
+            </a>
+            <div id="header-auth-section" class="hidden md:flex items-center space-x-6">
+                 <a href="pricing.html" class="text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors">Pricing</a>
+                <div id="generation-counter" class="text-sm font-medium text-gray-500"></div>
+                <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 hover:border-gray-400 transition-all duration-300">
+                    Sign In
+                </button>
+            </div>
+            <div class="md-hidden">
+                <button id="mobile-menu-btn" class="p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
+            <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-50 border">
+                <div class="p-2">
+                    <a href="pricing.html" class="block w-full text-left text-sm font-medium text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100 transition-colors">Pricing</a>
+                    <div class="border-t my-1"></div>
+                    <div id="mobile-generation-counter" class="text-sm text-center font-medium text-gray-600 px-2 py-2"></div>
+                    <button id="mobile-auth-btn" class="w-full text-left text-sm font-medium text-gray-700 px-4 py-2 rounded-md hover:bg-gray-100 transition-colors">
+                        Sign In
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow flex flex-col items-center justify-center text-center p-4">
+            <div class="w-full max-w-md bg-white p-8 sm:p-12 rounded-2xl border border-gray-200/80 shadow-lg fade-in-slide-up">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                    <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900 mt-6 mb-2">Payment Successful!</h1>
+                <p class="text-lg text-gray-600">
+                    <span id="credits-added" class="font-semibold text-gray-800"></span> credits have been added to your account.
+                </p>
+                <p class="text-xs text-gray-400 mt-4">
+                    Transaction ID: <span id="transaction-id"></span>
+                </p>
+                <a href="index.html" class="mt-8 inline-block w-full rounded-lg bg-gray-800 px-5 py-3 font-medium text-white shadow-sm hover:bg-black transition-colors">
+                    Start Creating
+                </a>
+            </div>
+        </main>
+
+        <footer class="text-center py-8 mt-auto border-t border-gray-200 fade-in-slide-up" style="animation-delay: 200ms;">
+             <p class="text-xs text-gray-500">&copy; 2025 GenArt. All rights reserved.</p>
+        </footer>
+    </div>
+    
+    <script type="module">
+        // --- Firebase and Auth Initialization ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
+            authDomain: "genart-a693a.firebaseapp.com",
+            projectId: "genart-a693a",
+            storageBucket: "genart-a693a.appspot.com",
+            messagingSenderId: "96958671615",
+            appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
+            measurementId: "G-EDCW8VYXY6"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // --- Page-Specific Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // 1. Parse URL to get purchase details
+            const urlParams = new URLSearchParams(window.location.search);
+            const credits = urlParams.get('credits');
+            const txnid = urlParams.get('txnid');
+
+            const creditsAddedEl = document.getElementById('credits-added');
+            const transactionIdEl = document.getElementById('transaction-id');
+
+            if (credits && creditsAddedEl) {
+                creditsAddedEl.textContent = credits;
+            }
+            if (txnid && transactionIdEl) {
+                transactionIdEl.textContent = txnid;
+            }
+
+            // 2. Initialize Header and Cursor
+            const authBtn = document.getElementById('auth-btn');
+            const generationCounter = document.getElementById('generation-counter');
+            
+            onAuthStateChanged(auth, user => {
+                if (user) {
+                    authBtn.textContent = 'Sign Out';
+                    // Fetch the NEW credit balance to display in the header
+                    user.getIdToken().then(token => {
+                        fetch('/api/credits', { headers: { 'Authorization': `Bearer ${token}` } })
+                            .then(res => res.json())
+                            .then(data => {
+                                generationCounter.textContent = `Credits: ${data.credits}`;
+                            })
+                            .catch(err => {
+                                console.error("Failed to fetch credits for header", err);
+                                generationCounter.textContent = "Credits: Error";
+                            });
+                    });
+                } else {
+                    authBtn.textContent = 'Sign In';
+                    generationCounter.textContent = 'Signed Out';
+                }
+            });
+
+            authBtn.addEventListener('click', () => {
+                if (auth.currentUser) {
+                    auth.signOut();
+                } else {
+                    window.location.href = 'index.html'; // Redirect to sign in
+                }
+            });
+
+            initializeCursor();
+        });
+
+        // --- Utility: Custom Cursor ---
+        function initializeCursor() {
+            const cursorDot = document.querySelector('.cursor-dot');
+            const cursorOutline = document.querySelector('.cursor-outline');
+            if (!cursorDot || !cursorOutline) return;
+            
+            let mouseX = 0, mouseY = 0, outlineX = 0, outlineY = 0;
+            window.addEventListener('mousemove', e => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            const animate = () => {
+                cursorDot.style.left = `${mouseX}px`;
+                cursorDot.style.top = `${mouseY}px`;
+                const ease = 0.15;
+                outlineX += (mouseX - outlineX) * ease;
+                outlineY += (mouseY - outlineY) * ease;
+                cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
+                requestAnimationFrame(animate);
+            };
+            requestAnimationFrame(animate);
+
+            document.querySelectorAll('a, button').forEach(el => {
+                el.addEventListener('mouseover', () => cursorOutline.classList.add('cursor-hover'));
+                el.addEventListener('mouseout', () => cursorOutline.classList.remove('cursor-hover'));
+            });
+        }
+    </script>
+</body>
+</html>
+
