@@ -48,8 +48,6 @@ function initializeEventListeners() {
     DOMElements.mobileMenuBtn?.addEventListener('click', () => DOMElements.mobileMenu.classList.toggle('hidden'));
 
     DOMElements.buyNowBtns.forEach(btn => {
-        // --- FIXED FOR IPHONES ---
-        // Using 'mousedown' fires the event immediately on touch, making it more reliable on iOS/Safari.
         btn.addEventListener('mousedown', (event) => handlePurchase(event));
     });
 }
@@ -113,11 +111,16 @@ async function handlePurchase(event) {
     const clickedButton = event.currentTarget;
     const plan = clickedButton.dataset.plan;
 
+    // --- THIS IS THE FEATURE YOU REQUESTED ---
+    // First, check if there is a signed-in user.
     if (!auth.currentUser) {
+        // If not, show the sign-in pop-up modal.
         toggleModal(DOMElements.authModal, true);
+        // Stop the function here so no payment is processed.
         return;
     }
 
+    // This code below will only run if the user IS signed in.
     const originalButtonText = clickedButton.innerHTML;
     clickedButton.disabled = true;
     clickedButton.innerHTML = `<span class="animate-pulse">Processing...</span>`;
