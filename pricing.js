@@ -151,8 +151,8 @@ async function handlePurchase(event) {
 function redirectToPayU(data) {
     const form = document.createElement('form');
     form.method = 'POST';
-    // Use 'https://secure.payu.in/_payment' for production/live mode
-    form.action = 'https://test.payu.in/_payment'; 
+    // UPDATED: This now points to the official LIVE PayU server for real payments.
+    form.action = 'https://secure.payu.in/_payment'; 
 
     for (const key in data) {
         if (Object.hasOwnProperty.call(data, key)) {
@@ -194,4 +194,5 @@ function initializeCursor() {
         el.addEventListener('mouseout', () => DOMElements.cursorOutline.classList.remove('cursor-hover'));
     });
 }
+
 
