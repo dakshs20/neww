@@ -48,21 +48,19 @@ function initializeEventListeners() {
     DOMElements.mobileMenuBtn?.addEventListener('click', () => DOMElements.mobileMenu.classList.toggle('hidden'));
 
     DOMElements.buyNowBtns.forEach(btn => {
-        // Using the standard 'click' event for maximum compatibility.
-        btn.addEventListener('click', (event) => handlePurchase(event));
+        // --- FIXED FOR SAFARI/IPHONES ---
+        // Using 'mousedown' fires the event immediately on touch, making it more reliable on iOS.
+        btn.addEventListener('mousedown', (event) => handlePurchase(event));
     });
 }
 
 // --- Core Logic ---
 
-// --- FIXED --- Using a more robust method to control modal visibility.
 function toggleModal(modal, show) {
     if (!modal) return;
     if (show) {
-        modal.setAttribute('aria-hidden', 'false');
         modal.classList.remove('opacity-0', 'invisible');
     } else {
-        modal.setAttribute('aria-hidden', 'true');
         modal.classList.add('opacity-0', 'invisible');
     }
 }
@@ -115,16 +113,11 @@ async function handlePurchase(event) {
     const clickedButton = event.currentTarget;
     const plan = clickedButton.dataset.plan;
 
-    // --- THIS LOGIC IS CONFIRMED WORKING ---
-    // First, check if there is a signed-in user.
     if (!auth.currentUser) {
-        // If not, show the sign-in pop-up modal.
         toggleModal(DOMElements.authModal, true);
-        // Stop the function here so no payment is processed.
         return;
     }
 
-    // This code below will only run if the user IS signed in.
     const originalButtonText = clickedButton.innerHTML;
     clickedButton.disabled = true;
     clickedButton.innerHTML = `<span class="animate-pulse">Processing...</span>`;
