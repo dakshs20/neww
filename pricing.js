@@ -48,8 +48,7 @@ function initializeEventListeners() {
     DOMElements.mobileMenuBtn?.addEventListener('click', () => DOMElements.mobileMenu.classList.toggle('hidden'));
 
     DOMElements.buyNowBtns.forEach(btn => {
-        // --- FIXED FOR SAFARI/IPHONES ---
-        // Using 'mousedown' fires the event immediately on touch, making it more reliable on iOS.
+        // Using 'mousedown' for better responsiveness on touch devices like iPhones.
         btn.addEventListener('mousedown', (event) => handlePurchase(event));
     });
 }
@@ -59,8 +58,10 @@ function initializeEventListeners() {
 function toggleModal(modal, show) {
     if (!modal) return;
     if (show) {
+        modal.setAttribute('aria-hidden', 'false');
         modal.classList.remove('opacity-0', 'invisible');
     } else {
+        modal.setAttribute('aria-hidden', 'true');
         modal.classList.add('opacity-0', 'invisible');
     }
 }
@@ -113,6 +114,7 @@ async function handlePurchase(event) {
     const clickedButton = event.currentTarget;
     const plan = clickedButton.dataset.plan;
 
+    // This is the feature to prompt non-logged-in users to sign in.
     if (!auth.currentUser) {
         toggleModal(DOMElements.authModal, true);
         return;
