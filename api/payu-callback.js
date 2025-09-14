@@ -58,11 +58,11 @@ export default async function handler(req, res) {
             // --- Map the payment amount to the corresponding credit package ---
             // This mapping is done on the server to ensure the correct credits are always given.
             if (parseFloat(amount) === 499.00) {
-                creditsToAdd = 600;
+                creditsToAdd = 400;
             } else if (parseFloat(amount) === 999.00) {
-                creditsToAdd = 1200;
+                creditsToAdd = 800;
             } else if (parseFloat(amount) === 2500.00) {
-                creditsToAdd = 4000;
+                creditsToAdd = 1500;
             }
 
             // Ensure we have credits to add and a valid user ID (udf1).
