@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     DOMElements.regeneratePromptInput = document.getElementById('regenerate-prompt-input');
     DOMElements.regenerateBtn = document.getElementById('regenerate-btn');
     DOMElements.messageBox = document.getElementById('message-box');
+    DOMElements.promoTryNowBtn = document.getElementById('promo-try-now-btn');
     
     initializeEventListeners();
 });
@@ -86,6 +87,9 @@ function initializeEventListeners() {
     
     DOMElements.generateBtn?.addEventListener('click', () => handleImageGenerationRequest(false));
     DOMElements.regenerateBtn?.addEventListener('click', () => handleImageGenerationRequest(true));
+    
+    // Event listener for the new "Try Now" button in the sticky bar
+    DOMElements.promoTryNowBtn?.addEventListener('click', handlePromoTryNow);
 
     DOMElements.promptInput?.addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -264,13 +268,10 @@ async function generateImage(prompt, isRegenerate) {
 
         const result = await generateResponse.json();
         
-        // This robust logic handles both text-to-image and image-to-image responses.
         let base64Data;
         if (uploadedImageData) {
-            // Logic for Image-to-Image (Gemini) response
             base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
         } else {
-            // Logic for Text-to-Image (Imagen) response
             base64Data = result.predictions?.[0]?.bytesBase64Encoded;
         }
 
@@ -428,6 +429,18 @@ function stopTimer() {
     const progressBar = document.getElementById('progress-bar');
     if (progressBar) progressBar.style.width = '100%';
 }
+
+// --- NEW FUNCTION ---
+// Handles the click on the "Try Now" button in the sticky bar.
+function handlePromoTryNow() {
+    const promptText = "Transform me into a 1920s vintage glamour portrait, black-and-white, soft shadows, art deco background, ultra-realistic cinematic lighting.";
+    DOMElements.promptInput.value = promptText;
+    
+    // Scroll to the generator and focus the input
+    DOMElements.promptInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    DOMElements.promptInput.focus();
+}
+
 
 function initializeCursor() {
     let mouseX = 0, mouseY = 0, outlineX = 0, outlineY = 0;
