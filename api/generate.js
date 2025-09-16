@@ -27,14 +27,15 @@ export default async function handler(req, res) {
 
         const { prompt, imageData, aspectRatio } = req.body;
         const apiKey = process.env.GOOGLE_API_KEY;
+
         if (!apiKey) {
+            console.error("GOOGLE_API_KEY is not set in environment variables.");
             return res.status(500).json({ error: "Server configuration error: API key not found." });
         }
 
         let apiUrl, payload;
 
         if (imageData && imageData.data) {
-            // Logic for image-to-image tasks using the Gemini Flash Image model
             apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
             payload = {
                 "contents": [{ 
@@ -46,13 +47,15 @@ export default async function handler(req, res) {
                 "generationConfig": { "responseModalities": ["IMAGE"] }
             };
         } else {
-            // Logic for text-to-image tasks using the Imagen 3 model
             apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
             payload = { 
                 instances: [{ prompt }], 
                 parameters: { "sampleCount": 1, "aspectRatio": aspectRatio || "1:1" }
             };
         }
+        
+        // Log the request for debugging, but be careful with large data
+        console.log(`Sending request to Google API: ${apiUrl.split('?')[0]}`);
 
         const apiResponse = await fetch(apiUrl, {
             method: 'POST',
@@ -62,7 +65,7 @@ export default async function handler(req, res) {
 
         if (!apiResponse.ok) {
             const errorText = await apiResponse.text();
-            console.error("Google API Error:", errorText);
+            console.error("Google API returned an error:", errorText);
             return res.status(apiResponse.status).json({ error: `Google API Error: ${errorText}` });
         }
 
