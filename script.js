@@ -120,7 +120,6 @@ function initializeEventListeners() {
 
 // --- UI & State Management ---
 
-// --- FIXED --- This function is now more robust for showing and hiding modals.
 function toggleModal(modal, show) {
     if (!modal) return;
     if (show) {
@@ -163,7 +162,7 @@ async function updateUIForAuthState(user) {
 }
 
 function updateCreditDisplay() {
-    const text = auth.currentUser ? `Credits: ${currentUserCredits}` : 'Sign in for credits';
+    const text = auth.currentUser ? `Credits: ${currentUserCredits}` : 'Sign in to generate';
     DOMElements.generationCounter.textContent = text;
     DOMElements.mobileGenerationCounter.textContent = text;
 }
@@ -264,8 +263,20 @@ async function generateImage(prompt, isRegenerate) {
         }
 
         const result = await generateResponse.json();
-        const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
-        if (!base64Data) throw new Error("No image data received from API.");
+        
+        // This robust logic handles both text-to-image and image-to-image responses.
+        let base64Data;
+        if (uploadedImageData) {
+            // Logic for Image-to-Image (Gemini) response
+            base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+        } else {
+            // Logic for Text-to-Image (Imagen) response
+            base64Data = result.predictions?.[0]?.bytesBase64Encoded;
+        }
+
+        if (!base64Data) {
+            throw new Error("No image data received from API.");
+        }
 
         const imageUrl = `data:image/png;base64,${base64Data}`;
         displayImage(imageUrl, prompt);
