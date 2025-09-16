@@ -1,49 +1,56 @@
-// File: /api/generate.js
-// Updated to remove all reCAPTCHA and Turnstile verification.
+import { auth } from 'firebase-admin';
+import admin from 'firebase-admin';
+
+// Initialize Firebase Admin SDK (ensure it's initialized only once)
+if (!admin.apps.length) {
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+        });
+    } catch (error) {
+        console.error("Firebase Admin Initialization Error in generate.js:", error);
+    }
+}
 
 export default async function handler(req, res) {
-    if (req.method === 'GET') {
-        return res.status(200).json({ status: "ok", message: "API endpoint is working correctly." });
-    }
-
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
 
     try {
-        // UPDATED: Removed 'recaptchaToken' from the request body.
+        const idToken = req.headers.authorization?.split('Bearer ')[1];
+        if (!idToken) {
+            return res.status(401).json({ error: 'User not authenticated.' });
+        }
+        await auth().verifyIdToken(idToken);
+
         const { prompt, imageData, aspectRatio } = req.body;
-        
         const apiKey = process.env.GOOGLE_API_KEY;
-
-        // REMOVED: The entire reCAPTCHA verification block is gone.
-        // The function now proceeds directly to image generation.
-
         if (!apiKey) {
             return res.status(500).json({ error: "Server configuration error: API key not found." });
         }
 
         let apiUrl, payload;
 
-        if (imageData) {
-            // Image-to-image model (Gemini Flash)
-            apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`;
+        if (imageData && imageData.data) {
+            // Logic for image-to-image tasks using the Gemini Flash Image model
+            apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
             payload = {
-                "contents": [{ "parts": [{ "text": prompt }, { "inlineData": { "mimeType": imageData.mimeType, "data": imageData.data } }] }],
-                "generationConfig": { "responseModalities": ["IMAGE", "TEXT"] }
+                "contents": [{ 
+                    "parts": [
+                        { "text": prompt }, 
+                        { "inlineData": { "mimeType": imageData.mimeType, "data": imageData.data } }
+                    ] 
+                }],
+                "generationConfig": { "responseModalities": ["IMAGE"] }
             };
         } else {
-            // Text-to-image model (Imagen 3)
+            // Logic for text-to-image tasks using the Imagen 3 model
             apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-            
-            const parameters = {
-                "sampleCount": 1,
-                "aspectRatio": aspectRatio || "1:1"
-            };
-
             payload = { 
                 instances: [{ prompt }], 
-                parameters: parameters 
+                parameters: { "sampleCount": 1, "aspectRatio": aspectRatio || "1:1" }
             };
         }
 
@@ -63,7 +70,8 @@ export default async function handler(req, res) {
         res.status(200).json(result);
 
     } catch (error) {
-        console.error("API function crashed:", error);
+        console.error("API function /api/generate crashed:", error);
         res.status(500).json({ error: 'The API function crashed.', details: error.message });
     }
 }
+
