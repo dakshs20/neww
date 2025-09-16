@@ -115,14 +115,14 @@ textarea::-webkit-scrollbar-thumb:hover {
     transition: width 0.2s linear; 
 }
 
-#auth-modal { 
+#auth-modal, #out-of-credits-modal { 
     transition: opacity 0.3s ease, visibility 0.3s ease; 
 }
-#auth-modal[aria-hidden="true"] { 
+#auth-modal[aria-hidden="true"], #out-of-credits-modal[aria-hidden="true"] { 
     opacity: 0; 
     visibility: hidden; 
 }
-#auth-modal[aria-hidden="false"] { 
+#auth-modal[aria-hidden="false"], #out-of-credits-modal[aria-hidden="false"] { 
     opacity: 1; 
     visibility: visible; 
 }
@@ -497,3 +497,12 @@ textarea::-webkit-scrollbar-thumb:hover {
         height: 56px;
     }
 }
+
+/* --- NEW: Sticky Promo Bar --- */
+#sticky-promo-bar {
+    position: -webkit-sticky; /* For Safari */
+    position: sticky;
+    top: 0;
+    width: 100%;
+}
+
