@@ -38,14 +38,14 @@ export default async function handler(req, res) {
         try {
             const doc = await userRef.get();
             if (!doc.exists) {
-                // **New User Logic**: If the user doesn't have a document in the database, create one with 25 free credits.
-                console.log(`New user detected: ${user.uid}. Creating account with 25 free credits.`);
+                // **New User Logic**: If the user doesn't have a document in the database, create one with 5 free credits.
+                console.log(`New user detected: ${user.uid}. Creating account with 5 free credits.`);
                 await userRef.set({
                     email: user.email,
                     credits: 5,
                     createdAt: admin.firestore.FieldValue.serverTimestamp()
                 });
-                return res.status(200).json({ credits: 25 });
+                return res.status(200).json({ credits: 5 });
             } else {
                 // **Existing User Logic**: Return the current credit balance.
                 return res.status(200).json({ credits: doc.data().credits });
@@ -88,4 +88,3 @@ export default async function handler(req, res) {
     res.setHeader('Allow', ['GET', 'POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
 }
-
