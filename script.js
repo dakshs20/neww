@@ -38,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
     DOMElements.closeModalBtn = document.getElementById('close-modal-btn');
     DOMElements.outOfCreditsModal = document.getElementById('out-of-credits-modal');
     DOMElements.closeCreditsModalBtn = document.getElementById('close-credits-modal-btn');
+    DOMElements.welcomeCreditsModal = document.getElementById('welcome-credits-modal');
+    DOMElements.closeWelcomeModalBtn = document.getElementById('close-welcome-modal-btn');
+    DOMElements.freeCreditsAmount = document.getElementById('free-credits-amount');
     DOMElements.generationCounter = document.getElementById('generation-counter');
     DOMElements.mobileGenerationCounter = document.getElementById('mobile-generation-counter');
     DOMElements.musicBtn = document.getElementById('music-btn');
@@ -78,10 +81,8 @@ function initializeEventListeners() {
     DOMElements.googleSignInBtn?.addEventListener('click', signInWithGoogle);
     DOMElements.closeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.authModal, false));
     
-    DOMElements.closeCreditsModalBtn?.addEventListener('click', () => {
-        toggleModal(DOMElements.outOfCreditsModal, false);
-        resetToGeneratorView();
-    });
+    DOMElements.closeCreditsModalBtn?.addEventListener('click', () => toggleModal(DOMElements.outOfCreditsModal, false));
+    DOMElements.closeWelcomeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.welcomeCreditsModal, false));
 
     DOMElements.musicBtn?.addEventListener('click', toggleMusic);
     
@@ -150,6 +151,15 @@ async function updateUIForAuthState(user) {
             const data = await response.json();
             currentUserCredits = data.credits;
             updateCreditDisplay();
+
+            // --- NEW USER WELCOME LOGIC ---
+            if (data.isNewUser && data.credits > 0) {
+                if(DOMElements.freeCreditsAmount) {
+                    DOMElements.freeCreditsAmount.textContent = data.credits;
+                }
+                toggleModal(DOMElements.welcomeCreditsModal, true);
+            }
+
         } catch (error) {
             console.error("Credit fetch error:", error);
             currentUserCredits = 0;
@@ -193,7 +203,9 @@ function handleAuthAction() {
 
 function signInWithGoogle() {
     signInWithPopup(auth, provider)
-        .then(() => toggleModal(DOMElements.authModal, false))
+        .then(() => {
+            toggleModal(DOMElements.authModal, false)
+        })
         .catch(error => {
             console.error("Authentication Error:", error);
             showMessage('Failed to sign in. Please try again.', 'error');
@@ -315,8 +327,6 @@ function stopLoadingUI() {
     addNavigationButtons();
 }
 
-// --- NEW HELPER FUNCTION ---
-// Safely converts a base64 data URL to a Blob object for downloading.
 function dataURLtoBlob(dataurl) {
     let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
         bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
@@ -340,12 +350,9 @@ function displayImage(imageUrl, prompt) {
     downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
     downloadButton.ariaLabel = "Download Image";
 
-    // --- FIXED DOWNLOAD LOGIC FOR SAFARI/IOS ---
     downloadButton.onclick = () => {
         try {
-            // Convert the base64 data URL to a Blob
             const blob = dataURLtoBlob(imageUrl);
-            // Create a temporary, browser-friendly URL for the Blob
             const url = URL.createObjectURL(blob);
             
             const a = document.createElement('a');
@@ -355,11 +362,10 @@ function displayImage(imageUrl, prompt) {
             a.click();
             document.body.removeChild(a);
 
-            // Clean up the temporary URL to free up memory
             URL.revokeObjectURL(url);
         } catch (error) {
             console.error("Download failed:", error);
-            showMessage("Could not download image. Please try saving it manually (long-press or right-click).", "error");
+            showMessage("Could not download image. Please try saving it manually.", "error");
         }
     };
 
@@ -437,14 +443,14 @@ function startTimer() {
     const timerEl = document.getElementById('timer');
     const progressBar = document.getElementById('progress-bar');
     const maxTime = 17 * 1000;
-    progressBar.style.width = '0%';
+    if (progressBar) progressBar.style.width = '0%';
     timerInterval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
         const progress = Math.min(elapsedTime / maxTime, 1);
-        progressBar.style.width = `${progress * 100}%`;
-        timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
+        if (progressBar) progressBar.style.width = `${progress * 100}%`;
+        if (timerEl) timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
         if (elapsedTime >= maxTime) {
-            timerEl.textContent = `17.0s / ~17s`;
+            if (timerEl) timerEl.textContent = `17.0s / ~17s`;
         }
     }, 100);
 }
@@ -464,6 +470,7 @@ function handlePromoTryNow() {
 }
 
 function initializeCursor() {
+    if (!DOMElements.cursorDot) return;
     let mouseX = 0, mouseY = 0, outlineX = 0, outlineY = 0;
     window.addEventListener('mousemove', e => {
         mouseX = e.clientX;
@@ -482,7 +489,8 @@ function initializeCursor() {
     requestAnimationFrame(animate);
 
     document.querySelectorAll('a, button, textarea, input, label').forEach(el => {
-        el.addEventListener('mouseover', () => DOMElements.cursorOutline.classList.add('cursor-hover'));
-        el.addEventListener('mouseout', () => DOMElements.cursorOutline.classList.remove('cursor-hover'));
+        el.addEventListener('mouseover', () => DOMElements.cursorOutline?.classList.add('cursor-hover'));
+        el.addEventListener('mouseout', () => DOMElements.cursorOutline?.classList.remove('cursor-hover'));
     });
 }
+
