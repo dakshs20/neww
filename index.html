@@ -72,7 +72,7 @@
     <div class="cursor-dot"></div>
     <div class="cursor-outline"></div>
 
-    <!-- NEW Sticky Promo Bar -->
+    <!-- Sticky Promo Bar -->
     <div id="sticky-promo-bar" class="bg-gray-900 text-white p-2.5 text-center text-sm flex items-center justify-center gap-3 sm:gap-4 flex-wrap z-50">
         <p class="font-medium">
             <span class="font-semibold bg-blue-500 text-white rounded-full px-2 py-0.5 text-xs mr-2">NEW</span>
@@ -85,7 +85,6 @@
     <div id="app-container" class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
         
         <header class="relative flex justify-between items-center py-5 px-2 fade-in-slide-up z-20">
-            <!-- SEO: Alt text is descriptive and includes keywords. -->
             <a href="index.html">
                  <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo - Free and Fastest AI Image Generator" class="h-6 w-auto">
             </a>
@@ -117,7 +116,6 @@
             <div class="w-full max-w-3xl">
                 <div id="generator-ui" class="w-full fade-in-slide-up" style="animation-delay: 100ms;">
                     <h1 class="text-3xl sm:text-4xl md:text-5xl font-medium text-gray-900 mb-4">The Fastest & Free AI Image Generator</h1>
-                    <!-- EDITED THIS LINE -->
                     <p class="text-base md:text-lg text-gray-500 mb-10">Create stunning AI art, photos, and images from text. Sign in to get 50 free credits.</p>
                     
                     <div id="prompt-container" class="bg-white rounded-2xl border border-gray-200/80 shadow-sm transition-all duration-300 ease-in-out flex flex-col overflow-hidden">
@@ -164,12 +162,59 @@
                     GenArt is an applied AI research company building the next generation of creative tools.
                 </p>
             </div>
+
+            <section id="cinematic-section" class="relative w-full py-24 md:py-32 my-16 rounded-2xl overflow-hidden">
+                <div id="stars-container">
+                    <div id="stars"></div>
+                    <div id="stars2"></div>
+                    <div id="stars3"></div>
+                </div>
+                <div class="relative z-10 text-center px-4">
+                    <h2 class="text-4xl md:text-5xl font-bold text-white mb-4 cinematic-text">Blazing-Fast AI Generation</h2>
+                    <p class="text-lg md:text-xl text-gray-300 max-w-xl mx-auto mb-8 cinematic-text" style="animation-delay: 0.2s;">
+                        Our foundational models are engineered for unparalleled speed and quality, bringing your ideas to life with our fast AI image generator.
+                    </p>
+                    <div class="inline-block bg-white/10 backdrop-blur-sm text-white font-semibold py-3 px-6 rounded-lg cinematic-text" style="animation-delay: 0.4s;">
+                        Average Generation Time: Under 17 Seconds
+                    </div>
+                </div>
+            </section>
+
+            <section id="gen0-section" class="relative w-full py-24 md:py-32 my-16 rounded-2xl overflow-hidden">
+                <div class="relative z-10 text-center px-4">
+                    <h3 class="text-lg md:text-xl text-blue-400 font-semibold mb-4 cinematic-text">COMING SOON</h3>
+                    <h2 class="text-4xl md:text-6xl font-bold text-white mb-6 cinematic-text" style="animation-delay: 0.2s;">Introducing Gen-0</h2>
+                    <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto cinematic-text" style="animation-delay: 0.4s;">
+                        A revolutionary leap in generative AI. Experience unparalleled quality and generate stunning visuals in under <span class="font-bold text-white">5 seconds</span> with our next-gen text to image AI.
+                    </p>
+                </div>
+            </section>
+
+            <!-- UPDATED: Added the second marquee-content div back for a seamless loop -->
             <section id="gallery-section" class="w-full py-16 overflow-hidden">
-                 <div class="marquee"><div class="marquee-content">
-                    <img src="https://iili.io/FiiqmhB.md.png" alt="Futuristic city" class="gallery-image">
-                    <img src="https://iili.io/FiiC8VS.md.png" alt="Neon portrait" class="gallery-image">
-                    <img src="https://iili.io/FiizC0P.md.png" alt="Surreal landscape" class="gallery-image">
-                 </div></div>
+                 <div class="text-center mb-12">
+                    <h2 class="text-3xl font-medium text-gray-800 fade-in-slide-up">Creations from the GenArt AI Image Generator</h2>
+                </div>
+                 <div class="marquee">
+                     <div class="marquee-content">
+                        <img src="https://iili.io/FiiqmhB.md.png" alt="Futuristic city" class="gallery-image">
+                        <img src="https://iili.io/FiiC8VS.md.png" alt="Neon portrait" class="gallery-image">
+                        <img src="https://iili.io/FiizC0P.md.png" alt="Surreal landscape" class="gallery-image">
+                        <img src="https://iili.io/FiiT4UP.md.png" alt="Fantasy creature" class="gallery-image">
+                        <img src="https://iili.io/FiiA23B.md.png" alt="Abstract pattern" class="gallery-image">
+                        <img src="https://iili.io/Fii52mF.md.png" alt="Photorealistic animal" class="gallery-image">
+                        <img src="https://iili.io/Fii7T3Q.md.png" alt="Cyberpunk character" class="gallery-image">
+                     </div>
+                     <div class="marquee-content" aria-hidden="true">
+                        <img src="https://iili.io/FiiqmhB.md.png" alt="Futuristic city" class="gallery-image">
+                        <img src="https://iili.io/FiiC8VS.md.png" alt="Neon portrait" class="gallery-image">
+                        <img src="https://iili.io/FiizC0P.md.png" alt="Surreal landscape" class="gallery-image">
+                        <img src="https://iili.io/FiiT4UP.md.png" alt="Fantasy creature" class="gallery-image">
+                        <img src="https://iili.io/FiiA23B.md.png" alt="Abstract pattern" class="gallery-image">
+                        <img src="https://iili.io/Fii52mF.md.png" alt="Photorealistic animal" class="gallery-image">
+                        <img src="https://iili.io/Fii7T3Q.md.png" alt="Cyberpunk character" class="gallery-image">
+                     </div>
+                 </div>
             </section>
         </main>
 
@@ -199,7 +244,7 @@
         </div>
     </div>
     
-    <!-- ADDED: Welcome Credits Modal -->
+    <!-- Welcome Credits Modal -->
     <div id="welcome-credits-modal" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 invisible">
         <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center fade-in-slide-up">
             <h2 class="text-2xl font-semibold text-gray-800 mb-2">Congratulations!</h2>
