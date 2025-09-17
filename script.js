@@ -88,7 +88,6 @@ function initializeEventListeners() {
     DOMElements.generateBtn?.addEventListener('click', () => handleImageGenerationRequest(false));
     DOMElements.regenerateBtn?.addEventListener('click', () => handleImageGenerationRequest(true));
     
-    // Event listener for the new "Try Now" button in the sticky bar
     DOMElements.promoTryNowBtn?.addEventListener('click', handlePromoTryNow);
 
     DOMElements.promptInput?.addEventListener('keydown', e => {
@@ -316,6 +315,17 @@ function stopLoadingUI() {
     addNavigationButtons();
 }
 
+// --- NEW HELPER FUNCTION ---
+// Safely converts a base64 data URL to a Blob object for downloading.
+function dataURLtoBlob(dataurl) {
+    let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+    while(n--){
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], {type:mime});
+}
+
 function displayImage(imageUrl, prompt) {
     const imgContainer = document.createElement('div');
     imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
@@ -329,13 +339,28 @@ function displayImage(imageUrl, prompt) {
     downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
     downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
     downloadButton.ariaLabel = "Download Image";
+
+    // --- FIXED DOWNLOAD LOGIC FOR SAFARI/IOS ---
     downloadButton.onclick = () => {
-        const a = document.createElement('a');
-        a.href = imageUrl;
-        a.download = 'genart-image.png';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        try {
+            // Convert the base64 data URL to a Blob
+            const blob = dataURLtoBlob(imageUrl);
+            // Create a temporary, browser-friendly URL for the Blob
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'genart-image.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            // Clean up the temporary URL to free up memory
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Download failed:", error);
+            showMessage("Could not download image. Please try saving it manually (long-press or right-click).", "error");
+        }
     };
 
     imgContainer.append(img, downloadButton);
@@ -430,17 +455,13 @@ function stopTimer() {
     if (progressBar) progressBar.style.width = '100%';
 }
 
-// --- NEW FUNCTION ---
-// Handles the click on the "Try Now" button in the sticky bar.
 function handlePromoTryNow() {
     const promptText = "Transform me into a 1920s vintage glamour portrait, black-and-white, soft shadows, art deco background, ultra-realistic cinematic lighting.";
     DOMElements.promptInput.value = promptText;
     
-    // Scroll to the generator and focus the input
     DOMElements.promptInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
     DOMElements.promptInput.focus();
 }
-
 
 function initializeCursor() {
     let mouseX = 0, mouseY = 0, outlineX = 0, outlineY = 0;
@@ -465,4 +486,3 @@ function initializeCursor() {
         el.addEventListener('mouseout', () => DOMElements.cursorOutline.classList.remove('cursor-hover'));
     });
 }
-
