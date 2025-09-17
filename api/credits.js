@@ -19,6 +19,7 @@ const specialUsers = [
     { email: "developer.techsquadz@gmail.com", credits: 5000 },
     { email: "interactweb24@gmail.com", credits: 5000 },
     { email: "anuj.suthar@gmail.com", credits: 5000 },
+    { email: "nilsone230384.002@gmail.com", credits: 5000 },
 ];
 
 export default async function handler(req, res) {
