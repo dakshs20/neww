@@ -36,28 +36,23 @@ export default async function handler(req, res) {
         if (req.method === 'GET') {
             const specialUser = specialUsers.find(su => su.email === user.email);
 
-            // --- FIXED LOGIC ---
-            // If the user is on the special list, their credits are set/updated to the special amount.
             if (specialUser) {
                 const userDoc = await userRef.get();
-                // To avoid unnecessary database writes, we only update if they don't exist or their credit count is wrong.
                 if (!userDoc.exists || userDoc.data().credits !== specialUser.credits) {
                     await userRef.set({
                         email: user.email,
                         credits: specialUser.credits,
-                    }, { merge: true }); // Using merge:true prevents overwriting other fields like createdAt.
+                    }, { merge: true });
                     console.log(`Set/updated special credits for ${user.email} to ${specialUser.credits}`);
                 }
                 return res.status(200).json({ credits: specialUser.credits });
             }
 
-            // This logic now only runs for REGULAR users.
             const userDoc = await userRef.get();
             if (userDoc.exists) {
-                // Regular user who already exists.
                 return res.status(200).json({ credits: userDoc.data().credits });
             } else {
-                // New, regular user.
+                // This is the line that controls the number of free credits for new, regular users.
                 const initialCredits = 50; // Default free credits
                 await userRef.set({
                     email: user.email,
