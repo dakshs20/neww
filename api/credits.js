@@ -14,9 +14,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// --- NEW FEATURE: Special Credits for Specific Users ---
-// To give a specific user a custom number of credits when they sign in,
-// add their email and the desired credit amount to this list.
+// --- Special Credits for Specific Users ---
 const specialUsers = [
     { email: "developer.techsquadz@gmail.com", credits: 5000 },
     { email: "interactweb24@gmail.com", credits: 5000 },
@@ -31,37 +29,46 @@ export default async function handler(req, res) {
     try {
         const user = await admin.auth().verifyIdToken(idToken);
         const userRef = db.collection('users').doc(user.uid);
-        const userDoc = await userRef.get();
 
         // Handle GET request (Fetch credits)
         if (req.method === 'GET') {
             const specialUser = specialUsers.find(su => su.email === user.email);
 
+            // --- FIXED LOGIC ---
+            // If the user is on the special list, their credits are set/updated to the special amount.
+            if (specialUser) {
+                const userDoc = await userRef.get();
+                // To avoid unnecessary database writes, we only update if they don't exist or their credit count is wrong.
+                if (!userDoc.exists || userDoc.data().credits !== specialUser.credits) {
+                    await userRef.set({
+                        email: user.email,
+                        credits: specialUser.credits,
+                    }, { merge: true }); // Using merge:true prevents overwriting other fields like createdAt.
+                    console.log(`Set/updated special credits for ${user.email} to ${specialUser.credits}`);
+                }
+                return res.status(200).json({ credits: specialUser.credits });
+            }
+
+            // This logic now only runs for REGULAR users.
+            const userDoc = await userRef.get();
             if (userDoc.exists) {
-                // If the user exists, just return their credits.
+                // Regular user who already exists.
                 return res.status(200).json({ credits: userDoc.data().credits });
             } else {
-                // If the user is new, create their document.
-                let initialCredits = 25; // Default free credits
-
-                // Check if the new user is on the special list.
-                if (specialUser) {
-                    initialCredits = specialUser.credits;
-                    console.log(`Assigning special credits (${initialCredits}) to new user: ${user.email}`);
-                }
-
+                // New, regular user.
+                const initialCredits = 25; // Default free credits
                 await userRef.set({
                     email: user.email,
                     credits: initialCredits,
                     createdAt: admin.firestore.FieldValue.serverTimestamp()
                 });
-                const newUserDoc = await userRef.get();
-                return res.status(200).json({ credits: newUserDoc.data().credits });
+                return res.status(200).json({ credits: initialCredits });
             }
         }
 
         // Handle POST request (Deduct credit)
         if (req.method === 'POST') {
+            const userDoc = await userRef.get();
             if (!userDoc.exists || userDoc.data().credits <= 0) {
                 return res.status(402).json({ error: 'Insufficient credits.' }); // 402 Payment Required
             }
