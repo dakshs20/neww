@@ -1,90 +1,86 @@
 import admin from 'firebase-admin';
-import { auth } from 'firebase-admin';
 
-// --- Firebase Admin Initialization ---
-// This ensures the Firebase Admin SDK is initialized only once, which is crucial for serverless environments.
+// Initialize Firebase Admin SDK (ensure it's initialized only once for serverless functions)
 if (!admin.apps.length) {
     try {
-        // The service account key is securely read from your hosting provider's environment variables.
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount)
         });
-        console.log("Firebase Admin Initialized Successfully in credits.js");
     } catch (error) {
-        console.error("CRITICAL: Firebase Admin Initialization Error in credits.js. Check your FIREBASE_SERVICE_ACCOUNT_KEY environment variable.", error);
+        console.error("Firebase Admin Initialization Error in credits.js:", error);
     }
 }
+
 const db = admin.firestore();
 
+// --- NEW FEATURE: Special Credits for Specific Users ---
+// To give a specific user a custom number of credits when they sign in,
+// add their email and the desired credit amount to this list.
+const specialUsers = [
+    { email: "developer.techsquadz@gmail.com", credits: 5000 },
+    { email: "interactweb24@gmail.com", credits: 5000 },
+];
+
 export default async function handler(req, res) {
-    let user;
-    try {
-        // **Security Check**: Verify the user's identity from the token sent in the request header.
-        const idToken = req.headers.authorization?.split('Bearer ')[1];
-        if (!idToken) {
-            return res.status(401).json({ error: 'User not authenticated. No token provided.' });
-        }
-        user = await auth().verifyIdToken(idToken);
-    } catch (error) {
-        console.error("Authentication Error:", error);
-        return res.status(401).json({ error: 'Invalid or expired user token.' });
+    const idToken = req.headers.authorization?.split('Bearer ')[1];
+    if (!idToken) {
+        return res.status(401).json({ error: 'No token provided.' });
     }
 
-    const userRef = db.collection('users').doc(user.uid);
+    try {
+        const user = await admin.auth().verifyIdToken(idToken);
+        const userRef = db.collection('users').doc(user.uid);
+        const userDoc = await userRef.get();
 
-    // --- LOGIC FOR FETCHING CREDITS (GET Request) ---
-    if (req.method === 'GET') {
-        try {
-            const doc = await userRef.get();
-            if (!doc.exists) {
-                // **New User Logic**: If the user doesn't have a document in the database, create one with 5 free credits.
-                console.log(`New user detected: ${user.uid}. Creating account with 5 free credits.`);
+        // Handle GET request (Fetch credits)
+        if (req.method === 'GET') {
+            const specialUser = specialUsers.find(su => su.email === user.email);
+
+            if (userDoc.exists) {
+                // If the user exists, just return their credits.
+                return res.status(200).json({ credits: userDoc.data().credits });
+            } else {
+                // If the user is new, create their document.
+                let initialCredits = 25; // Default free credits
+
+                // Check if the new user is on the special list.
+                if (specialUser) {
+                    initialCredits = specialUser.credits;
+                    console.log(`Assigning special credits (${initialCredits}) to new user: ${user.email}`);
+                }
+
                 await userRef.set({
                     email: user.email,
-                    credits: 5,
+                    credits: initialCredits,
                     createdAt: admin.firestore.FieldValue.serverTimestamp()
                 });
-                return res.status(200).json({ credits: 5 });
-            } else {
-                // **Existing User Logic**: Return the current credit balance.
-                return res.status(200).json({ credits: doc.data().credits });
+                const newUserDoc = await userRef.get();
+                return res.status(200).json({ credits: newUserDoc.data().credits });
             }
-        } catch (error) {
-            console.error("Error fetching credits for user:", user.uid, error);
-            return res.status(500).json({ error: 'Failed to retrieve credit balance.' });
         }
-    }
 
-    // --- LOGIC FOR DEDUCTING CREDITS (POST Request) ---
-    if (req.method === 'POST') {
-        try {
-            const doc = await userRef.get();
-
-            if (!doc.exists || doc.data().credits <= 0) {
-                // **Insufficient Credits Check**: Prevent generation if credits are 0 or less.
-                console.log(`User ${user.uid} has insufficient credits. Blocking generation.`);
+        // Handle POST request (Deduct credit)
+        if (req.method === 'POST') {
+            if (!userDoc.exists || userDoc.data().credits <= 0) {
                 return res.status(402).json({ error: 'Insufficient credits.' }); // 402 Payment Required
             }
-            
-            // **Deduct Credit**: Use an atomic server-side operation to safely decrement the credit count by 1.
+
             await userRef.update({
                 credits: admin.firestore.FieldValue.increment(-1)
             });
-
             const updatedDoc = await userRef.get();
-            const newCredits = updatedDoc.data().credits;
-
-            console.log(`Successfully deducted 1 credit from user ${user.uid}. New balance: ${newCredits}`);
-            return res.status(200).json({ success: true, newCredits: newCredits });
-
-        } catch (error) {
-            console.error("Error deducting credit for user:", user.uid, error);
-            return res.status(500).json({ error: 'Failed to deduct credit due to a server error.' });
+            return res.status(200).json({ newCredits: updatedDoc.data().credits });
         }
-    }
 
-    // If the request method is not GET or POST, return an error.
-    res.setHeader('Allow', ['GET', 'POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+        return res.status(405).json({ error: 'Method Not Allowed' });
+
+    } catch (error) {
+        console.error("API Error in /api/credits:", error);
+        if (error.code === 'auth/id-token-expired') {
+            return res.status(401).json({ error: 'Token expired.' });
+        }
+        return res.status(500).json({ error: 'A server error has occurred.' });
+    }
 }
+
