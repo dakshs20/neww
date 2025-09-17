@@ -57,7 +57,7 @@ export default async function handler(req, res) {
                 return res.status(200).json({ credits: userDoc.data().credits });
             } else {
                 // New, regular user.
-                const initialCredits = 25; // Default free credits
+                const initialCredits = 50; // Default free credits
                 await userRef.set({
                     email: user.email,
                     credits: initialCredits,
