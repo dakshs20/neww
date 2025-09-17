@@ -35,31 +35,33 @@ export default async function handler(req, res) {
         // Handle GET request (Fetch credits)
         if (req.method === 'GET') {
             const specialUser = specialUsers.find(su => su.email === user.email);
+            const userDoc = await userRef.get();
+            const isNew = !userDoc.exists; // Check if the user is new before any changes
 
             if (specialUser) {
-                const userDoc = await userRef.get();
-                if (!userDoc.exists || userDoc.data().credits !== specialUser.credits) {
+                if (isNew || userDoc.data().credits !== specialUser.credits) {
                     await userRef.set({
                         email: user.email,
                         credits: specialUser.credits,
                     }, { merge: true });
                     console.log(`Set/updated special credits for ${user.email} to ${specialUser.credits}`);
                 }
-                return res.status(200).json({ credits: specialUser.credits });
+                return res.status(200).json({ credits: specialUser.credits, isNewUser: isNew });
             }
 
-            const userDoc = await userRef.get();
             if (userDoc.exists) {
-                return res.status(200).json({ credits: userDoc.data().credits });
+                // Existing regular user
+                return res.status(200).json({ credits: userDoc.data().credits, isNewUser: false });
             } else {
-                // This is the line that controls the number of free credits for new, regular users.
+                // New regular user
                 const initialCredits = 50; // Default free credits
                 await userRef.set({
                     email: user.email,
                     credits: initialCredits,
                     createdAt: admin.firestore.FieldValue.serverTimestamp()
                 });
-                return res.status(200).json({ credits: initialCredits });
+                // Let the frontend know this user is new and what their credit balance is
+                return res.status(200).json({ credits: initialCredits, isNewUser: true });
             }
         }
 
@@ -67,7 +69,7 @@ export default async function handler(req, res) {
         if (req.method === 'POST') {
             const userDoc = await userRef.get();
             if (!userDoc.exists || userDoc.data().credits <= 0) {
-                return res.status(402).json({ error: 'Insufficient credits.' }); // 402 Payment Required
+                return res.status(402).json({ error: 'Insufficient credits.' });
             }
 
             await userRef.update({
