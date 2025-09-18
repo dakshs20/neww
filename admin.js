@@ -36,11 +36,15 @@ passwordInput.addEventListener('keydown', (e) => {
 });
 
 function checkPassword() {
-    if (passwordInput.value === ADMIN_PASSWORD) {
-        passwordProtectionEl.classList.add('hidden');
-        dashboardContentEl.classList.remove('hidden');
+    // Using .trim() to remove any accidental whitespace from the input
+    if (passwordInput.value.trim() === ADMIN_PASSWORD) {
+        console.log("Password correct. Displaying dashboard.");
+        // Directly changing style for a more robust show/hide action
+        passwordProtectionEl.style.display = 'none';
+        dashboardContentEl.style.display = 'block';
         initializeDashboard();
     } else {
+        console.log("Incorrect password entered.");
         passwordError.classList.remove('hidden');
         setTimeout(() => passwordError.classList.add('hidden'), 2000);
     }
@@ -81,29 +85,4 @@ function initializeDashboard() {
         });
     });
 }
-```
 
-### 3. Final Step: Firestore Security Rules
-
-To make this work, you need to update your Firestore security rules to allow your new admin page to read the `generations` collection.
-
-1.  Go to your **Firebase Console**.
-2.  Navigate to **Firestore Database -> Rules**.
-3.  Replace your existing rules with these:
-
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Users can only read and write their own data
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // The server can create new generation logs
-    match /generations/{docId} {
-      allow create: if true; // Allows the backend to write
-      allow read: if true;   // Allows the admin dashboard to read
-    }
-  }
-}
