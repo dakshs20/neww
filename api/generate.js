@@ -13,6 +13,23 @@ if (!admin.apps.length) {
     }
 }
 
+const db = admin.firestore();
+
+// --- NEW: Function to save prompt data ---
+async function logGeneration(userId, prompt) {
+    try {
+        await db.collection('generations').add({
+            userId: userId,
+            prompt: prompt,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        console.log(`Logged prompt for user: ${userId}`);
+    } catch (error) {
+        // We log the error but don't stop the image generation process
+        console.error("Failed to log prompt:", error);
+    }
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
@@ -23,13 +40,15 @@ export default async function handler(req, res) {
         if (!idToken) {
             return res.status(401).json({ error: 'User not authenticated.' });
         }
-        await auth().verifyIdToken(idToken);
+        const user = await auth().verifyIdToken(idToken);
 
+        // --- NEW: Log the prompt before generating ---
         const { prompt, imageData, aspectRatio } = req.body;
-        const apiKey = process.env.GOOGLE_API_KEY;
+        await logGeneration(user.uid, prompt);
 
+
+        const apiKey = process.env.GOOGLE_API_KEY;
         if (!apiKey) {
-            console.error("GOOGLE_API_KEY is not set in environment variables.");
             return res.status(500).json({ error: "Server configuration error: API key not found." });
         }
 
@@ -53,9 +72,6 @@ export default async function handler(req, res) {
                 parameters: { "sampleCount": 1, "aspectRatio": aspectRatio || "1:1" }
             };
         }
-        
-        // Log the request for debugging, but be careful with large data
-        console.log(`Sending request to Google API: ${apiUrl.split('?')[0]}`);
 
         const apiResponse = await fetch(apiUrl, {
             method: 'POST',
@@ -65,7 +81,7 @@ export default async function handler(req, res) {
 
         if (!apiResponse.ok) {
             const errorText = await apiResponse.text();
-            console.error("Google API returned an error:", errorText);
+            console.error("Google API Error:", errorText);
             return res.status(apiResponse.status).json({ error: `Google API Error: ${errorText}` });
         }
 
