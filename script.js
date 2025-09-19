@@ -16,31 +16,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// --- NEW: Predefined list of high-quality prompts for autocomplete ---
-const promptDatabase = [
-    "A majestic lion with a crown of stars, hyperrealistic, 8k resolution, cinematic lighting",
-    "A serene Japanese garden in spring, with cherry blossoms and a koi pond, Studio Ghibli anime style",
-    "A futuristic cityscape at night, with flying cars and neon signs, Blade Runner aesthetic, photorealistic",
-    "A cozy, cluttered artist's studio filled with plants and books, warm afternoon light, oil painting style",
-    "A surreal underwater world with glowing jellyfish and ancient ruins, fantasy, detailed illustration",
-    "An astronaut discovering a vibrant, alien jungle on a distant planet, sci-fi concept art",
-    "A photorealistic portrait of an old wizard with a long white beard, intricate details, fantasy",
-    "A steaming bowl of ramen in a bustling Tokyo street market, shallow depth of field, food photography",
-    "A haunted Victorian mansion on a hill during a thunderstorm, gothic horror, dark and moody",
-    "A minimalist abstract painting with bold geometric shapes and a calming color palette",
-    "A cute, fluffy red panda wearing a tiny backpack, exploring a bamboo forest, Pixar animation style",
-    "A vintage travel poster for a trip to Mars, retro-futurism, 1950s style",
-    "A close-up shot of a single dewdrop on a blade of grass, macro photography, hyper-detailed",
-    "A powerful superheroine hovering above a city, comic book art style, dynamic action pose",
-    "A secret library hidden inside an ancient tree, magical, glowing books, fantasy illustration",
-    "A cyberpunk ninja with a katana standing in a rain-soaked neon alley, synthwave aesthetic",
-    "A tranquil beach at sunset with pastel-colored clouds and calm waves, impressionist painting",
-    "A steampunk-inspired mechanical owl with intricate gears and glowing eyes, detailed 3D render",
-    "A watercolor painting of a charming European village street with cobblestones and cafes",
-    "An epic fantasy battle between a dragon and a knight, dramatic lighting, digital painting"
-];
-
-
 // --- Global State ---
 let currentUserCredits = 0;
 let lastPrompt = '';
@@ -93,8 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
     DOMElements.regenerateBtn = document.getElementById('regenerate-btn');
     DOMElements.messageBox = document.getElementById('message-box');
     DOMElements.promoTryNowBtn = document.getElementById('promo-try-now-btn');
-    // NEW: Cache the autocomplete container
-    DOMElements.autocompleteSuggestions = document.getElementById('autocomplete-suggestions');
     
     initializeEventListeners();
 });
@@ -125,16 +98,6 @@ function initializeEventListeners() {
         }
     });
 
-    // --- NEW: Autocomplete Event Listener ---
-    DOMElements.promptInput?.addEventListener('input', handleAutocomplete);
-    // Hide suggestions when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('#prompt-container')) {
-            hideAutocomplete();
-        }
-    });
-
-
     DOMElements.examplePrompts.forEach(button => {
         button.addEventListener('click', () => {
             DOMElements.promptInput.value = button.innerText.trim();
@@ -158,61 +121,6 @@ function initializeEventListeners() {
 
     initializeCursor();
 }
-
-// --- NEW: Autocomplete Feature Functions ---
-
-function handleAutocomplete(e) {
-    const query = e.target.value.toLowerCase();
-    
-    if (query.length < 3) { // Only show suggestions after 3 characters
-        hideAutocomplete();
-        return;
-    }
-
-    const filteredPrompts = promptDatabase.filter(p => p.toLowerCase().startsWith(query)).slice(0, 5); // Show max 5
-
-    if (filteredPrompts.length > 0) {
-        showAutocomplete(filteredPrompts, query);
-    } else {
-        hideAutocomplete();
-    }
-}
-
-function showAutocomplete(suggestions, query) {
-    const container = DOMElements.autocompleteSuggestions;
-    container.innerHTML = ''; // Clear previous suggestions
-    
-    suggestions.forEach(suggestion => {
-        const item = document.createElement('div');
-        item.className = 'suggestion-item';
-        
-        // Bold the part of the text that matches the query
-        const boldedText = `<strong>${suggestion.substring(0, query.length)}</strong>${suggestion.substring(query.length)}`;
-        
-        item.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-            <span>${boldedText}</span>
-        `;
-        
-        item.addEventListener('click', () => {
-            DOMElements.promptInput.value = suggestion;
-            hideAutocomplete();
-            DOMElements.promptInput.focus();
-        });
-        
-        container.appendChild(item);
-    });
-
-    container.classList.remove('hidden');
-}
-
-function hideAutocomplete() {
-    DOMElements.autocompleteSuggestions.classList.add('hidden');
-    DOMElements.autocompleteSuggestions.innerHTML = '';
-}
-
 
 // --- UI & State Management ---
 
@@ -281,7 +189,6 @@ function resetToGeneratorView() {
     removeUploadedImage();
     DOMElements.promptInput.value = '';
     DOMElements.regeneratePromptInput.value = '';
-    hideAutocomplete();
 }
 
 // --- Core Application Logic ---
@@ -307,9 +214,6 @@ function signInWithGoogle() {
 
 function handleImageGenerationRequest(isRegenerate) {
     if (isGenerating) return;
-
-    // Hide autocomplete before generating
-    hideAutocomplete();
 
     if (!auth.currentUser) {
         toggleModal(DOMElements.authModal, true);
@@ -589,3 +493,4 @@ function initializeCursor() {
         el.addEventListener('mouseout', () => DOMElements.cursorOutline?.classList.remove('cursor-hover'));
     });
 }
+
