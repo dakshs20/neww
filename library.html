@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library - GenArt</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100">
+    <div id="app-container" class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="flex justify-between items-center py-5 px-2">
+            <a href="index.html">
+                 <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
+            </a>
+            <div class="flex items-center space-x-6">
+                 <a href="library.html" class="text-sm font-medium text-gray-900">Library</a>
+                 <a href="pricing.html" class="text-sm font-medium text-gray-500 hover:text-gray-800">Pricing</a>
+            </div>
+        </header>
+
+        <main>
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Community Library</h1>
+            <p class="text-lg text-gray-500 mb-12">Explore images created by the GenArt community.</p>
+
+            <div id="image-library-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Images will be loaded here by JavaScript -->
+            </div>
+            <div id="loader" class="text-center py-8 hidden">
+                <p>Loading more images...</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Image Detail Modal -->
+    <div id="image-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col md:flex-row overflow-hidden">
+            <div class="w-full md:w-2/3 flex-shrink-0 bg-gray-200">
+                <img id="modal-img" src="" class="w-full h-full object-contain">
+            </div>
+            <div class="w-full md:w-1/3 p-6 flex flex-col">
+                <h3 class="text-lg font-semibold mb-2">Prompt Details</h3>
+                <div class="bg-gray-100 p-3 rounded-md text-sm text-gray-700 h-full overflow-y-auto relative">
+                    <p id="modal-prompt"></p>
+                    <button id="modal-copy-btn" class="absolute top-2 right-2 p-1.5 bg-gray-200 rounded-md hover:bg-gray-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zM-1 7a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3A.5.5 0 0 1 -1 7z"/></svg>
+                    </button>
+                </div>
+                <button id="modal-close-btn" class="mt-4 w-full bg-gray-800 text-white font-semibold py-2 rounded-lg hover:bg-black">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="library.js"></script>
+</body>
+</html>
