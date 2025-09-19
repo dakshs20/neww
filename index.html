@@ -122,27 +122,22 @@
                     <h1 class="text-3xl sm:text-4xl md:text-5xl font-medium text-gray-900 mb-4">The Fastest & Free AI Image Generator</h1>
                     <p class="text-base md:text-lg text-gray-500 mb-10">Create stunning AI art, photos, and images from text. Sign in to get 50 free credits.</p>
                     
-                    <!-- Container for both prompt input and suggestions for positioning context -->
-                    <div class="relative">
-                        <div id="prompt-container" class="bg-white rounded-2xl border border-gray-200/80 shadow-sm transition-all duration-300 ease-in-out flex flex-col overflow-hidden">
-                            <div class="p-3">
-                                <div id="image-preview-container" class="hidden relative w-20 h-20 mb-2">
-                                    <img id="image-preview" class="w-full h-full object-cover rounded-md" src="" alt="User uploaded image preview for AI editing">
-                                    <button id="remove-image-btn" class="absolute -top-2 -right-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-black">&times;</button>
-                                </div>
-                                <textarea id="prompt-input" rows="2.5" class="w-full p-3 bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none resize-none text-base" placeholder="An oil painting of a futuristic city skyline at dusk..."></textarea>
+                    <div id="prompt-container" class="bg-white rounded-2xl border border-gray-200/80 shadow-sm transition-all duration-300 ease-in-out flex flex-col overflow-hidden">
+                        <div class="p-3">
+                            <div id="image-preview-container" class="hidden relative w-20 h-20 mb-2">
+                                <img id="image-preview" class="w-full h-full object-cover rounded-md" src="" alt="User uploaded image preview for AI editing">
+                                <button id="remove-image-btn" class="absolute -top-2 -right-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-black">&times;</button>
                             </div>
-                            
-                            <div class="flex justify-between items-center p-3 border-t border-gray-100 bg-white mt-auto rounded-b-2xl">
-                                <div class="flex items-center space-x-1">
-                                     <input type="file" id="image-upload-input" accept="image/png, image/jpeg" class="hidden">
-                                     <button id="image-upload-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Add file" title="Add Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-gray-600 transition-colors"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
-                                </div>
-                                <button id="generate-btn" class="w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-gray-400" aria-label="Generate AI Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
-                            </div>
+                            <textarea id="prompt-input" rows="2.5" class="w-full p-3 bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none resize-none text-base" placeholder="An oil painting of a futuristic city skyline at dusk..."></textarea>
                         </div>
-                        <!-- NEW: Autocomplete suggestions container -->
-                        <div id="autocomplete-suggestions" class="hidden"></div>
+                        
+                        <div class="flex justify-between items-center p-3 border-t border-gray-100 bg-white mt-auto rounded-b-2xl">
+                            <div class="flex items-center space-x-1">
+                                 <input type="file" id="image-upload-input" accept="image/png, image/jpeg" class="hidden">
+                                 <button id="image-upload-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors" aria-label="Add file" title="Add Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-gray-600 transition-colors"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+                            </div>
+                            <button id="generate-btn" class="w-10 h-10 bg-gray-800 text-white rounded-lg flex items-center justify-center hover:bg-black transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-gray-400" aria-label="Generate AI Image"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg></button>
+                        </div>
                     </div>
                 </div>
                 <div id="result-container" class="w-full max-w-5xl mt-8 hidden">
@@ -262,3 +257,4 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
