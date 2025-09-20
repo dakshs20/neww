@@ -63,9 +63,29 @@ function initializeEventListeners() {
     DOMElements.imageUploadInput?.addEventListener('change', handleImageUpload);
     DOMElements.removeImageBtn?.addEventListener('click', removeUploadedImage);
     DOMElements.promptInput?.addEventListener('input', autoResizeTextarea);
-    DOMElements.ratioSelectorBtn?.addEventListener('click', (e) => { e.stopPropagation(); toggleRatioOptions(); });
-    document.querySelectorAll('.ratio-option-box').forEach(box => box.addEventListener('click', selectRatio));
-    document.addEventListener('click', () => DOMElements.ratioOptions?.classList.contains('visible') && toggleRatioOptions());
+    
+    // --- UPDATED LOGIC for Aspect Ratio Selector ---
+    DOMElements.ratioSelectorBtn?.addEventListener('click', (e) => { 
+        // Prevent this click from bubbling up to the document and immediately closing the menu
+        e.stopPropagation(); 
+        toggleRatioOptions(); 
+    });
+
+    document.querySelectorAll('.ratio-option-box').forEach(box => {
+        box.addEventListener('click', (e) => {
+            // We stop propagation here too, so the document listener doesn't fire twice
+            e.stopPropagation();
+            selectRatio(e);
+        });
+    });
+
+    // Global listener to close the ratio options when clicking anywhere else on the page
+    document.addEventListener('click', () => {
+        if (DOMElements.ratioOptions?.classList.contains('visible')) {
+            toggleRatioOptions();
+        }
+    });
+
     DOMElements.backgroundGridContainer?.addEventListener('scroll', handleScroll);
 }
 
@@ -246,6 +266,10 @@ function selectRatio(event) {
 
     document.querySelectorAll('.ratio-option-box').forEach(box => box.classList.remove('active'));
     selectedBox.classList.add('active');
+
+    // --- FIX ---
+    // Explicitly close the menu after a selection is made.
+    toggleRatioOptions();
 }
 
 function startLoadingUI() {
