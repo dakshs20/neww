@@ -57,6 +57,9 @@ body {
     justify-content: center;
     height: 100%;
     width: 100%;
+    /* Add padding to push the image up from the prompt bar */
+    padding-bottom: 100px; 
+    box-sizing: border-box; /* Ensures padding is included in the element's total height */
 }
 
 #image-grid {
