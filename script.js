@@ -1,7 +1,6 @@
 // --- Firebase and Auth Initialization ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
@@ -15,10 +14,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-const fallbackImageUrls = [
+const imageGalleryUrls = [
     "https://iili.io/K7bN7Hl.md.png", "https://iili.io/K7bOTzP.md.png", "https://iili.io/K7yYoqN.md.png", "https://iili.io/K7bk3Ku.md.png", 
     "https://iili.io/K7b6OPV.md.png", "https://iili.io/K7be88v.md.png", "https://iili.io/K7b894e.md.png", "https://iili.io/K7y1cUN.md.png", 
     "https://iili.io/K7yEx14.md.png", "https://iili.io/K7b4VQR.md.png", "https://iili.io/K7yGhS2.md.png", "https://iili.io/K7bs5wg.md.png", 
@@ -28,9 +26,8 @@ const fallbackImageUrls = [
 ];
 
 let currentUserCredits = 0, uploadedImageData = null, isGenerating = false, timerInterval, currentAspectRatio = '1:1';
-let lastVisibleDoc = null; // For pagination
-let isLoadingMoreImages = false; // To prevent multiple fetches
-let allImagesLoaded = false; // To know when to stop fetching
+let galleryImageIndex = 0; // Tracks which image to add next
+let isLoadingMoreImages = false;
 const DOMElements = {};
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -46,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ids.forEach(id => DOMElements[id.replace(/-./g, c => c[1].toUpperCase())] = document.getElementById(id));
     
     initializeEventListeners();
-    loadInitialImages(); // Fetch the first batch of images
+    populateInitialGallery();
 });
 
 function initializeEventListeners() {
@@ -64,87 +61,47 @@ function initializeEventListeners() {
     DOMElements.ratioSelectorBtn?.addEventListener('click', (e) => { e.stopPropagation(); toggleRatioOptions(); });
     document.querySelectorAll('.ratio-option-box').forEach(box => box.addEventListener('click', selectRatio));
     document.addEventListener('click', () => DOMElements.ratioOptions?.classList.contains('visible') && toggleRatioOptions());
-    DOMElements.backgroundGridContainer?.addEventListener('scroll', handleScroll); // Add scroll listener
+    DOMElements.backgroundGridContainer?.addEventListener('scroll', handleScroll);
 }
 
 function handleScroll() {
     const container = DOMElements.backgroundGridContainer;
     if (!container) return;
-    const threshold = 500; // Load more when 500px from the bottom
+    const threshold = 500;
     const isNearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - threshold;
-    if (isNearBottom && !isLoadingMoreImages && !allImagesLoaded) {
-        loadMoreImages();
+    if (isNearBottom && !isLoadingMoreImages) {
+        appendMoreImages();
     }
 }
 
-async function loadInitialImages() {
+function populateInitialGallery() {
     const grid = DOMElements.backgroundGrid;
     if (!grid) return;
-    populateGrid(fallbackImageUrls); // Show fallbacks while loading
-    try {
-        const q = query(collection(db, "shared_images"), orderBy("createdAt", "desc"), limit(20));
-        const documentSnapshots = await getDocs(q);
-        const imageUrls = documentSnapshots.docs.map(doc => doc.data().imageUrl);
-
-        if (imageUrls.length > 0) {
-            populateGrid(imageUrls); // Replace fallbacks
-            lastVisibleDoc = documentSnapshots.docs[documentSnapshots.docs.length - 1];
-            if (documentSnapshots.docs.length < 20) allImagesLoaded = true;
-        } else {
-            allImagesLoaded = true; // DB is empty
-        }
-    } catch (error) {
-        console.error("Error fetching initial images: ", error);
-        allImagesLoaded = true; // Stop trying on error
+    grid.innerHTML = ''; // Clear any existing content
+    for (let i = 0; i < 30; i++) {
+        appendImageToGrid();
     }
 }
 
-async function loadMoreImages() {
-    if (isLoadingMoreImages || allImagesLoaded) return;
+function appendMoreImages() {
     isLoadingMoreImages = true;
-
-    try {
-        const q = query(collection(db, "shared_images"), orderBy("createdAt", "desc"), startAfter(lastVisibleDoc), limit(10));
-        const documentSnapshots = await getDocs(q);
-        const newImageUrls = documentSnapshots.docs.map(doc => doc.data().imageUrl);
-
-        if (newImageUrls.length > 0) {
-            appendImagesToGrid(newImageUrls);
-            lastVisibleDoc = documentSnapshots.docs[documentSnapshots.docs.length - 1];
-        }
-        if (documentSnapshots.docs.length < 10) {
-            allImagesLoaded = true; // This was the last page
-        }
-    } catch (error) {
-        console.error("Error fetching more images: ", error);
-    } finally {
-        isLoadingMoreImages = false;
+    // Add a batch of 10 new images
+    for (let i = 0; i < 10; i++) {
+        appendImageToGrid();
     }
+    isLoadingMoreImages = false;
 }
 
-function populateGrid(urls) {
+function appendImageToGrid() {
     const grid = DOMElements.backgroundGrid;
     if (!grid) return;
-    grid.innerHTML = '';
-    urls.forEach(url => {
-        const img = document.createElement('img');
-        img.className = 'grid-image';
-        img.src = url;
-        img.loading = 'lazy';
-        grid.appendChild(img);
-    });
-}
-
-function appendImagesToGrid(urls) {
-    const grid = DOMElements.backgroundGrid;
-    if (!grid) return;
-    urls.forEach(url => {
-        const img = document.createElement('img');
-        img.className = 'grid-image';
-        img.src = url;
-        img.loading = 'lazy';
-        grid.appendChild(img);
-    });
+    const img = document.createElement('img');
+    img.className = 'grid-image';
+    // Loop through the image array indefinitely
+    img.src = imageGalleryUrls[galleryImageIndex % imageGalleryUrls.length];
+    img.loading = 'lazy';
+    grid.appendChild(img);
+    galleryImageIndex++;
 }
 
 function toggleModal(modal, show) {
@@ -285,7 +242,7 @@ function startLoadingUI() {
 function stopLoadingUI() {
     isGenerating = false;
     DOMElements.loadingIndicator.classList.add('hidden');
-    stopTimer(); // Stops the timer when loading is complete
+    stopTimer();
 }
 
 function applyWatermark(baseImageUrl) {
@@ -314,29 +271,6 @@ function applyWatermark(baseImageUrl) {
     });
 }
 
-async function shareImage(imageUrl, buttonElement) {
-    buttonElement.textContent = 'Sharing...';
-    buttonElement.disabled = true;
-    try {
-        const token = await auth.currentUser.getIdToken();
-        const response = await fetch('/api/share', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ imageDataUrl: imageUrl })
-        });
-        if (!response.ok) {
-            const errorResult = await response.json();
-            throw new Error(errorResult.error || 'Sharing failed on the server.');
-        }
-        buttonElement.textContent = 'Shared!';
-    } catch (error) {
-        console.error('Sharing Error:', error);
-        alert(`Sorry, we couldn't share your image at this time.\n\nError: ${error.message}`);
-        buttonElement.textContent = 'Share';
-        buttonElement.disabled = false;
-    }
-}
-
 async function displayImage(imageUrl, prompt) {
     try {
         const watermarkedImageUrl = await applyWatermark(imageUrl);
@@ -358,15 +292,11 @@ async function displayImage(imageUrl, prompt) {
             a.href = watermarkedImageUrl; a.download = 'genart-image.png';
             document.body.appendChild(a); a.click(); document.body.removeChild(a);
         };
-        const shareButton = document.createElement('button');
-        shareButton.className = "bg-blue-500 text-white p-2 rounded-full text-xs font-semibold";
-        shareButton.textContent = "Share";
-        shareButton.onclick = () => shareImage(watermarkedImageUrl, shareButton);
         const closeButton = document.createElement('button');
         closeButton.className = "bg-black/50 text-white p-2 rounded-full";
         closeButton.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
         closeButton.onclick = resetUIAfterGeneration;
-        buttonContainer.append(downloadButton, shareButton, closeButton);
+        buttonContainer.append(downloadButton, closeButton);
         imgContainer.append(img, buttonContainer);
         DOMElements.imageGrid.appendChild(imgContainer);
     } catch (error) {
@@ -384,7 +314,6 @@ function resetUIAfterGeneration() {
 }
 
 function startTimer() {
-    // Always clear any previous timer before starting a new one
     if (timerInterval) {
         clearInterval(timerInterval);
     }
