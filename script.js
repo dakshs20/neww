@@ -1,6 +1,7 @@
 // --- Firebase and Auth Initialization ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
@@ -14,188 +15,161 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app); // Initialize Firestore
 const provider = new GoogleAuthProvider();
+
+// --- IMPORTANT: This array now serves as a fallback ---
+const fallbackImageUrls = [
+    "https://iili.io/K7bN7Hl.md.png", "https://iili.io/K7bOTzP.md.png", "https://iili.io/K7yYoqN.md.png", "https://iili.io/K7bk3Ku.md.png", 
+    "https://iili.io/K7b6OPV.md.png", "https://iili.io/K7be88v.md.png", "https://iili.io/K7b894e.md.png", "https://iili.io/K7y1cUN.md.png", 
+    "https://iili.io/K7yEx14.md.png", "https://iili.io/K7b4VQR.md.png", "https://iili.io/K7yGhS2.md.png", "https://iili.io/K7bs5wg.md.png", 
+    "https://iili.io/K7bDzpS.md.png", "https://iili.io/K7yVVv2.md.png", "https://iili.io/K7bmj7R.md.png", "https://iili.io/K7bP679.md.png",
+    "https://iili.io/FiiqmhB.md.png", "https://iili.io/FiiC8VS.md.png",
+    "https://iili.io/FiizC0P.md.png", "https://iili.io/FiiT4UP.md.png"
+];
+
 
 // --- Global State ---
 let currentUserCredits = 0;
-let lastPrompt = '';
-let selectedAspectRatio = '1:1';
 let uploadedImageData = null;
 let isGenerating = false;
 let timerInterval;
+let currentAspectRatio = '1:1'; // Default aspect ratio
 
-// --- DOM Element Caching for Performance ---
+// --- DOM Element Caching ---
 const DOMElements = {};
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Cache all DOM elements once to avoid repeated lookups
-    DOMElements.mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    DOMElements.mobileMenu = document.getElementById('mobile-menu');
-    DOMElements.authBtn = document.getElementById('auth-btn');
-    DOMElements.mobileAuthBtn = document.getElementById('mobile-auth-btn');
-    DOMElements.authModal = document.getElementById('auth-modal');
-    DOMElements.googleSignInBtn = document.getElementById('google-signin-btn');
-    DOMElements.closeModalBtn = document.getElementById('close-modal-btn');
-    DOMElements.outOfCreditsModal = document.getElementById('out-of-credits-modal');
-    DOMElements.closeCreditsModalBtn = document.getElementById('close-credits-modal-btn');
-    DOMElements.welcomeCreditsModal = document.getElementById('welcome-credits-modal');
-    DOMElements.closeWelcomeModalBtn = document.getElementById('close-welcome-modal-btn');
-    DOMElements.freeCreditsAmount = document.getElementById('free-credits-amount');
-    DOMElements.generationCounter = document.getElementById('generation-counter');
-    DOMElements.mobileGenerationCounter = document.getElementById('mobile-generation-counter');
-    DOMElements.musicBtn = document.getElementById('music-btn');
-    DOMElements.lofiMusic = document.getElementById('lofi-music');
-    DOMElements.cursorDot = document.querySelector('.cursor-dot');
-    DOMElements.cursorOutline = document.querySelector('.cursor-outline');
-    DOMElements.generatorUI = document.getElementById('generator-ui');
-    DOMElements.resultContainer = document.getElementById('result-container');
-    DOMElements.promptInput = document.getElementById('prompt-input');
-    DOMElements.generateBtn = document.getElementById('generate-btn');
-    DOMElements.examplePrompts = document.querySelectorAll('.example-prompt');
-    DOMElements.imageUploadBtn = document.getElementById('image-upload-btn');
-    DOMElements.imageUploadInput = document.getElementById('image-upload-input');
-    DOMElements.removeImageBtn = document.getElementById('remove-image-btn');
-    DOMElements.imagePreviewContainer = document.getElementById('image-preview-container');
-    DOMElements.imagePreview = document.getElementById('image-preview');
-    DOMElements.aspectRatioBtns = document.querySelectorAll('.aspect-ratio-btn');
-    DOMElements.copyPromptBtn = document.getElementById('copy-prompt-btn');
-    DOMElements.enhancePromptBtn = document.getElementById('enhance-prompt-btn');
-    DOMElements.promptSuggestionsContainer = document.getElementById('prompt-suggestions');
-    DOMElements.loadingIndicator = document.getElementById('loading-indicator');
-    DOMElements.imageGrid = document.getElementById('image-grid');
-    DOMElements.postGenerationControls = document.getElementById('post-generation-controls');
-    DOMElements.regeneratePromptInput = document.getElementById('regenerate-prompt-input');
-    DOMElements.regenerateBtn = document.getElementById('regenerate-btn');
-    DOMElements.messageBox = document.getElementById('message-box');
-    DOMElements.promoTryNowBtn = document.getElementById('promo-try-now-btn');
+    const ids = [
+        'auth-btn', 'auth-modal', 'google-signin-btn', 'close-modal-btn', 
+        'out-of-credits-modal', 'close-credits-modal-btn', 'welcome-credits-modal', 
+        'close-welcome-modal-btn', 'generation-counter', 'prompt-input', 
+        'generate-btn', 'image-upload-btn', 'image-upload-input', 'remove-image-btn', 
+        'image-preview-container', 'image-preview', 'result-container', 'image-grid', 
+        'loading-indicator', 'progress-bar-container', 'progress-bar', 'timer', 
+        'background-grid-container', 'background-grid', 'ratio-selector-btn', 'ratio-options'
+    ];
+    ids.forEach(id => DOMElements[id.replace(/-./g, c => c[1].toUpperCase())] = document.getElementById(id));
     
     initializeEventListeners();
+    listenForSharedImages(); // New function to load the gallery
 });
 
 function initializeEventListeners() {
     onAuthStateChanged(auth, user => updateUIForAuthState(user));
-
-    if (DOMElements.mobileMenuBtn) DOMElements.mobileMenuBtn.addEventListener('click', () => DOMElements.mobileMenu.classList.toggle('hidden'));
-    
-    [DOMElements.authBtn, DOMElements.mobileAuthBtn].forEach(btn => btn?.addEventListener('click', handleAuthAction));
+    DOMElements.authBtn?.addEventListener('click', handleAuthAction);
     DOMElements.googleSignInBtn?.addEventListener('click', signInWithGoogle);
     DOMElements.closeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.authModal, false));
-    
-    DOMElements.closeCreditsModalBtn?.addEventListener('click', () => toggleModal(DOMElements.outOfCreditsModal, false));
+    DOMElements.closeCreditsModalBtn?.addEventListener('click', () => {
+        toggleModal(DOMElements.outOfCreditsModal, false);
+        resetUIAfterGeneration();
+    });
     DOMElements.closeWelcomeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.welcomeCreditsModal, false));
-
-    DOMElements.musicBtn?.addEventListener('click', toggleMusic);
-    
-    DOMElements.generateBtn?.addEventListener('click', () => handleImageGenerationRequest(false));
-    DOMElements.regenerateBtn?.addEventListener('click', () => handleImageGenerationRequest(true));
-    
-    DOMElements.promoTryNowBtn?.addEventListener('click', handlePromoTryNow);
-
-    DOMElements.promptInput?.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            DOMElements.generateBtn.click();
-        }
-    });
-
-    DOMElements.examplePrompts.forEach(button => {
-        button.addEventListener('click', () => {
-            DOMElements.promptInput.value = button.innerText.trim();
-            DOMElements.promptInput.focus();
-        });
-    });
-
-    DOMElements.aspectRatioBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            DOMElements.aspectRatioBtns.forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            selectedAspectRatio = btn.dataset.ratio;
-        });
-    });
-
+    DOMElements.generateBtn?.addEventListener('click', handleImageGenerationRequest);
     DOMElements.imageUploadBtn?.addEventListener('click', () => DOMElements.imageUploadInput.click());
     DOMElements.imageUploadInput?.addEventListener('change', handleImageUpload);
     DOMElements.removeImageBtn?.addEventListener('click', removeUploadedImage);
-    DOMElements.copyPromptBtn?.addEventListener('click', copyPrompt);
-    DOMElements.enhancePromptBtn?.addEventListener('click', handleEnhancePrompt);
+    DOMElements.promptInput?.addEventListener('input', autoResizeTextarea);
 
-    initializeCursor();
+    // --- Aspect Ratio Selector Listeners ---
+    DOMElements.ratioSelectorBtn?.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevents the document click listener from closing it immediately
+        toggleRatioOptions();
+    });
+
+    document.querySelectorAll('.ratio-option-box').forEach(box => {
+        box.addEventListener('click', selectRatio);
+    });
+
+    // Global listener to close the ratio options when clicking outside
+    document.addEventListener('click', () => {
+        if (DOMElements.ratioOptions?.classList.contains('visible')) {
+            toggleRatioOptions();
+        }
+    });
 }
 
-// --- UI & State Management ---
+// --- NEW: Background Grid Logic with Firestore ---
+function listenForSharedImages() {
+    const grid = DOMElements.backgroundGrid;
+    if (!grid) return;
 
+    // Start with the fallback images for a nice loading state
+    populateGrid(fallbackImageUrls); 
+
+    const q = query(collection(db, "shared_images"), orderBy("createdAt", "desc"));
+    
+    onSnapshot(q, (snapshot) => {
+        const imageUrls = [];
+        snapshot.forEach((doc) => {
+            imageUrls.push(doc.data().imageUrl);
+        });
+        
+        // If we got images from the database, use them. Otherwise, keep the fallbacks.
+        if (imageUrls.length > 0) {
+            populateGrid(imageUrls);
+        }
+    }, (error) => {
+        console.error("Error fetching shared images: ", error);
+        // If there's an error, we still have the fallback images displayed.
+    });
+}
+
+function populateGrid(urls) {
+    const grid = DOMElements.backgroundGrid;
+    grid.innerHTML = ''; // Clear previous images
+    urls.forEach(url => {
+        const img = document.createElement('img');
+        img.className = 'grid-image';
+        img.src = url;
+        img.loading = 'lazy';
+        grid.appendChild(img);
+    });
+}
+
+
+// --- Core App Logic (Authentication, Credits, Generation) ---
 function toggleModal(modal, show) {
     if (!modal) return;
     if (show) {
-        modal.setAttribute('aria-hidden', 'false');
         modal.classList.remove('opacity-0', 'invisible');
+        modal.setAttribute('aria-hidden', 'false');
     } else {
-        modal.setAttribute('aria-hidden', 'true');
         modal.classList.add('opacity-0', 'invisible');
+        modal.setAttribute('aria-hidden', 'true');
     }
 }
 
 async function updateUIForAuthState(user) {
+    const counter = DOMElements.generationCounter;
     if (user) {
         DOMElements.authBtn.textContent = 'Sign Out';
-        DOMElements.mobileAuthBtn.textContent = 'Sign Out';
         try {
-            const token = await user.getIdToken();
-            const response = await fetch('/api/credits', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (!response.ok) {
-                const bodyText = await response.text();
-                throw new Error(`Credit fetch failed with status: ${response.status} and body: ${bodyText}`);
-            }
+            const token = await user.getIdToken(true);
+            const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!response.ok) throw new Error('Failed to fetch credits');
             const data = await response.json();
             currentUserCredits = data.credits;
-            updateCreditDisplay();
-
-            // --- NEW USER WELCOME LOGIC ---
-            if (data.isNewUser && data.credits > 0) {
-                if(DOMElements.freeCreditsAmount) {
-                    DOMElements.freeCreditsAmount.textContent = data.credits;
-                }
+            if(counter) counter.textContent = `Credits: ${currentUserCredits}`;
+            if (data.isNewUser) {
+                const freeCreditsEl = document.getElementById('free-credits-amount');
+                if(freeCreditsEl) freeCreditsEl.textContent = data.credits;
                 toggleModal(DOMElements.welcomeCreditsModal, true);
             }
-
         } catch (error) {
-            console.error("Credit fetch error:", error);
-            currentUserCredits = 0;
-            updateCreditDisplay();
-            showMessage("Could not fetch your credit balance.", "error");
+            console.error("Error fetching credits:", error);
+            if(counter) counter.textContent = "Credits: Error";
         }
     } else {
-        currentUserCredits = 0;
         DOMElements.authBtn.textContent = 'Sign In';
-        DOMElements.mobileAuthBtn.textContent = 'Sign In';
-        updateCreditDisplay();
+        if(counter) counter.textContent = "";
+        currentUserCredits = 0;
     }
 }
 
-function updateCreditDisplay() {
-    const text = auth.currentUser ? `Credits: ${currentUserCredits}` : 'Sign in to generate';
-    DOMElements.generationCounter.textContent = text;
-    DOMElements.mobileGenerationCounter.textContent = text;
-}
-
-function resetToGeneratorView() {
-    DOMElements.generatorUI.classList.remove('hidden');
-    DOMElements.resultContainer.classList.add('hidden');
-    DOMElements.imageGrid.innerHTML = '';
-    DOMElements.messageBox.innerHTML = '';
-    DOMElements.postGenerationControls.classList.add('hidden');
-    removeUploadedImage();
-    DOMElements.promptInput.value = '';
-    DOMElements.regeneratePromptInput.value = '';
-}
-
-// --- Core Application Logic ---
-
 function handleAuthAction() {
     if (auth.currentUser) {
-        signOut(auth).catch(error => console.error("Sign out error:", error));
+        signOut(auth).catch(console.error);
     } else {
         toggleModal(DOMElements.authModal, true);
     }
@@ -203,294 +177,279 @@ function handleAuthAction() {
 
 function signInWithGoogle() {
     signInWithPopup(auth, provider)
-        .then(() => {
-            toggleModal(DOMElements.authModal, false)
-        })
-        .catch(error => {
-            console.error("Authentication Error:", error);
-            showMessage('Failed to sign in. Please try again.', 'error');
-        });
+      .then(() => toggleModal(DOMElements.authModal, false))
+      .catch((error) => {
+            console.error("Google Sign-In Error:", error);
+            alert("Could not sign in with Google. Please check if pop-ups are blocked and try again.");
+      });
 }
 
-function handleImageGenerationRequest(isRegenerate) {
+async function handleImageGenerationRequest() {
     if (isGenerating) return;
-
     if (!auth.currentUser) {
         toggleModal(DOMElements.authModal, true);
         return;
     }
-
     if (currentUserCredits <= 0) {
         toggleModal(DOMElements.outOfCreditsModal, true);
         return;
     }
-
-    const promptInput = isRegenerate ? DOMElements.regeneratePromptInput : DOMElements.promptInput;
-    const prompt = promptInput.value.trim();
-
-    if (!prompt) {
-        showMessage('Please describe what you want to create.', 'error');
-        return;
-    }
+    const prompt = DOMElements.promptInput.value.trim();
+    if (!prompt && !uploadedImageData) return;
     
-    lastPrompt = prompt;
-    generateImage(prompt, isRegenerate);
+    generateImage(prompt);
 }
 
-async function generateImage(prompt, isRegenerate) {
-    isGenerating = true;
-    startLoadingUI(isRegenerate);
-
+async function generateImage(prompt) {
+    startLoadingUI();
     try {
         const token = await auth.currentUser.getIdToken();
+        const deductResponse = await fetch('/api/credits', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }});
+        if (!deductResponse.ok) throw new Error('Credit deduction failed');
         
-        const deductResponse = await fetch('/api/credits', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!deductResponse.ok) {
-            if(deductResponse.status === 402) {
-                 toggleModal(DOMElements.outOfCreditsModal, true);
-            } else {
-                 throw new Error('Failed to deduct credit.');
-            }
-            stopLoadingUI();
-            return;
-        }
-        
-        const deductData = await deductResponse.json();
-        currentUserCredits = deductData.newCredits;
-        updateCreditDisplay();
-
         const generateResponse = await fetch('/api/generate', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ prompt, imageData: uploadedImageData, aspectRatio: selectedAspectRatio })
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ prompt, imageData: uploadedImageData, aspectRatio: currentAspectRatio })
         });
-
-        if (!generateResponse.ok) {
-            const errorResult = await generateResponse.json();
-            throw new Error(errorResult.error || `API Error: ${generateResponse.status}`);
-        }
-
-        const result = await generateResponse.json();
+        if (!generateResponse.ok) throw new Error('API generation failed');
         
-        let base64Data;
-        if (uploadedImageData) {
-            base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-        } else {
-            base64Data = result.predictions?.[0]?.bytesBase64Encoded;
-        }
-
-        if (!base64Data) {
-            throw new Error("No image data received from API.");
-        }
-
-        const imageUrl = `data:image/png;base64,${base64Data}`;
-        displayImage(imageUrl, prompt);
+        const result = await generateResponse.json();
+        const base64Data = uploadedImageData ? result?.candidates?.[0]?.content?.parts?.find(p=>p.inlineData)?.inlineData?.data : result.predictions?.[0]?.bytesBase64Encoded;
+        if (!base64Data) throw new Error("No image data in response");
+        
+        displayImage(`data:image/png;base64,${base64Data}`, prompt);
+        await updateUIForAuthState(auth.currentUser);
 
     } catch (error) {
-        console.error('Image generation failed:', error);
-        showMessage(`Sorry, we couldn't generate the image. ${error.message}`, 'error');
-        updateUIForAuthState(auth.currentUser); 
+        console.error("Generation Error:", error);
+        resetUIAfterGeneration();
     } finally {
         stopLoadingUI();
     }
 }
 
-// --- UI Update Functions for Generation ---
-
-function startLoadingUI(isRegenerate) {
-    DOMElements.imageGrid.innerHTML = '';
-    DOMElements.messageBox.innerHTML = '';
-    if (isRegenerate) {
-        DOMElements.loadingIndicator.classList.remove('hidden');
-        DOMElements.postGenerationControls.classList.add('hidden');
-    } else {
-        DOMElements.resultContainer.classList.remove('hidden');
-        DOMElements.loadingIndicator.classList.remove('hidden');
-        DOMElements.generatorUI.classList.add('hidden');
-    }
-    startTimer();
-}
-
-function stopLoadingUI() {
-    isGenerating = false;
-    stopTimer();
-    DOMElements.loadingIndicator.classList.add('hidden');
-    DOMElements.regeneratePromptInput.value = lastPrompt;
-    DOMElements.postGenerationControls.classList.remove('hidden');
-    addNavigationButtons();
-}
-
-function dataURLtoBlob(dataurl) {
-    let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-    while(n--){
-        u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], {type:mime});
-}
-
-function displayImage(imageUrl, prompt) {
-    const imgContainer = document.createElement('div');
-    imgContainer.className = 'bg-white rounded-xl shadow-lg overflow-hidden relative group fade-in-slide-up mx-auto max-w-2xl border border-gray-200/80';
-    
-    const img = document.createElement('img');
-    img.src = imageUrl;
-    img.alt = prompt;
-    img.className = 'w-full h-auto object-contain';
-    
-    const downloadButton = document.createElement('button');
-    downloadButton.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-white';
-    downloadButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
-    downloadButton.ariaLabel = "Download Image";
-
-    downloadButton.onclick = () => {
-        try {
-            const blob = dataURLtoBlob(imageUrl);
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'genart-image.png';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-
-            URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error("Download failed:", error);
-            showMessage("Could not download image. Please try saving it manually.", "error");
-        }
-    };
-
-    imgContainer.append(img, downloadButton);
-    DOMElements.imageGrid.appendChild(imgContainer);
-}
-
-// --- Utility Functions ---
-
-function showMessage(text, type = 'info') {
-    const messageEl = document.createElement('div');
-    messageEl.className = `p-4 rounded-lg ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'} fade-in-slide-up`;
-    messageEl.textContent = text;
-    DOMElements.messageBox.innerHTML = '';
-    DOMElements.messageBox.appendChild(messageEl);
-}
-
-function addNavigationButtons() {
-    const startNewButton = document.createElement('button');
-    startNewButton.textContent = '← Start New';
-    startNewButton.className = 'text-sm sm:text-base mt-4 text-blue-600 font-semibold hover:text-blue-800 transition-colors';
-    startNewButton.onclick = resetToGeneratorView;
-    DOMElements.messageBox.prepend(startNewButton);
-}
-
 function handleImageUpload(event) {
     const file = event.target.files[0];
-    if (!file || !file.type.startsWith('image/')) return;
+    if (!file) return;
     const reader = new FileReader();
     reader.onloadend = () => {
         uploadedImageData = { mimeType: file.type, data: reader.result.split(',')[1] };
         DOMElements.imagePreview.src = reader.result;
         DOMElements.imagePreviewContainer.classList.remove('hidden');
-        DOMElements.promptInput.placeholder = "Describe the edits you want to make...";
     };
     reader.readAsDataURL(file);
 }
 
 function removeUploadedImage() {
     uploadedImageData = null;
-    if (DOMElements.imageUploadInput) DOMElements.imageUploadInput.value = '';
+    DOMElements.imageUploadInput.value = '';
     DOMElements.imagePreviewContainer.classList.add('hidden');
-    DOMElements.imagePreview.src = '';
-    DOMElements.promptInput.placeholder = "An oil painting of a futuristic city skyline at dusk...";
 }
 
-async function handleEnhancePrompt() {
-    showMessage("Prompt enhancement is coming soon!", "info");
+
+// --- UI State Management for New Design ---
+function autoResizeTextarea(e) {
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
 }
 
-function copyPrompt() {
-    const promptText = DOMElements.promptInput.value;
-    if (!promptText) {
-        showMessage("There's nothing to copy.", "info");
-        return;
-    }
-    navigator.clipboard.writeText(promptText).then(() => {
-        showMessage("Prompt copied!", "info");
-    }).catch(() => {
-        showMessage("Failed to copy prompt.", "error");
+// --- Aspect Ratio Functions ---
+function toggleRatioOptions() {
+    DOMElements.ratioOptions?.classList.toggle('visible');
+}
+
+function selectRatio(event) {
+    const selectedBox = event.currentTarget;
+    currentAspectRatio = selectedBox.dataset.ratio;
+
+    document.querySelectorAll('.ratio-option-box').forEach(box => box.classList.remove('active'));
+    selectedBox.classList.add('active');
+    
+    // The menu is closed by the global click listener, which this click will trigger.
+}
+
+
+function startLoadingUI() {
+    isGenerating = true;
+    DOMElements.imageGrid.classList.add('hidden');
+    DOMElements.loadingIndicator.classList.remove('hidden');
+    DOMElements.backgroundGridContainer.classList.add('dimmed');
+    startTimer();
+}
+
+function stopLoadingUI() {
+    isGenerating = false;
+    DOMElements.loadingIndicator.classList.add('hidden');
+    stopTimer();
+}
+
+/**
+ * Applies a watermark to a given image URL.
+ * @param {string} baseImageUrl The original image data URL.
+ * @returns {Promise<string>} A promise that resolves with the new watermarked image data URL.
+ */
+function applyWatermark(baseImageUrl) {
+    return new Promise((resolve, reject) => {
+        // --- IMPORTANT ---
+        // PASTE THE DIRECT LINK TO YOUR WATERMARK IMAGE HERE
+        const watermarkUrl = 'https://iili.io/FsAoG2I.md.png'; // Example: 'https://example.com/logo.png'
+
+        const mainImage = new Image();
+        mainImage.crossOrigin = 'anonymous';
+        const watermark = new Image();
+        watermark.crossOrigin = 'anonymous';
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        mainImage.onload = () => {
+            watermark.onload = () => {
+                // Set canvas size to match the generated image
+                canvas.width = mainImage.width;
+                canvas.height = mainImage.height;
+
+                // Draw the generated image
+                ctx.drawImage(mainImage, 0, 0);
+
+                // --- Watermark Styling & Positioning ---
+                ctx.globalAlpha = 0.75; // Watermark opacity (from 0.0 to 1.0)
+
+                // Calculate watermark size (e.g., 15% of the main image width)
+                const watermarkWidth = canvas.width * 0.15;
+                const watermarkHeight = watermark.height * (watermarkWidth / watermark.width);
+                
+                // Calculate position (e.g., 2% padding from the bottom-right corner)
+                const padding = canvas.width * 0.02;
+                const x = canvas.width - watermarkWidth - padding;
+                const y = canvas.height - watermarkHeight - padding;
+
+                // Draw the watermark
+                ctx.drawImage(watermark, x, y, watermarkWidth, watermarkHeight);
+
+                // Resolve with the new, watermarked image data
+                resolve(canvas.toDataURL('image/png'));
+            };
+            watermark.onerror = reject;
+            watermark.src = watermarkUrl;
+        };
+        mainImage.onerror = reject;
+        mainImage.src = baseImageUrl;
     });
 }
 
-function toggleMusic() {
-    const isPlaying = DOMElements.musicBtn.classList.toggle('playing');
-    if (isPlaying) {
-        DOMElements.lofiMusic.play().catch(error => console.error("Audio playback failed:", error));
-    } else {
-        DOMElements.lofiMusic.pause();
+
+async function displayImage(imageUrl, prompt) {
+    DOMElements.loadingIndicator.classList.add('hidden');
+
+    try {
+        const watermarkedImageUrl = await applyWatermark(imageUrl);
+
+        DOMElements.imageGrid.classList.remove('hidden');
+        DOMElements.imageGrid.innerHTML = ''; 
+        
+        const imgContainer = document.createElement('div');
+        imgContainer.className = 'bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl p-2 relative group max-w-2xl mx-auto border border-gray-200/80';
+        const img = document.createElement('img');
+        img.src = watermarkedImageUrl;
+        img.alt = prompt;
+        img.className = 'w-full h-auto object-contain rounded-xl';
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity';
+        
+        const downloadButton = document.createElement('button');
+        downloadButton.className = "bg-black/50 text-white p-2 rounded-full";
+        downloadButton.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
+        downloadButton.onclick = () => {
+            const a = document.createElement('a');
+            a.href = watermarkedImageUrl; // Download the watermarked version
+            a.download = 'genart-image.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+        
+        // --- NEW: Share Button ---
+        const shareButton = document.createElement('button');
+        shareButton.className = "bg-black/50 text-white p-2 rounded-full";
+        shareButton.title = "Share to Everyone";
+        shareButton.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>`;
+        shareButton.onclick = () => shareImage(watermarkedImageUrl, shareButton);
+
+        const closeButton = document.createElement('button');
+        closeButton.className = "bg-black/50 text-white p-2 rounded-full";
+        closeButton.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        closeButton.onclick = resetUIAfterGeneration;
+
+        buttonContainer.append(downloadButton, shareButton, closeButton);
+        imgContainer.append(img, buttonContainer);
+        DOMElements.imageGrid.appendChild(imgContainer);
+
+    } catch (error) {
+        console.error("Failed to apply watermark:", error);
+        // Fallback to showing the original image if watermarking fails
+        displayImage(imageUrl, prompt); 
     }
+}
+
+// --- NEW: Share Image Function ---
+async function shareImage(imageDataUrl, button) {
+    if (!auth.currentUser) {
+        toggleModal(DOMElements.authModal, true);
+        return;
+    }
+
+    button.disabled = true;
+    button.innerHTML = '...'; // Simple loading indicator
+
+    try {
+        const token = await auth.currentUser.getIdToken();
+        const response = await fetch('/api/share', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ imageDataUrl })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to share the image.');
+        }
+        
+        // Change icon to a checkmark on success
+        button.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+    } catch (error) {
+        console.error("Sharing Error:", error);
+        alert("Sorry, we couldn't share your image at this time.");
+        // Re-enable button and restore icon on failure
+        button.disabled = false;
+        button.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>`;
+    }
+}
+
+function resetUIAfterGeneration() {
+    DOMElements.imageGrid.classList.add('hidden');
+    DOMElements.imageGrid.innerHTML = '';
+    DOMElements.backgroundGridContainer.classList.remove('dimmed');
+    DOMElements.promptInput.value = '';
+    autoResizeTextarea({target: DOMElements.promptInput});
+    removeUploadedImage();
 }
 
 function startTimer() {
     let startTime = Date.now();
-    const timerEl = document.getElementById('timer');
-    const progressBar = document.getElementById('progress-bar');
-    const maxTime = 17 * 1000;
-    if (progressBar) progressBar.style.width = '0%';
     timerInterval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
-        const progress = Math.min(elapsedTime / maxTime, 1);
-        if (progressBar) progressBar.style.width = `${progress * 100}%`;
-        if (timerEl) timerEl.textContent = `${(elapsedTime / 1000).toFixed(1)}s / ~17s`;
-        if (elapsedTime >= maxTime) {
-            if (timerEl) timerEl.textContent = `17.0s / ~17s`;
-        }
+        if(DOMElements.timer) DOMElements.timer.textContent = `${(elapsedTime / 1000).toFixed(1)}s`;
+        const progress = Math.min(elapsedTime / 17000, 1); 
+        if(DOMElements.progressBar) DOMElements.progressBar.style.width = `${progress * 100}%`;
     }, 100);
 }
 
 function stopTimer() {
     clearInterval(timerInterval);
-    const progressBar = document.getElementById('progress-bar');
-    if (progressBar) progressBar.style.width = '100%';
 }
-
-function handlePromoTryNow() {
-    const promptText = "Transform me into a 1920s vintage glamour portrait, black-and-white, soft shadows, art deco background, ultra-realistic cinematic lighting.";
-    DOMElements.promptInput.value = promptText;
-    
-    DOMElements.promptInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    DOMElements.promptInput.focus();
-}
-
-function initializeCursor() {
-    if (!DOMElements.cursorDot) return;
-    let mouseX = 0, mouseY = 0, outlineX = 0, outlineY = 0;
-    window.addEventListener('mousemove', e => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-    });
-
-    const animate = () => {
-        DOMElements.cursorDot.style.left = `${mouseX}px`;
-        DOMElements.cursorDot.style.top = `${mouseY}px`;
-        const ease = 0.15;
-        outlineX += (mouseX - outlineX) * ease;
-        outlineY += (mouseY - outlineY) * ease;
-        DOMElements.cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
-        requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-
-    document.querySelectorAll('a, button, textarea, input, label').forEach(el => {
-        el.addEventListener('mouseover', () => DOMElements.cursorOutline?.classList.add('cursor-hover'));
-        el.addEventListener('mouseout', () => DOMElements.cursorOutline?.classList.remove('cursor-hover'));
-    });
-}
-
