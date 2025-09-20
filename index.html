@@ -81,30 +81,28 @@
         </footer>
     </div>
 
-    <!-- Modal Container -->
-    <div id="modal-container">
-        <div id="auth-modal" aria-hidden="true" class="modal-box">
-            <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In Required</h2>
-                <p class="text-gray-500 mb-6">Please sign in to continue.</p>
-                <button id="google-signin-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 flex items-center justify-center space-x-2"><span>Sign In with Google</span></button>
-                <button id="close-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
-            </div>
+    <!-- Modals (Now direct children of the body) -->
+    <div id="auth-modal" aria-hidden="true" class="modal-box">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In Required</h2>
+            <p class="text-gray-500 mb-6">Please sign in to continue.</p>
+            <button id="google-signin-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 flex items-center justify-center space-x-2"><span>Sign In with Google</span></button>
+            <button id="close-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
         </div>
-        <div id="out-of-credits-modal" aria-hidden="true" class="modal-box">
-            <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Out of Credits</h2>
-                <p class="text-gray-500 mb-6">Please purchase more to continue.</p>
-                <a href="pricing.html" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 block">Buy Credits</a>
-                <button id="close-credits-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Not now</button>
-            </div>
+    </div>
+    <div id="out-of-credits-modal" aria-hidden="true" class="modal-box">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Out of Credits</h2>
+            <p class="text-gray-500 mb-6">Please purchase more to continue.</p>
+            <a href="pricing.html" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 block">Buy Credits</a>
+            <button id="close-credits-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Not now</button>
         </div>
-        <div id="welcome-credits-modal" aria-hidden="true" class="modal-box">
-            <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Congratulations!</h2>
-                <p class="text-gray-500 mb-6">You've received <span id="free-credits-amount" class="font-bold text-blue-500">50</span> free credits!</p>
-                <button id="close-welcome-modal-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600">Start Creating</button>
-            </div>
+    </div>
+    <div id="welcome-credits-modal" aria-hidden="true" class="modal-box">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Congratulations!</h2>
+            <p class="text-gray-500 mb-6">You've received <span id="free-credits-amount" class="font-bold text-blue-500">50</span> free credits!</p>
+            <button id="close-welcome-modal-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600">Start Creating</button>
         </div>
     </div>
 
