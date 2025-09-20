@@ -2,41 +2,39 @@
 body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     color: #1f2937; /* Tailwind gray-800 */
-    background-color: #f9fafb; /* Tailwind gray-50 */
+    overflow: hidden; /* Prevent body from scrolling */
 }
 
-/* --- Scrolling Background --- */
+/* --- Masonry Background Gallery --- */
 #background-grid-container {
     position: fixed;
     inset: 0;
     width: 100%;
     height: 100%;
     z-index: 0;
-    overflow: auto; 
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+    overflow: auto; /* Allows the gallery to be scrolled */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
     transition: opacity 0.5s ease, filter 0.5s ease;
 }
 
-/* --- MASONRY LAYOUT --- */
 #background-grid {
-    column-count: 5;
-    column-gap: 1.5vw;
     padding: 1.5vw;
+    columns: 5 280px;
+    column-gap: 1.5vw;
 }
 
 .grid-image {
     width: 100%;
     height: auto;
+    margin-bottom: 1.5vw;
     border-radius: 1rem;
     object-fit: cover;
     background-color: #e5e7eb;
-    margin-bottom: 1.5vw;
     break-inside: avoid;
 }
 
-/* --- Sticky Prompt Footer & Main UI --- */
+/* --- Sticky Prompt Footer --- */
 .prompt-footer {
     position: fixed;
     bottom: 0;
@@ -50,92 +48,104 @@ body {
     max-height: 200px;
 }
 
-/* --- Centering Generated Image --- */
-#result-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    width: 100%;
-    /* Add padding to push the image up from the prompt bar */
-    padding-bottom: 100px; 
-    box-sizing: border-box; /* Ensures padding is included in the element's total height */
-}
-
-#image-grid {
-    width: 100%;
-}
-
-
-/* --- Simplified Modal System --- */
-.modal-box {
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-    background-color: rgba(0,0,0,0.5);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-    pointer-events: auto;
-}
-
-.modal-box[aria-hidden="false"] {
-    opacity: 1;
-    visibility: visible;
-}
-
-
 /* --- UI State Changes --- */
 #background-grid-container.dimmed {
     opacity: 0.1;
     filter: blur(8px);
 }
 
-#ratio-options.visible {
+/* --- Generated Image Display --- */
+#main-content {
+    padding-bottom: 120px;
+}
+
+/* --- Modals --- */
+#modal-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none; 
+}
+
+.modal-container {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-container.visible {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    padding: 2rem;
+    max-width: 24rem;
+    width: 100%;
+    text-align: center;
+}
+
+
+/* --- Aspect Ratio Selector --- */
+/* FIX: Increased specificity to ensure the menu is hidden by default */
+.prompt-footer #ratio-options {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+}
+/* FIX: Increased specificity to ensure the menu appears when toggled */
+.prompt-footer #ratio-options.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 .ratio-option-box {
-    padding: 0.5rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
     border-radius: 0.5rem;
     cursor: pointer;
     transition: background-color 0.2s ease;
-    font-size: 0.875rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
 }
 .ratio-option-box:hover {
-    background-color: #4b5563;
+    background-color: rgba(0,0,0,0.05);
 }
 .ratio-option-box.active {
-    background-color: #3b82f6;
+    background-color: rgba(59, 130, 246, 0.1);
+}
+.ratio-option-box .ratio-value {
+    font-size: 0.75rem;
+    color: #6b7280;
 }
 
-/* --- Responsive Adjustments --- */
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
     #background-grid {
-        column-count: 2;
-        padding: 4vw;
-        column-gap: 4vw;
+        columns: 2;
     }
-    
-    .grid-image {
-        margin-bottom: 4vw;
+
+    #background-grid-container {
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 80%, transparent 100%);
+        mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 80%, transparent 100%);
     }
 
     .prompt-footer {
         backdrop-filter: none;
         background-color: transparent;
-    }
-    
-    #background-grid-container {
-        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 80%, transparent 100%);
-        mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 80%, transparent 100%);
     }
 }
 
