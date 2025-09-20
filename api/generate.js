@@ -15,8 +15,9 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// --- NEW: Function to save prompt data ---
+// --- Function to save prompt data ---
 async function logGeneration(userId, prompt) {
+    // This function will only be called if a user is logged in.
     try {
         await db.collection('generations').add({
             userId: userId,
@@ -25,7 +26,6 @@ async function logGeneration(userId, prompt) {
         });
         console.log(`Logged prompt for user: ${userId}`);
     } catch (error) {
-        // We log the error but don't stop the image generation process
         console.error("Failed to log prompt:", error);
     }
 }
@@ -37,15 +37,26 @@ export default async function handler(req, res) {
 
     try {
         const idToken = req.headers.authorization?.split('Bearer ')[1];
-        if (!idToken) {
-            return res.status(401).json({ error: 'User not authenticated.' });
+        let user = null;
+
+        // --- NEW: Conditional Authentication for Maintenance Mode ---
+        // Only verify the user if a token is actually sent from the frontend.
+        // During maintenance mode, no token is sent, so this block is skipped.
+        if (idToken) {
+            try {
+                user = await auth().verifyIdToken(idToken);
+            } catch (error) {
+                // If the token is invalid or expired, block the request.
+                return res.status(401).json({ error: 'Invalid or expired authentication token.' });
+            }
         }
-        const user = await auth().verifyIdToken(idToken);
 
-        // --- NEW: Log the prompt before generating ---
-        const { prompt, imageData, aspectRatio } = req.body;
-        await logGeneration(user.uid, prompt);
-
+        const { prompt, imageData, aspectRatio, isTryOn, personImageData, garmentImageData } = req.body;
+        
+        // Log the generation attempt only if a user is logged in
+        if (user) {
+            await logGeneration(user.uid, prompt);
+        }
 
         const apiKey = process.env.GOOGLE_API_KEY;
         if (!apiKey) {
@@ -54,7 +65,21 @@ export default async function handler(req, res) {
 
         let apiUrl, payload;
 
-        if (imageData && imageData.data) {
+        // --- Virtual Try-On Logic ---
+        if (isTryOn && personImageData && garmentImageData) {
+            apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+            payload = {
+                "contents": [{ 
+                    "parts": [
+                        { "text": prompt }, 
+                        { "inlineData": personImageData },
+                        { "inlineData": garmentImageData }
+                    ] 
+                }],
+                "generationConfig": { "responseModalities": ["IMAGE"] }
+            };
+        } else if (imageData && imageData.data) {
+            // --- Image-to-Image Logic ---
             apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
             payload = {
                 "contents": [{ 
@@ -66,6 +91,7 @@ export default async function handler(req, res) {
                 "generationConfig": { "responseModalities": ["IMAGE"] }
             };
         } else {
+            // --- Text-to-Image Logic ---
             apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
             payload = { 
                 instances: [{ prompt }], 
@@ -93,4 +119,3 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'The API function crashed.', details: error.message });
     }
 }
-
