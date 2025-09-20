@@ -7,12 +7,25 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
+    <meta name="description" content="Generate stunning AI-powered images from text. Describe your vision and let our AI bring it to life.">
+    <meta property="og:title" content="GenArt: AI Image Generator">
+    <meta property="og:description" content="Generate stunning AI-powered images from text. Describe your vision and let our AI bring it to life.">
+    <meta property="og:image" content="https://iili.io/K7bDzpS.md.png">
+    <meta property="og:url" content="https://genartml.com">
 </head>
-<body class="bg-white">
+<body class="bg-gray-50">
+
+    <!-- NEW: Maintenance Banner -->
+    <div id="maintenance-banner" class="bg-yellow-400 text-center p-3 relative">
+        <p class="text-sm font-medium text-yellow-900">
+            Site under maintenance. No sign-in required! Enjoy free, unlimited image generations.
+        </p>
+        <button id="close-banner-btn" class="absolute top-1/2 right-4 -translate-y-1/2 text-yellow-900 hover:bg-yellow-500 rounded-full p-1">&times;</button>
+    </div>
 
     <!-- Infinite Scrolling Background -->
-    <div id="background-grid-container" class="overflow-y-auto">
-        <div id="background-grid">
+    <div id="background-grid-container" class="pointer-events-none">
+        <div id="background-grid" class="manual-scroll">
             <!-- Images will be dynamically inserted here by script.js -->
         </div>
     </div>
@@ -26,7 +39,7 @@
                  <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
             </a>
             <div id="header-auth-section" class="flex items-center space-x-4">
-                 <a href="pricing.html" class="hidden sm:block text-sm font-medium text-gray-700 hover:text-black transition-colors">Pricing</a>
+                 <a id="pricing-link" href="pricing.html" class="hidden sm:block text-sm font-medium text-gray-700 hover:text-black transition-colors">Pricing</a>
                 <div id="generation-counter" class="hidden sm:block text-sm font-medium text-gray-700"></div>
                 <button id="auth-btn" class="text-sm font-medium bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition-all duration-300">
                     Sign In
@@ -51,44 +64,29 @@
 
         <!-- Sticky Prompt Footer -->
         <footer class="prompt-footer p-4 pointer-events-auto">
-            <div class="max-w-3xl mx-auto relative">
-                 <!-- Aspect Ratio Dropdown - Moved here to pop up above the prompt box -->
-                <div id="ratio-options" class="ratio-options-container">
-                    <div class="ratio-option-box" data-ratio="1:1">
-                        <div class="ratio-icon-square"></div>
-                        <span>1:1</span>
-                    </div>
-                     <div class="ratio-option-box" data-ratio="16:9">
-                        <div class="ratio-icon-landscape"></div>
-                        <span>16:9</span>
-                    </div>
-                    <div class="ratio-option-box" data-ratio="9:16">
-                        <div class="ratio-icon-portrait"></div>
-                        <span>9:16</span>
-                    </div>
-                    <div class="ratio-option-box" data-ratio="4:5">
-                        <div class="ratio-icon-instagram"></div>
-                        <span>4:5</span>
-                    </div>
+            <div class="max-w-3xl mx-auto bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200/80 p-2.5 relative">
+                <!-- Aspect Ratio Pop-up -->
+                <div id="ratio-options" class="absolute bottom-full left-0 mb-2 bg-gray-800 text-white rounded-xl shadow-lg p-2 opacity-0 invisible transition-all duration-300">
+                    <div class="font-semibold text-sm px-2 py-1 mb-1">Aspect Ratio</div>
+                    <div data-ratio="1:1" class="ratio-option-box active">Square (1:1)</div>
+                    <div data-ratio="16:9" class="ratio-option-box">Landscape (16:9)</div>
+                    <div data-ratio="9:16" class="ratio-option-box">Portrait (9:16)</div>
+                    <div data-ratio="4:5" class="ratio-option-box">Instagram (4:5)</div>
                 </div>
 
-                <div id="prompt-container" class="bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200/80 p-2.5 flex items-center gap-1">
+                <div id="prompt-container" class="flex items-center gap-2">
+                    <button id="image-upload-btn" class="p-3 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0" title="Upload Image">
+                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
+                    <button id="ratio-selector-btn" class="p-3 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0" title="Select Aspect Ratio">
+                        <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
+                    </button>
                     <div id="image-preview-container" class="hidden relative w-12 h-12 flex-shrink-0">
                         <img id="image-preview" class="w-full h-full object-cover rounded-lg" src="" alt="Image preview">
                         <button id="remove-image-btn" class="absolute -top-1.5 -right-1.5 bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-black">&times;</button>
                     </div>
                     <input type="file" id="image-upload-input" class="hidden" accept="image/png, image/jpeg">
-                    <button id="image-upload-btn" class="p-3 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0" title="Upload Image">
-                        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    </button>
-                    
-                    <textarea id="prompt-input" rows="1" class="w-full bg-transparent text-gray-800 placeholder-gray-500 focus:outline-none resize-none text-base pl-2" placeholder="Describe your vision..."></textarea>
-
-                    <!-- Aspect Ratio Selector Button -->
-                    <button id="ratio-selector-btn" class="p-3 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0" title="Select Aspect Ratio">
-                        <svg class="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="3" x2="12" y2="21"></line><line x1="3" y1="12" x2="21" y2="12"></line></svg>
-                    </button>
-
+                    <textarea id="prompt-input" rows="1" class="w-full bg-transparent text-gray-800 placeholder-gray-500 focus:outline-none resize-none text-base" placeholder="Describe your vision..."></textarea>
                     <button id="generate-btn" class="w-10 h-10 bg-blue-500 text-white rounded-xl flex items-center justify-center hover:bg-blue-600 transition-all duration-300 flex-shrink-0" aria-label="Generate">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M12 5l7 7-7 7"></path></svg>
                     </button>
@@ -97,7 +95,16 @@
         </footer>
     </div>
 
-    <!-- Modals (All existing features are preserved) -->
+    <!-- NEW Maintenance Pop-up Modal -->
+    <div id="maintenance-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 opacity-0 invisible transition-opacity duration-300 pointer-events-auto">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Service Update</h2>
+            <p class="text-gray-500 mb-6">Our full service is under maintenance. For now, enjoy free and unlimited image generations—no sign-in required!</p>
+            <button id="close-maintenance-modal-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600">Start Creating</button>
+        </div>
+    </div>
+
+    <!-- Existing Modals -->
     <div id="auth-modal" aria-hidden="true" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 opacity-0 invisible transition-opacity duration-300 pointer-events-auto">
         <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
             <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In Required</h2>
