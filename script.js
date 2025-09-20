@@ -18,143 +18,60 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// --- IMPORTANT: This array now serves as a fallback ---
 const fallbackImageUrls = [
-    "https://iili.io/K7bN7Hl.md.png", "https://iili.io/K7bOTzP.md.png", "https://iili.io/K7yYoqN.md.png", "https://iili.io/K7bk3Ku.md.png",
-    "https://iili.io/K7b6OPV.md.png", "https://iili.io/K7be88v.md.png", "https://iili.io/K7b894e.md.png", "https://iili.io/K7y1cUN.md.png",
-    "https://iili.io/K7yEx14.md.png", "https://iili.io/K7b4VQR.md.png", "https://iili.io/K7yGhS2.md.png", "https://iili.io/K7bs5wg.md.png",
+    "https://iili.io/K7bN7Hl.md.png", "https://iili.io/K7bOTzP.md.png", "https://iili.io/K7yYoqN.md.png", "https://iili.io/K7bk3Ku.md.png", 
+    "https://iili.io/K7b6OPV.md.png", "https://iili.io/K7be88v.md.png", "https://iili.io/K7b894e.md.png", "https://iili.io/K7y1cUN.md.png", 
+    "https://iili.io/K7yEx14.md.png", "https://iili.io/K7b4VQR.md.png", "https://iili.io/K7yGhS2.md.png", "https://iili.io/K7bs5wg.md.png", 
     "https://iili.io/K7bDzpS.md.png", "https://iili.io/K7yVVv2.md.png", "https://iili.io/K7bmj7R.md.png", "https://iili.io/K7bP679.md.png",
     "https://iili.io/FiiqmhB.md.png", "https://iili.io/FiiC8VS.md.png",
     "https://iili.io/FiizC0P.md.png", "https://iili.io/FiiT4UP.md.png"
 ];
 
-// --- Global State ---
-let currentUserCredits = 0;
-let uploadedImageData = null;
-let isGenerating = false;
-let timerInterval;
-let currentAspectRatio = '1:1';
-
-// --- DOM Element Caching ---
+let currentUserCredits = 0, uploadedImageData = null, isGenerating = false, timerInterval, currentAspectRatio = '1:1';
 const DOMElements = {};
-
-// --- Centralized Authentication State Manager ---
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        handleUserSignIn(user);
-    } else {
-        handleUserSignOut();
-    }
-});
 
 document.addEventListener('DOMContentLoaded', () => {
     const ids = [
-        'auth-btn', 'auth-modal', 'google-signin-btn', 'close-modal-btn',
-        'out-of-credits-modal', 'close-credits-modal-btn', 'welcome-credits-modal',
-        'close-welcome-modal-btn', 'generation-counter', 'prompt-input',
-        'generate-btn', 'image-upload-btn', 'image-upload-input', 'remove-image-btn',
-        'image-preview-container', 'image-preview', 'result-container', 'image-grid',
-        'loading-indicator', 'progress-bar-container', 'progress-bar', 'timer',
+        'auth-btn', 'auth-modal', 'google-signin-btn', 'close-modal-btn', 
+        'out-of-credits-modal', 'close-credits-modal-btn', 'welcome-credits-modal', 
+        'close-welcome-modal-btn', 'generation-counter', 'prompt-input', 
+        'generate-btn', 'image-upload-btn', 'image-upload-input', 'remove-image-btn', 
+        'image-preview-container', 'image-preview', 'result-container', 'image-grid', 
+        'loading-indicator', 'progress-bar-container', 'progress-bar', 'timer', 
         'background-grid-container', 'background-grid', 'ratio-selector-btn', 'ratio-options'
     ];
     ids.forEach(id => DOMElements[id.replace(/-./g, c => c[1].toUpperCase())] = document.getElementById(id));
-
+    
     initializeEventListeners();
     listenForSharedImages();
 });
 
 function initializeEventListeners() {
+    onAuthStateChanged(auth, user => updateUIForAuthState(user));
     DOMElements.authBtn?.addEventListener('click', handleAuthAction);
     DOMElements.googleSignInBtn?.addEventListener('click', signInWithGoogle);
     DOMElements.closeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.authModal, false));
-    DOMElements.closeCreditsModalBtn?.addEventListener('click', () => {
-        toggleModal(DOMElements.outOfCreditsModal, false);
-        resetUIAfterGeneration();
-    });
+    DOMElements.closeCreditsModalBtn?.addEventListener('click', () => toggleModal(DOMElements.outOfCreditsModal, false));
     DOMElements.closeWelcomeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.welcomeCreditsModal, false));
     DOMElements.generateBtn?.addEventListener('click', handleImageGenerationRequest);
     DOMElements.imageUploadBtn?.addEventListener('click', () => DOMElements.imageUploadInput.click());
     DOMElements.imageUploadInput?.addEventListener('change', handleImageUpload);
     DOMElements.removeImageBtn?.addEventListener('click', removeUploadedImage);
     DOMElements.promptInput?.addEventListener('input', autoResizeTextarea);
-    DOMElements.ratioSelectorBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleRatioOptions();
-    });
-    document.querySelectorAll('.ratio-option-box').forEach(box => {
-        box.addEventListener('click', selectRatio);
-    });
-    document.addEventListener('click', () => {
-        if (DOMElements.ratioOptions?.classList.contains('visible')) {
-            toggleRatioOptions();
-        }
-    });
+    DOMElements.ratioSelectorBtn?.addEventListener('click', (e) => { e.stopPropagation(); toggleRatioOptions(); });
+    document.querySelectorAll('.ratio-option-box').forEach(box => box.addEventListener('click', selectRatio));
+    document.addEventListener('click', () => DOMElements.ratioOptions?.classList.contains('visible') && toggleRatioOptions());
 }
 
-// --- NEW Robust Auth Functions ---
-async function handleUserSignIn(user) {
-    DOMElements.authBtn.textContent = 'Sign Out';
-    try {
-        const token = await user.getIdToken(true);
-        const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${token}` } });
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to fetch credits: ${errorText}`);
-        }
-        const data = await response.json();
-        currentUserCredits = data.credits;
-        if (DOMElements.generationCounter) DOMElements.generationCounter.textContent = `Credits: ${currentUserCredits}`;
-        if (data.isNewUser) {
-            const freeCreditsEl = document.getElementById('free-credits-amount');
-            if (freeCreditsEl) freeCreditsEl.textContent = data.credits;
-            toggleModal(DOMElements.welcomeCreditsModal, true);
-        }
-    } catch (error) {
-        console.error("Critical error fetching credits:", error);
-        if (DOMElements.generationCounter) DOMElements.generationCounter.textContent = "Credits: Error";
-    }
-}
-
-function handleUserSignOut() {
-    DOMElements.authBtn.textContent = 'Sign In';
-    if (DOMElements.generationCounter) DOMElements.generationCounter.textContent = "";
-    currentUserCredits = 0;
-}
-
-function handleAuthAction() {
-    if (auth.currentUser) {
-        signOut(auth).catch(console.error);
-    } else {
-        toggleModal(DOMElements.authModal, true);
-    }
-}
-
-function signInWithGoogle() {
-    signInWithPopup(auth, provider)
-        .then(() => {
-            toggleModal(DOMElements.authModal, false);
-        })
-        .catch((error) => {
-            console.error("Google Sign-In Error:", error);
-            alert("Failed to sign in. Please ensure pop-ups are not blocked by your browser and try again.");
-        });
-}
-
-
-// --- Background Gallery Logic ---
 function listenForSharedImages() {
     const grid = DOMElements.backgroundGrid;
     if (!grid) return;
-    populateGrid(fallbackImageUrls);
+    populateGrid(fallbackImageUrls); 
     const q = query(collection(db, "shared_images"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snapshot) => {
         const imageUrls = snapshot.docs.map(doc => doc.data().imageUrl);
-        if (imageUrls.length > 0) {
-            populateGrid(imageUrls);
-        }
-    }, (error) => {
-        console.error("Error fetching shared images: ", error);
-    });
+        if (imageUrls.length > 0) populateGrid(imageUrls);
+    }, (error) => console.error("Error fetching shared images: ", error));
 }
 
 function populateGrid(urls) {
@@ -169,24 +86,55 @@ function populateGrid(urls) {
     });
 }
 
-// --- Core App Logic (Modals, Generation, etc.) ---
 function toggleModal(modal, show) {
     if (!modal) return;
-    modal.classList.toggle('opacity-0', !show);
-    modal.classList.toggle('invisible', !show);
-    modal.setAttribute('aria-hidden', String(!show));
+    modal.setAttribute('aria-hidden', !show);
+}
+
+async function updateUIForAuthState(user) {
+    const counter = DOMElements.generationCounter;
+    if (user) {
+        DOMElements.authBtn.textContent = 'Sign Out';
+        try {
+            const token = await user.getIdToken(true);
+            const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!response.ok) throw new Error('Failed to fetch credits');
+            const data = await response.json();
+            currentUserCredits = data.credits;
+            if(counter) counter.textContent = `Credits: ${currentUserCredits}`;
+            if (data.isNewUser) {
+                const freeCreditsEl = document.getElementById('free-credits-amount');
+                if(freeCreditsEl) freeCreditsEl.textContent = data.credits;
+                toggleModal(DOMElements.welcomeCreditsModal, true);
+            }
+        } catch (error) {
+            console.error("Error fetching credits:", error);
+            if(counter) counter.textContent = "Credits: Error";
+        }
+    } else {
+        DOMElements.authBtn.textContent = 'Sign In';
+        if(counter) counter.textContent = "";
+        currentUserCredits = 0;
+    }
+}
+
+function handleAuthAction() {
+    auth.currentUser ? signOut(auth).catch(console.error) : toggleModal(DOMElements.authModal, true);
+}
+
+function signInWithGoogle() {
+    signInWithPopup(auth, provider)
+      .then(() => toggleModal(DOMElements.authModal, false))
+      .catch((error) => {
+            console.error("Google Sign-In Error:", error);
+            alert("Could not sign in with Google. Please check if pop-ups are blocked and try again.");
+      });
 }
 
 async function handleImageGenerationRequest() {
     if (isGenerating) return;
-    if (!auth.currentUser) {
-        toggleModal(DOMElements.authModal, true);
-        return;
-    }
-    if (currentUserCredits <= 0) {
-        toggleModal(DOMElements.outOfCreditsModal, true);
-        return;
-    }
+    if (!auth.currentUser) return toggleModal(DOMElements.authModal, true);
+    if (currentUserCredits <= 0) return toggleModal(DOMElements.outOfCreditsModal, true);
     const prompt = DOMElements.promptInput.value.trim();
     if (!prompt && !uploadedImageData) return;
     generateImage(prompt);
@@ -196,7 +144,22 @@ async function generateImage(prompt) {
     startLoadingUI();
     try {
         const token = await auth.currentUser.getIdToken();
-        await fetch('/api/credits', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+        const deductResponse = await fetch('/api/credits', { 
+            method: 'POST', 
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!deductResponse.ok) {
+            toggleModal(DOMElements.outOfCreditsModal, true);
+            throw new Error('Credit deduction failed');
+        }
+        
+        const creditData = await deductResponse.json();
+        currentUserCredits = creditData.newCredits;
+        if(DOMElements.generationCounter) {
+            DOMElements.generationCounter.textContent = `Credits: ${currentUserCredits}`;
+        }
+
         const generateResponse = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -204,16 +167,17 @@ async function generateImage(prompt) {
         });
         if (!generateResponse.ok) throw new Error('API generation failed');
         const result = await generateResponse.json();
-        const base64Data = uploadedImageData ? result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data : result.predictions?.[0]?.bytesBase64Encoded;
+        const base64Data = uploadedImageData ? result?.candidates?.[0]?.content?.parts?.find(p=>p.inlineData)?.inlineData?.data : result.predictions?.[0]?.bytesBase64Encoded;
         if (!base64Data) throw new Error("No image data in response");
+        
         displayImage(`data:image/png;base64,${base64Data}`, prompt);
     } catch (error) {
-        console.error("Generation Error:", error);
-        resetUIAfterGeneration();
+        console.error("Generation Error:", error.message);
     } finally {
         stopLoadingUI();
     }
 }
+
 
 function handleImageUpload(event) {
     const file = event.target.files[0];
@@ -234,9 +198,8 @@ function removeUploadedImage() {
 }
 
 function autoResizeTextarea(e) {
-    const textarea = e.target;
-    textarea.style.height = 'auto';
-    textarea.style.height = `${textarea.scrollHeight}px`;
+    e.target.style.height = 'auto';
+    e.target.style.height = `${e.target.scrollHeight}px`;
 }
 
 function toggleRatioOptions() {
@@ -244,10 +207,9 @@ function toggleRatioOptions() {
 }
 
 function selectRatio(event) {
-    const selectedBox = event.currentTarget;
-    currentAspectRatio = selectedBox.dataset.ratio;
+    currentAspectRatio = event.currentTarget.dataset.ratio;
     document.querySelectorAll('.ratio-option-box').forEach(box => box.classList.remove('active'));
-    selectedBox.classList.add('active');
+    event.currentTarget.classList.add('active');
 }
 
 function startLoadingUI() {
@@ -261,22 +223,19 @@ function startLoadingUI() {
 function stopLoadingUI() {
     isGenerating = false;
     DOMElements.loadingIndicator.classList.add('hidden');
-    stopTimer();
+    resetUIAfterGeneration();
 }
 
 function applyWatermark(baseImageUrl) {
     return new Promise((resolve, reject) => {
         const watermarkUrl = 'https://iili.io/FsAoG2I.md.png';
-        const mainImage = new Image();
-        mainImage.crossOrigin = 'anonymous';
-        const watermark = new Image();
-        watermark.crossOrigin = 'anonymous';
+        const mainImage = new Image(); mainImage.crossOrigin = 'anonymous';
+        const watermark = new Image(); watermark.crossOrigin = 'anonymous';
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         mainImage.onload = () => {
             watermark.onload = () => {
-                canvas.width = mainImage.width;
-                canvas.height = mainImage.height;
+                canvas.width = mainImage.width; canvas.height = mainImage.height;
                 ctx.drawImage(mainImage, 0, 0);
                 ctx.globalAlpha = 0.75;
                 const watermarkWidth = canvas.width * 0.15;
@@ -287,12 +246,33 @@ function applyWatermark(baseImageUrl) {
                 ctx.drawImage(watermark, x, y, watermarkWidth, watermarkHeight);
                 resolve(canvas.toDataURL('image/png'));
             };
-            watermark.onerror = reject;
-            watermark.src = watermarkUrl;
+            watermark.onerror = reject; watermark.src = watermarkUrl;
         };
-        mainImage.onerror = reject;
-        mainImage.src = baseImageUrl;
+        mainImage.onerror = reject; mainImage.src = baseImageUrl;
     });
+}
+
+async function shareImage(imageUrl, buttonElement) {
+    buttonElement.textContent = 'Sharing...';
+    buttonElement.disabled = true;
+    try {
+        const token = await auth.currentUser.getIdToken();
+        const response = await fetch('/api/share', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ imageDataUrl: imageUrl })
+        });
+        if (!response.ok) {
+            const errorResult = await response.json();
+            throw new Error(errorResult.error || 'Sharing failed on the server.');
+        }
+        buttonElement.textContent = 'Shared!';
+    } catch (error) {
+        console.error('Sharing Error:', error);
+        alert(`Sorry, we couldn't share your image at this time.\n\nError: ${error.message}`);
+        buttonElement.textContent = 'Share';
+        buttonElement.disabled = false;
+    }
 }
 
 async function displayImage(imageUrl, prompt) {
@@ -300,7 +280,7 @@ async function displayImage(imageUrl, prompt) {
     try {
         const watermarkedImageUrl = await applyWatermark(imageUrl);
         DOMElements.imageGrid.classList.remove('hidden');
-        DOMElements.imageGrid.innerHTML = '';
+        DOMElements.imageGrid.innerHTML = ''; 
         const imgContainer = document.createElement('div');
         imgContainer.className = 'bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl p-2 relative group max-w-2xl mx-auto border border-gray-200/80';
         const img = document.createElement('img');
@@ -314,16 +294,12 @@ async function displayImage(imageUrl, prompt) {
         downloadButton.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
         downloadButton.onclick = () => {
             const a = document.createElement('a');
-            a.href = watermarkedImageUrl;
-            a.download = 'genart-image.png';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            a.href = watermarkedImageUrl; a.download = 'genart-image.png';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
         };
         const shareButton = document.createElement('button');
-        shareButton.className = "bg-black/50 text-white p-2 rounded-full";
-        shareButton.title = "Share to Everyone";
-        shareButton.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>`;
+        shareButton.className = "bg-blue-500 text-white p-2 rounded-full text-xs font-semibold";
+        shareButton.textContent = "Share";
         shareButton.onclick = () => shareImage(watermarkedImageUrl, shareButton);
         const closeButton = document.createElement('button');
         closeButton.className = "bg-black/50 text-white p-2 rounded-full";
@@ -333,36 +309,7 @@ async function displayImage(imageUrl, prompt) {
         imgContainer.append(img, buttonContainer);
         DOMElements.imageGrid.appendChild(imgContainer);
     } catch (error) {
-        console.error("Failed to apply watermark:", error);
-        // Fallback to display the original image if watermarking fails
-        displayImage(imageUrl, prompt);
-    }
-}
-
-async function shareImage(imageDataUrl, button) {
-    if (!auth.currentUser) {
-        toggleModal(DOMElements.authModal, true);
-        return;
-    }
-    button.disabled = true;
-    button.innerHTML = '...';
-    try {
-        const token = await auth.currentUser.getIdToken();
-        const response = await fetch('/api/share', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ imageDataUrl })
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Sharing failed due to an unknown server issue.');
-        }
-        button.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-    } catch (error) {
-        console.error("Sharing Error:", error);
-        alert(`Sorry, we couldn't share your image at this time. \n\nError: ${error.message}`);
-        button.disabled = false;
-        button.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>`;
+        console.error("Error applying watermark or displaying image:", error);
     }
 }
 
@@ -371,7 +318,7 @@ function resetUIAfterGeneration() {
     DOMElements.imageGrid.innerHTML = '';
     DOMElements.backgroundGridContainer.classList.remove('dimmed');
     DOMElements.promptInput.value = '';
-    autoResizeTextarea({ target: DOMElements.promptInput });
+    autoResizeTextarea({target: DOMElements.promptInput});
     removeUploadedImage();
 }
 
@@ -379,9 +326,9 @@ function startTimer() {
     let startTime = Date.now();
     timerInterval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
-        if (DOMElements.timer) DOMElements.timer.textContent = `${(elapsedTime / 1000).toFixed(1)}s`;
-        const progress = Math.min(elapsedTime / 17000, 1);
-        if (DOMElements.progressBar) DOMElements.progressBar.style.width = `${progress * 100}%`;
+        if(DOMElements.timer) DOMElements.timer.textContent = `${(elapsedTime / 1000).toFixed(1)}s`;
+        const progress = Math.min(elapsedTime / 17000, 1); 
+        if(DOMElements.progressBar) DOMElements.progressBar.style.width = `${progress * 100}%`;
     }, 100);
 }
 
