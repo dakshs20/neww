@@ -17,7 +17,6 @@ const db = admin.firestore();
 
 // --- Function to save prompt data ---
 async function logGeneration(userId, prompt) {
-    // This function will only be called if a user is logged in.
     try {
         await db.collection('generations').add({
             userId: userId,
@@ -26,6 +25,7 @@ async function logGeneration(userId, prompt) {
         });
         console.log(`Logged prompt for user: ${userId}`);
     } catch (error) {
+        // We log the error but don't stop the image generation process
         console.error("Failed to log prompt:", error);
     }
 }
@@ -36,27 +36,21 @@ export default async function handler(req, res) {
     }
 
     try {
+        // --- Full Authentication Logic Restored ---
         const idToken = req.headers.authorization?.split('Bearer ')[1];
-        let user = null;
-
-        // --- NEW: Conditional Authentication for Maintenance Mode ---
-        // Only verify the user if a token is actually sent from the frontend.
-        // During maintenance mode, no token is sent, so this block is skipped.
-        if (idToken) {
-            try {
-                user = await auth().verifyIdToken(idToken);
-            } catch (error) {
-                // If the token is invalid or expired, block the request.
-                return res.status(401).json({ error: 'Invalid or expired authentication token.' });
-            }
+        if (!idToken) {
+            return res.status(401).json({ error: 'User not authenticated. No token provided.' });
+        }
+        
+        const user = await auth().verifyIdToken(idToken);
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid user token. Authentication failed.' });
         }
 
         const { prompt, imageData, aspectRatio, isTryOn, personImageData, garmentImageData } = req.body;
         
-        // Log the generation attempt only if a user is logged in
-        if (user) {
-            await logGeneration(user.uid, prompt);
-        }
+        // Log the generation attempt now that we have a verified user
+        await logGeneration(user.uid, prompt);
 
         const apiKey = process.env.GOOGLE_API_KEY;
         if (!apiKey) {
@@ -119,3 +113,4 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'The API function crashed.', details: error.message });
     }
 }
+
