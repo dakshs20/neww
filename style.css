@@ -12,7 +12,6 @@ body {
     width: 100%;
     height: 100%;
     z-index: 0;
-    /* --- THIS IS THE FIX: Allows the container to be scrollable --- */
     overflow: auto; 
     -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
     /* This mask creates the fade effect at the top and bottom */
@@ -21,10 +20,10 @@ body {
     transition: opacity 0.5s ease, filter 0.5s ease;
 }
 
+/* --- MASONRY LAYOUT --- */
 #background-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 1.5vw;
+    column-count: 5; /* Number of columns for desktop */
+    column-gap: 1.5vw;
     padding: 1.5vw;
 }
 
@@ -34,6 +33,8 @@ body {
     border-radius: 1rem;
     object-fit: cover;
     background-color: #e5e7eb;
+    margin-bottom: 1.5vw; /* Space below each image */
+    break-inside: avoid; /* Prevents images from breaking across columns */
 }
 
 
@@ -88,10 +89,14 @@ body {
 /* --- Responsive Adjustments --- */
 @media (max-width: 768px) {
     #background-grid {
-        /* On mobile, use a single-column layout */
-        grid-template-columns: repeat(1, 1fr);
+        /* On mobile, use a two-column masonry layout */
+        column-count: 2;
         padding: 4vw;
-        gap: 4vw;
+        column-gap: 4vw;
+    }
+    
+    .grid-image {
+        margin-bottom: 4vw;
     }
 
     .prompt-footer {
