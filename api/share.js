@@ -1,14 +1,14 @@
 import admin from 'firebase-admin';
 import { getStorage } from 'firebase-admin/storage';
-import { v4 as uuidv4 } from 'uuid';
 
-// --- Firebase Admin Initialization ---
+// Ensure Firebase Admin is initialized only once
 if (!admin.apps.length) {
     try {
         const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
-            storageBucket: "genart-a693a.appspot.com" // IMPORTANT: Use your actual storage bucket name
+            // This line is crucial for connecting to your storage
+            storageBucket: "genart-a693a.appspot.com"
         });
     } catch (error) {
         console.error("Firebase Admin Initialization Error in share.js:", error);
@@ -16,6 +16,7 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+// Get a direct reference to your storage bucket
 const bucket = getStorage().bucket();
 
 export default async function handler(req, res) {
@@ -24,48 +25,48 @@ export default async function handler(req, res) {
     }
 
     try {
-        // --- 1. Authenticate the user ---
+        // Authenticate the user
         const idToken = req.headers.authorization?.split('Bearer ')[1];
         if (!idToken) {
             return res.status(401).json({ error: 'User not authenticated.' });
         }
         const user = await admin.auth().verifyIdToken(idToken);
 
-        // --- 2. Get the image data from the request ---
         const { imageDataUrl } = req.body;
-        if (!imageDataUrl) {
-            return res.status(400).json({ error: 'Image data is required.' });
+        if (!imageDataUrl || !imageDataUrl.startsWith('data:image/png;base64,')) {
+            return res.status(400).json({ error: 'Invalid image data format provided.' });
         }
 
-        // --- 3. Convert the Data URL to a Buffer ---
-        const base64EncodedImageString = imageDataUrl.replace(/^data:image\/\w+;base64,/, '');
-        const imageBuffer = Buffer.from(base64EncodedImageString, 'base64');
-        
-        // --- 4. Upload the image to Firebase Storage ---
-        const fileName = `shared/${uuidv4()}.png`;
+        // 1. Prepare the image for upload
+        const base64Data = imageDataUrl.replace(/^data:image\/png;base64,/, "");
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        const fileName = `shared/${user.uid}-${Date.now()}.png`;
         const file = bucket.file(fileName);
-        
-        await file.save(imageBuffer, {
-            metadata: {
-                contentType: 'image/png',
-            },
-        });
-        
-        // --- 5. Make the file public and get its URL ---
-        await file.makePublic();
-        const publicUrl = file.publicUrl();
 
-        // --- 6. Save the public URL to Firestore ---
+        // 2. Save the image to the bucket
+        await file.save(imageBuffer, {
+            metadata: { contentType: 'image/png' },
+        });
+
+        // 3. Make the file publicly readable
+        await file.makePublic();
+
+        // 4. Construct the permanent public URL
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+        // 5. Save the public URL to the Firestore database
         await db.collection('shared_images').add({
             imageUrl: publicUrl,
             userId: user.uid,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
-        
-        res.status(200).json({ message: 'Image shared successfully!', url: publicUrl });
+
+        res.status(200).json({ success: true, url: publicUrl });
 
     } catch (error) {
-        console.error("API function /api/share crashed:", error);
-        res.status(500).json({ error: 'Failed to share image due to a server error.' });
+        console.error("Image sharing API failed:", error);
+        // Send a more detailed error message back to the user for easier debugging
+        res.status(500).json({ error: `Sharing failed on the server. Reason: ${error.message}` });
     }
 }
+
