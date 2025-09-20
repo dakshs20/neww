@@ -1,151 +1,66 @@
 /* Base Styles */
-body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-    color: #1f2937; /* Tailwind gray-800 */
-    overflow: hidden; /* Prevent body from scrolling */
-}
-
-/* --- Masonry Background Gallery --- */
-#background-grid-container {
-    position: fixed;
-    inset: 0;
+body, html {
+    margin: 0;
+    padding: 0;
     width: 100%;
     height: 100%;
-    z-index: 0;
-    overflow: auto; /* Allows the gallery to be scrolled */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-    transition: opacity 0.5s ease, filter 0.5s ease;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
 }
 
-#background-grid {
-    padding: 1.5vw;
-    columns: 5 280px;
-    column-gap: 1.5vw;
-}
-
-.grid-image {
-    width: 100%;
-    height: auto;
-    margin-bottom: 1.5vw;
-    border-radius: 1rem;
-    object-fit: cover;
-    background-color: #e5e7eb;
-    break-inside: avoid;
-}
-
-/* --- Sticky Prompt Footer --- */
-.prompt-footer {
+/* Animated Blurred Background */
+.background-blur {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 30;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    z-index: -1;
+    background-image: url('https://iili.io/K7bN7Hl.md.png');
+    background-size: cover;
+    background-position: center;
+    filter: blur(12px) brightness(0.7);
+    /* New animation for a dynamic feel */
+    animation: zoom-pan 45s linear infinite alternate;
 }
 
-#prompt-input {
-    min-height: 48px;
-    max-height: 200px;
+@keyframes zoom-pan {
+    0% {
+        transform: scale(1) translate(0, 0);
+    }
+    100% {
+        transform: scale(1.1) translate(2%, -2%);
+    }
 }
 
-/* --- UI State Changes --- */
-#background-grid-container.dimmed {
-    opacity: 0.1;
-    filter: blur(8px);
-}
-
-/* --- Generated Image Display --- */
-#main-content {
-    padding-bottom: 120px;
-}
-
-/* --- Modals --- */
-#modal-layer {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    pointer-events: none; 
-}
-
-.modal-container {
-    position: fixed;
-    inset: 0;
+/* Centered Content Container */
+.content-container {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
-    padding: 1rem;
-    background-color: rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-.modal-container.visible {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-}
-
-.modal-content {
-    background-color: white;
-    border-radius: 1rem;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    padding: 2rem;
-    max-width: 24rem;
-    width: 100%;
-    text-align: center;
-}
-
-
-/* --- Aspect Ratio Selector --- */
-/* FIX: Increased specificity to ensure the menu is hidden by default */
-.prompt-footer #ratio-options {
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(10px);
-    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
-}
-/* FIX: Increased specificity to ensure the menu appears when toggled */
-.prompt-footer #ratio-options.visible {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-.ratio-option-box {
-    display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-.ratio-option-box:hover {
-    background-color: rgba(0,0,0,0.05);
-}
-.ratio-option-box.active {
-    background-color: rgba(59, 130, 246, 0.1);
-}
-.ratio-option-box .ratio-value {
-    font-size: 0.75rem;
-    color: #6b7280;
+    height: 100vh;
+    padding: 2rem;
+    text-align: center;
+    color: white;
 }
 
+/* Text shadow for better readability */
+h1, p {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    #background-grid {
-        columns: 2;
+/* New pulsating animation for text */
+.pulsate {
+    animation: pulsate 3s ease-in-out infinite;
+}
+
+@keyframes pulsate {
+    0%, 100% {
+        opacity: 0.8;
     }
-
-    #background-grid-container {
-        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 80%, transparent 100%);
-        mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 80%, transparent 100%);
-    }
-
-    .prompt-footer {
-        backdrop-filter: none;
-        background-color: transparent;
+    50% {
+        opacity: 1;
     }
 }
 
