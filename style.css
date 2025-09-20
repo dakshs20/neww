@@ -50,11 +50,25 @@ body {
     max-height: 200px;
 }
 
+/* --- Centering Generated Image --- */
+#result-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
+#image-grid {
+    width: 100%;
+}
+
+
 /* --- Simplified Modal System --- */
 .modal-box {
     position: fixed;
     inset: 0;
-    z-index: 9999; /* Increased z-index to ensure it's on top of all other content */
+    z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
