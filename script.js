@@ -173,6 +173,8 @@ async function generateImage(prompt) {
         displayImage(`data:image/png;base64,${base64Data}`, prompt);
     } catch (error) {
         console.error("Generation Error:", error.message);
+        // If generation fails, reset UI so user isn't stuck
+        resetUIAfterGeneration();
     } finally {
         stopLoadingUI();
     }
@@ -223,7 +225,7 @@ function startLoadingUI() {
 function stopLoadingUI() {
     isGenerating = false;
     DOMElements.loadingIndicator.classList.add('hidden');
-    resetUIAfterGeneration();
+    // NOTE: resetUIAfterGeneration() is removed from here to keep the background blurred.
 }
 
 function applyWatermark(baseImageUrl) {
@@ -276,7 +278,7 @@ async function shareImage(imageUrl, buttonElement) {
 }
 
 async function displayImage(imageUrl, prompt) {
-    DOMElements.loadingIndicator.classList.add('hidden');
+    // This function is now called after loading is finished, so no need to hide loader here.
     try {
         const watermarkedImageUrl = await applyWatermark(imageUrl);
         DOMElements.imageGrid.classList.remove('hidden');
