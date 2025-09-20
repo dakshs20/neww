@@ -15,14 +15,6 @@
 </head>
 <body class="bg-gray-50">
 
-    <!-- NEW: Maintenance Banner -->
-    <div id="maintenance-banner" class="bg-yellow-400 text-center p-3 relative">
-        <p class="text-sm font-medium text-yellow-900">
-            Site under maintenance. No sign-in required! Enjoy free, unlimited image generations.
-        </p>
-        <button id="close-banner-btn" class="absolute top-1/2 right-4 -translate-y-1/2 text-yellow-900 hover:bg-yellow-500 rounded-full p-1">&times;</button>
-    </div>
-
     <!-- Infinite Scrolling Background -->
     <div id="background-grid-container" class="pointer-events-none">
         <div id="background-grid" class="manual-scroll">
@@ -66,7 +58,7 @@
         <footer class="prompt-footer p-4 pointer-events-auto">
             <div class="max-w-3xl mx-auto bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200/80 p-2.5 relative">
                 <!-- Aspect Ratio Pop-up -->
-                <div id="ratio-options" class="absolute bottom-full left-0 mb-2 bg-gray-800 text-white rounded-xl shadow-lg p-2 opacity-0 invisible transition-all duration-300">
+                <div id="ratio-options" class="absolute bottom-full right-0 mb-2 bg-gray-800 text-white rounded-xl shadow-lg p-2 opacity-0 invisible transition-all duration-300">
                     <div class="font-semibold text-sm px-2 py-1 mb-1">Aspect Ratio</div>
                     <div data-ratio="1:1" class="ratio-option-box active">Square (1:1)</div>
                     <div data-ratio="16:9" class="ratio-option-box">Landscape (16:9)</div>
@@ -95,16 +87,7 @@
         </footer>
     </div>
 
-    <!-- NEW Maintenance Pop-up Modal -->
-    <div id="maintenance-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 opacity-0 invisible transition-opacity duration-300 pointer-events-auto">
-        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Service Update</h2>
-            <p class="text-gray-500 mb-6">Our full service is under maintenance. For now, enjoy free and unlimited image generations—no sign-in required!</p>
-            <button id="close-maintenance-modal-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600">Start Creating</button>
-        </div>
-    </div>
-
-    <!-- Existing Modals -->
+    <!-- Modals -->
     <div id="auth-modal" aria-hidden="true" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 opacity-0 invisible transition-opacity duration-300 pointer-events-auto">
         <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
             <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In Required</h2>
@@ -132,3 +115,4 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
