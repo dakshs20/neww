@@ -1,7 +1,7 @@
 // --- Firebase and Auth Initialization ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, query, onSnapshot, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, limit, startAfter, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
@@ -28,6 +28,9 @@ const fallbackImageUrls = [
 ];
 
 let currentUserCredits = 0, uploadedImageData = null, isGenerating = false, timerInterval, currentAspectRatio = '1:1';
+let lastVisibleDoc = null; // For pagination
+let isLoadingMoreImages = false; // To prevent multiple fetches
+let allImagesLoaded = false; // To know when to stop fetching
 const DOMElements = {};
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -43,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ids.forEach(id => DOMElements[id.replace(/-./g, c => c[1].toUpperCase())] = document.getElementById(id));
     
     initializeEventListeners();
-    listenForSharedImages();
+    loadInitialImages(); // Fetch the first batch of images
 });
 
 function initializeEventListeners() {
@@ -61,22 +64,80 @@ function initializeEventListeners() {
     DOMElements.ratioSelectorBtn?.addEventListener('click', (e) => { e.stopPropagation(); toggleRatioOptions(); });
     document.querySelectorAll('.ratio-option-box').forEach(box => box.addEventListener('click', selectRatio));
     document.addEventListener('click', () => DOMElements.ratioOptions?.classList.contains('visible') && toggleRatioOptions());
+    DOMElements.backgroundGridContainer?.addEventListener('scroll', handleScroll); // Add scroll listener
 }
 
-function listenForSharedImages() {
+function handleScroll() {
+    const container = DOMElements.backgroundGridContainer;
+    if (!container) return;
+    const threshold = 500; // Load more when 500px from the bottom
+    const isNearBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - threshold;
+    if (isNearBottom && !isLoadingMoreImages && !allImagesLoaded) {
+        loadMoreImages();
+    }
+}
+
+async function loadInitialImages() {
     const grid = DOMElements.backgroundGrid;
     if (!grid) return;
-    populateGrid(fallbackImageUrls); 
-    const q = query(collection(db, "shared_images"), orderBy("createdAt", "desc"));
-    onSnapshot(q, (snapshot) => {
-        const imageUrls = snapshot.docs.map(doc => doc.data().imageUrl);
-        if (imageUrls.length > 0) populateGrid(imageUrls);
-    }, (error) => console.error("Error fetching shared images: ", error));
+    populateGrid(fallbackImageUrls); // Show fallbacks while loading
+    try {
+        const q = query(collection(db, "shared_images"), orderBy("createdAt", "desc"), limit(20));
+        const documentSnapshots = await getDocs(q);
+        const imageUrls = documentSnapshots.docs.map(doc => doc.data().imageUrl);
+
+        if (imageUrls.length > 0) {
+            populateGrid(imageUrls); // Replace fallbacks
+            lastVisibleDoc = documentSnapshots.docs[documentSnapshots.docs.length - 1];
+            if (documentSnapshots.docs.length < 20) allImagesLoaded = true;
+        } else {
+            allImagesLoaded = true; // DB is empty
+        }
+    } catch (error) {
+        console.error("Error fetching initial images: ", error);
+        allImagesLoaded = true; // Stop trying on error
+    }
+}
+
+async function loadMoreImages() {
+    if (isLoadingMoreImages || allImagesLoaded) return;
+    isLoadingMoreImages = true;
+
+    try {
+        const q = query(collection(db, "shared_images"), orderBy("createdAt", "desc"), startAfter(lastVisibleDoc), limit(10));
+        const documentSnapshots = await getDocs(q);
+        const newImageUrls = documentSnapshots.docs.map(doc => doc.data().imageUrl);
+
+        if (newImageUrls.length > 0) {
+            appendImagesToGrid(newImageUrls);
+            lastVisibleDoc = documentSnapshots.docs[documentSnapshots.docs.length - 1];
+        }
+        if (documentSnapshots.docs.length < 10) {
+            allImagesLoaded = true; // This was the last page
+        }
+    } catch (error) {
+        console.error("Error fetching more images: ", error);
+    } finally {
+        isLoadingMoreImages = false;
+    }
 }
 
 function populateGrid(urls) {
     const grid = DOMElements.backgroundGrid;
+    if (!grid) return;
     grid.innerHTML = '';
+    urls.forEach(url => {
+        const img = document.createElement('img');
+        img.className = 'grid-image';
+        img.src = url;
+        img.loading = 'lazy';
+        grid.appendChild(img);
+    });
+}
+
+function appendImagesToGrid(urls) {
+    const grid = DOMElements.backgroundGrid;
+    if (!grid) return;
     urls.forEach(url => {
         const img = document.createElement('img');
         img.className = 'grid-image';
