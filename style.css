@@ -14,7 +14,6 @@ body {
     z-index: 0;
     overflow: auto; 
     -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    /* This mask creates the fade effect at the top and bottom */
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
     mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
     transition: opacity 0.5s ease, filter 0.5s ease;
@@ -22,7 +21,7 @@ body {
 
 /* --- MASONRY LAYOUT --- */
 #background-grid {
-    column-count: 5; /* Number of columns for desktop */
+    column-count: 5;
     column-gap: 1.5vw;
     padding: 1.5vw;
 }
@@ -33,12 +32,11 @@ body {
     border-radius: 1rem;
     object-fit: cover;
     background-color: #e5e7eb;
-    margin-bottom: 1.5vw; /* Space below each image */
-    break-inside: avoid; /* Prevents images from breaking across columns */
+    margin-bottom: 1.5vw;
+    break-inside: avoid;
 }
 
-
-/* --- Sticky Prompt Footer --- */
+/* --- Sticky Prompt Footer & Main UI --- */
 .prompt-footer {
     position: fixed;
     bottom: 0;
@@ -52,22 +50,38 @@ body {
     max-height: 200px;
 }
 
+/* --- Simplified Modal System --- */
+.modal-box {
+    position: fixed;
+    inset: 0;
+    z-index: 9999; /* Increased z-index to ensure it's on top of all other content */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background-color: rgba(0,0,0,0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: auto;
+}
+
+.modal-box[aria-hidden="false"] {
+    opacity: 1;
+    visibility: visible;
+}
+
+
 /* --- UI State Changes --- */
 #background-grid-container.dimmed {
     opacity: 0.1;
     filter: blur(8px);
 }
 
-/* Modal and Pop-up Transitions */
-#auth-modal, #out-of-credits-modal, #welcome-credits-modal, #ratio-options {
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
 #ratio-options.visible {
     opacity: 1;
     visibility: visible;
 }
-
 .ratio-option-box {
     padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
@@ -79,17 +93,15 @@ body {
     gap: 0.5rem;
 }
 .ratio-option-box:hover {
-    background-color: #4b5563; /* Tailwind gray-600 */
+    background-color: #4b5563;
 }
 .ratio-option-box.active {
-    background-color: #3b82f6; /* Tailwind blue-500 */
+    background-color: #3b82f6;
 }
-
 
 /* --- Responsive Adjustments --- */
 @media (max-width: 768px) {
     #background-grid {
-        /* On mobile, use a two-column masonry layout */
         column-count: 2;
         padding: 4vw;
         column-gap: 4vw;
@@ -105,7 +117,6 @@ body {
     }
     
     #background-grid-container {
-         /* Adjust the fade on mobile to be more pronounced at the bottom */
         -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 80%, transparent 100%);
         mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 80%, transparent 100%);
     }
