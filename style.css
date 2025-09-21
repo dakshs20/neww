@@ -12,7 +12,7 @@ body {
 .masonry-column {
     display: flex;
     flex-direction: column;
-    flex-basis: 100%;
+    /* The 'flex-basis: 100%' was removed to allow columns to share space correctly. */
     flex: 1;
     gap: 1rem; /* 16px */
 }
