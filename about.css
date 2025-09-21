@@ -16,7 +16,7 @@ body {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: radial-gradient(circle at 25% 30%, rgba(59, 130, 246, 0.2) 0%, transparent 25%),
+    background-image: radial-gradient(circle at 25% 30%, rgba(59, 130, 246, 0.2) 0%, transparent. 25%),
                       radial-gradient(circle at 75% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 30%);
     animation: particles-float 20s ease-in-out infinite;
 }
@@ -33,118 +33,71 @@ body {
     50% { color: #60a5fa; } /* blue-400 */
 }
 
-/* --- Why Speed Matters: Timeline Animation --- */
-.timeline-bar {
-    width: 100%;
-    height: 10px;
-    background-color: #334155; /* slate-700 */
+/* --- Why Speed Matters: Animated Infographic --- */
+.workflow-track { margin-bottom: 2rem; }
+.workflow-label { color: #94a3b8; margin-bottom: 0.5rem; display: block; }
+.icons-container { display: flex; justify-content: space-between; background: #1e293b; padding: 0.5rem; border-radius: 99px; }
+.icon-step {
+    opacity: 0;
+    transform: scale(0.5);
+    padding: 0.5rem 1rem;
+    background: #334155;
     border-radius: 99px;
-    overflow: hidden;
-    position: relative;
+    color: #cbd5e1;
+    font-size: 0.875rem;
 }
-.timeline-progress { 
-    height: 100%; 
-    width: 0%; 
-    border-radius: 99px; 
-    transform: translateX(-100%);
-    transition: transform 1.5s ease-in-out;
-}
-.timeline-progress.traditional { background-color: #f87171; /* red-400 */ }
-.timeline-progress.genart { background-color: #3b82f6; /* blue-600 */ transition-delay: 0.2s; }
-
-/* Animate bars into view when section is visible */
-.fade-in-section.is-visible .timeline-progress {
-    transform: translateX(0);
-}
-
+.icon-step.genart-icon { background: #2563eb; color: white; }
 
 /* --- Technology Section: SVG Animation --- */
-#tech-flow-svg .node circle {
-    fill: #1e293b; /* slate-800 */
-    stroke: #475569; /* slate-600 */
-    stroke-width: 2;
-    transition: all 0.4s ease;
-}
-#tech-flow-svg .node text {
-    fill: #64748b; /* slate-500 */
-    font-size: 10px;
-    text-anchor: middle;
-    transition: fill 0.4s ease;
-}
-#tech-flow-svg .connector {
-    stroke: #334155; /* slate-700 */
-    stroke-width: 2;
-    stroke-dasharray: 100;
-    stroke-dashoffset: 100;
-    transition: stroke-dashoffset 1s ease-out;
-}
-
-/* Animate the flow when section becomes visible */
-#tech-flow-svg.is-animating #node-prompt circle { stroke: #3b82f6; animation: pulse-node 1.5s ease-in-out 0.5s infinite; }
-#tech-flow-svg.is-animating #node-prompt text { fill: #e2e8f0; }
-#tech-flow-svg.is-animating .connector:nth-of-type(1) { stroke-dashoffset: 0; transition-delay: 0.5s; }
-
-#tech-flow-svg.is-animating #node-model circle { stroke: #3b82f6; animation: pulse-node 1.5s ease-in-out 1.5s infinite; }
-#tech-flow-svg.is-animating #node-model text { fill: #e2e8f0; transition-delay: 1.5s; }
-#tech-flow-svg.is-animating .connector:nth-of-type(2) { stroke-dashoffset: 0; transition-delay: 1.5s; }
-
-#tech-flow-svg.is-animating #node-image circle { stroke: #3b82f6; animation: pulse-node 1.5s ease-in-out 2.5s infinite; }
-#tech-flow-svg.is-animating #node-image text { fill: #e2e8f0; transition-delay: 2.5s; }
-
-
-@keyframes pulse-node {
-    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-    50% { transform: scale(1.1); box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.4); }
-}
-
-/* --- Roadmap / Timeline --- */
-#roadmap { display: flex; justify-content: space-between; position: relative; }
-.roadmap-line { position: absolute; top: 10px; left: 10%; right: 10%; height: 2px; background-color: #334155; }
-.roadmap-line-progress { width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa); box-shadow: 0 0 10px #3b82f6; }
-.roadmap-item { width: 20%; opacity: 0.5; transition: opacity 0.4s ease; }
-.roadmap-item.is-active { opacity: 1; }
-.roadmap-node { width: 20px; height: 20px; border-radius: 9999px; background-color: #334155; margin: 0 auto; transition: all 0.4s ease; }
-.roadmap-item.is-active .roadmap-node { 
-    background-color: #60a5fa; 
-    transform: scale(1.2); 
-    box-shadow: 0 0 20px 8px rgba(96, 165, 250, 0.5);
-    animation: pulse-node-roadmap 2s infinite;
-}
-.roadmap-item.is-active h3 { color: #fff; }
-.roadmap-item .text-content { opacity: 0; transform: translateY(10px); transition: opacity 0.5s ease, transform 0.5s ease; }
-.roadmap-item.is-active .text-content { opacity: 1; transform: translateY(0); }
-
-
-@keyframes pulse-node-roadmap {
-    0% { box-shadow: 0 0 20px 8px rgba(96, 165, 250, 0.5); }
-    50% { box-shadow: 0 0 25px 12px rgba(96, 165, 250, 0.3); }
-    100% { box-shadow: 0 0 20px 8px rgba(96, 165, 250, 0.5); }
-}
-
-
-@media (max-width: 768px) {
-    #roadmap { flex-direction: column; align-items: center; gap: 4rem; }
-    .roadmap-line { display: none; }
-    .roadmap-item { width: 80%; opacity: 1; } /* Always active on mobile */
-}
-
-
-/* --- General Animations & Components --- */
-.fade-in-section { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
-.fade-in-section.is-visible { opacity: 1; transform: translateY(0); }
-
-.gradient-text { background: linear-gradient(to right, #60a5fa, #818cf8); -webkit-background-clip: text; background-clip: text; color: transparent; }
-
-.interactive-card {
+.tech-card {
     transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
     border: 1px solid transparent;
     border-radius: 1rem;
+    padding: 2rem;
+    background: #1e293b;
 }
-.interactive-card:hover {
+.tech-card:hover {
     transform: translateY(-10px);
     border-color: rgba(59, 130, 246, 0.3);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2), 0 0 40px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 40px rgba(59, 130, 246, 0.2);
 }
+.tech-list li { opacity: 0; transform: translateX(-20px); }
+
+#tech-flow-svg .node circle { fill: #334155; stroke: #475569; stroke-width: 2; transition: all 0.5s ease; }
+#tech-flow-svg .node text { fill: #94a3b8; font-size: 14px; text-anchor: middle; font-weight: 500; }
+#tech-flow-svg .connector-bg { stroke: #334155; stroke-width: 4; }
+#tech-flow-svg .connector-flow { stroke: #3b82f6; stroke-width: 4; stroke-dasharray: 200; stroke-dashoffset: 200; filter: url(#glow); }
+
+/* --- Roadmap / Timeline --- */
+#roadmap { display: flex; justify-content: space-between; position: relative; padding-top: 2rem; }
+.roadmap-line { position: absolute; top: 1.5rem; left: 10%; right: 10%; height: 4px; background-color: #334155; border-radius: 2px; }
+.roadmap-item { width: 20%; display: flex; flex-direction: column; align-items: center; }
+.roadmap-node {
+    width: 24px; height: 24px; border-radius: 50%;
+    background-color: #334155; border: 4px solid #0f172a;
+    position: relative; z-index: 1; transition: all 0.4s ease-in-out;
+}
+.roadmap-item.is-active .roadmap-node {
+    background-color: #60a5fa;
+    transform: scale(1.25);
+    box-shadow: 0 0 25px 5px rgba(96, 165, 250, 0.6);
+}
+.text-content { margin-top: 1.5rem; opacity: 0.5; transition: all 0.4s ease; }
+.text-content h3 { font-size: 1.5rem; font-weight: bold; color: #94a3b8; transition: color 0.4s ease; }
+.text-content p { color: #64748b; }
+.roadmap-item.is-active .text-content { opacity: 1; transform: translateY(-5px); }
+.roadmap-item.is-active h3 { color: white; }
+
+@media (max-width: 768px) {
+    #roadmap { flex-direction: column; align-items: flex-start; gap: 4rem; padding-left: 1rem; }
+    .roadmap-line { left: calc(1rem + 12px); top: 1.5rem; bottom: 1.5rem; width: 4px; height: auto; }
+    .roadmap-item { width: 100%; flex-direction: row; text-align: left; gap: 1.5rem; }
+    .text-content { margin-top: 0; }
+}
+
+/* --- General Animations & Components --- */
+.fade-in-section { opacity: 0; }
+.gradient-text { background: linear-gradient(to right, #60a5fa, #818cf8); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 .cta-button {
     display: inline-block;
@@ -185,6 +138,6 @@ body {
 /* --- Accessibility --- */
 @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
-    .fade-in-section { opacity: 1; transform: none; }
+    .fade-in-section { opacity: 1; }
 }
 
