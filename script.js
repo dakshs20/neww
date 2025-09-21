@@ -25,8 +25,9 @@ let isGenerating = false;
 let currentAspectRatio = '1:1';
 let uploadedImageData = null;
 let timerInterval;
-let isFetchingMore = false; // Flag to prevent multiple simultaneous loads
-let imagePage = 0; // Index for infinite scroll pagination
+let isFetchingMore = false;
+let imagePage = 0;
+let nextColumnIndex = 0; // NEW: To track which column to add the next image to.
 
 // All available images for infinite scroll
 const ALL_IMAGE_URLS = [
@@ -36,7 +37,6 @@ const ALL_IMAGE_URLS = [
     "https://iili.io/K7b4VQR.md.png", "https://iili.io/K7yGhS2.md.png", "https://iili.io/K7bs5wg.md.png",
     "https://iili.io/K7bDzpS.md.png", "https://iili.io/K7yVVv2.md.png", "https://iili.io/K7bmj7R.md.png",
     "https://iili.io/K7bP679.md.png",
-    // Add more images here to make the scroll longer
     "https://images.unsplash.com/photo-1678043639454-a25c4a31b1d1?q=80&w=800",
     "https://images.unsplash.com/photo-1678776210282-b1187d6e53c4?q=80&w=800",
     "https://images.unsplash.com/photo-1677332213134-b0ae1071a5c4?q=80&w=800",
@@ -84,7 +84,6 @@ function initializeEventListeners() {
     DOMElements.imageUploadInput?.addEventListener('change', handleImageUpload);
     DOMElements.removeImageBtn?.addEventListener('click', removeUploadedImage);
 
-    // Aspect Ratio Dropdown
     DOMElements.ratioBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         DOMElements.ratioOptions.classList.toggle('hidden');
@@ -98,7 +97,6 @@ function initializeEventListeners() {
         });
     });
 
-    // Header blur on scroll
     DOMElements.galleryContainer?.addEventListener('scroll', () => {
         const overlay = DOMElements.headerBlurOverlay;
         if (DOMElements.galleryContainer.scrollTop > 50) {
@@ -108,19 +106,16 @@ function initializeEventListeners() {
         }
     });
 
-    // Preview Modal
     DOMElements.closePreviewBtn?.addEventListener('click', () => toggleModal(DOMElements.previewModal, false));
     DOMElements.downloadBtn?.addEventListener('click', downloadPreviewImage);
     DOMElements.regenerateBtn?.addEventListener('click', handleRegeneration);
 
-    // Infinite Scroll
     DOMElements.galleryContainer?.addEventListener('scroll', handleInfiniteScroll);
 }
 
 // --- Infinite Scroll ---
 function handleInfiniteScroll() {
     const container = DOMElements.galleryContainer;
-    // Load more when user is 300px from the bottom
     if (container.scrollTop + container.clientHeight >= container.scrollHeight - 300 && !isFetchingMore) {
         loadMoreImages();
     }
@@ -130,7 +125,6 @@ function loadMoreImages() {
     isFetchingMore = true;
     DOMElements.loader.style.display = 'block';
 
-    // Simulate network delay for fetching images
     setTimeout(() => {
         const imagesPerPage = 10;
         const startIndex = (imagePage * imagesPerPage) % ALL_IMAGE_URLS.length;
@@ -138,7 +132,6 @@ function loadMoreImages() {
         
         let newImages = ALL_IMAGE_URLS.slice(startIndex, endIndex);
 
-        // If the slice goes past the end of the array, wrap around and get the rest from the beginning
         if (endIndex > ALL_IMAGE_URLS.length) {
             const remaining = endIndex - ALL_IMAGE_URLS.length;
             newImages = newImages.concat(ALL_IMAGE_URLS.slice(0, remaining));
@@ -148,7 +141,7 @@ function loadMoreImages() {
             addImageToMasonry(url);
         });
         
-        imagePage++; // Move to the next "page" of images
+        imagePage++;
         DOMElements.loader.style.display = 'none';
         isFetchingMore = false;
     }, 1000);
@@ -199,7 +192,7 @@ function updateCreditsDisplay(amount) {
 
 function autoResizeTextarea(e) {
     const textarea = e.target;
-    textarea.style.height = 'auto'; // Reset height
+    textarea.style.height = 'auto';
     textarea.style.height = `${textarea.scrollHeight}px`;
 }
 
@@ -237,7 +230,6 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
 
     const prompt = fromRegenerate ? promptOverride : DOMElements.promptInput.value.trim();
     if (!prompt && !uploadedImageData) {
-        // Add a small shake animation to the prompt bar
         const promptBar = DOMElements.promptInput.parentElement;
         promptBar.classList.add('animate-shake');
         setTimeout(() => promptBar.classList.remove('animate-shake'), 500);
@@ -251,8 +243,6 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
     try {
         const token = await currentUser.getIdToken();
         
-        // --- INSTANT CREDIT DEDUCTION ---
-        // First, deduct the credit and update the UI immediately
         const deductResponse = await fetch('/api/credits', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
@@ -263,8 +253,7 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         }
         const creditData = await deductResponse.json();
         currentUserCredits = creditData.newCredits;
-        updateCreditsDisplay(currentUserCredits); // Update UI instantly
-        // --- END INSTANT CREDIT DEDUCTION ---
+        updateCreditsDisplay(currentUserCredits);
 
         const response = await fetch('/api/generate', {
             method: 'POST',
@@ -286,10 +275,8 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         
         const imageUrl = `data:image/png;base64,${base64Data}`;
         
-        // Add the new image to the top of the gallery first
-        addImageToMasonry(imageUrl, true); // true = prepend
+        addImageToMasonry(imageUrl, true);
 
-        // Then show the preview modal
         showPreviewModal(imageUrl, prompt);
 
     } catch (error) {
@@ -310,7 +297,6 @@ async function handleRegeneration() {
     const newPrompt = DOMElements.previewPromptInput.value;
     if (!newPrompt) return;
     toggleModal(DOMElements.previewModal, false);
-    // Use the new prompt override feature
     await handleImageGenerationRequest(newPrompt, true);
 }
 
@@ -341,30 +327,37 @@ function startTimer() {
 
 // --- Image Handling & Masonry ---
 function addImageToMasonry(url, prepend = false) {
-    // Find the shortest column to add the next image
-    let shortestColumn = DOMElements.masonryColumns[0];
-    for (let i = 1; i < DOMElements.masonryColumns.length; i++) {
-        if (DOMElements.masonryColumns[i].offsetHeight < shortestColumn.offsetHeight) {
-            shortestColumn = DOMElements.masonryColumns[i];
-        }
-    }
-    
+    if (!DOMElements.masonryColumns || DOMElements.masonryColumns.length === 0) return;
+
     const item = document.createElement('div');
     item.className = 'masonry-item';
     const img = document.createElement('img');
     img.src = url;
     img.className = 'rounded-lg w-full h-auto block';
     img.alt = 'Generated Art';
-    img.style.opacity = 0; // Start invisible for fade-in
+    img.style.opacity = 0;
+    
     img.onload = () => {
         img.style.opacity = 1;
+        item.style.animation = 'none'; 
+        item.style.backgroundImage = 'none';
+        item.style.backgroundColor = 'transparent';
+        item.style.minHeight = 'auto';
     };
     item.appendChild(img);
 
     if (prepend) {
+        let shortestColumn = DOMElements.masonryColumns[0];
+        for (let i = 1; i < DOMElements.masonryColumns.length; i++) {
+            if (DOMElements.masonryColumns[i].offsetHeight < shortestColumn.offsetHeight) {
+                shortestColumn = DOMElements.masonryColumns[i];
+            }
+        }
         shortestColumn.insertBefore(item, shortestColumn.firstChild);
     } else {
-        shortestColumn.appendChild(item);
+        const columnToAddTo = DOMElements.masonryColumns[nextColumnIndex];
+        columnToAddTo.appendChild(item);
+        nextColumnIndex = (nextColumnIndex + 1) % DOMElements.masonryColumns.length;
     }
 }
 
