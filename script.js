@@ -24,7 +24,7 @@ let currentUserCredits = 0;
 let isGenerating = false;
 let currentAspectRatio = '1:1';
 let uploadedImageData = null;
-let currentPreviewInputData = null; // NEW: State for the image in the preview modal
+let currentPreviewInputData = null; 
 let timerInterval;
 let isFetchingMore = false;
 let imagePage = 0;
@@ -170,6 +170,7 @@ function updateUIForAuthState(user) {
     const nav = DOMElements.headerNav;
     if (user) {
         nav.innerHTML = `
+            <a href="about.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">About</a>
             <div id="credits-counter" class="text-sm font-medium text-gray-700">Credits: ...</div>
             <button id="sign-out-btn" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Sign Out</button>
         `;
@@ -177,6 +178,7 @@ function updateUIForAuthState(user) {
         fetchUserCredits(user);
     } else {
         nav.innerHTML = `
+            <a href="about.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">About</a>
             <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Pricing</a>
             <button id="sign-in-btn" class="text-sm font-medium bg-blue-600 text-white px-4 py-1.5 rounded-full hover:bg-blue-700 transition-colors">Sign In</button>
         `;
@@ -257,7 +259,6 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
     setLoadingState(true);
     startTimer();
     
-    // Make a copy of the image data to pass to the backend, so we don't lose the original
     const generationInputData = imageDataSource ? {...imageDataSource} : null;
 
     try {
@@ -295,10 +296,8 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         
         const imageUrl = `data:image/png;base64,${base64Data}`;
         
-        // REMOVED: This line no longer adds the generated image to the main gallery.
-        // addImageToMasonry(imageUrl, true);
+        // addImageToMasonry(imageUrl, true); // This line is now commented out
 
-        // Pass the original input image data to the preview modal
         showPreviewModal(imageUrl, prompt, generationInputData);
 
     } catch (error) {
@@ -421,10 +420,8 @@ function showPreviewModal(imageUrl, prompt, inputImageData) {
     DOMElements.previewImage.src = imageUrl;
     DOMElements.previewPromptInput.value = prompt;
 
-    // Store the input image data for this specific preview session
     currentPreviewInputData = inputImageData;
 
-    // Show or hide the input image section based on whether one was used
     if (inputImageData) {
         const dataUrl = `data:${inputImageData.mimeType};base64,${inputImageData.data}`;
         DOMElements.previewInputImage.src = dataUrl;
