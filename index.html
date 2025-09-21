@@ -127,10 +127,18 @@
         <div id="timer-text" class="text-white text-6xl font-bold">17s</div>
     </div>
 
-    <!-- Image Preview Modal -->
+    <!-- UPDATED: Image Preview Modal -->
     <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-        <div class="relative bg-white rounded-xl shadow-2xl p-2 inline-block">
-            <img id="preview-image" src="" alt="Generated Image" class="max-w-full max-h-[85vh] object-contain rounded-lg">
+        <div class="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
+            <!-- Scrollable content area -->
+            <div class="overflow-y-auto p-6">
+                <img id="preview-image" src="" alt="Generated Image" class="w-full h-auto object-contain rounded-lg">
+                <div class="mt-6">
+                    <label class="text-sm font-semibold text-gray-500 tracking-wider uppercase">Prompt</label>
+                    <p id="preview-prompt-text" class="mt-2 text-gray-800 bg-gray-100 p-3 rounded-md"></p>
+                </div>
+            </div>
+            <!-- Action Buttons -->
             <div class="absolute top-4 right-4 flex space-x-2">
                  <button id="download-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Download Image">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
@@ -139,9 +147,15 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
+            <div class="absolute bottom-6 right-6">
+                <button id="use-prompt-btn" class="bg-blue-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-700 transition-colors shadow-lg">
+                    Edit this Prompt
+                </button>
+            </div>
         </div>
     </div>
 
     <script type="module" src="script.js"></script>
 </body>
 </html>
+
