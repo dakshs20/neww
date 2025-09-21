@@ -1,137 +1,74 @@
-/* --- Base and Typography --- */
+/* --- Base Styles --- */
 body {
-    background-color: #0f172a; /* slate-900 */
-    color: #cbd5e1; /* slate-300 */
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
-/* --- Hero Section & Animations --- */
-#hero-particles {
-    background-image: radial-gradient(circle at 25% 30%, rgba(59, 130, 246, 0.3) 0%, transparent 20%),
-                      radial-gradient(circle at 75% 80%, rgba(99, 102, 241, 0.2) 0%, transparent 25%);
-    animation: particles-float 20s ease-in-out infinite;
-}
-
-@keyframes particles-float {
-    0% { transform: translate(0, 0); }
-    50% { transform: translate(10px, 20px); }
-    100% { transform: translate(0, 0); }
-}
-
-.cursor {
-    animation: blink 1s step-end infinite;
-}
-
-@keyframes blink {
-    from, to { color: transparent; }
-    50% { color: #60a5fa; } /* blue-400 */
-}
-
-/* --- Technology Section Animation Placeholder --- */
-.tech-flow-animation {
-    border: 1px solid #334155; /* slate-700 */
-    border-radius: 1rem;
-    background: radial-gradient(circle at center, #1e293b, #0f172a);
+/* --- Masonry Gallery Layout (Desktop First) --- */
+#masonry-gallery {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #64748b; /* slate-500 */
-    font-size: 0.875rem;
+    gap: 1rem; /* 16px */
 }
 
-/* --- Roadmap / Timeline --- */
-#roadmap {
+.masonry-column {
     display: flex;
-    justify-content: space-between;
-    position: relative;
-}
-.roadmap-line {
-    position: absolute;
-    top: 10px;
-    left: 10%;
-    right: 10%;
-    height: 2px;
-    background-color: #334155; /* slate-700 */
-    z-index: -1;
-}
-.roadmap-item {
-    width: 20%;
-    opacity: 0.5;
-    transition: opacity 0.4s ease;
-}
-.roadmap-item.is-active {
-    opacity: 1;
-}
-.roadmap-node {
-    width: 20px;
-    height: 20px;
-    border-radius: 9999px;
-    background-color: #334155; /* slate-700 */
-    margin: 0 auto;
-    transition: background-color 0.4s ease, transform 0.4s ease;
-}
-.roadmap-item.is-active .roadmap-node {
-    background-color: #3b82f6; /* blue-600 */
-    transform: scale(1.2);
-    box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.4);
-}
-@media (max-width: 768px) {
-    #roadmap { flex-direction: column; align-items: center; gap: 4rem; }
-    .roadmap-line { display: none; }
-    .roadmap-item { width: 80%; }
+    flex-direction: column;
+    flex: 1; /* This is key to making columns share space */
+    gap: 1rem; /* 16px */
 }
 
-
-/* --- General Animations & Components --- */
-.fade-in-section {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-.fade-in-section.is-visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.gradient-text {
-    background: linear-gradient(to right, #60a5fa, #3b82f6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+.masonry-item {
+    overflow: hidden;
+    border-radius: 0.75rem; /* rounded-xl */
+    background-color: #e2e8f0; /* Placeholder color */
+    min-height: 150px;
+    animation: shimmer 2s infinite linear;
+    background-image: linear-gradient(to right, #e2e8f0 0%, #f1f5f9 20%, #e2e8f0 40%, #e2e8f0 100%);
+    background-repeat: no-repeat;
+    background-size: 1000px 100%; 
 }
 
-.cta-button {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.cta-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+@keyframes shimmer {
+    0% { background-position: -500px 0; }
+    100% { background-position: 500px 0; }
 }
 
-#founder-note {
-    position: relative;
-}
-#founder-note::after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 50%;
-    width: 0;
-    height: 1px;
-    background-color: #60a5fa;
-    transition: width 1s ease-out, left 1s ease-out;
-}
-#founder-note.is-visible::after {
-    width: 50%;
-    left: 25%;
+.masonry-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 0.75rem; /* rounded-xl */
+    transition: opacity 0.5s ease-in-out;
 }
 
-/* --- Accessibility --- */
-@media (prefers-reduced-motion: reduce) {
-    #hero-particles, .fade-in-section, .cta-button, .roadmap-node, #founder-note::after {
-        animation: none !important;
-        transition: none !important;
+/* --- Prompt Bar & UI --- */
+#prompt-input {
+    max-height: 150px; /* Cap the max height */
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+.animate-shake {
+    animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 767px) {
+    #masonry-gallery {
+        /* On mobile, switch to a single-column block layout */
+        display: block;
     }
-    .fade-in-section { opacity: 1; transform: none; }
+    
+    .masonry-column {
+        display: block;
+    }
+
+    /* Hide all columns except the first one, as JS moves all images there */
+    .masonry-column:not(:first-child) {
+        display: none;
+    }
 }
 
