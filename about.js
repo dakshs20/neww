@@ -49,7 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // Typewriter Animation
+    // Hero Animations
+    gsap.from("#hero-headline", { opacity: 0, y: 20, duration: 0.8, ease: "power3.out", delay: 0.2 });
+    gsap.from("#hero-subline", { opacity: 0, y: 20, duration: 0.8, ease: "power3.out", delay: 0.4 });
     const words = ["imagination.", "visuals.", "reality."];
     let masterTl = gsap.timeline({ repeat: -1 });
     words.forEach(word => {
@@ -58,51 +60,66 @@ document.addEventListener('DOMContentLoaded', () => {
         masterTl.add(tl);
     });
 
-    // Fade-in Sections
+    // General Fade-in for all sections
     gsap.utils.toArray('.fade-in-section').forEach(section => {
-        gsap.fromTo(section, 
-            { opacity: 0, y: 50 },
-            {
-                opacity: 1, y: 0, duration: 0.8, ease: 'power3.out',
-                scrollTrigger: {
-                    trigger: section,
-                    start: 'top 85%',
-                    toggleActions: 'play none none none',
-                    onEnter: () => section.classList.add('is-visible')
-                }
+        gsap.from(section, {
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            ease: 'power3.out',
+            scrollTrigger: {
+                trigger: section,
+                start: 'top 85%',
+                toggleActions: 'play none none none',
             }
-        );
+        });
     });
-    
-    // Timeline Comparison Animation
+
+    // "Why Speed Matters" Infographic Animation
     ScrollTrigger.create({
-        trigger: "#timeline-comparison",
+        trigger: "#speed-infographic",
         start: "top 80%",
         onEnter: () => {
-            gsap.to("#traditional-bar", { width: "100%", duration: 1.5, ease: "power2.inOut" });
-            gsap.to("#genart-bar", { width: "5%", duration: 1.5, ease: "power2.inOut", delay: 0.2 });
+            gsap.to("#traditional-icons .icon-step", {
+                opacity: 1,
+                scale: 1,
+                stagger: 0.2,
+                duration: 0.5,
+                ease: "back.out(1.7)"
+            });
+            gsap.to("#genart-icons .icon-step", {
+                opacity: 1,
+                scale: 1,
+                stagger: 0.2,
+                duration: 0.5,
+                delay: 1,
+                ease: "back.out(1.7)"
+            });
         }
     });
-    
-    // Tech Flow SVG Animation
-    ScrollTrigger.create({
-        trigger: "#tech-flow-svg",
-        start: "top 75%",
-        onEnter: () => document.getElementById('tech-flow-svg').classList.add('is-animating')
+
+    // "AI Made Human" Tech Flow Animation
+    const techTl = gsap.timeline({
+        scrollTrigger: {
+            trigger: ".tech-card",
+            start: "top center",
+            toggleActions: "play none none reverse",
+        }
     });
+    techTl.staggerFromTo(".tech-list li", 0.5, { opacity: 0, x: -20 }, { opacity: 1, x: 0 }, 0.1)
+          .to("#node-prompt circle", { fill: "#3b82f6" }, "-=0.5")
+          .to(".connector-flow", { strokeDashoffset: 0, duration: 1.5, ease: "power2.inOut" })
+          .to("#node-model circle", { fill: "#3b82f6" }, "-=0.7")
+          .to("#node-image circle", { fill: "#3b82f6" }, "-=0.2");
 
 
     // Counters Animation
     gsap.utils.toArray('.counter').forEach(counter => {
-        const target = +counter.dataset.target;
-        const obj = { value: 0 };
-        gsap.to(obj, {
-            value: target,
-            duration: 2.5,
-            ease: 'power3.out',
-            onUpdate: () => {
-                counter.textContent = Math.round(obj.value);
-            },
+        gsap.from(counter, {
+            textContent: 0,
+            duration: 2,
+            ease: 'power2.out',
+            snap: { textContent: 1 },
             scrollTrigger: {
                 trigger: counter,
                 start: 'top 90%'
@@ -112,25 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Roadmap Timeline Animation
     const roadmapItems = gsap.utils.toArray('.roadmap-item');
-    gsap.to("#roadmap-line-progress", {
-      width: "100%",
-      scrollTrigger: {
-        trigger: "#roadmap",
-        start: "top center",
-        end: "bottom bottom",
-        scrub: 1,
-        onUpdate: (self) => {
-            const progress = self.progress;
-            const step = 1 / (roadmapItems.length - 1);
-             roadmapItems.forEach((item, i) => {
-                if (progress >= i * step) {
-                    item.classList.add('is-active');
-                } else {
-                    item.classList.remove('is-active');
-                }
-            });
-        }
-      }
+    roadmapItems.forEach((item) => {
+        ScrollTrigger.create({
+            trigger: item,
+            start: "top center",
+            onEnter: () => item.classList.add("is-active"),
+            onLeaveBack: () => item.classList.remove("is-active")
+        });
     });
     
      // Founder's Note Underline Animation
