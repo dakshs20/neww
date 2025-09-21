@@ -4,124 +4,135 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>About GenArt — Fast AI Image Generation for Creators & Agencies</title>
-    <meta name="description" content="GenArt transforms ideas into professional images in seconds. Learn how our AI works and why speed matters.">
+    <meta name="description" content="GenArt is the world’s fastest AI image generation platform — built to accelerate imagination for creators, brands, and enterprises.">
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="about-style.css">
 </head>
-<body class="overflow-x-hidden">
+<body class="bg-slate-900 text-slate-300 overflow-x-hidden">
 
-    <!-- Main App Container -->
-    <div class="flex flex-col min-h-screen">
-        <!-- Header -->
-        <header class="absolute top-0 left-0 right-0 z-30 p-4">
-            <div class="max-w-7xl mx-auto flex justify-between items-center">
-                <a href="index.html">
-                    <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
-                </a>
-                <div id="header-nav" class="flex items-center space-x-4 bg-white/70 backdrop-blur-md border border-gray-200/80 shadow-sm rounded-full px-4 py-1.5">
-                     <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Pricing</a>
-                     <a href="about.html" class="text-sm font-medium text-blue-600">About</a>
-                     <button id="sign-in-btn" class="text-sm font-medium bg-blue-600 text-white px-4 py-1.5 rounded-full hover:bg-blue-700 transition-colors">Sign In</button>
+    <!-- Header -->
+    <header class="absolute top-0 left-0 right-0 z-50 p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html">
+                <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
+            </a>
+            <div id="header-nav" class="flex items-center space-x-4 bg-slate-800/50 backdrop-blur-md border border-slate-700/80 shadow-sm rounded-full px-4 py-1.5">
+                <!-- Links dynamically inserted by JS -->
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- 1. Hero Section -->
+        <section class="relative h-screen flex flex-col items-center justify-center text-center p-4 overflow-hidden">
+            <div id="hero-particles" class="absolute inset-0"></div>
+            <div class="z-10">
+                <h1 class="text-4xl md:text-6xl font-bold text-white max-w-4xl mb-4">Creativity should never wait.</h1>
+                <p class="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto mb-8">GenArt is the world’s fastest AI image generation platform — built to accelerate <span id="typewriter" class="font-bold text-blue-400"></span><span class="cursor">|</span></p>
+            </div>
+        </section>
+
+        <!-- 2. Why Speed Matters -->
+        <section class="py-20 md:py-32 fade-in-section">
+            <div class="max-w-5xl mx-auto px-6 text-center">
+                <h2 class="text-3xl md:text-5xl font-bold text-white mb-6">Why Speed Matters</h2>
+                <p class="text-lg md:text-xl text-slate-400 leading-relaxed">
+                    In the age of instant communication, visuals are the new language. Ideas can’t wait hours to be designed or rendered — they need to exist <span class="text-blue-400 font-semibold">now</span>. Speed in image generation means faster campaigns, quicker iterations, lower costs, and the ability to experiment without friction. GenArt compresses a process that once took days into seconds, making creativity limitless.
+                </p>
+            </div>
+        </section>
+
+        <!-- 3. The Technology -->
+        <section class="py-20 md:py-32 bg-slate-800/50 fade-in-section">
+            <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div class="text-left">
+                    <h2 class="text-3xl md:text-5xl font-bold text-white mb-6">AI Made Human</h2>
+                    <p class="text-lg text-slate-400 mb-4">Our models learn from millions of visual patterns to translate human intent into stunning visuals instantly. We’ve built the fastest pipeline in the industry, focusing on three core principles:</p>
+                    <ul class="list-none space-y-3">
+                        <li class="flex items-start"><span class="text-blue-400 mr-3 mt-1">&#10003;</span> <strong class="mr-2">Fidelity:</strong> High-resolution, professional-grade outputs.</li>
+                        <li class="flex items-start"><span class="text-blue-400 mr-3 mt-1">&#10003;</span> <strong class="mr-2">Control:</strong> Unmatched style and composition control.</li>
+                        <li class="flex items-start"><span class="text-blue-400 mr-3 mt-1">&#10003;</span> <strong class="mr-2">Safety:</strong> Built-in safeguards for responsible, brand-safe creativity.</li>
+                    </ul>
+                </div>
+                <div class="flex items-center justify-center h-64 md:h-96">
+                    <!-- Placeholder for Lottie/SVG Animation -->
+                    <div class="tech-flow-animation w-full h-full"></div>
                 </div>
             </div>
-        </header>
+        </section>
 
-        <main class="flex-grow">
-            <!-- Hero Section -->
-            <section class="relative w-full h-[60vh] min-h-[400px] flex items-center justify-center text-center overflow-hidden animated-gradient px-4">
-                <div class="hero-particles"></div>
-                <div class="z-10">
-                    <h1 id="hero-headline" class="text-4xl md:text-6xl font-bold text-slate-800 max-w-4xl">
-                        <span class="inline-block">GenArt</span> <span class="inline-block">accelerates</span> <span class="inline-block">imagination</span> <span class="inline-block">—</span> <span class="inline-block">turning</span> <span class="inline-block">ideas</span> <span class="inline-block">into</span> <span class="inline-block">visuals</span> <span class="inline-block">in</span> <span class="inline-block">seconds.</span>
-                    </h1>
-                </div>
-            </section>
-
-            <!-- AI Explanation Section -->
-            <section class="py-16 md:py-24 bg-white fade-in-section">
-                <div class="max-w-4xl mx-auto px-6 text-center">
-                    <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-6">What is Generative AI?</h2>
-                    <p class="text-lg md:text-xl text-slate-600 leading-relaxed">
-                        Generative AI is a type of artificial intelligence that can create brand new content—like images, text, or music—from simple text descriptions. At GenArt, we use this groundbreaking technology to understand your creative vision and instantly generate stunning, high-quality images that match your exact needs. It's like having a world-class artist ready to create anything you can imagine, 24/7.
-                    </p>
-                </div>
-            </section>
-
-            <!-- How It Works Section -->
-            <section class="py-16 md:py-24 bg-slate-50 fade-in-section">
-                <div class="max-w-7xl mx-auto px-6">
-                    <div class="text-center mb-12">
-                         <h2 class="text-3xl md:text-4xl font-bold text-slate-800">Designed for Speed and Creativity</h2>
-                         <p class="mt-4 text-lg text-slate-500">A powerful toolkit for effortless visual creation.</p>
+        <!-- 4. Future Launches (Roadmap) -->
+        <section class="py-20 md:py-32 fade-in-section">
+            <div class="max-w-5xl mx-auto px-6 text-center">
+                 <h2 class="text-3xl md:text-5xl font-bold text-white mb-16">The GenArt Ecosystem</h2>
+                 <div id="roadmap" class="relative">
+                    <div class="roadmap-line"></div>
+                    <div class="roadmap-item" data-item="1">
+                        <div class="roadmap-node"></div>
+                        <h3 class="text-2xl font-bold text-white mt-4">Image Generation</h3>
+                        <p class="text-slate-400">The fastest text-to-image engine. Live now.</p>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <!-- Feature Card 1 -->
-                        <div class="feature-card bg-white p-8 rounded-xl shadow-md border border-gray-200/80">
-                             <h3 class="text-xl font-semibold text-slate-800 mb-2">Instant Generation</h3>
-                             <p class="text-slate-600">Go from prompt to final image in seconds, not hours. Our optimized models deliver unparalleled speed.</p>
-                        </div>
-                        <!-- Feature Card 2 -->
-                        <div class="feature-card bg-white p-8 rounded-xl shadow-md border border-gray-200/80">
-                             <h3 class="text-xl font-semibold text-slate-800 mb-2">Full Style Control</h3>
-                             <p class="text-slate-600">Precisely control the look and feel of your images with aspect ratios, style prompts, and image-to-image editing.</p>
-                        </div>
-                        <!-- Feature Card 3 -->
-                        <div class="feature-card bg-white p-8 rounded-xl shadow-md border border-gray-200/80">
-                             <h3 class="text-xl font-semibold text-slate-800 mb-2">Iterate and Refine</h3>
-                             <p class="text-slate-600">Quickly regenerate and edit your creations in our intuitive previewer to achieve the perfect result.</p>
-                        </div>
-                        <!-- Feature Card 4 -->
-                        <div class="feature-card bg-white p-8 rounded-xl shadow-md border border-gray-200/80">
-                             <h3 class="text-xl font-semibold text-slate-800 mb-2">Safe and Secure</h3>
-                             <p class="text-slate-600">All generations are processed securely, and your data is protected with industry-standard practices.</p>
-                        </div>
+                     <div class="roadmap-item" data-item="2">
+                        <div class="roadmap-node"></div>
+                        <h3 class="text-2xl font-bold text-white mt-4">Verse (Text-to-Text)</h3>
+                        <p class="text-slate-400">Professional-grade AI writing. Coming soon.</p>
+                    </div>
+                     <div class="roadmap-item" data-item="3">
+                        <div class="roadmap-node"></div>
+                        <h3 class="text-2xl font-bold text-white mt-4">Video Generation</h3>
+                        <p class="text-slate-400">Cinematic storytelling from a single prompt.</p>
+                    </div>
+                     <div class="roadmap-item" data-item="4">
+                        <div class="roadmap-node"></div>
+                        <h3 class="text-2xl font-bold text-white mt-4">Enterprise Tools</h3>
+                        <p class="text-slate-400">Custom APIs and team dashboards at scale.</p>
+                    </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- 5. Impact & Industries -->
+        <section class="py-20 md:py-32 bg-slate-800/50 fade-in-section">
+            <div class="max-w-6xl mx-auto px-6 text-center">
+                <h2 class="text-3xl md:text-5xl font-bold text-white mb-6">Transforming Industries Worldwide</h2>
+                <p class="text-lg md:text-xl text-slate-400 mb-16">GenArt is already being used in design, advertising, gaming, film, product prototyping, and education in over 50 countries.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div>
+                        <h4 class="text-6xl md:text-7xl font-bold gradient-text counter" data-target="50">0</h4>
+                        <p class="mt-2 text-xl text-slate-400">Million+ Generations</p>
+                    </div>
+                    <div>
+                        <h4 class="text-6xl md:text-7xl font-bold gradient-text counter" data-target="150">0</h4>
+                        <p class="mt-2 text-xl text-slate-400">Thousand+ Creators</p>
                     </div>
                 </div>
-            </section>
-            
-            <!-- Milestones Section -->
-            <section class="py-16 md:py-24 bg-white fade-in-section">
-                <div class="max-w-5xl mx-auto px-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                        <div>
-                            <h4 class="text-5xl md:text-6xl font-bold text-blue-600 counter gradient-text" data-target="50">0</h4>
-                            <p class="mt-2 text-lg text-slate-500">Million+ Generations</p>
-                        </div>
-                        <div>
-                            <h4 class="text-5xl md:text-6xl font-bold text-blue-600"><span class="counter gradient-text" data-target="17">0</span>s</h4>
-                            <p class="mt-2 text-lg text-slate-500">Average Generation Time</p>
-                        </div>
-                        <div>
-                            <h4 class="text-5xl md:text-6xl font-bold text-blue-600 counter gradient-text" data-target="100">0</h4>
-                            <p class="mt-2 text-lg text-slate-500">K+ Happy Creators</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- CTA Section -->
-            <section class="py-16 md:py-24 bg-slate-50 fade-in-section">
-                <div class="max-w-4xl mx-auto px-6 text-center">
-                    <h2 class="text-3xl md:text-4xl font-bold text-slate-800">Ready to Create at the Speed of Thought?</h2>
-                    <p class="mt-4 text-lg md:text-xl text-slate-600">Join thousands of creators and agencies who are building the future of visual content with GenArt.</p>
-                    <a href="index.html" class="cta-button mt-8 inline-block bg-blue-600 text-white font-semibold text-lg px-8 py-4 rounded-full">
-                        Generate Your First Image
-                    </a>
-                </div>
-            </section>
+            </div>
+        </section>
 
-        </main>
+        <!-- 7. Founder's Note -->
+        <section class="py-20 md:py-32 fade-in-section">
+             <div class="max-w-3xl mx-auto px-6 text-center">
+                <p id="founder-note" class="text-2xl font-light italic text-slate-300 leading-relaxed">
+                   “GenArt started as a late-night experiment to solve one problem: Why should creative speed be a luxury? What began with a few lines of code is now trusted by thousands of creators worldwide. And this is just the beginning.”
+                </p>
+             </div>
+        </section>
 
-        <!-- Footer -->
-        <footer class="text-center py-8 border-t border-gray-200 bg-white">
-            <p class="text-sm text-gray-500">&copy; 2025 GenArt. All rights reserved.</p>
-             <a href="privacy-policy.html" class="text-sm text-gray-500 hover:text-blue-600 mt-2 inline-block">Privacy Policy</a>
-        </footer>
-    </div>
+        <!-- 8. Call-to-Action -->
+        <section class="py-20 md:py-32 text-center fade-in-section">
+            <div class="max-w-4xl mx-auto px-6">
+                <a href="index.html" class="cta-button inline-block bg-blue-600 text-white font-semibold text-xl px-10 py-5 rounded-full">
+                    Try GenArt Now
+                </a>
+                <p class="mt-6 text-slate-400">Be part of the future of AI creativity — Verse and Video coming soon.</p>
+            </div>
+        </section>
+    </main>
     
-    <!-- GSAP Animation Library -->
+    <!-- GSAP & ScrollTrigger -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script type="module" src="about.js"></script>
 </body>
 </html>
