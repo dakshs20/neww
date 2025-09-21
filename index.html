@@ -3,45 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GenArt - Under Maintenance</title>
+    <title>GenArt: AI Image Generator</title>
     <link rel="icon" type="image/png" href="favicon.png">
+    
+    <!-- 1. Preload the most important above-the-fold images for faster loading -->
+    <link rel="preload" as="image" href="https://iili.io/K7bN7Hl.md.png">
+    <link rel="preload" as="image" href="https://iili.io/K7bOTzP.md.png">
+    <link rel="preload" as="image" href="https://iili.io/K7yYoqN.md.png">
+    <link rel="preload" as="image" href="https://iili.io/K7bk3Ku.md.png">
+    <link rel="preload" as="image" href="https://iili.io/K7b6OPV.md.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
-    <!-- Styles for the new overlay -->
-    <style>
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black layer */
-            z-index: 0;
-        }
-        .content-container {
-            position: relative; /* This ensures the text content appears on top of the new overlay */
-            z-index: 1;
-        }
-    </style>
 </head>
-<body>
+<body class="bg-white overflow-hidden">
 
-    <div class="background-blur"></div>
-    <div class="overlay"></div>
+    <!-- Main Content Area -->
+    <div id="app-container" class="relative w-full h-screen flex flex-col">
+        
+        <!-- Header -->
+        <header class="fixed top-0 left-0 right-0 p-4 z-50 flex justify-between items-center">
+            <a href="index.html">
+                 <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
+            </a>
+            <div id="header-nav" class="bg-white/50 backdrop-blur-2xl border border-white/20 shadow-lg rounded-full px-4 py-2 flex items-center space-x-4">
+                <!-- Auth state content will be injected here by script.js -->
+            </div>
+        </header>
 
-    <div class="content-container">
-        <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-8 w-auto mb-8">
-        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
-            Our AI is taking a quick nap.
-        </h1>
-        <p class="text-lg md:text-xl text-gray-200 max-w-2xl text-center mb-2">
-            The fastest and your favorite image generation tool is undergoing a little tune-up.
-        </p>
-        <p class="text-md text-gray-300 max-w-2xl text-center italic">
-            (Since GenArt doesn't want to give you a bad experience, we're making things perfect!)
-        </p>
-        <p class="text-xl text-white mt-8 font-semibold pulsate">
-            We will be back soon!
-        </p>
+        <!-- New: Blur fade overlay for scrolling effect -->
+        <div id="header-blur-overlay" class="fixed top-0 left-0 right-0 h-24 pointer-events-none z-40 opacity-0 transition-opacity duration-300"></div>
+
+        <!-- Masonry Gallery -->
+        <main id="gallery-container" class="flex-grow w-full h-full overflow-y-auto pt-20 pb-28">
+            <div id="masonry-gallery" class="p-4">
+                <!-- Hardcoded initial images for fast load -->
+                <div class="masonry-item"><img src="https://iili.io/K7bN7Hl.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
+                <div class="masonry-item"><img src="https://iili.io/K7bOTzP.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
+                <div class="masonry-item"><img src="https://iili.io/K7yYoqN.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
+                <div class="masonry-item"><img src="https://iili.io/K7bk3Ku.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
+                <div class="masonry-item"><img src="https://iili.io/K7b6OPV.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
+                <div class="masonry-item"><img src="https://iili.io/K7be88v.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
+                <div class="masonry-item"><img src="https://iili.io/K7b894e.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
+                <div class="masonry-item"><img src="https://iili.io/K7y1cUN.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
+                <div class="masonry-item"><img src="https://iili.io/K7yEx14.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
+                <div class="masonry-item"><img src="https://iili.io/K7b4VQR.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
+            </div>
+            <div id="loader" class="text-center py-8" style="display: none;">
+                <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            </div>
+        </main>
+
+        <!-- Prompt Bar -->
+        <footer class="fixed bottom-0 left-0 right-0 p-4 z-50">
+            <div class="max-w-3xl mx-auto">
+                <div class="bg-white/50 backdrop-blur-2xl border border-white/20 shadow-xl rounded-full p-2.5 flex items-center gap-2">
+                    <button id="image-upload-btn" class="p-2.5 rounded-full hover:bg-gray-200/60 transition-colors flex-shrink-0">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
+                    <input type="file" id="image-upload-input" class="hidden" accept="image/png, image/jpeg">
+                    <div id="image-preview-container" class="hidden relative w-10 h-10 flex-shrink-0">
+                        <img id="image-preview" class="w-full h-full object-cover rounded-lg" src="" alt="Image preview">
+                        <button id="remove-image-btn" class="absolute -top-1.5 -right-1.5 bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-black">&times;</button>
+                    </div>
+                    <textarea id="prompt-input" rows="1" class="flex-grow bg-transparent text-gray-800 placeholder-gray-500 focus:outline-none resize-none text-base px-2 py-2" placeholder="Describe your vision..."></textarea>
+                    <div class="relative">
+                        <button id="ratio-btn" class="p-2.5 rounded-lg hover:bg-gray-200/60 transition-colors">
+                            <svg class="w-5 h-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V3zm2 2v10h10V5H5z" clip-rule="evenodd"></path></svg>
+                        </button>
+                        <div id="ratio-options" class="hidden absolute bottom-full right-0 mb-2 bg-white/80 backdrop-blur-xl border border-white/30 rounded-lg shadow-2xl p-2 w-48">
+                            <button class="ratio-option w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md flex justify-between items-center selected" data-ratio="1:1"><span>Square</span> <span>1:1</span></button>
+                            <button class="ratio-option w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md flex justify-between items-center" data-ratio="16:9"><span>Landscape</span> <span>16:9</span></button>
+                            <button class="ratio-option w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md flex justify-between items-center" data-ratio="9:16"><span>Portrait</span> <span>9:16</span></button>
+                            <button class="ratio-option w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md flex justify-between items-center" data-ratio="4:5"><span>Instagram</span> <span>4:5</span></button>
+                        </div>
+                    </div>
+                    <button id="generate-btn" class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-all duration-300 flex-shrink-0" aria-label="Generate">
+                        <svg id="generate-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                        <svg id="loading-spinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </footer>
     </div>
 
+    <!-- Modals -->
+    <div id="auth-modal" aria-hidden="true" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 opacity-0 invisible transition-opacity duration-300 [&[aria-hidden='false']]:opacity-100 [&[aria-hidden='false']]:visible">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In Required</h2>
+            <p class="text-gray-500 mb-6">Please sign in to continue.</p>
+            <button id="google-signin-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2"><span>Sign In with Google</span></button>
+            <button class="close-modal-btn mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+        </div>
+    </div>
+    <div id="out-of-credits-modal" aria-hidden="true" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 opacity-0 invisible transition-opacity duration-300 [&[aria-hidden='false']]:opacity-100 [&[aria-hidden='false']]:visible">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Out of Credits</h2>
+            <p class="text-gray-500 mb-6">Please purchase more to continue.</p>
+            <a href="pricing.html" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 block">Buy Credits</a>
+            <button class="close-modal-btn mt-4 text-sm text-gray-500 hover:text-gray-700">Not now</button>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
 </body>
 </html>
-
