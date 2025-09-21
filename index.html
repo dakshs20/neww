@@ -127,33 +127,36 @@
         <div id="timer-text" class="text-white text-6xl font-bold">17s</div>
     </div>
 
-    <!-- UPDATED: Image Preview Modal with better fitting -->
-    <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-        <div class="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
-            <!-- Image container that grows and shrinks to fit content -->
-            <div class="flex-grow p-6 flex items-center justify-center min-h-0">
+    <!-- UPDATED: Split-Screen Image Preview Modal -->
+    <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div class="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex overflow-hidden">
+            <!-- Left Side: Image -->
+            <div class="w-1/2 bg-gray-100 flex items-center justify-center p-4">
                 <img id="preview-image" src="" alt="Generated Image" class="max-w-full max-h-full object-contain rounded-lg">
             </div>
-    
-            <!-- Prompt area that stays at the bottom -->
-            <div class="flex-shrink-0 p-6 pt-0">
-                <label class="text-sm font-semibold text-gray-500 tracking-wider uppercase">Prompt (edit below to regenerate)</label>
-                <textarea id="preview-prompt-input" rows="3" class="mt-2 w-full text-gray-800 bg-gray-100 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></textarea>
+
+            <!-- Right Side: Controls -->
+            <div class="w-1/2 flex flex-col p-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-4">Edit & Regenerate</h3>
+                <div class="flex-grow flex flex-col">
+                    <label for="preview-prompt-input" class="text-sm font-semibold text-gray-500 tracking-wider uppercase">Prompt</label>
+                    <textarea id="preview-prompt-input" rows="8" class="mt-2 w-full text-gray-800 bg-gray-100 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition flex-grow"></textarea>
+                </div>
+                <div class="mt-6 flex-shrink-0">
+                    <button id="regenerate-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22"></path></svg>
+                        <span>Regenerate</span>
+                    </button>
+                </div>
             </div>
-            
-            <!-- Action Buttons -->
+
+            <!-- Absolute Buttons (Download/Close) -->
             <div class="absolute top-4 right-4 flex space-x-2">
                  <button id="download-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Download Image">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                 </button>
                 <button id="close-preview-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Close">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div class="absolute bottom-6 right-6">
-                <button id="regenerate-btn" class="bg-blue-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center space-x-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22"></path></svg>
-                    <span>Regenerate</span>
                 </button>
             </div>
         </div>
