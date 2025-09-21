@@ -36,20 +36,14 @@ export default async function handler(req, res) {
     }
 
     try {
-        // --- Full Authentication Logic Restored ---
         const idToken = req.headers.authorization?.split('Bearer ')[1];
         if (!idToken) {
-            return res.status(401).json({ error: 'User not authenticated. No token provided.' });
+            return res.status(401).json({ error: 'User not authenticated.' });
         }
-        
         const user = await auth().verifyIdToken(idToken);
-        if (!user) {
-            return res.status(401).json({ error: 'Invalid user token. Authentication failed.' });
-        }
 
-        const { prompt, imageData, aspectRatio, isTryOn, personImageData, garmentImageData } = req.body;
+        const { prompt, imageData, aspectRatio } = req.body;
         
-        // Log the generation attempt now that we have a verified user
         await logGeneration(user.uid, prompt);
 
         const apiKey = process.env.GOOGLE_API_KEY;
@@ -59,20 +53,7 @@ export default async function handler(req, res) {
 
         let apiUrl, payload;
 
-        // --- Virtual Try-On Logic ---
-        if (isTryOn && personImageData && garmentImageData) {
-            apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
-            payload = {
-                "contents": [{ 
-                    "parts": [
-                        { "text": prompt }, 
-                        { "inlineData": personImageData },
-                        { "inlineData": garmentImageData }
-                    ] 
-                }],
-                "generationConfig": { "responseModalities": ["IMAGE"] }
-            };
-        } else if (imageData && imageData.data) {
+        if (imageData && imageData.data) {
             // --- Image-to-Image Logic ---
             apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
             payload = {
@@ -113,4 +94,3 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'The API function crashed.', details: error.message });
     }
 }
-
