@@ -30,7 +30,7 @@
         </header>
         
         <!-- Header Blur Overlay -->
-        <div id="header-blur-overlay" class="absolute top-0 left-0 right-0 h-32 bg-white/80 z-20 transition-opacity duration-300 opacity-0 pointer-events-none"></div>
+        <div id="header-blur-overlay" class="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white via-white/80 to-transparent z-20 transition-opacity duration-300 opacity-0 pointer-events-none"></div>
 
         <!-- Masonry Gallery Container -->
         <div id="gallery-container" class="flex-grow overflow-y-auto pt-24 pb-40 px-4">
@@ -104,7 +104,7 @@
     </div>
     
     <!-- Modals -->
-    <div id="auth-modal" role="dialog" aria-hidden="true" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display: none;" onclick="this.setAttribute('aria-hidden', 'true')">
+    <div id="auth-modal" role="dialog" aria-hidden="true" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;" onclick="this.setAttribute('aria-hidden', 'true')">
         <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
             <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In Required</h2>
             <p class="text-gray-500 mb-6">Please sign in to continue.</p>
@@ -112,7 +112,7 @@
             <button class="close-modal-btn mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
         </div>
     </div>
-    <div id="out-of-credits-modal" role="dialog" aria-hidden="true" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display: none;" onclick="this.setAttribute('aria-hidden', 'true')">
+    <div id="out-of-credits-modal" role="dialog" aria-hidden="true" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;" onclick="this.setAttribute('aria-hidden', 'true')">
         <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
             <h2 class="text-2xl font-semibold text-gray-800 mb-2">Out of Credits</h2>
             <p class="text-gray-500 mb-6">Please purchase more to continue.</p>
@@ -121,16 +121,16 @@
         </div>
     </div>
     
-    <!-- NEW: Loading Timer Overlay -->
+    <!-- Loading Timer Overlay -->
     <div id="loading-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-center justify-center flex-col space-y-4">
         <p class="text-white text-lg font-medium">Generating your masterpiece...</p>
         <div id="timer-text" class="text-white text-6xl font-bold">17s</div>
     </div>
 
-    <!-- NEW: Image Preview Modal -->
+    <!-- Image Preview Modal -->
     <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-        <div class="relative max-w-4xl max-h-[90vh] bg-white rounded-xl shadow-2xl p-2">
-            <img id="preview-image" src="" alt="Generated Image" class="w-full h-full object-contain rounded-lg">
+        <div class="relative bg-white rounded-xl shadow-2xl p-2 inline-block">
+            <img id="preview-image" src="" alt="Generated Image" class="max-w-full max-h-[85vh] object-contain rounded-lg">
             <div class="absolute top-4 right-4 flex space-x-2">
                  <button id="download-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Download Image">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
