@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'image-preview-container', 'image-preview', 'masonry-gallery', 'gallery-container', 'loader',
         'ratio-btn', 'ratio-options', 'header-blur-overlay',
         'loading-overlay', 'timer-text', 'preview-modal', 'preview-image', 
-        'download-btn', 'close-preview-btn', 'preview-prompt-text', 'use-prompt-btn'
+        'download-btn', 'close-preview-btn', 'preview-prompt-input', 'regenerate-btn'
     ];
     ids.forEach(id => DOMElements[id.replace(/-./g, c => c[1].toUpperCase())] = document.getElementById(id));
     
@@ -290,7 +290,7 @@ function startGenerationTimer() {
 
 function showPreviewModal(imageUrl, prompt) {
     DOMElements.previewImage.src = imageUrl;
-    DOMElements.previewPromptText.textContent = prompt;
+    DOMElements.previewPromptInput.value = prompt;
     DOMElements.previewModal.classList.remove('hidden');
 
     DOMElements.downloadBtn.onclick = () => {
@@ -302,10 +302,13 @@ function showPreviewModal(imageUrl, prompt) {
         document.body.removeChild(a);
     };
     
-    DOMElements.usePromptBtn.onclick = () => {
-        DOMElements.promptInput.value = prompt;
-        DOMElements.previewModal.classList.add('hidden');
-        DOMElements.promptInput.focus();
+    DOMElements.regenerateBtn.onclick = () => {
+        const editedPrompt = DOMElements.previewPromptInput.value.trim();
+        if (editedPrompt) {
+            DOMElements.previewModal.classList.add('hidden');
+            DOMElements.promptInput.value = editedPrompt;
+            generateImage(editedPrompt);
+        }
     };
 
     DOMElements.closePreviewBtn.onclick = () => {
