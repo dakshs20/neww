@@ -23,13 +23,13 @@ let currentUser;
 let currentUserCredits = 0;
 let isGenerating = false;
 let currentAspectRatio = '1:1';
-let uploadedImageData = null;
+let uploadedImageData = null; // Holds data for the main prompt bar
+let currentPreviewInputData = null; // Holds data for the image in the preview modal
 let timerInterval;
 let isFetchingMore = false;
 let imagePage = 0;
-let nextColumnIndex = 0; // NEW: To track which column to add the next image to.
+let nextColumnIndex = 0;
 
-// All available images for infinite scroll
 const ALL_IMAGE_URLS = [
     "https://iili.io/K7bN7Hl.md.png", "https://iili.io/K7bOTzP.md.png", "https://iili.io/K7yYoqN.md.png",
     "https://iili.io/K7bk3Ku.md.png", "https://iili.io/K7b6OPV.md.png", "https://iili.io/K7be88v.md.png",
@@ -43,7 +43,6 @@ const ALL_IMAGE_URLS = [
     "https://images.unsplash.com/photo-1678043639454-a25c4a31b1d1?q=80&w=800"
 ];
 
-
 // --- DOM Element Caching ---
 const DOMElements = {};
 
@@ -54,7 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'auth-modal', 'google-signin-btn', 'out-of-credits-modal', 'loading-overlay',
         'timer-text', 'preview-modal', 'preview-image', 'preview-prompt-input',
         'download-btn', 'close-preview-btn', 'regenerate-btn', 'header-blur-overlay',
-        'image-upload-btn', 'image-upload-input', 'image-preview-container', 'image-preview', 'remove-image-btn'
+        'image-upload-btn', 'image-upload-input', 'image-preview-container', 'image-preview', 'remove-image-btn',
+        'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input'
     ];
     ids.forEach(id => DOMElements[id.replace(/-./g, c => c[1].toUpperCase())] = document.getElementById(id));
     DOMElements.closeModalBtns = document.querySelectorAll('.close-modal-btn');
@@ -106,9 +106,14 @@ function initializeEventListeners() {
         }
     });
 
+    // Preview Modal
     DOMElements.closePreviewBtn?.addEventListener('click', () => toggleModal(DOMElements.previewModal, false));
     DOMElements.downloadBtn?.addEventListener('click', downloadPreviewImage);
     DOMElements.regenerateBtn?.addEventListener('click', handleRegeneration);
+    DOMElements.changeInputImageBtn?.addEventListener('click', () => DOMElements.previewImageUploadInput.click());
+    DOMElements.previewImageUploadInput?.addEventListener('change', handlePreviewImageChange);
+    DOMElements.removeInputImageBtn?.addEventListener('click', removePreviewInputImage);
+
 
     DOMElements.galleryContainer?.addEventListener('scroll', handleInfiniteScroll);
 }
@@ -125,8 +130,6 @@ function loadMoreImages() {
     isFetchingMore = true;
     DOMElements.loader.style.display = 'block';
 
-    // The artificial 1-second delay has been removed.
-    // New images will now be fetched and displayed instantly.
     const imagesPerPage = 10;
     const startIndex = (imagePage * imagesPerPage) % ALL_IMAGE_URLS.length;
     const endIndex = startIndex + imagesPerPage;
@@ -146,7 +149,6 @@ function loadMoreImages() {
     DOMElements.loader.style.display = 'none';
     isFetchingMore = false;
 }
-
 
 // --- Core App Logic ---
 
@@ -228,8 +230,11 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         return;
     }
 
+    // If regenerating, use the image data from the preview modal. Otherwise, use the main prompt bar's data.
+    const imageDataSource = fromRegenerate ? currentPreviewInputData : uploadedImageData;
     const prompt = fromRegenerate ? promptOverride : DOMElements.promptInput.value.trim();
-    if (!prompt && !uploadedImageData) {
+
+    if (!prompt && !imageDataSource) {
         const promptBar = DOMElements.promptInput.parentElement;
         promptBar.classList.add('animate-shake');
         setTimeout(() => promptBar.classList.remove('animate-shake'), 500);
@@ -239,6 +244,9 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
     isGenerating = true;
     setLoadingState(true);
     startTimer();
+    
+    // Store a copy of the input image data that was used for *this specific* generation
+    const generationInputData = imageDataSource ? {...imageDataSource} : null;
 
     try {
         const token = await currentUser.getIdToken();
@@ -258,7 +266,7 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         const response = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ prompt, imageData: uploadedImageData, aspectRatio: currentAspectRatio })
+            body: JSON.stringify({ prompt, imageData: generationInputData, aspectRatio: currentAspectRatio })
         });
 
         if (!response.ok) {
@@ -267,7 +275,7 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         }
         
         const result = await response.json();
-        const base64Data = uploadedImageData 
+        const base64Data = generationInputData
             ? result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data 
             : result.predictions?.[0]?.bytesBase64Encoded;
             
@@ -277,7 +285,8 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         
         addImageToMasonry(imageUrl, true);
 
-        showPreviewModal(imageUrl, prompt);
+        // Pass the input image data to the preview modal
+        showPreviewModal(imageUrl, prompt, generationInputData);
 
     } catch (error) {
         console.error("Generation Error:", error);
@@ -295,7 +304,8 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
 
 async function handleRegeneration() {
     const newPrompt = DOMElements.previewPromptInput.value;
-    if (!newPrompt) return;
+    if (!newPrompt && !currentPreviewInputData) return;
+    
     toggleModal(DOMElements.previewModal, false);
     await handleImageGenerationRequest(newPrompt, true);
 }
@@ -361,6 +371,7 @@ function addImageToMasonry(url, prepend = false) {
     }
 }
 
+// For the main prompt bar
 function handleImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -383,10 +394,43 @@ function removeUploadedImage() {
 
 
 // --- Preview Modal ---
-function showPreviewModal(imageUrl, prompt) {
+function showPreviewModal(imageUrl, prompt, inputImageData) {
     DOMElements.previewImage.src = imageUrl;
     DOMElements.previewPromptInput.value = prompt;
+
+    currentPreviewInputData = inputImageData; // Store the input data for this preview
+
+    if (inputImageData) {
+        const dataUrl = `data:${inputImageData.mimeType};base64,${inputImageData.data}`;
+        DOMElements.previewInputImage.src = dataUrl;
+        DOMElements.previewInputImageContainer.classList.remove('hidden');
+    } else {
+        DOMElements.previewInputImageContainer.classList.add('hidden');
+    }
+
     toggleModal(DOMElements.previewModal, true);
+}
+
+// For the preview modal image input
+function handlePreviewImageChange(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+        const base64String = reader.result.split(',')[1];
+        // Update the state for the preview modal
+        currentPreviewInputData = { mimeType: file.type, data: base64String };
+        // Update the image preview inside the modal
+        DOMElements.previewInputImage.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function removePreviewInputImage() {
+    currentPreviewInputData = null;
+    DOMElements.previewImageUploadInput.value = '';
+    DOMElements.previewInputImage.src = '';
+    DOMElements.previewInputImageContainer.classList.add('hidden');
 }
 
 function downloadPreviewImage() {
