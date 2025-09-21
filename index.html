@@ -127,17 +127,20 @@
         <div id="timer-text" class="text-white text-6xl font-bold">17s</div>
     </div>
 
-    <!-- UPDATED: Image Preview Modal with Editable Prompt -->
+    <!-- UPDATED: Image Preview Modal with better fitting -->
     <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4">
         <div class="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col overflow-hidden">
-            <!-- Scrollable content area -->
-            <div class="overflow-y-auto p-6">
-                <img id="preview-image" src="" alt="Generated Image" class="w-full h-auto object-contain rounded-lg">
-                <div class="mt-6">
-                    <label class="text-sm font-semibold text-gray-500 tracking-wider uppercase">Prompt (edit below to regenerate)</label>
-                    <textarea id="preview-prompt-input" rows="3" class="mt-2 w-full text-gray-800 bg-gray-100 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></textarea>
-                </div>
+            <!-- Image container that grows and shrinks to fit content -->
+            <div class="flex-grow p-6 flex items-center justify-center min-h-0">
+                <img id="preview-image" src="" alt="Generated Image" class="max-w-full max-h-full object-contain rounded-lg">
             </div>
+    
+            <!-- Prompt area that stays at the bottom -->
+            <div class="flex-shrink-0 p-6 pt-0">
+                <label class="text-sm font-semibold text-gray-500 tracking-wider uppercase">Prompt (edit below to regenerate)</label>
+                <textarea id="preview-prompt-input" rows="3" class="mt-2 w-full text-gray-800 bg-gray-100 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></textarea>
+            </div>
+            
             <!-- Action Buttons -->
             <div class="absolute top-4 right-4 flex space-x-2">
                  <button id="download-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Download Image">
