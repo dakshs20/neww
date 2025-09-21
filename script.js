@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'image-preview-container', 'image-preview', 'masonry-gallery', 'gallery-container', 'loader',
         'ratio-btn', 'ratio-options', 'header-blur-overlay',
         'loading-overlay', 'timer-text', 'preview-modal', 'preview-image', 
-        'download-btn', 'close-preview-btn'
+        'download-btn', 'close-preview-btn', 'preview-prompt-text', 'use-prompt-btn'
     ];
     ids.forEach(id => DOMElements[id.replace(/-./g, c => c[1].toUpperCase())] = document.getElementById(id));
     
@@ -158,7 +158,6 @@ function addImageToGallery(imageUrl, isNew = false) {
     const columns = Array.from(document.querySelectorAll('.masonry-column'));
     if (!columns.length) return;
 
-    // Find the shortest column to add the next image
     const shortestColumn = columns.reduce((shortest, column) => 
         column.offsetHeight < shortest.offsetHeight ? column : shortest
     , columns[0]);
@@ -183,8 +182,6 @@ function addImageToGallery(imageUrl, isNew = false) {
 }
 
 function fetchMoreImages() {
-    // This is a placeholder for fetching from a real backend.
-    // For now, it just stops.
     DOMElements.loader.style.display = 'none';
 }
 
@@ -211,7 +208,7 @@ async function handleImageGenerationRequest() {
 
 async function generateImage(prompt) {
     setLoadingState(true);
-    startGenerationTimer(); // Start the 17s timer
+    startGenerationTimer();
     try {
         const token = await currentUser.getIdToken();
         
@@ -236,17 +233,16 @@ async function generateImage(prompt) {
         
         const imageUrl = `data:image/png;base64,${base64Data}`;
         
-        // Stop timer and show preview modal
         clearInterval(timerInterval);
         DOMElements.loadingOverlay.classList.add('hidden');
-        showPreviewModal(imageUrl);
+        showPreviewModal(imageUrl, prompt);
 
         await fetchUserCredits(currentUser);
         resetPromptBar();
 
     } catch (error) {
         console.error("Generation Error:", error);
-        clearInterval(timerInterval); // Ensure timer stops on error
+        clearInterval(timerInterval);
         DOMElements.loadingOverlay.classList.add('hidden');
     } finally {
         setLoadingState(false);
@@ -286,15 +282,15 @@ function startGenerationTimer() {
         if (countdown >= 0) {
             DOMElements.timerText.textContent = `${countdown}s`;
         } else {
-            // Let it sit at 0s if generation is slow
             DOMElements.timerText.textContent = '0s';
             clearInterval(timerInterval);
         }
     }, 1000);
 }
 
-function showPreviewModal(imageUrl) {
+function showPreviewModal(imageUrl, prompt) {
     DOMElements.previewImage.src = imageUrl;
+    DOMElements.previewPromptText.textContent = prompt;
     DOMElements.previewModal.classList.remove('hidden');
 
     DOMElements.downloadBtn.onclick = () => {
@@ -305,10 +301,16 @@ function showPreviewModal(imageUrl) {
         a.click();
         document.body.removeChild(a);
     };
+    
+    DOMElements.usePromptBtn.onclick = () => {
+        DOMElements.promptInput.value = prompt;
+        DOMElements.previewModal.classList.add('hidden');
+        DOMElements.promptInput.focus();
+    };
 
     DOMElements.closePreviewBtn.onclick = () => {
         DOMElements.previewModal.classList.add('hidden');
-        addImageToGallery(imageUrl, true); // Add to gallery after closing
+        addImageToGallery(imageUrl, true);
     };
 }
 
@@ -327,7 +329,6 @@ function resetPromptBar() {
 
 function toggleModal(modal, show) {
     if (!modal) return;
-    // Use style.display for modals defined outside the main flow
     modal.style.display = show ? 'flex' : 'none';
     modal.setAttribute('aria-hidden', String(!show));
 }
