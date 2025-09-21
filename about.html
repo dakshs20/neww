@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About GenArt — Fast AI Image Generation for Creators & Agencies</title>
+    <meta name="description" content="GenArt transforms ideas into professional images in seconds. Learn how our AI works and why speed matters.">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="about-style.css">
+</head>
+<body class="overflow-x-hidden">
+
+    <!-- Main App Container -->
+    <div class="flex flex-col min-h-screen">
+        <!-- Header -->
+        <header class="absolute top-0 left-0 right-0 z-30 p-4">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <a href="index.html">
+                    <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
+                </a>
+                <div id="header-nav" class="flex items-center space-x-4 bg-white/70 backdrop-blur-md border border-gray-200/80 shadow-sm rounded-full px-4 py-1.5">
+                     <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Pricing</a>
+                     <a href="about.html" class="text-sm font-medium text-blue-600">About</a>
+                     <button id="sign-in-btn" class="text-sm font-medium bg-blue-600 text-white px-4 py-1.5 rounded-full hover:bg-blue-700 transition-colors">Sign In</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow">
+            <!-- Hero Section -->
+            <section class="relative w-full h-[60vh] min-h-[400px] flex items-center justify-center text-center overflow-hidden animated-gradient px-4">
+                <div class="hero-particles"></div>
+                <div class="z-10">
+                    <h1 id="hero-headline" class="text-4xl md:text-6xl font-bold text-slate-800 max-w-4xl">
+                        <span class="inline-block">GenArt</span> <span class="inline-block">accelerates</span> <span class="inline-block">imagination</span> <span class="inline-block">—</span> <span class="inline-block">turning</span> <span class="inline-block">ideas</span> <span class="inline-block">into</span> <span class="inline-block">visuals</span> <span class="inline-block">in</span> <span class="inline-block">seconds.</span>
+                    </h1>
+                </div>
+            </section>
+
+            <!-- AI Explanation Section -->
+            <section class="py-16 md:py-24 bg-white fade-in-section">
+                <div class="max-w-4xl mx-auto px-6 text-center">
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-6">What is Generative AI?</h2>
+                    <p class="text-lg md:text-xl text-slate-600 leading-relaxed">
+                        Generative AI is a type of artificial intelligence that can create brand new content—like images, text, or music—from simple text descriptions. At GenArt, we use this groundbreaking technology to understand your creative vision and instantly generate stunning, high-quality images that match your exact needs. It's like having a world-class artist ready to create anything you can imagine, 24/7.
+                    </p>
+                </div>
+            </section>
+
+            <!-- How It Works Section -->
+            <section class="py-16 md:py-24 bg-slate-50 fade-in-section">
+                <div class="max-w-7xl mx-auto px-6">
+                    <div class="text-center mb-12">
+                         <h2 class="text-3xl md:text-4xl font-bold text-slate-800">Designed for Speed and Creativity</h2>
+                         <p class="mt-4 text-lg text-slate-500">A powerful toolkit for effortless visual creation.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        <!-- Feature Card 1 -->
+                        <div class="feature-card bg-white p-8 rounded-xl shadow-md border border-gray-200/80">
+                             <h3 class="text-xl font-semibold text-slate-800 mb-2">Instant Generation</h3>
+                             <p class="text-slate-600">Go from prompt to final image in seconds, not hours. Our optimized models deliver unparalleled speed.</p>
+                        </div>
+                        <!-- Feature Card 2 -->
+                        <div class="feature-card bg-white p-8 rounded-xl shadow-md border border-gray-200/80">
+                             <h3 class="text-xl font-semibold text-slate-800 mb-2">Full Style Control</h3>
+                             <p class="text-slate-600">Precisely control the look and feel of your images with aspect ratios, style prompts, and image-to-image editing.</p>
+                        </div>
+                        <!-- Feature Card 3 -->
+                        <div class="feature-card bg-white p-8 rounded-xl shadow-md border border-gray-200/80">
+                             <h3 class="text-xl font-semibold text-slate-800 mb-2">Iterate and Refine</h3>
+                             <p class="text-slate-600">Quickly regenerate and edit your creations in our intuitive previewer to achieve the perfect result.</p>
+                        </div>
+                        <!-- Feature Card 4 -->
+                        <div class="feature-card bg-white p-8 rounded-xl shadow-md border border-gray-200/80">
+                             <h3 class="text-xl font-semibold text-slate-800 mb-2">Safe and Secure</h3>
+                             <p class="text-slate-600">All generations are processed securely, and your data is protected with industry-standard practices.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Milestones Section -->
+            <section class="py-16 md:py-24 bg-white fade-in-section">
+                <div class="max-w-5xl mx-auto px-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                        <div>
+                            <h4 class="text-5xl md:text-6xl font-bold text-blue-600 counter gradient-text" data-target="50">0</h4>
+                            <p class="mt-2 text-lg text-slate-500">Million+ Generations</p>
+                        </div>
+                        <div>
+                            <h4 class="text-5xl md:text-6xl font-bold text-blue-600"><span class="counter gradient-text" data-target="17">0</span>s</h4>
+                            <p class="mt-2 text-lg text-slate-500">Average Generation Time</p>
+                        </div>
+                        <div>
+                            <h4 class="text-5xl md:text-6xl font-bold text-blue-600 counter gradient-text" data-target="100">0</h4>
+                            <p class="mt-2 text-lg text-slate-500">K+ Happy Creators</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- CTA Section -->
+            <section class="py-16 md:py-24 bg-slate-50 fade-in-section">
+                <div class="max-w-4xl mx-auto px-6 text-center">
+                    <h2 class="text-3xl md:text-4xl font-bold text-slate-800">Ready to Create at the Speed of Thought?</h2>
+                    <p class="mt-4 text-lg md:text-xl text-slate-600">Join thousands of creators and agencies who are building the future of visual content with GenArt.</p>
+                    <a href="index.html" class="cta-button mt-8 inline-block bg-blue-600 text-white font-semibold text-lg px-8 py-4 rounded-full">
+                        Generate Your First Image
+                    </a>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="text-center py-8 border-t border-gray-200 bg-white">
+            <p class="text-sm text-gray-500">&copy; 2025 GenArt. All rights reserved.</p>
+             <a href="privacy-policy.html" class="text-sm text-gray-500 hover:text-blue-600 mt-2 inline-block">Privacy Policy</a>
+        </footer>
+    </div>
+    
+    <!-- GSAP Animation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script type="module" src="about.js"></script>
+</body>
+</html>
+
