@@ -28,8 +28,8 @@
         <section class="relative h-screen flex flex-col items-center justify-center text-center p-4 overflow-hidden">
             <div id="hero-particles" class="absolute inset-0"></div>
             <div class="z-10">
-                <h1 class="text-4xl md:text-6xl font-bold text-white max-w-4xl mb-4">Creativity should never wait.</h1>
-                <p class="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto mb-8">GenArt is the world’s fastest AI image generation platform — built to accelerate <span id="typewriter" class="font-bold text-blue-400"></span><span class="cursor">|</span></p>
+                <h1 class="text-4xl md:text-6xl font-bold text-white max-w-4xl mb-4" id="hero-headline">Creativity should never wait.</h1>
+                <p class="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto mb-8" id="hero-subline">GenArt is the world’s fastest AI image generation platform — built to accelerate <span id="typewriter" class="font-bold text-blue-400"></span><span class="cursor">|</span></p>
             </div>
         </section>
 
@@ -40,40 +40,48 @@
                 <p class="text-lg md:text-xl text-slate-400 leading-relaxed mb-16">
                     Ideas can’t wait hours to be designed or rendered — they need to exist now. GenArt compresses a process that once took days into seconds, making creativity limitless.
                 </p>
-                <!-- Animated Timeline Comparison -->
-                <div id="timeline-comparison" class="w-full max-w-3xl mx-auto text-left">
-                    <div class="mb-8">
-                        <p class="text-slate-400 mb-2">Traditional Workflow (Hours/Days)</p>
-                        <div class="timeline-bar"><div id="traditional-bar" class="timeline-progress traditional"></div></div>
+                <div id="speed-infographic" class="w-full max-w-4xl mx-auto text-left">
+                    <div class="workflow-track">
+                        <span class="workflow-label">Traditional</span>
+                        <div class="icons-container" id="traditional-icons">
+                            <div class="icon-step"><span>Brief</span></div>
+                            <div class="icon-step"><span>Sketch</span></div>
+                            <div class="icon-step"><span>Render</span></div>
+                            <div class="icon-step"><span>Feedback</span></div>
+                            <div class="icon-step"><span>Final</span></div>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-white font-semibold mb-2">GenArt Workflow (Seconds)</p>
-                        <div class="timeline-bar"><div id="genart-bar" class="timeline-progress genart"></div></div>
+                    <div class="workflow-track">
+                        <span class="workflow-label">GenArt</span>
+                        <div class="icons-container" id="genart-icons">
+                             <div class="icon-step genart-icon"><span>Prompt</span></div>
+                             <div class="icon-step genart-icon"><span>Generate</span></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- 3. The Technology -->
-        <section class="py-20 md:py-32 bg-slate-800/50 fade-in-section interactive-card">
+        <section class="py-20 md:py-32 bg-slate-800/50 fade-in-section">
             <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                <div class="text-left">
+                <div class="text-left tech-card">
                     <h2 class="text-3xl md:text-5xl font-bold text-white mb-6">AI Made Human</h2>
                     <p class="text-lg text-slate-400 mb-4">Our models learn from millions of visual patterns to translate human intent into stunning visuals instantly. We’ve built the fastest pipeline in the industry, focusing on three core principles:</p>
-                    <ul class="list-none space-y-3">
-                        <li class="flex items-start"><span class="text-blue-400 mr-3 mt-1">&#10003;</span> <strong class="mr-2">Fidelity:</strong> High-resolution, professional-grade outputs.</li>
-                        <li class="flex items-start"><span class="text-blue-400 mr-3 mt-1">&#10003;</span> <strong class="mr-2">Control:</strong> Unmatched style and composition control.</li>
-                        <li class="flex items-start"><span class="text-blue-400 mr-3 mt-1">&#10003;</span> <strong class="mr-2">Safety:</strong> Built-in safeguards for responsible, brand-safe creativity.</li>
+                    <ul class="list-none space-y-3 tech-list">
+                        <li><strong class="mr-2">Fidelity:</strong> High-resolution, professional-grade outputs.</li>
+                        <li><strong class="mr-2">Control:</strong> Unmatched style and composition control.</li>
+                        <li><strong class="mr-2">Safety:</strong> Built-in safeguards for responsible, brand-safe creativity.</li>
                     </ul>
                 </div>
-                <!-- SVG Animation for Tech Flow -->
                 <div class="flex items-center justify-center h-64 md:h-96">
-                    <svg id="tech-flow-svg" class="w-full h-full" viewBox="0 0 300 100">
-                        <g class="node" id="node-prompt"><circle cx="50" cy="50" r="15"></circle><text x="50" y="55">Prompt</text></g>
-                        <g class="node" id="node-model"><circle cx="150" cy="50" r="15"></circle><text x="150" y="55">Model</text></g>
-                        <g class="node" id="node-image"><circle cx="250" cy="50" r="15"></circle><text x="250" y="55">Image</text></g>
-                        <path class="connector" d="M 65 50 H 135"></path>
-                        <path class="connector" d="M 165 50 H 235"></path>
+                    <svg id="tech-flow-svg" class="w-full h-full" viewBox="0 0 400 200">
+                        <defs><filter id="glow"><feGaussianBlur stdDeviation="3.5" result="coloredBlur"></feGaussianBlur><feMerge><feMergeNode in="coloredBlur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter></defs>
+                        <path class="connector-bg" d="M 100 100 H 300"></path>
+                        <path class="connector-flow" d="M 100 100 H 300"></path>
+                        <g class="node" id="node-prompt"><circle cx="100" cy="100" r="20"></circle><text x="100" y="105">Prompt</text></g>
+                        <g class="node" id="node-model"><circle cx="200" cy="100" r="25"></circle><text x="200" y="105">AI Model</text></g>
+                        <g class="node" id="node-image"><circle cx="300" cy="100" r="20"></circle><text x="300" y="105">Image</text></g>
                     </svg>
                 </div>
             </div>
@@ -82,28 +90,24 @@
         <!-- 4. Future Launches (Roadmap) -->
         <section class="py-20 md:py-32 fade-in-section">
             <div class="max-w-5xl mx-auto px-6 text-center">
-                 <h2 class="text-3xl md:text-5xl font-bold text-white mb-16">The GenArt Ecosystem</h2>
+                 <h2 class="text-3xl md:text-5xl font-bold text-white mb-24">The GenArt Ecosystem</h2>
                  <div id="roadmap" class="relative">
-                    <div class="roadmap-line"><div id="roadmap-line-progress" class="roadmap-line-progress"></div></div>
-                    <div class="roadmap-item">
+                    <div class="roadmap-line"></div>
+                    <div class="roadmap-item" data-index="0">
                         <div class="roadmap-node"></div>
-                        <h3 class="text-2xl font-bold text-white mt-4">Image</h3>
-                        <p class="text-slate-400">Live now</p>
+                        <div class="text-content"><h3>Image</h3><p>Live now</p></div>
                     </div>
-                     <div class="roadmap-item">
+                     <div class="roadmap-item" data-index="1">
                         <div class="roadmap-node"></div>
-                        <h3 class="text-2xl font-bold text-white mt-4">Verse (Text)</h3>
-                        <p class="text-slate-400">Coming soon</p>
+                        <div class="text-content"><h3>Verse (Text)</h3><p>Coming soon</p></div>
                     </div>
-                     <div class="roadmap-item">
+                     <div class="roadmap-item" data-index="2">
                         <div class="roadmap-node"></div>
-                        <h3 class="text-2xl font-bold text-white mt-4">Video</h3>
-                        <p class="text-slate-400">In development</p>
+                        <div class="text-content"><h3>Video</h3><p>In development</p></div>
                     </div>
-                     <div class="roadmap-item">
+                     <div class="roadmap-item" data-index="3">
                         <div class="roadmap-node"></div>
-                        <h3 class="text-2xl font-bold text-white mt-4">Enterprise</h3>
-                        <p class="text-slate-400">In development</p>
+                        <div class="text-content"><h3>Enterprise</h3><p>In development</p></div>
                     </div>
                  </div>
             </div>
