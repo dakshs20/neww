@@ -295,7 +295,8 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         
         const imageUrl = `data:image/png;base64,${base64Data}`;
         
-        addImageToMasonry(imageUrl, true);
+        // REMOVED: This line no longer adds the generated image to the main gallery.
+        // addImageToMasonry(imageUrl, true);
 
         // Pass the original input image data to the preview modal
         showPreviewModal(imageUrl, prompt, generationInputData);
