@@ -212,8 +212,22 @@ async function generateImage(prompt) {
     try {
         const token = await currentUser.getIdToken();
         
-        await fetch('/api/credits', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }});
-        
+        // Deduct credit and get the new balance instantly
+        const creditResponse = await fetch('/api/credits', { 
+            method: 'POST', 
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!creditResponse.ok) {
+            throw new Error('Credit deduction failed.');
+        }
+
+        // Instantly update UI with new credit balance
+        const creditData = await creditResponse.json();
+        currentUserCredits = creditData.newCredits;
+        const counter = document.getElementById('generation-counter');
+        if (counter) counter.textContent = `Credits: ${currentUserCredits}`;
+
         const body = { prompt, aspectRatio: currentAspectRatio, ...(uploadedImageData && { imageData: uploadedImageData }) };
 
         const response = await fetch('/api/generate', {
@@ -237,13 +251,14 @@ async function generateImage(prompt) {
         DOMElements.loadingOverlay.classList.add('hidden');
         showPreviewModal(imageUrl, prompt);
 
-        await fetchUserCredits(currentUser);
         resetPromptBar();
 
     } catch (error) {
         console.error("Generation Error:", error);
         clearInterval(timerInterval);
         DOMElements.loadingOverlay.classList.add('hidden');
+        // If something fails, refresh credits to be safe
+        if(currentUser) fetchUserCredits(currentUser);
     } finally {
         setLoadingState(false);
     }
