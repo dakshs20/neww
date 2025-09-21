@@ -82,7 +82,16 @@ function initializeEventListeners() {
     setupUIInteractions();
 }
 
+function autoResizeTextarea(event) {
+    const textarea = event.target;
+    textarea.style.height = 'auto'; // Reset height to recalculate
+    const newHeight = textarea.scrollHeight;
+    textarea.style.height = `${newHeight}px`;
+}
+
 function setupUIInteractions() {
+    DOMElements.promptInput?.addEventListener('input', autoResizeTextarea);
+
     DOMElements.ratioBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         DOMElements.ratioOptions.classList.toggle('hidden');
@@ -321,7 +330,7 @@ function showPreviewModal(imageUrl, prompt) {
         const editedPrompt = DOMElements.previewPromptInput.value.trim();
         if (editedPrompt) {
             DOMElements.previewModal.classList.add('hidden');
-            DOMElements.promptInput.value = editedPrompt;
+            // Do not clear the main prompt bar, use the edited one
             generateImage(editedPrompt);
         }
     };
