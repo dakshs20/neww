@@ -127,37 +127,55 @@
         <div id="timer-text" class="text-white text-6xl font-bold">17s</div>
     </div>
 
-    <!-- UPDATED: Responsive Split-Screen Image Preview Modal -->
-    <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div class="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
-            <!-- Left Side: Image -->
-            <div class="w-full md:w-1/2 bg-gray-100 flex items-center justify-center p-4">
+    <!-- Image Preview Modal -->
+    <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4 md:p-8">
+        <div class="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
+            <!-- Left Side: Generated Image -->
+            <div class="relative md:w-1/2 flex items-center justify-center bg-gray-100 p-6">
                 <img id="preview-image" src="" alt="Generated Image" class="max-w-full max-h-full object-contain rounded-lg">
+                <div class="absolute top-4 right-4 flex space-x-2">
+                    <button id="download-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Download Image">
+                       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                   </button>
+                   <button id="close-preview-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Close">
+                       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+                   </button>
+               </div>
             </div>
-
-            <!-- Right Side: Controls -->
-            <div class="w-full md:w-1/2 flex flex-col p-6">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">Edit & Regenerate</h3>
-                <div class="flex-grow flex flex-col">
-                    <label for="preview-prompt-input" class="text-sm font-semibold text-gray-500 tracking-wider uppercase">Prompt</label>
-                    <textarea id="preview-prompt-input" rows="8" class="mt-2 w-full text-gray-800 bg-gray-100 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition flex-grow"></textarea>
+            <!-- Right Side: Edit & Regenerate Controls -->
+            <div class="md:w-1/2 flex flex-col p-6 space-y-4 overflow-y-auto">
+                <h3 class="text-lg font-bold text-gray-800">Edit & Regenerate</h3>
+                
+                <!-- NEW: Input Image Section -->
+                <div id="preview-input-image-container" class="hidden">
+                    <label class="text-sm font-semibold text-gray-500 tracking-wider uppercase">Your Image</label>
+                    <div class="mt-2 relative w-32 h-32 rounded-lg overflow-hidden group">
+                        <img id="preview-input-image" src="" class="w-full h-full object-cover" alt="Your input image">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
+                            <button id="change-input-image-btn" class="text-white p-2 rounded-full hover:bg-white/20" title="Change Image">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5m-4-1v-4h4V4h-4v5l-4 4 4 4zm0 0v5h-4v-5h4z"></path></svg>
+                            </button>
+                            <button id="remove-input-image-btn" class="text-white p-2 rounded-full hover:bg-white/20" title="Remove Image">
+                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                     <input type="file" id="preview-image-upload-input" class="hidden" accept="image/png, image/jpeg">
                 </div>
-                <div class="mt-6 flex-shrink-0">
-                    <button id="regenerate-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center space-x-2">
+
+                <!-- Prompt Section -->
+                <div>
+                    <label class="text-sm font-semibold text-gray-500 tracking-wider uppercase">Prompt</label>
+                    <textarea id="preview-prompt-input" rows="4" class="mt-2 w-full text-gray-800 bg-gray-100 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></textarea>
+                </div>
+                
+                <!-- Regenerate Button -->
+                <div class="pt-4 flex-grow flex items-end justify-end">
+                    <button id="regenerate-btn" class="bg-blue-600 text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center space-x-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22"></path></svg>
                         <span>Regenerate</span>
                     </button>
                 </div>
-            </div>
-
-            <!-- Absolute Buttons (Download/Close) -->
-            <div class="absolute top-4 right-4 flex space-x-2">
-                 <button id="download-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Download Image">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                </button>
-                <button id="close-preview-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Close">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
             </div>
         </div>
     </div>
