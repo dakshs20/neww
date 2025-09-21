@@ -1,69 +1,100 @@
 /* --- Base and Typography --- */
 body {
-    background-color: #f8fafc; /* Tailwind slate-50 */
-    color: #1e293b; /* Tailwind slate-800 */
+    background-color: #0f172a; /* slate-900 */
+    color: #cbd5e1; /* slate-300 */
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
 }
 
 /* --- Hero Section & Animations --- */
-.animated-gradient {
-    background: linear-gradient(45deg, #eff6ff, #dbeafe, #bfdbfe);
-    background-size: 200% 200%;
-    animation: gradient-flow 15s ease infinite;
+#hero-particles {
+    background-image: radial-gradient(circle at 25% 30%, rgba(59, 130, 246, 0.3) 0%, transparent 20%),
+                      radial-gradient(circle at 75% 80%, rgba(99, 102, 241, 0.2) 0%, transparent 25%);
+    animation: particles-float 20s ease-in-out infinite;
 }
 
-@keyframes gradient-flow {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+@keyframes particles-float {
+    0% { transform: translate(0, 0); }
+    50% { transform: translate(10px, 20px); }
+    100% { transform: translate(0, 0); }
 }
 
-.hero-particles {
+.cursor {
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    from, to { color: transparent; }
+    50% { color: #60a5fa; } /* blue-400 */
+}
+
+/* --- Technology Section Animation Placeholder --- */
+.tech-flow-animation {
+    border: 1px solid #334155; /* slate-700 */
+    border-radius: 1rem;
+    background: radial-gradient(circle at center, #1e293b, #0f172a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b; /* slate-500 */
+    font-size: 0.875rem;
+}
+
+/* --- Roadmap / Timeline --- */
+#roadmap {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
+.roadmap-line {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image:
-        radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 3%),
-        radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 4%),
-        radial-gradient(circle at 25% 85%, rgba(255, 255, 255, 0.2) 0%, transparent 5%),
-        radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.3) 0%, transparent 2%);
-    background-size: 100% 100%;
-    animation: particles-flow 25s linear infinite;
+    top: 10px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background-color: #334155; /* slate-700 */
+    z-index: -1;
+}
+.roadmap-item {
+    width: 20%;
+    opacity: 0.5;
+    transition: opacity 0.4s ease;
+}
+.roadmap-item.is-active {
+    opacity: 1;
+}
+.roadmap-node {
+    width: 20px;
+    height: 20px;
+    border-radius: 9999px;
+    background-color: #334155; /* slate-700 */
+    margin: 0 auto;
+    transition: background-color 0.4s ease, transform 0.4s ease;
+}
+.roadmap-item.is-active .roadmap-node {
+    background-color: #3b82f6; /* blue-600 */
+    transform: scale(1.2);
+    box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.4);
+}
+@media (max-width: 768px) {
+    #roadmap { flex-direction: column; align-items: center; gap: 4rem; }
+    .roadmap-line { display: none; }
+    .roadmap-item { width: 80%; }
 }
 
-@keyframes particles-flow {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(-20px); }
-}
 
-/* --- Scroll-Triggered Animations --- */
+/* --- General Animations & Components --- */
 .fade-in-section {
     opacity: 0;
     transform: translateY(30px);
     transition: opacity 0.6s ease-out, transform 0.6s ease-out;
 }
-
 .fade-in-section.is-visible {
     opacity: 1;
     transform: translateY(0);
 }
 
-/* --- Dynamic & Professional Components --- */
-
-.feature-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-}
-
-.feature-card:hover {
-    transform: translateY(-8px);
-    border-color: rgba(59, 130, 246, 0.3); /* blue-500 with opacity */
-    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1), 0 8px 10px -6px rgba(59, 130, 246, 0.1);
-}
-
 .gradient-text {
-    background: linear-gradient(to right, #3b82f6, #1d4ed8);
+    background: linear-gradient(to right, #60a5fa, #3b82f6);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -72,25 +103,35 @@ body {
 .cta-button {
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-
 .cta-button:hover {
     transform: scale(1.05);
-    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
 }
 
+#founder-note {
+    position: relative;
+}
+#founder-note::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    width: 0;
+    height: 1px;
+    background-color: #60a5fa;
+    transition: width 1s ease-out, left 1s ease-out;
+}
+#founder-note.is-visible::after {
+    width: 50%;
+    left: 25%;
+}
 
 /* --- Accessibility --- */
 @media (prefers-reduced-motion: reduce) {
-    .animated-gradient,
-    .hero-particles,
-    .fade-in-section,
-    .feature-card,
-    .cta-button {
+    #hero-particles, .fade-in-section, .cta-button, .roadmap-node, #founder-note::after {
         animation: none !important;
         transition: none !important;
     }
-    .fade-in-section {
-        opacity: 1;
-        transform: none;
-    }
+    .fade-in-section { opacity: 1; transform: none; }
 }
+
