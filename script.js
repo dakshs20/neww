@@ -125,26 +125,26 @@ function loadMoreImages() {
     isFetchingMore = true;
     DOMElements.loader.style.display = 'block';
 
-    setTimeout(() => {
-        const imagesPerPage = 10;
-        const startIndex = (imagePage * imagesPerPage) % ALL_IMAGE_URLS.length;
-        const endIndex = startIndex + imagesPerPage;
-        
-        let newImages = ALL_IMAGE_URLS.slice(startIndex, endIndex);
+    // The artificial 1-second delay has been removed.
+    // New images will now be fetched and displayed instantly.
+    const imagesPerPage = 10;
+    const startIndex = (imagePage * imagesPerPage) % ALL_IMAGE_URLS.length;
+    const endIndex = startIndex + imagesPerPage;
+    
+    let newImages = ALL_IMAGE_URLS.slice(startIndex, endIndex);
 
-        if (endIndex > ALL_IMAGE_URLS.length) {
-            const remaining = endIndex - ALL_IMAGE_URLS.length;
-            newImages = newImages.concat(ALL_IMAGE_URLS.slice(0, remaining));
-        }
+    if (endIndex > ALL_IMAGE_URLS.length) {
+        const remaining = endIndex - ALL_IMAGE_URLS.length;
+        newImages = newImages.concat(ALL_IMAGE_URLS.slice(0, remaining));
+    }
 
-        newImages.forEach(url => {
-            addImageToMasonry(url);
-        });
-        
-        imagePage++;
-        DOMElements.loader.style.display = 'none';
-        isFetchingMore = false;
-    }, 1000);
+    newImages.forEach(url => {
+        addImageToMasonry(url);
+    });
+    
+    imagePage++;
+    DOMElements.loader.style.display = 'none';
+    isFetchingMore = false;
 }
 
 
