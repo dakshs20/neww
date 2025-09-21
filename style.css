@@ -12,17 +12,15 @@ body {
 .masonry-column {
     display: flex;
     flex-direction: column;
-    /* The 'flex-basis: 100%' was removed to allow columns to share space correctly. */
     flex: 1;
     gap: 1rem; /* 16px */
 }
 
 .masonry-item {
-    /* The 'margin-bottom' was removed for better consistency, as the 'gap' on the column already handles spacing. */
     overflow: hidden;
     border-radius: 0.75rem; /* rounded-xl */
     
-    /* NEW: Add placeholder styling for faster perceived loading */
+    /* Placeholder styling for faster perceived loading */
     background-color: #e2e8f0; /* A light grey placeholder */
     min-height: 150px; /* Prevent collapse before image loads */
     animation: shimmer 2s infinite linear;
@@ -31,7 +29,7 @@ body {
     background-size: 1000px 100%; 
 }
 
-/* NEW: Add shimmer animation */
+/* Shimmer animation */
 @keyframes shimmer {
     0% {
         background-position: -500px 0;
@@ -64,5 +62,23 @@ body {
 }
 .animate-shake {
     animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Responsive Masonry for Mobile */
+@media (max-width: 767px) {
+    #masonry-gallery {
+        /* On mobile, we only show one column, so the container can be a simple block */
+        display: block;
+    }
+
+    .masonry-column {
+        /* Ensure the single visible column takes up the full width */
+        width: 100%;
+    }
+
+    /* Hide all columns except the first one */
+    .masonry-column:not(:first-child) {
+        display: none;
+    }
 }
 
