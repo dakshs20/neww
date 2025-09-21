@@ -23,8 +23,8 @@ let currentUser;
 let currentUserCredits = 0;
 let isGenerating = false;
 let currentAspectRatio = '1:1';
-let uploadedImageData = null; // Holds data for the main prompt bar
-let currentPreviewInputData = null; // Holds data for the image in the preview modal
+let uploadedImageData = null;
+let currentPreviewInputData = null;
 let timerInterval;
 let isFetchingMore = false;
 let imagePage = 0;
@@ -63,7 +63,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeEventListeners();
     onAuthStateChanged(auth, user => updateUIForAuthState(user));
+    restructureGalleryForMobile(); // Restructure the gallery on initial load for mobile
 });
+
+// NEW: Function to consolidate images into one column on mobile
+function restructureGalleryForMobile() {
+    if (window.innerWidth >= 768) {
+        return; // Do nothing on desktop
+    }
+
+    const firstColumn = DOMElements.masonryColumns[0];
+    if (!firstColumn) return;
+
+    // Consolidate all pre-rendered images into the first column
+    for (let i = 1; i < DOMElements.masonryColumns.length; i++) {
+        const column = DOMElements.masonryColumns[i];
+        while (column.firstChild) {
+            firstColumn.appendChild(column.firstChild);
+        }
+    }
+}
 
 
 function initializeEventListeners() {
@@ -230,7 +249,6 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         return;
     }
 
-    // If regenerating, use the image data from the preview modal. Otherwise, use the main prompt bar's data.
     const imageDataSource = fromRegenerate ? currentPreviewInputData : uploadedImageData;
     const prompt = fromRegenerate ? promptOverride : DOMElements.promptInput.value.trim();
 
@@ -245,7 +263,6 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
     setLoadingState(true);
     startTimer();
     
-    // Store a copy of the input image data that was used for *this specific* generation
     const generationInputData = imageDataSource ? {...imageDataSource} : null;
 
     try {
@@ -285,7 +302,6 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         
         addImageToMasonry(imageUrl, true);
 
-        // Pass the input image data to the preview modal
         showPreviewModal(imageUrl, prompt, generationInputData);
 
     } catch (error) {
@@ -356,6 +372,17 @@ function addImageToMasonry(url, prepend = false) {
     };
     item.appendChild(img);
 
+    // If on mobile, always use the first column. Otherwise, distribute.
+    if (window.innerWidth < 768) {
+        const firstColumn = DOMElements.masonryColumns[0];
+        if (prepend) {
+            firstColumn.insertBefore(item, firstColumn.firstChild);
+        } else {
+            firstColumn.appendChild(item);
+        }
+        return;
+    }
+
     if (prepend) {
         let shortestColumn = DOMElements.masonryColumns[0];
         for (let i = 1; i < DOMElements.masonryColumns.length; i++) {
@@ -398,7 +425,7 @@ function showPreviewModal(imageUrl, prompt, inputImageData) {
     DOMElements.previewImage.src = imageUrl;
     DOMElements.previewPromptInput.value = prompt;
 
-    currentPreviewInputData = inputImageData; // Store the input data for this preview
+    currentPreviewInputData = inputImageData;
 
     if (inputImageData) {
         const dataUrl = `data:${inputImageData.mimeType};base64,${inputImageData.data}`;
@@ -418,9 +445,7 @@ function handlePreviewImageChange(event) {
     const reader = new FileReader();
     reader.onloadend = () => {
         const base64String = reader.result.split(',')[1];
-        // Update the state for the preview modal
         currentPreviewInputData = { mimeType: file.type, data: base64String };
-        // Update the image preview inside the modal
         DOMElements.previewInputImage.src = reader.result;
     };
     reader.readAsDataURL(file);
