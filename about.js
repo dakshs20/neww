@@ -45,13 +45,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Animations ---
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
-        document.querySelectorAll('.counter').forEach(c => c.textContent = c.dataset.target);
+        document.querySelectorAll('.counter, .counter-decimal').forEach(c => c.textContent = c.dataset.target);
         return;
     }
 
     // Hero Animations
     gsap.from("#hero-headline", { opacity: 0, y: 20, duration: 0.8, ease: "power3.out", delay: 0.2 });
     gsap.from("#hero-subline", { opacity: 0, y: 20, duration: 0.8, ease: "power3.out", delay: 0.4 });
+    gsap.from("#hero-cta", { opacity: 0, y: 20, duration: 0.8, ease: "power3.out", delay: 0.6 });
+    gsap.from(".micro-demo", { opacity: 0, scale: 0.95, duration: 0.8, ease: "power3.out", delay: 0.8 });
+
     const words = ["imagination.", "visuals.", "reality."];
     let masterTl = gsap.timeline({ repeat: -1 });
     words.forEach(word => {
@@ -59,59 +62,19 @@ document.addEventListener('DOMContentLoaded', () => {
         tl.to("#typewriter", { text: word, duration: 1, ease: "none" });
         masterTl.add(tl);
     });
-
-    // General Fade-in for all sections
-    gsap.utils.toArray('.fade-in-section').forEach(section => {
-        gsap.from(section, {
-            opacity: 0,
-            y: 50,
-            duration: 1,
-            ease: 'power3.out',
-            scrollTrigger: {
-                trigger: section,
-                start: 'top 85%',
-                toggleActions: 'play none none none',
-            }
-        });
-    });
-
-    // "Why Speed Matters" Infographic Animation
-    ScrollTrigger.create({
-        trigger: "#speed-infographic",
-        start: "top 80%",
-        onEnter: () => {
-            gsap.to("#traditional-icons .icon-step", {
-                opacity: 1,
-                scale: 1,
-                stagger: 0.2,
-                duration: 0.5,
-                ease: "back.out(1.7)"
-            });
-            gsap.to("#genart-icons .icon-step", {
-                opacity: 1,
-                scale: 1,
-                stagger: 0.2,
-                duration: 0.5,
-                delay: 1,
-                ease: "back.out(1.7)"
-            });
-        }
-    });
-
-    // "AI Made Human" Tech Flow Animation
-    const techTl = gsap.timeline({
+    
+    // Animate Pipeline Cards
+    gsap.to(".pipeline-card", {
+        opacity: 1,
+        y: 0,
+        stagger: 0.2,
+        duration: 0.8,
+        ease: 'power3.out',
         scrollTrigger: {
-            trigger: ".tech-card",
-            start: "top center",
-            toggleActions: "play none none reverse",
+            trigger: ".pipeline-card",
+            start: "top 85%",
         }
     });
-    techTl.staggerFromTo(".tech-list li", 0.5, { opacity: 0, x: -20 }, { opacity: 1, x: 0 }, 0.1)
-          .to("#node-prompt circle", { fill: "#3b82f6" }, "-=0.5")
-          .to(".connector-flow", { strokeDashoffset: 0, duration: 1.5, ease: "power2.inOut" })
-          .to("#node-model circle", { fill: "#3b82f6" }, "-=0.7")
-          .to("#node-image circle", { fill: "#3b82f6" }, "-=0.2");
-
 
     // Counters Animation
     gsap.utils.toArray('.counter').forEach(counter => {
@@ -120,9 +83,18 @@ document.addEventListener('DOMContentLoaded', () => {
             duration: 2,
             ease: 'power2.out',
             snap: { textContent: 1 },
-            scrollTrigger: {
-                trigger: counter,
-                start: 'top 90%'
+            scrollTrigger: { trigger: counter, start: 'top 90%' }
+        });
+    });
+     gsap.utils.toArray('.counter-decimal').forEach(counter => {
+        gsap.from(counter, {
+            textContent: 0,
+            duration: 2,
+            ease: 'power2.out',
+            snap: { textContent: 0.1 },
+            scrollTrigger: { trigger: counter, start: 'top 90%' },
+            onUpdate: function() {
+                counter.textContent = parseFloat(this.targets()[0].textContent).toFixed(1);
             }
         });
     });
@@ -133,17 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ScrollTrigger.create({
             trigger: item,
             start: "top center",
-            onEnter: () => item.classList.add("is-active"),
-            onLeaveBack: () => item.classList.remove("is-active")
+            end: "bottom center",
+            toggleClass: "is-active"
         });
     });
-    
-     // Founder's Note Underline Animation
-     ScrollTrigger.create({
-        trigger: "#founder-note",
-        start: "top 80%",
-        onEnter: () => document.getElementById('founder-note').classList.add('is-visible')
-    });
-
 });
 
