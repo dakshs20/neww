@@ -7,74 +7,85 @@ body {
 
 /* --- Hero Section & Animations --- */
 #hero-particles {
-    background-image: radial-gradient(circle at 25% 30%, rgba(59, 130, 246, 0.3) 0%, transparent 20%),
-                      radial-gradient(circle at 75% 80%, rgba(99, 102, 241, 0.2) 0%, transparent 25%);
+    position: absolute;
+    inset: 0;
+    background-color: #0f172a;
+    overflow: hidden;
+}
+#hero-particles::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 25% 30%, rgba(59, 130, 246, 0.2) 0%, transparent 25%),
+                      radial-gradient(circle at 75% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 30%);
     animation: particles-float 20s ease-in-out infinite;
 }
 
 @keyframes particles-float {
     0% { transform: translate(0, 0); }
-    50% { transform: translate(10px, 20px); }
+    50% { transform: translate(-20px, 10px); }
     100% { transform: translate(0, 0); }
 }
 
-.cursor {
-    animation: blink 1s step-end infinite;
-}
-
+.cursor { animation: blink 1s step-end infinite; }
 @keyframes blink {
     from, to { color: transparent; }
     50% { color: #60a5fa; } /* blue-400 */
 }
 
-/* --- Technology Section Animation Placeholder --- */
-.tech-flow-animation {
-    border: 1px solid #334155; /* slate-700 */
-    border-radius: 1rem;
-    background: radial-gradient(circle at center, #1e293b, #0f172a);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #64748b; /* slate-500 */
-    font-size: 0.875rem;
+/* --- Why Speed Matters: Timeline Animation --- */
+.timeline-bar {
+    width: 100%;
+    height: 10px;
+    background-color: #334155; /* slate-700 */
+    border-radius: 99px;
+    overflow: hidden;
+}
+.timeline-progress { height: 100%; width: 0%; border-radius: 99px; }
+.timeline-progress.traditional { background-color: #f87171; /* red-400 */ }
+.timeline-progress.genart { background-color: #3b82f6; /* blue-600 */ }
+
+
+/* --- Technology Section: SVG Animation --- */
+#tech-flow-svg .node circle {
+    fill: #1e293b; /* slate-800 */
+    stroke: #3b82f6; /* blue-600 */
+    stroke-width: 2;
+    transition: fill 0.3s ease;
+}
+#tech-flow-svg .node text {
+    fill: #94a3b8; /* slate-400 */
+    font-size: 10px;
+    text-anchor: middle;
+}
+#tech-flow-svg .connector {
+    stroke: #475569; /* slate-600 */
+    stroke-width: 2;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+}
+/* Active animation states will be added by GSAP */
+#tech-flow-svg.is-animating .node circle { animation: pulse-node 1.5s infinite ease-in-out; }
+#tech-flow-svg.is-animating .connector { animation: draw-line 2s ease-out forwards; }
+
+@keyframes pulse-node {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+@keyframes draw-line {
+    to { stroke-dashoffset: 0; }
 }
 
+
 /* --- Roadmap / Timeline --- */
-#roadmap {
-    display: flex;
-    justify-content: space-between;
-    position: relative;
-}
-.roadmap-line {
-    position: absolute;
-    top: 10px;
-    left: 10%;
-    right: 10%;
-    height: 2px;
-    background-color: #334155; /* slate-700 */
-    z-index: -1;
-}
-.roadmap-item {
-    width: 20%;
-    opacity: 0.5;
-    transition: opacity 0.4s ease;
-}
-.roadmap-item.is-active {
-    opacity: 1;
-}
-.roadmap-node {
-    width: 20px;
-    height: 20px;
-    border-radius: 9999px;
-    background-color: #334155; /* slate-700 */
-    margin: 0 auto;
-    transition: background-color 0.4s ease, transform 0.4s ease;
-}
-.roadmap-item.is-active .roadmap-node {
-    background-color: #3b82f6; /* blue-600 */
-    transform: scale(1.2);
-    box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.4);
-}
+#roadmap { display: flex; justify-content: space-between; position: relative; }
+.roadmap-line { position: absolute; top: 10px; left: 10%; right: 10%; height: 2px; background-color: #334155; }
+.roadmap-line-progress { width: 0%; height: 100%; background-color: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
+.roadmap-item { width: 20%; opacity: 0.5; transition: opacity 0.4s ease; }
+.roadmap-item.is-active { opacity: 1; }
+.roadmap-node { width: 20px; height: 20px; border-radius: 9999px; background-color: #334155; margin: 0 auto; transition: all 0.4s ease; }
+.roadmap-item.is-active .roadmap-node { background-color: #3b82f6; transform: scale(1.2); box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.4); }
+
 @media (max-width: 768px) {
     #roadmap { flex-direction: column; align-items: center; gap: 4rem; }
     .roadmap-line { display: none; }
@@ -83,55 +94,55 @@ body {
 
 
 /* --- General Animations & Components --- */
-.fade-in-section {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
-.fade-in-section.is-visible {
-    opacity: 1;
-    transform: translateY(0);
-}
+.fade-in-section { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
+.fade-in-section.is-visible { opacity: 1; transform: translateY(0); }
 
-.gradient-text {
-    background: linear-gradient(to right, #60a5fa, #3b82f6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+.gradient-text { background: linear-gradient(to right, #60a5fa, #3b82f6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+.interactive-card {
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    border-radius: 1rem;
+}
+.interactive-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2), 0 0 30px rgba(59, 130, 246, 0.2);
 }
 
 .cta-button {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.cta-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
-}
-
-#founder-note {
+    display: inline-block;
+    font-weight: 600;
+    font-size: 1.25rem;
+    padding: 1.25rem 2.5rem;
+    border-radius: 9999px;
     position: relative;
+    overflow: hidden;
+    color: white;
+    background-color: #2563eb; /* blue-600 */
+    transition: transform 0.3s ease;
 }
-#founder-note::after {
+.cta-button:hover { transform: scale(1.05); }
+.cta-button::before {
     content: '';
     position: absolute;
-    bottom: -10px;
+    top: 50%;
     left: 50%;
     width: 0;
-    height: 1px;
-    background-color: #60a5fa;
-    transition: width 1s ease-out, left 1s ease-out;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.4s ease, height 0.4s ease;
 }
-#founder-note.is-visible::after {
-    width: 50%;
-    left: 25%;
-}
+.cta-button:hover::before { width: 200%; height: 200%; }
+
+#founder-note { position: relative; }
+#founder-note.is-visible::after { content: ''; position: absolute; bottom: -10px; left: 25%; width: 50%; height: 1px; background-color: #60a5fa; animation: draw-underline 1s ease-out forwards; }
+
+@keyframes draw-underline { from { width: 0; } to { width: 50%; } }
 
 /* --- Accessibility --- */
 @media (prefers-reduced-motion: reduce) {
-    #hero-particles, .fade-in-section, .cta-button, .roadmap-node, #founder-note::after {
-        animation: none !important;
-        transition: none !important;
-    }
+    * { animation: none !important; transition: none !important; }
     .fade-in-section { opacity: 1; transform: none; }
 }
 
