@@ -1,0 +1,96 @@
+/* --- Base and Typography --- */
+body {
+    background-color: #f8fafc; /* Tailwind slate-50 */
+    color: #1e293b; /* Tailwind slate-800 */
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+}
+
+/* --- Hero Section & Animations --- */
+.animated-gradient {
+    background: linear-gradient(45deg, #eff6ff, #dbeafe, #bfdbfe);
+    background-size: 200% 200%;
+    animation: gradient-flow 15s ease infinite;
+}
+
+@keyframes gradient-flow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.hero-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.3) 0%, transparent 3%),
+        radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.4) 0%, transparent 4%),
+        radial-gradient(circle at 25% 85%, rgba(255, 255, 255, 0.2) 0%, transparent 5%),
+        radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.3) 0%, transparent 2%);
+    background-size: 100% 100%;
+    animation: particles-flow 25s linear infinite;
+}
+
+@keyframes particles-flow {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-20px); }
+}
+
+/* --- Scroll-Triggered Animations --- */
+.fade-in-section {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.fade-in-section.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* --- Dynamic & Professional Components --- */
+
+.feature-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(59, 130, 246, 0.3); /* blue-500 with opacity */
+    box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1), 0 8px 10px -6px rgba(59, 130, 246, 0.1);
+}
+
+.gradient-text {
+    background: linear-gradient(to right, #3b82f6, #1d4ed8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.cta-button {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cta-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.2);
+}
+
+
+/* --- Accessibility --- */
+@media (prefers-reduced-motion: reduce) {
+    .animated-gradient,
+    .hero-particles,
+    .fade-in-section,
+    .feature-card,
+    .cta-button {
+        animation: none !important;
+        transition: none !important;
+    }
+    .fade-in-section {
+        opacity: 1;
+        transform: none;
+    }
+}
