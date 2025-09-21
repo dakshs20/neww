@@ -19,6 +19,8 @@ const provider = new GoogleAuthProvider();
 // --- Main Logic ---
 document.addEventListener('DOMContentLoaded', () => {
     
+    gsap.registerPlugin(ScrollTrigger, TextPlugin);
+
     // --- Header Authentication ---
     const headerNav = document.getElementById('header-nav');
     function updateUIForAuthState(user) {
@@ -43,12 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Animations ---
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
-        // Fallback for reduced motion
         document.querySelectorAll('.counter').forEach(c => c.textContent = c.dataset.target);
         return;
     }
-
-    gsap.registerPlugin(ScrollTrigger);
 
     // Typewriter Animation
     const words = ["imagination.", "visuals.", "reality."];
@@ -68,20 +67,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 scrollTrigger: {
                     trigger: section,
                     start: 'top 85%',
-                    toggleActions: 'play none none none'
+                    toggleActions: 'play none none none',
+                    onEnter: () => section.classList.add('is-visible')
                 }
             }
         );
     });
+    
+    // Timeline Comparison Animation
+    ScrollTrigger.create({
+        trigger: "#timeline-comparison",
+        start: "top 80%",
+        onEnter: () => {
+            gsap.to("#traditional-bar", { width: "100%", duration: 1.5, ease: "power2.inOut" });
+            gsap.to("#genart-bar", { width: "5%", duration: 1.5, ease: "power2.inOut", delay: 0.2 });
+        }
+    });
+    
+    // Tech Flow SVG Animation
+    ScrollTrigger.create({
+        trigger: "#tech-flow-svg",
+        start: "top 75%",
+        onEnter: () => document.getElementById('tech-flow-svg').classList.add('is-animating')
+    });
+
 
     // Counters Animation
     gsap.utils.toArray('.counter').forEach(counter => {
         const target = +counter.dataset.target;
-        gsap.from(counter, {
-            textContent: 0,
-            duration: 2,
-            ease: 'power2.out',
-            snap: { textContent: 1 },
+        const obj = { value: 0 };
+        gsap.to(obj, {
+            value: target,
+            duration: 2.5,
+            ease: 'power3.out',
+            onUpdate: () => {
+                counter.textContent = Math.round(obj.value);
+            },
             scrollTrigger: {
                 trigger: counter,
                 start: 'top 90%'
@@ -91,37 +112,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Roadmap Timeline Animation
     const roadmapItems = gsap.utils.toArray('.roadmap-item');
-    gsap.to(roadmapItems, {
-        scrollTrigger: {
-            trigger: "#roadmap",
-            start: "top center",
-            end: "bottom center",
-            scrub: 1,
-        },
-        onUpdate: function() {
-            const progress = this.progress;
-            const step = 1 / roadmapItems.length;
-            roadmapItems.forEach((item, i) => {
-                if (progress > (i * step)) {
+    gsap.to("#roadmap-line-progress", {
+      width: "100%",
+      scrollTrigger: {
+        trigger: "#roadmap",
+        start: "top center",
+        end: "bottom bottom",
+        scrub: 1,
+        onUpdate: (self) => {
+            const progress = self.progress;
+            const step = 1 / (roadmapItems.length - 1);
+             roadmapItems.forEach((item, i) => {
+                if (progress >= i * step) {
                     item.classList.add('is-active');
                 } else {
                     item.classList.remove('is-active');
                 }
             });
         }
+      }
     });
     
      // Founder's Note Underline Animation
-     gsap.from("#founder-note", {
-        scrollTrigger: {
-            trigger: "#founder-note",
-            start: "top 80%",
-            onEnter: () => document.getElementById('founder-note').classList.add('is-visible')
-        }
+     ScrollTrigger.create({
+        trigger: "#founder-note",
+        start: "top 80%",
+        onEnter: () => document.getElementById('founder-note').classList.add('is-visible')
     });
 
 });
-
-// GSAP TextPlugin for typewriter
-gsap.registerPlugin(TextPlugin);
 
