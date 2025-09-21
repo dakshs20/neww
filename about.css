@@ -5,68 +5,75 @@ body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
 }
 
-/* --- Hero Section & Animations --- */
+.section-title { @apply text-3xl md:text-5xl font-bold text-white mb-6; }
+.section-subtitle { @apply text-lg md:text-xl text-slate-400 leading-relaxed max-w-3xl mx-auto; }
+
+/* --- Hero Section --- */
 #hero-particles {
-    position: absolute;
-    inset: 0;
-    background-color: #0f172a;
-    overflow: hidden;
+    position: absolute; inset: 0; background-color: #0f172a; overflow: hidden;
 }
 #hero-particles::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(circle at 25% 30%, rgba(59, 130, 246, 0.2) 0%, transparent. 25%),
-                      radial-gradient(circle at 75% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 30%);
-    animation: particles-float 20s ease-in-out infinite;
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 25% 30%, rgba(59, 130, 246, 0.15) 0%, transparent 30%),
+                      radial-gradient(circle at 75% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 35%);
+    animation: particles-float 25s ease-in-out infinite;
 }
-
 @keyframes particles-float {
-    0% { transform: translate(0, 0); }
-    50% { transform: translate(-20px, 10px); }
-    100% { transform: translate(0, 0); }
+    0% { transform: translate(0, 0); } 50% { transform: translate(-25px, 15px); } 100% { transform: translate(0, 0); }
 }
-
 .cursor { animation: blink 1s step-end infinite; }
-@keyframes blink {
-    from, to { color: transparent; }
-    50% { color: #60a5fa; } /* blue-400 */
+@keyframes blink { from, to { color: transparent; } 50% { color: #60a5fa; } }
+
+.cta-button {
+    @apply inline-block font-semibold px-6 py-3 rounded-full transition-all duration-300;
+}
+.cta-button.primary {
+    @apply bg-blue-600 text-white hover:bg-blue-500 transform hover:scale-105 shadow-lg shadow-blue-600/20;
+}
+.cta-button.secondary {
+    @apply bg-slate-700/50 text-slate-300 hover:bg-slate-700 border border-slate-600;
 }
 
-/* --- Why Speed Matters: Animated Infographic --- */
-.workflow-track { margin-bottom: 2rem; }
-.workflow-label { color: #94a3b8; margin-bottom: 0.5rem; display: block; }
-.icons-container { display: flex; justify-content: space-between; background: #1e293b; padding: 0.5rem; border-radius: 99px; }
-.icon-step {
+.micro-demo {
+    @apply bg-slate-800/50 p-4 rounded-2xl border border-slate-700 backdrop-blur-lg;
+}
+.prompt-input-demo {
+    @apply text-sm text-slate-400 bg-slate-900 p-3 rounded-lg mb-3 border border-slate-700;
+}
+#demo-thumbnail {
+    @apply rounded-lg w-full h-auto;
+}
+
+/* --- Metrics Section --- */
+.metric-card {
+    @apply bg-slate-900 p-6 rounded-lg border border-slate-800 transition-all duration-300;
+}
+.metric-card:hover {
+    @apply transform -translate-y-2 border-blue-500/50;
+}
+.metric-card h4 {
+    @apply text-4xl md:text-5xl font-bold text-white;
+}
+.metric-card p {
+    @apply text-sm text-slate-400 mt-2;
+}
+
+
+/* --- How GenArt Works --- */
+.pipeline-card {
+    @apply bg-slate-800/80 p-8 rounded-xl border border-slate-700 transition-all duration-300 relative overflow-hidden;
+    transform: translateY(20px);
     opacity: 0;
-    transform: scale(0.5);
-    padding: 0.5rem 1rem;
-    background: #334155;
-    border-radius: 99px;
-    color: #cbd5e1;
-    font-size: 0.875rem;
 }
-.icon-step.genart-icon { background: #2563eb; color: white; }
-
-/* --- Technology Section: SVG Animation --- */
-.tech-card {
-    transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
-    border: 1px solid transparent;
-    border-radius: 1rem;
-    padding: 2rem;
-    background: #1e293b;
+.pipeline-card:hover {
+    @apply transform -translate-y-2 border-blue-500/50;
 }
-.tech-card:hover {
-    transform: translateY(-10px);
-    border-color: rgba(59, 130, 246, 0.3);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 40px rgba(59, 130, 246, 0.2);
+.pipeline-card .pipeline-icon {
+    @apply w-12 h-12 bg-blue-600/20 border border-blue-500/30 rounded-lg mb-4;
 }
-.tech-list li { opacity: 0; transform: translateX(-20px); }
-
-#tech-flow-svg .node circle { fill: #334155; stroke: #475569; stroke-width: 2; transition: all 0.5s ease; }
-#tech-flow-svg .node text { fill: #94a3b8; font-size: 14px; text-anchor: middle; font-weight: 500; }
-#tech-flow-svg .connector-bg { stroke: #334155; stroke-width: 4; }
-#tech-flow-svg .connector-flow { stroke: #3b82f6; stroke-width: 4; stroke-dasharray: 200; stroke-dashoffset: 200; filter: url(#glow); }
+.pipeline-card h3 {
+    @apply text-xl font-bold text-white mb-2;
+}
 
 /* --- Roadmap / Timeline --- */
 #roadmap { display: flex; justify-content: space-between; position: relative; padding-top: 2rem; }
@@ -82,10 +89,10 @@ body {
     transform: scale(1.25);
     box-shadow: 0 0 25px 5px rgba(96, 165, 250, 0.6);
 }
-.text-content { margin-top: 1.5rem; opacity: 0.5; transition: all 0.4s ease; }
-.text-content h3 { font-size: 1.5rem; font-weight: bold; color: #94a3b8; transition: color 0.4s ease; }
-.text-content p { color: #64748b; }
-.roadmap-item.is-active .text-content { opacity: 1; transform: translateY(-5px); }
+.text-content { margin-top: 1.5rem; opacity: 0.5; transform: translateY(10px); transition: all 0.4s ease; }
+.text-content h3 { font-size: 1.25rem; font-weight: bold; color: #94a3b8; transition: color 0.4s ease; }
+.text-content p { color: #64748b; font-size: 0.875rem; }
+.roadmap-item.is-active .text-content { opacity: 1; transform: translateY(0); }
 .roadmap-item.is-active h3 { color: white; }
 
 @media (max-width: 768px) {
@@ -95,49 +102,8 @@ body {
     .text-content { margin-top: 0; }
 }
 
-/* --- General Animations & Components --- */
-.fade-in-section { opacity: 0; }
-.gradient-text { background: linear-gradient(to right, #60a5fa, #818cf8); -webkit-background-clip: text; background-clip: text; color: transparent; }
-
-.cta-button {
-    display: inline-block;
-    font-weight: 600;
-    font-size: 1.25rem;
-    padding: 1.25rem 2.5rem;
-    border-radius: 9999px;
-    position: relative;
-    overflow: hidden;
-    color: white;
-    background-color: #2563eb; /* blue-600 */
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-}
-.cta-button:hover { 
-    transform: scale(1.05); 
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.8);
-}
-.cta-button::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: width 0.4s ease, height 0.4s ease;
-}
-.cta-button:hover::before { width: 200%; height: 200%; }
-
-#founder-note { position: relative; }
-#founder-note.is-visible::after { content: ''; position: absolute; bottom: -10px; left: 25%; width: 50%; height: 1px; background-color: #60a5fa; animation: draw-underline 1s ease-out forwards; }
-
-@keyframes draw-underline { from { width: 0; } to { width: 50%; } }
-
 /* --- Accessibility --- */
 @media (prefers-reduced-motion: reduce) {
     * { animation: none !important; transition: none !important; }
-    .fade-in-section { opacity: 1; }
 }
 
