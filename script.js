@@ -25,6 +25,7 @@ let isGenerating = false;
 let currentAspectRatio = '1:1';
 let uploadedImageData = null;
 let isFetchingMore = false;
+let timerInterval;
 
 // The full list of gallery images.
 const ALL_IMAGE_URLS = [
@@ -36,9 +37,6 @@ const ALL_IMAGE_URLS = [
     "https://iili.io/K7bP679.md.png"
 ];
 
-// Start index for infinite scroll, after the initial hardcoded images.
-let nextImageIndex = 10; 
-
 // --- DOM Element Caching ---
 const DOMElements = {};
 
@@ -48,14 +46,16 @@ document.addEventListener('DOMContentLoaded', () => {
         'prompt-input', 'generate-btn', 'generate-icon', 'loading-spinner',
         'image-upload-btn', 'image-upload-input', 'remove-image-btn',
         'image-preview-container', 'image-preview', 'masonry-gallery', 'gallery-container', 'loader',
-        'ratio-btn', 'ratio-options', 'header-blur-overlay'
+        'ratio-btn', 'ratio-options', 'header-blur-overlay',
+        'loading-overlay', 'timer-text', 'preview-modal', 'preview-image', 
+        'download-btn', 'close-preview-btn'
     ];
     ids.forEach(id => DOMElements[id.replace(/-./g, c => c[1].toUpperCase())] = document.getElementById(id));
     
     DOMElements.closeModalBtns = document.querySelectorAll('.close-modal-btn');
 
     initializeEventListeners();
-    initializeImageLoading(); // New function for instant loading effect
+    initializeImageLoading();
     onAuthStateChanged(auth, user => {
         currentUser = user;
         updateUIForAuthState(user);
@@ -67,11 +67,9 @@ function initializeEventListeners() {
     DOMElements.closeModalBtns.forEach(btn => btn.addEventListener('click', closeAllModals));
     DOMElements.generateBtn?.addEventListener('click', handleImageGenerationRequest);
     
-    // New: Listen for 'Enter' key press on the prompt input
     DOMElements.promptInput?.addEventListener('keydown', (event) => {
-        // Trigger generation if Enter is pressed without the Shift key
         if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault(); // Prevents adding a new line in the textarea
+            event.preventDefault();
             handleImageGenerationRequest();
         }
     });
@@ -80,7 +78,11 @@ function initializeEventListeners() {
     DOMElements.imageUploadInput?.addEventListener('change', handleImageUpload);
     DOMElements.removeImageBtn?.addEventListener('click', removeUploadedImage);
 
-    // Aspect Ratio Dropdown
+    // Dropdowns and Scroll listeners
+    setupUIInteractions();
+}
+
+function setupUIInteractions() {
     DOMElements.ratioBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         DOMElements.ratioOptions.classList.toggle('hidden');
@@ -95,62 +97,43 @@ function initializeEventListeners() {
         });
     });
 
-    // Combined Scroll Listener for Gallery
     DOMElements.galleryContainer.addEventListener('scroll', () => {
         const { scrollTop, scrollHeight, clientHeight } = DOMElements.galleryContainer;
         
-        // Header blur fade effect
-        if (scrollTop > 20) { 
-            DOMElements.headerBlurOverlay.classList.add('opacity-100');
-        } else {
-            DOMElements.headerBlurOverlay.classList.remove('opacity-100');
-        }
+        if (scrollTop > 20) DOMElements.headerBlurOverlay.classList.add('opacity-100');
+        else DOMElements.headerBlurOverlay.classList.remove('opacity-100');
 
-        // Infinite scroll logic
         if (scrollTop + clientHeight >= scrollHeight - 300 && !isFetchingMore) {
             fetchMoreImages();
         }
     });
 }
 
-// --- NEW: Instant Image Loading Logic ---
 function initializeImageLoading() {
-    const images = document.querySelectorAll('.masonry-item img');
-    images.forEach(img => {
-        // If image is already cached by the browser, reveal it instantly
-        if (img.complete) {
-            img.classList.add('loaded');
-        } else {
-            // Otherwise, add an event listener to reveal it when it's done
-            img.addEventListener('load', () => {
-                img.classList.add('loaded');
-            });
-        }
+    document.querySelectorAll('.masonry-item img').forEach(img => {
+        if (img.complete) img.classList.add('loaded');
+        else img.addEventListener('load', () => img.classList.add('loaded'));
     });
 }
 
-
-// --- UI & State Management ---
-
+// --- Auth & User State ---
 function updateUIForAuthState(user) {
     const nav = DOMElements.headerNav;
     if (!nav) return;
-
     if (user) {
         nav.innerHTML = `
             <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Pricing</a>
             <div id="generation-counter" class="text-sm font-medium text-gray-700">Loading...</div>
             <button id="auth-action-btn" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Sign Out</button>
         `;
-        document.getElementById('auth-action-btn').addEventListener('click', () => signOut(auth));
+        nav.querySelector('#auth-action-btn').addEventListener('click', () => signOut(auth));
         fetchUserCredits(user);
     } else {
         nav.innerHTML = `
             <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Pricing</a>
             <button id="auth-action-btn" class="text-sm font-medium bg-blue-600 text-white px-4 py-1.5 rounded-full hover:bg-blue-700 transition-all">Sign In</button>
         `;
-        // Directly trigger the sign-in process instead of showing the modal
-        document.getElementById('auth-action-btn').addEventListener('click', signInWithGoogle);
+        nav.querySelector('#auth-action-btn').addEventListener('click', signInWithGoogle);
     }
 }
 
@@ -170,58 +153,43 @@ async function fetchUserCredits(user) {
     }
 }
 
-
-// --- Image Gallery & Infinite Scroll ---
-
+// --- Gallery Management ---
 function addImageToGallery(imageUrl, isNew = false) {
-    const gallery = DOMElements.masonryGallery;
+    const columns = Array.from(document.querySelectorAll('.masonry-column'));
+    if (!columns.length) return;
+
+    // Find the shortest column to add the next image
+    const shortestColumn = columns.reduce((shortest, column) => 
+        column.offsetHeight < shortest.offsetHeight ? column : shortest
+    , columns[0]);
+
     const item = document.createElement('div');
     item.className = 'masonry-item';
     const img = document.createElement('img');
     img.src = imageUrl;
     img.className = 'rounded-lg w-full h-auto block';
-    img.loading = 'lazy';
     img.alt = 'Generated Art';
-    
-    // Apply the same loading logic to dynamically added images
-    if (img.complete) {
-        img.classList.add('loaded');
-    } else {
-        img.addEventListener('load', () => {
-            img.classList.add('loaded');
-        });
-    }
 
+    if (img.complete) img.classList.add('loaded');
+    else img.addEventListener('load', () => img.classList.add('loaded'));
+    
     item.appendChild(img);
 
     if (isNew) {
-        gallery.insertBefore(item, gallery.firstChild);
+        shortestColumn.insertBefore(item, shortestColumn.firstChild);
     } else {
-        gallery.appendChild(item);
+        shortestColumn.appendChild(item);
     }
 }
 
 function fetchMoreImages() {
-    if (nextImageIndex >= ALL_IMAGE_URLS.length) {
-        DOMElements.loader.style.display = 'none';
-        return;
-    }
-
-    isFetchingMore = true;
-    DOMElements.loader.style.display = 'block';
-
-    setTimeout(() => {
-        const imagesToLoad = ALL_IMAGE_URLS.slice(nextImageIndex, nextImageIndex + 5);
-        imagesToLoad.forEach(url => addImageToGallery(url));
-        nextImageIndex += 5;
-        isFetchingMore = false;
-        DOMElements.loader.style.display = 'none';
-    }, 1000);
+    // This is a placeholder for fetching from a real backend.
+    // For now, it just stops.
+    DOMElements.loader.style.display = 'none';
 }
 
 
-// --- Generation Logic ---
-
+// --- Generation Flow ---
 async function handleImageGenerationRequest() {
     if (isGenerating) return;
     if (!currentUser) {
@@ -238,55 +206,54 @@ async function handleImageGenerationRequest() {
         setTimeout(() => DOMElements.promptInput.classList.remove('placeholder-red-400'), 1000);
         return;
     }
-    
     generateImage(prompt);
 }
 
 async function generateImage(prompt) {
     setLoadingState(true);
+    startGenerationTimer(); // Start the 17s timer
     try {
         const token = await currentUser.getIdToken();
         
-        const deductResponse = await fetch('/api/credits', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }});
-        if (!deductResponse.ok) throw new Error('Credit deduction failed');
+        await fetch('/api/credits', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` }});
         
-        const body = { prompt, aspectRatio: currentAspectRatio };
-        if (uploadedImageData) {
-            body.imageData = uploadedImageData;
-        }
+        const body = { prompt, aspectRatio: currentAspectRatio, ...(uploadedImageData && { imageData: uploadedImageData }) };
 
-        const generateResponse = await fetch('/api/generate', {
+        const response = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(body)
         });
-        if (!generateResponse.ok) {
-            const errorData = await generateResponse.json();
-            throw new Error(errorData.error || 'API generation failed');
-        }
+
+        if (!response.ok) throw new Error((await response.json()).error || 'API generation failed');
         
-        const result = await generateResponse.json();
-        
+        const result = await response.json();
         const base64Data = uploadedImageData 
             ? result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data 
             : result.predictions?.[0]?.bytesBase64Encoded;
 
         if (!base64Data) throw new Error("No image data in API response");
         
-        addImageToGallery(`data:image/png;base64,${base64Data}`, true);
+        const imageUrl = `data:image/png;base64,${base64Data}`;
+        
+        // Stop timer and show preview modal
+        clearInterval(timerInterval);
+        DOMElements.loadingOverlay.classList.add('hidden');
+        showPreviewModal(imageUrl);
+
         await fetchUserCredits(currentUser);
         resetPromptBar();
 
     } catch (error) {
         console.error("Generation Error:", error);
+        clearInterval(timerInterval); // Ensure timer stops on error
+        DOMElements.loadingOverlay.classList.add('hidden');
     } finally {
         setLoadingState(false);
     }
 }
 
-
-// --- Image Upload Handling ---
-
+// --- Image Upload ---
 function handleImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -308,7 +275,43 @@ function removeUploadedImage() {
 }
 
 
-// --- UI Helpers ---
+// --- UI Helpers (Modals, Timers, etc.) ---
+function startGenerationTimer() {
+    let countdown = 17;
+    DOMElements.timerText.textContent = `${countdown}s`;
+    DOMElements.loadingOverlay.classList.remove('hidden');
+
+    timerInterval = setInterval(() => {
+        countdown--;
+        if (countdown >= 0) {
+            DOMElements.timerText.textContent = `${countdown}s`;
+        } else {
+            // Let it sit at 0s if generation is slow
+            DOMElements.timerText.textContent = '0s';
+            clearInterval(timerInterval);
+        }
+    }, 1000);
+}
+
+function showPreviewModal(imageUrl) {
+    DOMElements.previewImage.src = imageUrl;
+    DOMElements.previewModal.classList.remove('hidden');
+
+    DOMElements.downloadBtn.onclick = () => {
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = `genart-${Date.now()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
+    DOMElements.closePreviewBtn.onclick = () => {
+        DOMElements.previewModal.classList.add('hidden');
+        addImageToGallery(imageUrl, true); // Add to gallery after closing
+    };
+}
+
 
 function setLoadingState(isLoading) {
     isGenerating = isLoading;
@@ -324,13 +327,13 @@ function resetPromptBar() {
 
 function toggleModal(modal, show) {
     if (!modal) return;
+    // Use style.display for modals defined outside the main flow
+    modal.style.display = show ? 'flex' : 'none';
     modal.setAttribute('aria-hidden', String(!show));
 }
 
 function closeAllModals() {
-    document.querySelectorAll('[role="dialog"], [id*="-modal"]').forEach(modal => {
-        toggleModal(modal, false);
-    });
+    document.querySelectorAll('[role="dialog"]').forEach(modal => toggleModal(modal, false));
 }
 
 function signInWithGoogle() {
