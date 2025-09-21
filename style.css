@@ -70,5 +70,9 @@ body {
     .masonry-column:not(:first-child) {
         display: none;
     }
+
+    .masonry-item {
+        margin-bottom: 1rem; /* Add spacing between images on mobile */
+    }
 }
 
