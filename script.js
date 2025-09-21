@@ -24,7 +24,7 @@ let currentUserCredits = 0;
 let isGenerating = false;
 let currentAspectRatio = '1:1';
 let uploadedImageData = null;
-let currentPreviewInputData = null;
+let currentPreviewInputData = null; // NEW: State for the image in the preview modal
 let timerInterval;
 let isFetchingMore = false;
 let imagePage = 0;
@@ -63,19 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeEventListeners();
     onAuthStateChanged(auth, user => updateUIForAuthState(user));
-    restructureGalleryForMobile(); // Restructure the gallery on initial load for mobile
+    restructureGalleryForMobile();
 });
 
-// NEW: Function to consolidate images into one column on mobile
 function restructureGalleryForMobile() {
-    if (window.innerWidth >= 768) {
-        return; // Do nothing on desktop
-    }
-
+    if (window.innerWidth >= 768) return;
     const firstColumn = DOMElements.masonryColumns[0];
     if (!firstColumn) return;
-
-    // Consolidate all pre-rendered images into the first column
     for (let i = 1; i < DOMElements.masonryColumns.length; i++) {
         const column = DOMElements.masonryColumns[i];
         while (column.firstChild) {
@@ -263,6 +257,7 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
     setLoadingState(true);
     startTimer();
     
+    // Make a copy of the image data to pass to the backend, so we don't lose the original
     const generationInputData = imageDataSource ? {...imageDataSource} : null;
 
     try {
@@ -302,6 +297,7 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         
         addImageToMasonry(imageUrl, true);
 
+        // Pass the original input image data to the preview modal
         showPreviewModal(imageUrl, prompt, generationInputData);
 
     } catch (error) {
@@ -372,7 +368,6 @@ function addImageToMasonry(url, prepend = false) {
     };
     item.appendChild(img);
 
-    // If on mobile, always use the first column. Otherwise, distribute.
     if (window.innerWidth < 768) {
         const firstColumn = DOMElements.masonryColumns[0];
         if (prepend) {
@@ -425,8 +420,10 @@ function showPreviewModal(imageUrl, prompt, inputImageData) {
     DOMElements.previewImage.src = imageUrl;
     DOMElements.previewPromptInput.value = prompt;
 
+    // Store the input image data for this specific preview session
     currentPreviewInputData = inputImageData;
 
+    // Show or hide the input image section based on whether one was used
     if (inputImageData) {
         const dataUrl = `data:${inputImageData.mimeType};base64,${inputImageData.data}`;
         DOMElements.previewInputImage.src = dataUrl;
