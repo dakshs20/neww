@@ -149,7 +149,8 @@ function updateUIForAuthState(user) {
             <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Pricing</a>
             <button id="auth-action-btn" class="text-sm font-medium bg-blue-600 text-white px-4 py-1.5 rounded-full hover:bg-blue-700 transition-all">Sign In</button>
         `;
-        document.getElementById('auth-action-btn').addEventListener('click', () => toggleModal(DOMElements.authModal, true));
+        // Directly trigger the sign-in process instead of showing the modal
+        document.getElementById('auth-action-btn').addEventListener('click', signInWithGoogle);
     }
 }
 
