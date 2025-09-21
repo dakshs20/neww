@@ -25,130 +25,101 @@
 
     <main>
         <!-- 1. Hero Section -->
-        <section class="relative h-screen flex flex-col items-center justify-center text-center p-4 overflow-hidden">
+        <section class="relative h-screen flex items-center p-4 overflow-hidden">
             <div id="hero-particles" class="absolute inset-0"></div>
-            <div class="z-10">
-                <h1 class="text-4xl md:text-6xl font-bold text-white max-w-4xl mb-4" id="hero-headline">Creativity should never wait.</h1>
-                <p class="text-lg md:text-xl text-slate-400 max-w-3xl mx-auto mb-8" id="hero-subline">
-                    GenArt is the world’s fastest AI image generation platform — built to accelerate <span id="typewriter" class="font-bold text-blue-400"></span><span class="cursor">|</span>
-                </p>
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-center z-10">
+                <div>
+                    <h1 class="text-4xl md:text-6xl font-bold text-white max-w-xl text-left" id="hero-headline">Creativity should never wait.</h1>
+                    <p class="text-lg md:text-xl text-slate-400 max-w-xl text-left mt-6" id="hero-subline">
+                        GenArt accelerates imagination — turning ideas into professional imagery in seconds for creators, teams, and enterprises.
+                    </p>
+                    <div class="flex flex-col sm:flex-row items-start gap-4 mt-8" id="hero-cta">
+                        <a href="index.html" class="cta-button primary">Try GenArt — Create your first image</a>
+                        <a href="#speed-infographic" class="cta-button secondary">See live demo</a>
+                    </div>
+                </div>
+                <div class="hidden lg:flex justify-center">
+                    <div class="micro-demo">
+                        <div class="prompt-input-demo">A futuristic city skyline at dusk...</div>
+                        <img id="demo-thumbnail" src="https://iili.io/K7y1cUN.md.png" alt="Generated city skyline" />
+                    </div>
+                </div>
             </div>
         </section>
 
-        <!-- 2. Why Speed Matters -->
+        <!-- 2. Snapshot / Live Metrics -->
+        <section class="py-16 bg-slate-800/50 border-y border-slate-700/50">
+            <div class="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                <div class="metric-card"><h4 class="counter" data-target="50">0</h4><p>Million+ Generations</p></div>
+                <div class="metric-card"><h4 class="counter-decimal" data-target="4">0</h4><p>Seconds Avg. Time</p></div>
+                <div class="metric-card"><h4 class="counter" data-target="50">0</h4><p>Countries Served</p></div>
+                <div class="metric-card"><h4 class="counter" data-target="1200">0</h4><p>Enterprise Customers</p></div>
+            </div>
+        </section>
+
+        <!-- 3. Why Speed Matters -->
         <section class="py-20 md:py-32">
             <div class="max-w-5xl mx-auto px-6 text-center">
-                <h2 class="section-title">In the Creative Economy, <br> Speed is the Ultimate Advantage.</h2>
+                <h2 class="section-title">Why speed matters.</h2>
                 <p class="section-subtitle">
-                    Ideas can’t wait hours to be designed or rendered — they need to exist now. GenArt compresses a process that once took days into seconds, making creativity limitless.
+                    In modern product and marketing cycles, visual iteration is the rate-limiting step. Faster image generation means faster decisions, faster campaigns, and more experiments. When ideas can be visualized in seconds, teams test more concepts, creative directors iterate more boldly, and brands capture cultural moments — not chase them.
                 </p>
-                <div id="speed-infographic" class="w-full max-w-4xl mx-auto text-left mt-20">
-                    <div class="workflow-track">
-                        <span class="workflow-label">Traditional Workflow</span>
-                        <div class="icons-container" id="traditional-icons">
-                            <div class="icon-step"><span>Brief</span></div><div class="icon-connector"></div>
-                            <div class="icon-step"><span>Sketch</span></div><div class="icon-connector"></div>
-                            <div class="icon-step"><span>Render</span></div><div class="icon-connector"></div>
-                            <div class="icon-step"><span>Feedback</span></div><div class="icon-connector"></div>
-                            <div class="icon-step"><span>Final</span></div>
-                        </div>
-                    </div>
-                    <div class="workflow-track">
-                        <span class="workflow-label">GenArt Workflow</span>
-                        <div class="icons-container" id="genart-icons">
-                             <div class="icon-step genart-icon"><span>Prompt</span></div><div class="icon-connector genart-connector"></div>
-                             <div class="icon-step genart-icon"><span>Generate</span></div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </section>
 
-        <!-- 3. The Technology -->
-        <section class="py-20 md:py-32 bg-slate-800/50">
-            <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                <div class="text-left tech-card">
-                    <h2 class="section-title text-left">AI Made Human</h2>
-                    <p class="section-subtitle text-left">Our models learn from millions of visual patterns to translate human intent into stunning visuals instantly, focusing on three core principles:</p>
-                    <ul class="list-none space-y-4 mt-8 tech-list">
-                        <li><strong class="text-blue-400">Fidelity:</strong> High-resolution, professional-grade outputs.</li>
-                        <li><strong class="text-blue-400">Control:</strong> Unmatched style and composition control.</li>
-                        <li><strong class="text-blue-400">Safety:</strong> Built-in safeguards for responsible creativity.</li>
-                    </ul>
-                </div>
-                <div class="flex items-center justify-center h-64 md:h-96">
-                     <svg id="tech-flow-svg" viewBox="0 0 400 200">
-                        <defs><filter id="glow"><feGaussianBlur stdDeviation="3.5" result="coloredBlur"></feGaussianBlur><feMerge><feMergeNode in="coloredBlur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter></defs>
-                        <path class="connector-bg" d="M 100 100 H 300"></path>
-                        <path class="connector-flow" d="M 100 100 H 300"></path>
-                        <g class="node" id="node-prompt"><circle cx="100" cy="100" r="20"></circle><text x="100" y="105">Prompt</text></g>
-                        <g class="node" id="node-model"><circle cx="200" cy="100" r="25"></circle><text x="200" y="105">AI Model</text></g>
-                        <g class="node" id="node-image"><circle cx="300" cy="100" r="20"></circle><text x="300" y="105">Image</text></g>
-                    </svg>
-                </div>
-            </div>
-        </section>
-
-        <!-- 4. Future Launches (Roadmap) -->
+        <!-- 4. How GenArt Works -->
         <section class="py-20 md:py-32">
+            <div class="max-w-6xl mx-auto px-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                    <div class="pipeline-card"><div class="pipeline-icon"></div><h3>Prompt</h3><p>Tell GenArt what you want — a brief, a mood, or an uploaded asset.</p></div>
+                    <div class="pipeline-card"><div class="pipeline-icon"></div><h3>Model</h3><p>Our pipeline translates your intent using optimized models and style controls.</p></div>
+                    <div class="pipeline-card"><div class="pipeline-icon"></div><h3>Image</h3><p>A polished asset ready for export, editing, or scaling for campaigns.</p></div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 5. Product Ecosystem & Roadmap -->
+        <section class="py-20 md:py-32 bg-slate-800/50">
             <div class="max-w-5xl mx-auto px-6 text-center">
                  <h2 class="section-title mb-24">The GenArt Ecosystem</h2>
                  <div id="roadmap" class="relative">
                     <div class="roadmap-line"></div>
                     <div class="roadmap-item" data-index="0">
                         <div class="roadmap-node"></div>
-                        <div class="text-content"><h3>Image</h3><p>Live now</p></div>
+                        <div class="text-content"><h3>Images (Now)</h3><p>The fastest image generation engine for professional-quality outputs.</p></div>
                     </div>
                      <div class="roadmap-item" data-index="1">
                         <div class="roadmap-node"></div>
-                        <div class="text-content"><h3>Verse (Text)</h3><p>Coming soon</p></div>
+                        <div class="text-content"><h3>Verse (Q4)</h3><p>Our text-to-text AI for briefs, scripts, ad copy, and storyboards.</p></div>
                     </div>
                      <div class="roadmap-item" data-index="2">
                         <div class="roadmap-node"></div>
-                        <div class="text-content"><h3>Video</h3><p>In development</p></div>
+                        <div class="text-content"><h3>Video (Beta)</h3><p>AI-powered video generation, from short-form ads to cinematic prototypes.</p></div>
                     </div>
                      <div class="roadmap-item" data-index="3">
                         <div class="roadmap-node"></div>
-                        <div class="text-content"><h3>Enterprise</h3><p>In development</p></div>
+                        <div class="text-content"><h3>Enterprise</h3><p>Team dashboards, API keys, and dedicated SLAs for organizations.</p></div>
                     </div>
                  </div>
             </div>
         </section>
 
-        <!-- 5. Impact & Industries -->
-        <section class="py-20 md:py-32 bg-slate-800/50">
-            <div class="max-w-6xl mx-auto px-6 text-center">
-                <h2 class="section-title">Transforming Industries Worldwide</h2>
-                <p class="section-subtitle">GenArt is already used in design, advertising, gaming, film, and education in over 50 countries.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 mt-20">
-                    <div class="stat-card">
-                        <h4 class="text-6xl md:text-7xl font-bold gradient-text counter" data-target="50">0</h4>
-                        <p class="mt-2 text-xl text-slate-400">Million+ Generations</p>
-                    </div>
-                    <div class="stat-card">
-                        <h4 class="text-6xl md:text-7xl font-bold gradient-text counter" data-target="150">0</h4>
-                        <p class="mt-2 text-xl text-slate-400">Thousand+ Creators</p>
-                    </div>
-                </div>
+        <!-- 6. Research, Safety & Responsible AI -->
+        <section class="py-20 md:py-32">
+            <div class="max-w-4xl mx-auto px-6 text-center">
+                <h2 class="section-title">Responsible by Design</h2>
+                <p class="section-subtitle">
+                    Our research focuses on balancing creativity with safety. We employ automated moderation, watermarking options, model cards, and human-in-the-loop review for sensitive categories. We publish transparency reports and maintain a public safety policy.
+                </p>
             </div>
         </section>
-
-        <!-- 7. Founder's Note -->
-        <section class="py-20 md:py-32">
-             <div class="max-w-3xl mx-auto px-6 text-center">
-                <p id="founder-note" class="text-2xl font-light italic text-slate-300 leading-relaxed">
-                   “GenArt started as a late-night experiment to solve one problem: Why should creative speed be a luxury? What began with a few lines of code is now trusted by thousands of creators worldwide. And this is just the beginning.”
-                </p>
-             </div>
-        </section>
-
-        <!-- 8. Call-to-Action -->
-        <section class="py-20 md:py-32 text-center">
+        
+        <!-- 10. Footer CTA -->
+        <section class="py-20 md:py-32 text-center border-t border-slate-700/50">
             <div class="max-w-4xl mx-auto px-6">
-                <a href="index.html" class="cta-button">
-                    <span>Try GenArt Now</span>
-                </a>
-                <p class="mt-6 text-slate-400">Be part of the future of AI creativity — Verse and Video coming soon.</p>
+                <h2 class="text-3xl md:text-5xl font-bold text-white mb-8">Get Started with GenArt</h2>
+                <a href="index.html" class="cta-button primary">Try GenArt Free</a>
+                <p class="mt-8 text-slate-400">For enterprise solutions & SLAs, <a href="#" class="text-blue-400 hover:underline">contact sales</a>.</p>
             </div>
         </section>
     </main>
