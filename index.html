@@ -127,16 +127,16 @@
         <div id="timer-text" class="text-white text-6xl font-bold">17s</div>
     </div>
 
-    <!-- UPDATED: Split-Screen Image Preview Modal -->
+    <!-- UPDATED: Responsive Split-Screen Image Preview Modal -->
     <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div class="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex overflow-hidden">
+        <div class="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
             <!-- Left Side: Image -->
-            <div class="w-1/2 bg-gray-100 flex items-center justify-center p-4">
+            <div class="w-full md:w-1/2 bg-gray-100 flex items-center justify-center p-4">
                 <img id="preview-image" src="" alt="Generated Image" class="max-w-full max-h-full object-contain rounded-lg">
             </div>
 
             <!-- Right Side: Controls -->
-            <div class="w-1/2 flex flex-col p-6">
+            <div class="w-full md:w-1/2 flex flex-col p-6">
                 <h3 class="text-lg font-bold text-gray-800 mb-4">Edit & Regenerate</h3>
                 <div class="flex-grow flex flex-col">
                     <label for="preview-prompt-input" class="text-sm font-semibold text-gray-500 tracking-wider uppercase">Prompt</label>
