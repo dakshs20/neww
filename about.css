@@ -40,56 +40,92 @@ body {
     background-color: #334155; /* slate-700 */
     border-radius: 99px;
     overflow: hidden;
+    position: relative;
 }
-.timeline-progress { height: 100%; width: 0%; border-radius: 99px; }
+.timeline-progress { 
+    height: 100%; 
+    width: 0%; 
+    border-radius: 99px; 
+    transform: translateX(-100%);
+    transition: transform 1.5s ease-in-out;
+}
 .timeline-progress.traditional { background-color: #f87171; /* red-400 */ }
-.timeline-progress.genart { background-color: #3b82f6; /* blue-600 */ }
+.timeline-progress.genart { background-color: #3b82f6; /* blue-600 */ transition-delay: 0.2s; }
+
+/* Animate bars into view when section is visible */
+.fade-in-section.is-visible .timeline-progress {
+    transform: translateX(0);
+}
 
 
 /* --- Technology Section: SVG Animation --- */
 #tech-flow-svg .node circle {
     fill: #1e293b; /* slate-800 */
-    stroke: #3b82f6; /* blue-600 */
+    stroke: #475569; /* slate-600 */
     stroke-width: 2;
-    transition: fill 0.3s ease;
+    transition: all 0.4s ease;
 }
 #tech-flow-svg .node text {
-    fill: #94a3b8; /* slate-400 */
+    fill: #64748b; /* slate-500 */
     font-size: 10px;
     text-anchor: middle;
+    transition: fill 0.4s ease;
 }
 #tech-flow-svg .connector {
-    stroke: #475569; /* slate-600 */
+    stroke: #334155; /* slate-700 */
     stroke-width: 2;
     stroke-dasharray: 100;
     stroke-dashoffset: 100;
+    transition: stroke-dashoffset 1s ease-out;
 }
-/* Active animation states will be added by GSAP */
-#tech-flow-svg.is-animating .node circle { animation: pulse-node 1.5s infinite ease-in-out; }
-#tech-flow-svg.is-animating .connector { animation: draw-line 2s ease-out forwards; }
+
+/* Animate the flow when section becomes visible */
+#tech-flow-svg.is-animating #node-prompt circle { stroke: #3b82f6; animation: pulse-node 1.5s ease-in-out 0.5s infinite; }
+#tech-flow-svg.is-animating #node-prompt text { fill: #e2e8f0; }
+#tech-flow-svg.is-animating .connector:nth-of-type(1) { stroke-dashoffset: 0; transition-delay: 0.5s; }
+
+#tech-flow-svg.is-animating #node-model circle { stroke: #3b82f6; animation: pulse-node 1.5s ease-in-out 1.5s infinite; }
+#tech-flow-svg.is-animating #node-model text { fill: #e2e8f0; transition-delay: 1.5s; }
+#tech-flow-svg.is-animating .connector:nth-of-type(2) { stroke-dashoffset: 0; transition-delay: 1.5s; }
+
+#tech-flow-svg.is-animating #node-image circle { stroke: #3b82f6; animation: pulse-node 1.5s ease-in-out 2.5s infinite; }
+#tech-flow-svg.is-animating #node-image text { fill: #e2e8f0; transition-delay: 2.5s; }
+
 
 @keyframes pulse-node {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    50% { transform: scale(1.1); box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.4); }
 }
-@keyframes draw-line {
-    to { stroke-dashoffset: 0; }
-}
-
 
 /* --- Roadmap / Timeline --- */
 #roadmap { display: flex; justify-content: space-between; position: relative; }
 .roadmap-line { position: absolute; top: 10px; left: 10%; right: 10%; height: 2px; background-color: #334155; }
-.roadmap-line-progress { width: 0%; height: 100%; background-color: #3b82f6; box-shadow: 0 0 10px #3b82f6; }
+.roadmap-line-progress { width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa); box-shadow: 0 0 10px #3b82f6; }
 .roadmap-item { width: 20%; opacity: 0.5; transition: opacity 0.4s ease; }
 .roadmap-item.is-active { opacity: 1; }
 .roadmap-node { width: 20px; height: 20px; border-radius: 9999px; background-color: #334155; margin: 0 auto; transition: all 0.4s ease; }
-.roadmap-item.is-active .roadmap-node { background-color: #3b82f6; transform: scale(1.2); box-shadow: 0 0 15px 5px rgba(59, 130, 246, 0.4); }
+.roadmap-item.is-active .roadmap-node { 
+    background-color: #60a5fa; 
+    transform: scale(1.2); 
+    box-shadow: 0 0 20px 8px rgba(96, 165, 250, 0.5);
+    animation: pulse-node-roadmap 2s infinite;
+}
+.roadmap-item.is-active h3 { color: #fff; }
+.roadmap-item .text-content { opacity: 0; transform: translateY(10px); transition: opacity 0.5s ease, transform 0.5s ease; }
+.roadmap-item.is-active .text-content { opacity: 1; transform: translateY(0); }
+
+
+@keyframes pulse-node-roadmap {
+    0% { box-shadow: 0 0 20px 8px rgba(96, 165, 250, 0.5); }
+    50% { box-shadow: 0 0 25px 12px rgba(96, 165, 250, 0.3); }
+    100% { box-shadow: 0 0 20px 8px rgba(96, 165, 250, 0.5); }
+}
+
 
 @media (max-width: 768px) {
     #roadmap { flex-direction: column; align-items: center; gap: 4rem; }
     .roadmap-line { display: none; }
-    .roadmap-item { width: 80%; }
+    .roadmap-item { width: 80%; opacity: 1; } /* Always active on mobile */
 }
 
 
@@ -97,15 +133,17 @@ body {
 .fade-in-section { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease-out, transform 0.8s ease-out; }
 .fade-in-section.is-visible { opacity: 1; transform: translateY(0); }
 
-.gradient-text { background: linear-gradient(to right, #60a5fa, #3b82f6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.gradient-text { background: linear-gradient(to right, #60a5fa, #818cf8); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 .interactive-card {
-    transition: transform 0.4s ease, box-shadow 0.4s ease;
+    transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+    border: 1px solid transparent;
     border-radius: 1rem;
 }
 .interactive-card:hover {
     transform: translateY(-10px);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2), 0 0 30px rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.3);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2), 0 0 40px rgba(59, 130, 246, 0.2);
 }
 
 .cta-button {
@@ -118,9 +156,13 @@ body {
     overflow: hidden;
     color: white;
     background-color: #2563eb; /* blue-600 */
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
 }
-.cta-button:hover { transform: scale(1.05); }
+.cta-button:hover { 
+    transform: scale(1.05); 
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.8);
+}
 .cta-button::before {
     content: '';
     position: absolute;
