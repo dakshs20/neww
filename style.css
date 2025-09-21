@@ -18,7 +18,7 @@ body {
 }
 
 .masonry-item {
-    margin-bottom: 1rem;
+    /* The 'margin-bottom' was removed for better consistency, as the 'gap' on the column already handles spacing. */
     overflow: hidden;
     border-radius: 0.75rem; /* rounded-xl */
     
