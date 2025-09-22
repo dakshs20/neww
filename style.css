@@ -123,8 +123,8 @@ body {
 /* --- NEW: Desktop-specific size for Prompt Bar --- */
 @media (min-width: 768px) {
     #prompt-bar-container {
-        max-width: 900px; /* Increase max-width on desktop */
-        padding: 1rem 1.5rem; /* Increase vertical and horizontal padding */
+        max-width: 1000px; /* Increased max-width on desktop */
+        padding: 1.25rem 2rem; /* Increased vertical and horizontal padding */
     }
 }
 
