@@ -22,7 +22,7 @@ const provider = new GoogleAuthProvider();
 let currentUser;
 let currentUserCredits = 0;
 let isGenerating = false;
-let currentAspectRatio = '1:1'; // Default aspect ratio
+let currentAspectRatio = '1:1';
 let uploadedImageData = null;
 let currentPreviewInputData = null; 
 let timerInterval;
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'download-btn', 'close-preview-btn', 'regenerate-btn',
         'image-upload-btn', 'image-upload-input', 'image-preview-container', 'image-preview', 'remove-image-btn',
         'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input',
-        'hero-section', 'hero-headline', 'hero-subline', 'typewriter'
+        'hero-section', 'hero-headline', 'hero-subline', 'typewriter', 'prompt-bar-container'
     ];
     ids.forEach(id => {
         if (id) {
@@ -119,10 +119,9 @@ function initializeAnimations() {
     
     gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-    // --- NEW: Advanced Hero Animation ---
     const headline = DOMElements.heroHeadline;
     if (headline) {
-        const headlineText = headline.textContent; // Use existing text
+        const headlineText = headline.textContent;
         headline.innerHTML = headlineText.split("").map(char => `<span class="char">${char === ' ' ? '&nbsp;' : char}</span>`).join("");
         
         gsap.to(".char", {
@@ -135,16 +134,14 @@ function initializeAnimations() {
         });
     }
 
-
     gsap.to(DOMElements.heroSubline, {
         opacity: 1,
         y: 0,
         duration: 1,
         ease: 'power3.out',
-        delay: 0.5 // Delay until after headline animates
+        delay: 0.5
     });
 
-    // Typewriter effect
     const words = ["creators.", "agencies.", "enterprises."];
     let masterTl = gsap.timeline({ repeat: -1 });
     words.forEach(word => {
@@ -153,7 +150,6 @@ function initializeAnimations() {
         masterTl.add(tl);
     });
     
-    // Mouse-follow spotlight effect
     if (DOMElements.heroSection) {
         DOMElements.heroSection.addEventListener('mousemove', (e) => {
             const rect = DOMElements.heroSection.getBoundingClientRect();
@@ -168,8 +164,6 @@ function initializeAnimations() {
         });
     }
 
-
-    // Animate Stat Cards
     if (DOMElements.statCards.length > 0) {
         gsap.to(DOMElements.statCards, {
             opacity: 1,
@@ -184,7 +178,6 @@ function initializeAnimations() {
         });
     }
 
-    // Animate Counters
     if (DOMElements.counters.length > 0) {
         DOMElements.counters.forEach(counter => {
             const target = +counter.dataset.target;
@@ -253,8 +246,20 @@ function updateCreditsDisplay(amount) {
 
 function autoResizeTextarea(e) {
     const textarea = e.target;
+    const promptBarContainer = DOMElements.promptBarContainer;
+    if (!textarea || !promptBarContainer) return;
+
     textarea.style.height = 'auto';
     textarea.style.height = `${textarea.scrollHeight}px`;
+
+    const lineHeight = parseFloat(window.getComputedStyle(textarea).lineHeight);
+    const numLines = Math.round(textarea.scrollHeight / lineHeight);
+
+    if (numLines > 2) {
+        promptBarContainer.classList.add('expanded');
+    } else {
+        promptBarContainer.classList.remove('expanded');
+    }
 }
 
 function toggleModal(modal, show) {
@@ -302,10 +307,7 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
     setLoadingState(true);
     startTimer();
     
-    // If an image is uploaded, we don't send an aspect ratio. The model will detect it.
-    // If no image is uploaded, we send the user-selected ratio (defaulting to '1:1').
     const aspectRatioToSend = imageDataSource ? null : currentAspectRatio;
-    
     const generationInputData = imageDataSource ? {...imageDataSource} : null;
 
     try {
@@ -398,7 +400,6 @@ function handleImageUpload(event) {
         uploadedImageData = { mimeType: file.type, data: base64String };
         DOMElements.imagePreview.src = reader.result;
         DOMElements.imagePreviewContainer.classList.remove('hidden');
-        // Disable the ratio button as the image's own ratio will be used
         DOMElements.ratioBtn.disabled = true;
         DOMElements.ratioBtn.classList.add('opacity-50', 'cursor-not-allowed');
     };
@@ -410,7 +411,6 @@ function removeUploadedImage() {
     DOMElements.imageUploadInput.value = '';
     DOMElements.imagePreview.src = '';
     DOMElements.imagePreviewContainer.classList.add('hidden');
-    // Re-enable the ratio button
     DOMElements.ratioBtn.disabled = false;
     DOMElements.ratioBtn.classList.remove('opacity-50', 'cursor-not-allowed');
 }
