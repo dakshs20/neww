@@ -33,12 +33,12 @@
         <!-- Main Content Scroller -->
         <div id="gallery-container" class="flex-grow overflow-y-auto pt-24 pb-40">
             
-            <!-- NEW: Hero Section -->
+            <!-- Hero Section -->
             <section id="hero-section" class="text-center py-16 md:py-24 px-4">
                 <h1 id="hero-headline" class="text-4xl md:text-6xl font-bold text-gray-800 tracking-tighter">Turn imagination into visuals in seconds.</h1>
             </section>
 
-            <!-- NEW: Stats Section -->
+            <!-- Stats Section -->
             <section id="stats-section" class="py-12 px-4">
                 <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                     <div class="stat-card">
@@ -56,8 +56,11 @@
                 </div>
             </section>
 
+            <!-- NEW: Gallery Fade Overlay -->
+            <div id="gallery-fade-overlay"></div>
+
             <!-- Masonry Gallery Container -->
-            <div class="px-4">
+            <div class="px-4 relative z-0">
                 <div id="masonry-gallery">
                      <div class="masonry-column">
                         <div class="masonry-item"><img src="https://iili.io/K7bN7Hl.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
@@ -174,5 +177,4 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
-
 
