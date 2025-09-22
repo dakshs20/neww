@@ -7,11 +7,9 @@
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
-    <!-- Preload the first few critical images for faster perceived load times -->
-    <link rel="preload" as="image" href="https://iili.io/K7bN7Hl.md.png">
-    <link rel="preload" as="image" href="https://iili.io/K7bOTzP.md.png">
-    <link rel="preload" as="image" href="https://iili.io/K7yYoqN.md.png">
-    <link rel="preload" as="image" href="https://iili.io/K7bk3Ku.md.png">
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
 </head>
 <body class="bg-white overflow-hidden">
 
@@ -23,7 +21,6 @@
                 <a href="index.html">
                     <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
                 </a>
-                <!-- UPDATED: Navigation now dynamically populated by script.js -->
                 <div id="header-nav" class="flex items-center space-x-4 bg-white/70 backdrop-blur-md border border-gray-200/80 shadow-sm rounded-full px-4 py-1.5">
                     <!-- Auth state content injected by script.js -->
                 </div>
@@ -33,46 +30,58 @@
         <!-- Header Blur Overlay -->
         <div id="header-blur-overlay" class="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white via-white/80 to-transparent z-20 transition-opacity duration-300 opacity-0 pointer-events-none"></div>
 
-        <!-- Masonry Gallery Container -->
-        <div id="gallery-container" class="flex-grow overflow-y-auto pt-24 pb-40 px-4">
-            <div id="masonry-gallery">
-                 <!-- Masonry columns for images -->
-                 <div class="masonry-column">
-                    <div class="masonry-item"><img src="https://iili.io/K7bN7Hl.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
-                    <div class="masonry-item"><img src="https://iili.io/K7b6OPV.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
-                    <div class="masonry-item"><img src="https://iili.io/K7yEx14.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
-                 </div>
-                 <div class="masonry-column">
-                    <div class="masonry-item"><img src="https://iili.io/K7bOTzP.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
-                    <div class="masonry-item"><img src="https://iili.io/K7be88v.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
-                    <div class="masonry-item"><img src="https://iili.io/K7yGhS2.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
-                    <div class="masonry-item"><img src="https://iili.io/K7yVVv2.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
-                 </div>
-                 <div class="masonry-column">
-                    <div class="masonry-item"><img src="https://iili.io/K7yYoqN.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
-                    <div class="masonry-item"><img src="https://iili.io/K7b894e.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
-                     <div class="masonry-item"><img src="https://iili.io/K7bmj7R.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
-                 </div>
-                 <div class="masonry-column">
-                    <div class="masonry-item"><img src="https://iili.io/K7bk3Ku.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
-                    <div class="masonry-item"><img src="https://iili.io/K7y1cUN.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
-                    <div class="masonry-item"><img src="https://iili.io/K7b4VQR.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
-                    <div class="masonry-item"><img src="https://iili.io/K7bs5wg.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
-                 </div>
-                 <div class="masonry-column">
-                    <div class="masonry-item"><img src="https://iili.io/K7bDzpS.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
-                    <div class="masonry-item"><img src="https://iili.io/K7bP679.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
+        <!-- Main Content Scroller -->
+        <div id="gallery-container" class="flex-grow overflow-y-auto pt-24 pb-40">
+            
+            <!-- NEW: Hero Section -->
+            <section id="hero-section" class="text-center py-16 md:py-24 px-4">
+                <h1 id="hero-headline" class="text-4xl md:text-6xl font-bold text-gray-800 tracking-tighter">Turn imagination into visuals in seconds.</h1>
+            </section>
+
+            <!-- NEW: Stats Section -->
+            <section id="stats-section" class="py-12 px-4">
+                <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                    <div class="stat-card">
+                        <h3 class="counter text-4xl md:text-5xl font-bold text-blue-600" data-target="50">0</h3>
+                        <p class="text-sm text-gray-500 mt-2">Million+ Generations</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 class="counter text-4xl md:text-5xl font-bold text-blue-600" data-target="500">0</h3>
+                        <p class="text-sm text-gray-500 mt-2">K+ Happy Creators</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 class="text-4xl md:text-5xl font-bold text-blue-600">&lt;17s</h3>
+                        <p class="text-sm text-gray-500 mt-2">Avg. Generation Speed</p>
+                    </div>
                 </div>
-            </div>
-            <div id="loader" class="text-center py-8" style="display: none;">
-                <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            </section>
+
+            <!-- Masonry Gallery Container -->
+            <div class="px-4">
+                <div id="masonry-gallery">
+                     <div class="masonry-column">
+                        <div class="masonry-item"><img src="https://iili.io/K7bN7Hl.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
+                        <div class="masonry-item"><img src="https://iili.io/K7b6OPV.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
+                     </div>
+                     <div class="masonry-column">
+                        <div class="masonry-item"><img src="https://iili.io/K7bOTzP.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
+                        <div class="masonry-item"><img src="https://iili.io/K7be88v.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
+                     </div>
+                     <div class="masonry-column">
+                        <div class="masonry-item"><img src="https://iili.io/K7yYoqN.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
+                        <div class="masonry-item"><img src="https://iili.io/K7b894e.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
+                     </div>
+                     <div class="masonry-column">
+                        <div class="masonry-item"><img src="https://iili.io/K7bk3Ku.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
+                        <div class="masonry-item"><img src="https://iili.io/K7y1cUN.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Prompt Bar -->
         <footer class="absolute bottom-0 left-0 right-0 p-4 z-40">
             <div class="max-w-2xl mx-auto bg-white/70 backdrop-blur-lg border border-gray-200/80 shadow-2xl rounded-full p-3 flex items-center space-x-2">
-                 <!-- Image Upload and Preview -->
                 <div id="image-preview-container" class="hidden relative w-10 h-10 flex-shrink-0">
                     <img id="image-preview" class="w-full h-full object-cover rounded-full" src="" alt="Image preview">
                     <button id="remove-image-btn" class="absolute -top-1 -right-1 bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-black">&times;</button>
@@ -81,9 +90,7 @@
                 <button id="image-upload-btn" class="p-2.5 rounded-full hover:bg-gray-200/70 transition-colors flex-shrink-0" title="Upload Image">
                     <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path></svg>
                 </button>
-                <!-- Prompt Input -->
                 <textarea id="prompt-input" rows="1" class="w-full bg-transparent text-gray-800 placeholder-gray-500 focus:outline-none resize-none text-base py-2" placeholder="Describe your vision..."></textarea>
-                 <!-- Aspect Ratio Selector -->
                 <div class="relative flex-shrink-0">
                     <button id="ratio-btn" class="p-2.5 rounded-full hover:bg-gray-200/70 transition-colors" title="Aspect Ratio">
                         <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
@@ -95,7 +102,6 @@
                         <button class="ratio-option w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md" data-ratio="4:5">Instagram <span class="text-xs opacity-60">4:5</span></button>
                     </div>
                 </div>
-                <!-- Generate Button -->
                 <button id="generate-btn" class="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-all duration-300 flex-shrink-0 disabled:bg-blue-400" aria-label="Generate">
                     <svg id="generate-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"></path></svg>
                     <svg id="loading-spinner" class="hidden animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -121,57 +127,40 @@
             <button class="close-modal-btn mt-4 text-sm text-gray-500 hover:text-gray-700">Not now</button>
         </div>
     </div>
-    
-    <!-- Loading Timer Overlay -->
     <div id="loading-overlay" class="hidden fixed inset-0 bg-black/50 backdrop-blur-md z-50 flex items-center justify-center flex-col space-y-4">
         <p class="text-white text-lg font-medium">Generating your masterpiece...</p>
         <div id="timer-text" class="text-white text-6xl font-bold">17s</div>
     </div>
-
-    <!-- Image Preview Modal -->
-    <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4 md:p-8">
+    <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4">
         <div class="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
-            <!-- Left Side: Image -->
-            <div class="relative md:w-1/2 flex items-center justify-center bg-gray-100 p-4">
-                 <img id="preview-image" src="" alt="Generated Image" class="max-w-full max-h-full object-contain rounded-lg">
+            <div class="md:w-2/3 h-64 md:h-auto bg-gray-100 flex items-center justify-center">
+                <img id="preview-image" src="" alt="Generated Image" class="max-w-full max-h-full object-contain">
             </div>
-            <!-- Right Side: Edit & Regenerate -->
-            <div class="md:w-1/2 flex flex-col p-6">
-                <h3 class="text-xl font-bold text-gray-800">Edit & Regenerate</h3>
-                
-                <!-- Input Image Section -->
-                <div id="preview-input-image-container" class="mt-4 hidden">
-                    <label class="text-sm font-semibold text-gray-500 tracking-wider uppercase">Your Image</label>
-                    <div class="relative mt-2 w-24 h-24 rounded-lg overflow-hidden">
-                         <img id="preview-input-image" src="" class="w-full h-full object-cover">
-                         <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                            <button id="change-input-image-btn" class="text-white p-1" title="Change Image">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5m-4-1v-4m0 0H8m4 0h4m-4 4v4m0 0H8m4 0h4"></path></svg>
-                            </button>
-                             <button id="remove-input-image-btn" class="text-white p-1" title="Remove Image">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                         </div>
+            <div class="md:w-1/3 p-6 flex flex-col">
+                <h3 class="text-lg font-bold text-gray-800">Edit & Regenerate</h3>
+                <div id="preview-input-image-container" class="hidden mt-4">
+                    <label class="text-sm font-semibold text-gray-500">YOUR UPLOADED IMAGE</label>
+                    <div class="relative mt-2">
+                        <img id="preview-input-image" src="" class="w-24 h-24 object-cover rounded-lg">
+                        <div class="absolute top-2 right-2 flex flex-col space-y-1">
+                            <button id="change-input-image-btn" class="bg-white/80 p-1 rounded-full text-gray-700 hover:bg-white"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5m-4-1v-4m0 0H8m4 0h4m-4 4v4m0 0H8m4 0h4m-4-4l-4-4m8 8l4-4"></path></svg></button>
+                            <input type="file" id="preview-image-upload-input" class="hidden" accept="image/png, image/jpeg">
+                            <button id="remove-input-image-btn" class="bg-white/80 p-1 rounded-full text-gray-700 hover:bg-white"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                        </div>
                     </div>
-                    <input type="file" id="preview-image-upload-input" class="hidden" accept="image/png, image/jpeg">
                 </div>
-
-                <!-- Prompt Section -->
                 <div class="mt-4 flex-grow flex flex-col">
-                    <label class="text-sm font-semibold text-gray-500 tracking-wider uppercase">Prompt</label>
-                    <textarea id="preview-prompt-input" rows="6" class="mt-2 w-full flex-grow text-gray-800 bg-gray-100 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition"></textarea>
+                    <label class="text-sm font-semibold text-gray-500" for="preview-prompt-input">PROMPT</label>
+                    <textarea id="preview-prompt-input" rows="5" class="mt-2 w-full text-gray-800 bg-gray-100 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition flex-grow"></textarea>
                 </div>
-                <!-- Action Buttons -->
-                <div class="mt-4 flex justify-end">
-                    <button id="regenerate-btn" class="bg-blue-600 text-white font-semibold py-2.5 px-6 rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center space-x-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5m-4-1v-4m0 0H8m4 0h4m-4 4v4m0 0H8m4 0h4"></path></svg>
+                <div class="mt-4">
+                    <button id="regenerate-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22"></path></svg>
                         <span>Regenerate</span>
                     </button>
                 </div>
             </div>
-
-             <!-- Top Right Close/Download Buttons -->
-            <div class="absolute top-4 right-4 flex space-x-2">
+            <div class="absolute top-4 right-4 md:right-auto md:left-4 flex space-x-2">
                  <button id="download-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Download Image">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                 </button>
