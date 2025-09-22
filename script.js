@@ -26,42 +26,30 @@ let currentAspectRatio = '1:1';
 let uploadedImageData = null;
 let currentPreviewInputData = null; 
 let timerInterval;
-let isFetchingMore = false;
-let imagePage = 0;
-let nextColumnIndex = 0;
-
-const ALL_IMAGE_URLS = [
-    "https://iili.io/K7bN7Hl.md.png", "https://iili.io/K7bOTzP.md.png", "https://iili.io/K7yYoqN.md.png",
-    "https://iili.io/K7bk3Ku.md.png", "https://iili.io/K7b6OPV.md.png", "https://iili.io/K7be88v.md.png",
-    "https://iili.io/K7b894e.md.png", "https://iili.io/K7y1cUN.md.png", "https://iili.io/K7yEx14.md.png",
-    "https://iili.io/K7b4VQR.md.png", "https://iili.io/K7yGhS2.md.png", "https://iili.io/K7bs5wg.md.png",
-    "https://iili.io/K7bDzpS.md.png", "https://iili.io/K7yVVv2.md.png", "https://iili.io/K7bmj7R.md.png",
-    "https://iili.io/K7bP679.md.png",
-    "https://images.unsplash.com/photo-1678043639454-a25c4a31b1d1?q=80&w=800",
-    "https://images.unsplash.com/photo-1678776210282-b1187d6e53c4?q=80&w=800",
-    "https://images.unsplash.com/photo-1677332213134-b0ae1071a5c4?q=80&w=800",
-    "https://images.unsplash.com/photo-1678043639454-a25c4a31b1d1?q=80&w=800"
-];
 
 // --- DOM Element Caching ---
 const DOMElements = {};
 
 document.addEventListener('DOMContentLoaded', () => {
     const ids = [
-        'header-nav', 'gallery-container', 'masonry-gallery', 'loader', 'prompt-input',
+        'header-nav', 'gallery-container', 'masonry-gallery', 'prompt-input',
         'generate-btn', 'generate-icon', 'loading-spinner', 'ratio-btn', 'ratio-options',
         'auth-modal', 'google-signin-btn', 'out-of-credits-modal', 'loading-overlay',
         'timer-text', 'preview-modal', 'preview-image', 'preview-prompt-input',
         'download-btn', 'close-preview-btn', 'regenerate-btn', 'header-blur-overlay',
         'image-upload-btn', 'image-upload-input', 'image-preview-container', 'image-preview', 'remove-image-btn',
-        'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input'
+        'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input',
+        'hero-headline'
     ];
     ids.forEach(id => DOMElements[id.replace(/-./g, c => c[1].toUpperCase())] = document.getElementById(id));
     DOMElements.closeModalBtns = document.querySelectorAll('.close-modal-btn');
     DOMElements.ratioOptionBtns = document.querySelectorAll('.ratio-option');
     DOMElements.masonryColumns = document.querySelectorAll('.masonry-column');
+    DOMElements.statCards = document.querySelectorAll('.stat-card');
+    DOMElements.counters = document.querySelectorAll('.counter');
 
     initializeEventListeners();
+    initializeAnimations();
     onAuthStateChanged(auth, user => updateUIForAuthState(user));
     restructureGalleryForMobile();
 });
@@ -119,52 +107,73 @@ function initializeEventListeners() {
         }
     });
 
-    // Preview Modal
     DOMElements.closePreviewBtn?.addEventListener('click', () => toggleModal(DOMElements.previewModal, false));
     DOMElements.downloadBtn?.addEventListener('click', downloadPreviewImage);
     DOMElements.regenerateBtn?.addEventListener('click', handleRegeneration);
     DOMElements.changeInputImageBtn?.addEventListener('click', () => DOMElements.previewImageUploadInput.click());
     DOMElements.previewImageUploadInput?.addEventListener('change', handlePreviewImageChange);
     DOMElements.removeInputImageBtn?.addEventListener('click', removePreviewInputImage);
-
-
-    DOMElements.galleryContainer?.addEventListener('scroll', handleInfiniteScroll);
 }
 
-// --- Infinite Scroll ---
-function handleInfiniteScroll() {
-    const container = DOMElements.galleryContainer;
-    if (container.scrollTop + container.clientHeight >= container.scrollHeight - 300 && !isFetchingMore) {
-        loadMoreImages();
-    }
-}
+// --- NEW: Animations ---
+function initializeAnimations() {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return;
 
-function loadMoreImages() {
-    isFetchingMore = true;
-    DOMElements.loader.style.display = 'block';
-
-    const imagesPerPage = 10;
-    const startIndex = (imagePage * imagesPerPage) % ALL_IMAGE_URLS.length;
-    const endIndex = startIndex + imagesPerPage;
-    
-    let newImages = ALL_IMAGE_URLS.slice(startIndex, endIndex);
-
-    if (endIndex > ALL_IMAGE_URLS.length) {
-        const remaining = endIndex - ALL_IMAGE_URLS.length;
-        newImages = newImages.concat(ALL_IMAGE_URLS.slice(0, remaining));
-    }
-
-    newImages.forEach(url => {
-        addImageToMasonry(url);
+    // Animate Hero Headline
+    gsap.to(DOMElements.heroHeadline, {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        ease: 'power3.out',
+        delay: 0.2
     });
-    
-    imagePage++;
-    DOMElements.loader.style.display = 'none';
-    isFetchingMore = false;
+
+    // Animate Stat Cards
+    gsap.to(DOMElements.statCards, {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: 'power3.out',
+        scrollTrigger: {
+            trigger: "#stats-section",
+            start: "top 85%",
+        }
+    });
+
+    // Animate Counters
+    DOMElements.counters.forEach(counter => {
+        const target = +counter.dataset.target;
+        gsap.to(counter, {
+            textContent: target,
+            duration: 2,
+            ease: "power2.out",
+            snap: { textContent: 1 },
+            scrollTrigger: {
+                trigger: counter,
+                start: "top 90%",
+            },
+            onUpdate: function() {
+                // Add K or M for thousands or millions
+                const currentVal = Math.ceil(this.targets()[0].textContent);
+                if (target >= 1000) {
+                     counter.textContent = Math.ceil(currentVal / 100) / 10 + "K";
+                } else {
+                     counter.textContent = currentVal;
+                }
+            },
+             onComplete: function() {
+                if (target >= 1000000) counter.textContent = target / 1000000 + "M";
+                else if (target >= 1000) counter.textContent = target / 1000 + "K";
+                else counter.textContent = target;
+            }
+        });
+    });
 }
+
 
 // --- Core App Logic ---
-
 function updateUIForAuthState(user) {
     currentUser = user;
     const nav = DOMElements.headerNav;
@@ -233,7 +242,6 @@ function signInWithGoogle() {
 }
 
 // --- Image Generation ---
-
 async function handleImageGenerationRequest(promptOverride = null, fromRegenerate = false) {
     if (isGenerating) return;
     if (!currentUser) {
@@ -269,9 +277,8 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        if (!deductResponse.ok) {
-            throw new Error('Credit deduction failed. Please try again.');
-        }
+        if (!deductResponse.ok) throw new Error('Credit deduction failed. Please try again.');
+        
         const creditData = await deductResponse.json();
         currentUserCredits = creditData.newCredits;
         updateCreditsDisplay(currentUserCredits);
@@ -296,8 +303,6 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         
         const imageUrl = `data:image/png;base64,${base64Data}`;
         
-        // addImageToMasonry(imageUrl, true); // This line is now commented out
-
         showPreviewModal(imageUrl, prompt, generationInputData);
 
     } catch (error) {
@@ -322,7 +327,6 @@ async function handleRegeneration() {
     await handleImageGenerationRequest(newPrompt, true);
 }
 
-
 function setLoadingState(isLoading) {
     isGenerating = isLoading;
     DOMElements.generateBtn.disabled = isLoading;
@@ -341,59 +345,11 @@ function startTimer() {
     timerInterval = setInterval(() => {
         seconds--;
         DOMElements.timerText.textContent = `${seconds}s`;
-        if (seconds <= 0) {
-            clearInterval(timerInterval);
-        }
+        if (seconds <= 0) clearInterval(timerInterval);
     }, 1000);
 }
 
-// --- Image Handling & Masonry ---
-function addImageToMasonry(url, prepend = false) {
-    if (!DOMElements.masonryColumns || DOMElements.masonryColumns.length === 0) return;
-
-    const item = document.createElement('div');
-    item.className = 'masonry-item';
-    const img = document.createElement('img');
-    img.src = url;
-    img.className = 'rounded-lg w-full h-auto block';
-    img.alt = 'Generated Art';
-    img.style.opacity = 0;
-    
-    img.onload = () => {
-        img.style.opacity = 1;
-        item.style.animation = 'none'; 
-        item.style.backgroundImage = 'none';
-        item.style.backgroundColor = 'transparent';
-        item.style.minHeight = 'auto';
-    };
-    item.appendChild(img);
-
-    if (window.innerWidth < 768) {
-        const firstColumn = DOMElements.masonryColumns[0];
-        if (prepend) {
-            firstColumn.insertBefore(item, firstColumn.firstChild);
-        } else {
-            firstColumn.appendChild(item);
-        }
-        return;
-    }
-
-    if (prepend) {
-        let shortestColumn = DOMElements.masonryColumns[0];
-        for (let i = 1; i < DOMElements.masonryColumns.length; i++) {
-            if (DOMElements.masonryColumns[i].offsetHeight < shortestColumn.offsetHeight) {
-                shortestColumn = DOMElements.masonryColumns[i];
-            }
-        }
-        shortestColumn.insertBefore(item, shortestColumn.firstChild);
-    } else {
-        const columnToAddTo = DOMElements.masonryColumns[nextColumnIndex];
-        columnToAddTo.appendChild(item);
-        nextColumnIndex = (nextColumnIndex + 1) % DOMElements.masonryColumns.length;
-    }
-}
-
-// For the main prompt bar
+// --- Image Handling & Uploads ---
 function handleImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -414,12 +370,10 @@ function removeUploadedImage() {
     DOMElements.imagePreviewContainer.classList.add('hidden');
 }
 
-
 // --- Preview Modal ---
 function showPreviewModal(imageUrl, prompt, inputImageData) {
     DOMElements.previewImage.src = imageUrl;
     DOMElements.previewPromptInput.value = prompt;
-
     currentPreviewInputData = inputImageData;
 
     if (inputImageData) {
@@ -429,11 +383,9 @@ function showPreviewModal(imageUrl, prompt, inputImageData) {
     } else {
         DOMElements.previewInputImageContainer.classList.add('hidden');
     }
-
     toggleModal(DOMElements.previewModal, true);
 }
 
-// For the preview modal image input
 function handlePreviewImageChange(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -459,7 +411,7 @@ function downloadPreviewImage() {
     a.href = imageUrl;
     a.download = 'genart-image.png';
     document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+a.click();
+document.body.removeChild(a);
 }
 
