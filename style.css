@@ -13,16 +13,16 @@ body {
     transform: translateY(20px);
 }
 
-/* --- NEW: Gallery Fade Overlay --- */
+/* --- CORRECTED: Gallery Fade Overlay --- */
 #gallery-fade-overlay {
     height: 6rem; /* 96px */
-    margin-top: -6rem;
-    position: relative;
+    position: relative; /* Changed from absolute/fixed positioning */
     z-index: 10;
     pointer-events: none;
     background: linear-gradient(to bottom, white, rgba(255, 255, 255, 0));
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    /* The negative margin that caused the issue has been removed. */
 }
 
 
@@ -31,6 +31,14 @@ body {
     display: flex;
     gap: 1rem; /* 16px */
 }
+
+/* The gallery is pulled up to sit behind the fade overlay */
+#masonry-gallery-wrapper {
+    margin-top: -6rem;
+    position: relative;
+    z-index: 0;
+}
+
 
 .masonry-column {
     display: flex;
