@@ -11,7 +11,7 @@ body {
     inset: 0;
     z-index: -1; /* Sit behind all content */
     /* New, lighter gradient using very pale blue, lavender, and mint */
-    background: linear-gradient(125deg, #85c1e9, #f5f3ff, #f8fafc, #ecfdf5, #73b9ee);
+    background: linear-gradient(125deg, #85c1e9, #3373c4, #f8fafc, #ecfdf5, #73b9ee);
     background-size: 400% 400%;
     animation: gradient-flow 15s ease-in-out infinite;
     will-change: background-position;
@@ -97,6 +97,7 @@ body {
     .masonry-column:not(:first-child) { display: none; }
     .masonry-item { margin-bottom: 1rem; }
 }
+
 
 
 
