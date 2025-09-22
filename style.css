@@ -120,11 +120,16 @@ body {
     }
 }
 
-/* --- NEW: Desktop-specific size for Prompt Bar --- */
+/* --- UPDATED: Desktop-specific size for Prompt Bar --- */
 @media (min-width: 768px) {
     #prompt-bar-container {
-        max-width: 1000px; /* Increased max-width on desktop */
-        padding: 1.25rem 2rem; /* Increased vertical and horizontal padding */
+        max-width: 1152px; /* Increased max-width significantly (Tailwind's max-w-6xl) */
+        padding: 1.5rem 2.5rem; /* Increased vertical and horizontal padding for more height and length */
+    }
+    #prompt-input {
+        min-height: 56px; /* Set a larger minimum height for the text area itself */
+        display: flex;
+        align-items: center;
     }
 }
 
