@@ -36,10 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
         'generate-btn', 'generate-icon', 'loading-spinner', 'ratio-btn', 'ratio-options',
         'auth-modal', 'google-signin-btn', 'out-of-credits-modal', 'loading-overlay',
         'timer-text', 'preview-modal', 'preview-image', 'preview-prompt-input',
-        'download-btn', 'close-preview-btn', 'regenerate-btn', 'header-blur-overlay',
+        'download-btn', 'close-preview-btn', 'regenerate-btn',
         'image-upload-btn', 'image-upload-input', 'image-preview-container', 'image-preview', 'remove-image-btn',
         'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input',
-        'hero-headline', 'hero-subline', 'typewriter'
+        'hero-section', 'hero-headline', 'hero-subline', 'typewriter'
     ];
     ids.forEach(id => {
         if (id) {
@@ -102,15 +102,6 @@ function initializeEventListeners() {
         });
     });
 
-    DOMElements.galleryContainer?.addEventListener('scroll', () => {
-        const overlay = DOMElements.headerBlurOverlay;
-        if (DOMElements.galleryContainer.scrollTop > 50) {
-            overlay.classList.remove('opacity-0');
-        } else {
-            overlay.classList.add('opacity-0');
-        }
-    });
-
     DOMElements.closePreviewBtn?.addEventListener('click', () => toggleModal(DOMElements.previewModal, false));
     DOMElements.downloadBtn?.addEventListener('click', downloadPreviewImage);
     DOMElements.regenerateBtn?.addEventListener('click', handleRegeneration);
@@ -126,20 +117,26 @@ function initializeAnimations() {
     
     gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-    // Animate Hero Headline
-    gsap.to(DOMElements.heroHeadline, {
+    // --- NEW: Advanced Hero Animation ---
+    const headline = DOMElements.heroHeadline;
+    const headlineText = "Turn imagination into visuals in seconds.";
+    headline.innerHTML = headlineText.split("").map(char => `<span class="char">${char === ' ' ? '&nbsp;' : char}</span>`).join("");
+    
+    gsap.to(".char", {
         opacity: 1,
         y: 0,
-        duration: 1,
-        ease: 'power3.out',
-        delay: 0.2
+        scale: 1,
+        duration: 0.8,
+        stagger: 0.02,
+        ease: 'power3.out'
     });
+
     gsap.to(DOMElements.heroSubline, {
         opacity: 1,
         y: 0,
         duration: 1,
         ease: 'power3.out',
-        delay: 0.4
+        delay: 0.5 // Delay until after headline animates
     });
 
     // Typewriter effect
@@ -150,6 +147,20 @@ function initializeAnimations() {
         tl.to("#typewriter", { text: word, duration: 1, ease: "none" });
         masterTl.add(tl);
     });
+    
+    // Mouse-follow spotlight effect
+    DOMElements.heroSection.addEventListener('mousemove', (e) => {
+        const rect = DOMElements.heroSection.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        gsap.to(DOMElements.heroSection, {
+            '--mouse-x': `${x}px`,
+            '--mouse-y': `${y}px`,
+            duration: 0.6,
+            ease: 'power3.out'
+        });
+    });
+
 
     // Animate Stat Cards
     gsap.to(DOMElements.statCards, {
@@ -167,11 +178,10 @@ function initializeAnimations() {
     // Animate Counters
     DOMElements.counters.forEach(counter => {
         const target = +counter.dataset.target;
-        const isMillion = target >= 1000000;
-        const isThousand = target >= 1000 && target < 1000000;
-
-        gsap.to(counter, {
-            textContent: target,
+        const isMillion = target >= 1000; // Simplified for 50M
+        
+        gsap.from(counter, {
+            textContent: 0,
             duration: 2.5,
             ease: "power2.out",
             snap: { textContent: 1 },
@@ -180,19 +190,7 @@ function initializeAnimations() {
                 start: "top 90%",
             },
             onUpdate: function() {
-                const currentVal = Math.ceil(this.targets()[0].textContent);
-                if (isMillion) {
-                    counter.textContent = (currentVal / 1000000).toFixed(1);
-                } else if (isThousand) {
-                    counter.textContent = (currentVal / 1000).toFixed(1);
-                } else {
-                    counter.textContent = currentVal;
-                }
-            },
-             onComplete: function() {
-                if (isMillion) counter.textContent = target / 1000000;
-                else if (isThousand) counter.textContent = target / 1000;
-                else counter.textContent = target;
+                counter.textContent = Math.ceil(this.targets()[0].textContent);
             }
         });
     });
@@ -434,7 +432,6 @@ function removePreviewInputImage() {
 
 function downloadPreviewImage() {
     const imageUrl = DOMElements.previewImage.src;
-    // Fix for Apple devices
     fetch(imageUrl)
         .then(res => res.blob())
         .then(blob => {
