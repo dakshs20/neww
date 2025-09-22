@@ -186,18 +186,19 @@ function initializeAnimations() {
     if (DOMElements.counters.length > 0) {
         DOMElements.counters.forEach(counter => {
             const target = +counter.dataset.target;
-            
-            gsap.from(counter, {
-                textContent: 0,
+            const proxy = { val: 0 }; // Create a proxy object to animate
+
+            gsap.to(proxy, {
+                val: target, // Animate the proxy object's value
                 duration: 2.5,
                 ease: "power2.out",
-                snap: { textContent: 1 },
                 scrollTrigger: {
                     trigger: counter,
                     start: "top 90%",
                 },
                 onUpdate: function() {
-                    counter.textContent = Math.ceil(this.targets()[0].textContent);
+                    // Use the proxy value to update the counter's text
+                    counter.textContent = Math.ceil(proxy.val);
                 }
             });
         });
