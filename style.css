@@ -1,26 +1,36 @@
 /* --- Base Styles --- */
 body {
-    background-color: #f8fafc; /* Off-white background */
+    /* Changed to a slightly off-white for a softer feel */
+    background-color: #f8fafc; 
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     color: #374151; /* gray-700 */
 }
 
-/* --- Dynamic Hero Section --- */
-#hero-section {
-    position: relative;
-    overflow: hidden;
+/* --- NEW: Full-page Aurora Background --- */
+#hero-particles {
     background-color: #f8fafc;
+    /* Add a subtle spotlight effect that follows the mouse */
     background-image: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(59, 130, 246, 0.15), transparent 40%);
     transition: background 0.4s ease-out;
 }
 
+/* --- Hero and Stats Section --- */
+#hero-section, #stats-section {
+    background-color: transparent; /* Make sections transparent to see the effect */
+}
+
+/* This will style each character span injected by JS */
 #hero-headline .char {
     display: inline-block;
     opacity: 0;
     transform: translateY(30px) scale(0.9);
 }
 
-#hero-subline, .stat-card {
+#hero-subline {
+    opacity: 0;
+    transform: translateY(20px);
+}
+.stat-card {
     opacity: 0;
     transform: translateY(20px);
 }
@@ -32,39 +42,30 @@ body {
     50% { color: #2563eb; } /* blue-600 */
 }
 
-/* --- Prompt Bar & Dynamic Corner Radius --- */
-#prompt-bar-container {
-    transition: border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-#prompt-bar-container.expanded {
-    border-radius: 1.75rem; /* Corresponds to rounded-3xl */
-}
-
-
-/* --- Masonry Gallery Layout --- */
+/* --- Masonry Gallery Layout (Desktop First) --- */
 #masonry-gallery {
     display: flex;
-    gap: 1rem;
+    gap: 1rem; /* 16px */
 }
 
 #masonry-gallery-wrapper {
     position: relative;
     z-index: 0;
-    background-color: transparent;
+    background-color: transparent; /* Make gallery wrapper transparent */
 }
+
 
 .masonry-column {
     display: flex;
     flex-direction: column;
     flex: 1;
-    gap: 1rem;
+    gap: 1rem; /* 16px */
 }
 
 .masonry-item {
     overflow: hidden;
-    border-radius: 0.75rem;
-    background-color: #e2e8f0;
+    border-radius: 0.75rem; /* rounded-xl */
+    background-color: #e2e8f0; /* Placeholder color */
     min-height: 150px;
     animation: shimmer 2s infinite linear;
     background-image: linear-gradient(to right, #e2e8f0 0%, #f1f5f9 20%, #e2e8f0 40%, #e2e8f0 100%);
@@ -81,12 +82,13 @@ body {
     width: 100%;
     height: auto;
     display: block;
-    border-radius: 0.75rem;
+    border-radius: 0.75rem; /* rounded-xl */
     transition: opacity 0.5s ease-in-out;
 }
 
+/* --- Prompt Bar & UI --- */
 #prompt-input {
-    max-height: 150px;
+    max-height: 150px; /* Cap the max height */
 }
 
 @keyframes shake {
@@ -101,9 +103,20 @@ body {
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 767px) {
-    #masonry-gallery { display: block; }
-    .masonry-column { display: block; }
-    .masonry-column:not(:first-child) { display: none; }
-    .masonry-item { margin-bottom: 1rem; }
+    #masonry-gallery {
+        display: block;
+    }
+    
+    .masonry-column {
+        display: block;
+    }
+
+    .masonry-column:not(:first-child) {
+        display: none;
+    }
+
+    .masonry-item {
+        margin-bottom: 1rem;
+    }
 }
 
