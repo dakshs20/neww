@@ -119,17 +119,20 @@ function initializeAnimations() {
 
     // --- NEW: Advanced Hero Animation ---
     const headline = DOMElements.heroHeadline;
-    const headlineText = "Turn imagination into visuals in seconds.";
-    headline.innerHTML = headlineText.split("").map(char => `<span class="char">${char === ' ' ? '&nbsp;' : char}</span>`).join("");
-    
-    gsap.to(".char", {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.8,
-        stagger: 0.02,
-        ease: 'power3.out'
-    });
+    if (headline) {
+        const headlineText = headline.textContent; // Use existing text
+        headline.innerHTML = headlineText.split("").map(char => `<span class="char">${char === ' ' ? '&nbsp;' : char}</span>`).join("");
+        
+        gsap.to(".char", {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.8,
+            stagger: 0.02,
+            ease: 'power4.out'
+        });
+    }
+
 
     gsap.to(DOMElements.heroSubline, {
         opacity: 1,
@@ -149,51 +152,56 @@ function initializeAnimations() {
     });
     
     // Mouse-follow spotlight effect
-    DOMElements.heroSection.addEventListener('mousemove', (e) => {
-        const rect = DOMElements.heroSection.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        gsap.to(DOMElements.heroSection, {
-            '--mouse-x': `${x}px`,
-            '--mouse-y': `${y}px`,
-            duration: 0.6,
-            ease: 'power3.out'
+    if (DOMElements.heroSection) {
+        DOMElements.heroSection.addEventListener('mousemove', (e) => {
+            const rect = DOMElements.heroSection.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            gsap.to(DOMElements.heroSection, {
+                '--mouse-x': `${x}px`,
+                '--mouse-y': `${y}px`,
+                duration: 0.6,
+                ease: 'power3.out'
+            });
         });
-    });
+    }
 
 
     // Animate Stat Cards
-    gsap.to(DOMElements.statCards, {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        stagger: 0.15,
-        ease: 'power3.out',
-        scrollTrigger: {
-            trigger: "#stats-section",
-            start: "top 85%",
-        }
-    });
-
-    // Animate Counters
-    DOMElements.counters.forEach(counter => {
-        const target = +counter.dataset.target;
-        const isMillion = target >= 1000; // Simplified for 50M
-        
-        gsap.from(counter, {
-            textContent: 0,
-            duration: 2.5,
-            ease: "power2.out",
-            snap: { textContent: 1 },
+    if (DOMElements.statCards.length > 0) {
+        gsap.to(DOMElements.statCards, {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: 'power3.out',
             scrollTrigger: {
-                trigger: counter,
-                start: "top 90%",
-            },
-            onUpdate: function() {
-                counter.textContent = Math.ceil(this.targets()[0].textContent);
+                trigger: "#stats-section",
+                start: "top 85%",
             }
         });
-    });
+    }
+
+    // Animate Counters
+    if (DOMElements.counters.length > 0) {
+        DOMElements.counters.forEach(counter => {
+            const target = +counter.dataset.target;
+            
+            gsap.from(counter, {
+                textContent: 0,
+                duration: 2.5,
+                ease: "power2.out",
+                snap: { textContent: 1 },
+                scrollTrigger: {
+                    trigger: counter,
+                    start: "top 90%",
+                },
+                onUpdate: function() {
+                    counter.textContent = Math.ceil(this.targets()[0].textContent);
+                }
+            });
+        });
+    }
 }
 
 
