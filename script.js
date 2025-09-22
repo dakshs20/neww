@@ -150,20 +150,7 @@ function initializeAnimations() {
         masterTl.add(tl);
     });
     
-    if (DOMElements.heroSection) {
-        DOMElements.heroSection.addEventListener('mousemove', (e) => {
-            const rect = DOMElements.heroSection.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            gsap.to(DOMElements.heroSection, {
-                '--mouse-x': `${x}px`,
-                '--mouse-y': `${y}px`,
-                duration: 0.6,
-                ease: 'power3.out'
-            });
-        });
-    }
-
+    // Animate Stat Cards
     if (DOMElements.statCards.length > 0) {
         gsap.to(DOMElements.statCards, {
             opacity: 1,
@@ -178,6 +165,7 @@ function initializeAnimations() {
         });
     }
 
+    // Animate Counters
     if (DOMElements.counters.length > 0) {
         DOMElements.counters.forEach(counter => {
             const target = +counter.dataset.target;
@@ -255,7 +243,7 @@ function autoResizeTextarea(e) {
     const lineHeight = parseFloat(window.getComputedStyle(textarea).lineHeight);
     const numLines = Math.round(textarea.scrollHeight / lineHeight);
 
-    if (numLines > 2) {
+    if (numLines > 1) { // Changed from 2 to 1 for immediate effect
         promptBarContainer.classList.add('expanded');
     } else {
         promptBarContainer.classList.remove('expanded');
