@@ -3,7 +3,7 @@ body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
-/* --- NEW: Hero and Stats Section --- */
+/* --- Hero and Stats Section --- */
 #hero-section h1 {
     opacity: 0;
     transform: translateY(20px);
@@ -12,6 +12,19 @@ body {
     opacity: 0;
     transform: translateY(20px);
 }
+
+/* --- NEW: Gallery Fade Overlay --- */
+#gallery-fade-overlay {
+    height: 6rem; /* 96px */
+    margin-top: -6rem;
+    position: relative;
+    z-index: 10;
+    pointer-events: none;
+    background: linear-gradient(to bottom, white, rgba(255, 255, 255, 0));
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
 
 /* --- Masonry Gallery Layout (Desktop First) --- */
 #masonry-gallery {
