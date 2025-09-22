@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale-1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GenArt: AI Image Generator</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -35,7 +35,7 @@
         <div id="gallery-container" class="flex-grow overflow-y-auto pt-24 pb-40">
             
             <!-- Hero Section -->
-            <section id="hero-section" class="text-center py-20 md:py-32 px-4">
+            <section id="hero-section" class="text-center py-20 md:py-32 px-4 relative">
                 <div class="relative z-10">
                     <h1 id="hero-headline" class="text-4xl md:text-6xl font-bold text-gray-800 tracking-tighter">
                         Turn imagination into visuals in seconds.
@@ -89,7 +89,7 @@
 
         <!-- Prompt Bar -->
         <footer class="absolute bottom-0 left-0 right-0 p-4 z-40">
-            <div id="prompt-bar-container" class="max-w-2xl md:max-w-4xl mx-auto bg-white/70 backdrop-blur-lg border border-gray-200/80 shadow-2xl rounded-full p-3 md:p-4 flex items-center space-x-2">
+            <div class="max-w-2xl mx-auto bg-white/70 backdrop-blur-lg border border-gray-200/80 shadow-2xl rounded-full p-3 flex items-center space-x-2">
                 <div id="image-preview-container" class="hidden relative w-10 h-10 flex-shrink-0">
                     <img id="image-preview" class="w-full h-full object-cover rounded-full" src="" alt="Image preview">
                     <button id="remove-image-btn" class="absolute -top-1 -right-1 bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-black">&times;</button>
