@@ -112,7 +112,7 @@ function initializeEventListeners() {
     DOMElements.removeInputImageBtn?.addEventListener('click', removePreviewInputImage);
 }
 
-// --- NEW: Animations ---
+// --- Animations ---
 function initializeAnimations() {
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
@@ -150,14 +150,15 @@ function initializeAnimations() {
         masterTl.add(tl);
     });
     
-    // Animate Stat Cards
+    // Animate Stat Cards with a smoother effect
     if (DOMElements.statCards.length > 0) {
         gsap.to(DOMElements.statCards, {
             opacity: 1,
             y: 0,
-            duration: 0.8,
-            stagger: 0.15,
-            ease: 'power3.out',
+            scale: 1,
+            duration: 1.2,
+            stagger: 0.2,
+            ease: 'power4.out',
             scrollTrigger: {
                 trigger: "#stats-section",
                 start: "top 85%",
@@ -243,7 +244,7 @@ function autoResizeTextarea(e) {
     const lineHeight = parseFloat(window.getComputedStyle(textarea).lineHeight);
     const numLines = Math.round(textarea.scrollHeight / lineHeight);
 
-    if (numLines > 1) { // Changed from 2 to 1 for immediate effect
+    if (numLines > 1) { 
         promptBarContainer.classList.add('expanded');
     } else {
         promptBarContainer.classList.remove('expanded');
