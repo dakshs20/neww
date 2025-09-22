@@ -13,16 +13,17 @@ body {
     transform: translateY(20px);
 }
 
-/* --- CORRECTED: Gallery Fade Overlay --- */
+/* --- UPDATED: Softer & Smoother Gallery Fade Overlay --- */
 #gallery-fade-overlay {
-    height: 6rem; /* 96px */
-    position: relative; /* Changed from absolute/fixed positioning */
+    height: 12rem; /* Increased height for a more gradual fade (was 6rem) */
+    position: relative;
     z-index: 10;
     pointer-events: none;
-    background: linear-gradient(to bottom, white, rgba(255, 255, 255, 0));
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    /* The negative margin that caused the issue has been removed. */
+    /* Adjusted gradient to be less sharp at the top */
+    background: linear-gradient(to bottom, white 30%, rgba(255, 255, 255, 0));
+    /* Increased blur for a softer effect */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 
@@ -32,9 +33,9 @@ body {
     gap: 1rem; /* 16px */
 }
 
-/* The gallery is pulled up to sit behind the fade overlay */
+/* The gallery is pulled up further to sit behind the taller fade overlay */
 #masonry-gallery-wrapper {
-    margin-top: -6rem;
+    margin-top: -12rem; /* Adjusted to match the new overlay height */
     position: relative;
     z-index: 0;
 }
