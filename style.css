@@ -10,8 +10,8 @@ body {
     position: fixed;
     inset: 0;
     z-index: -1; /* Sit behind all content */
-    /* New gradient using a mix of light blues and a hint of cyan */
-    background: linear-gradient(125deg, #e0f2fe, #cffafe, #f8fafc, #e0f2fe, #dbeafe);
+    /* New, lighter gradient using very pale blue, lavender, and mint */
+    background: linear-gradient(125deg, #f0f9ff, #f5f3ff, #f8fafc, #ecfdf5, #f0f9ff);
     background-size: 400% 400%;
     animation: gradient-flow 15s ease-in-out infinite;
     will-change: background-position;
