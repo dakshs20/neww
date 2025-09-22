@@ -15,7 +15,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// --- Function to save prompt data ---
+// Function to save prompt data for analytics
 async function logGeneration(userId, prompt) {
     try {
         await db.collection('generations').add({
@@ -23,7 +23,6 @@ async function logGeneration(userId, prompt) {
             prompt: prompt,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
-        console.log(`Logged prompt for user: ${userId}`);
     } catch (error) {
         // We log the error but don't stop the image generation process
         console.error("Failed to log prompt:", error);
@@ -44,7 +43,10 @@ export default async function handler(req, res) {
 
         const { prompt, imageData, aspectRatio } = req.body;
         
-        await logGeneration(user.uid, prompt);
+        // Log the generation attempt
+        if (prompt) {
+            await logGeneration(user.uid, prompt);
+        }
 
         const apiKey = process.env.GOOGLE_API_KEY;
         if (!apiKey) {
@@ -53,8 +55,11 @@ export default async function handler(req, res) {
 
         let apiUrl, payload;
 
+        // --- Intelligent Logic for Image vs. Text Generation ---
+
+        // Case 1: Image-to-Image (imageData is provided)
+        // The model will automatically use the uploaded image's aspect ratio.
         if (imageData && imageData.data) {
-            // --- Image-to-Image Logic ---
             apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
             payload = {
                 "contents": [{ 
@@ -65,8 +70,10 @@ export default async function handler(req, res) {
                 }],
                 "generationConfig": { "responseModalities": ["IMAGE"] }
             };
-        } else {
-            // --- Text-to-Image Logic ---
+        } 
+        // Case 2: Text-to-Image (no imageData)
+        // We use the aspect ratio selected by the user, defaulting to '1:1'.
+        else {
             apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
             payload = { 
                 instances: [{ prompt }], 
@@ -94,3 +101,4 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'The API function crashed.', details: error.message });
     }
 }
+
