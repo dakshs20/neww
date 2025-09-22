@@ -35,7 +35,7 @@ body {
     50% { color: #2563eb; } /* blue-600 */
 }
 
-/* --- CORRECTED: Smooth Gallery Fade Overlay --- */
+/* --- Smooth Gallery Fade Overlay --- */
 #gallery-fade-overlay {
     background: linear-gradient(to bottom, #f8fafc 50%, rgba(248, 250, 252, 0) 100%);
     backdrop-filter: blur(8px);
@@ -118,18 +118,5 @@ body {
     .masonry-column { display: block; }
     .masonry-column:not(:first-child) { display: none; }
     .masonry-item { margin-bottom: 1rem; }
-}
-
-/* --- Desktop-specific size for Prompt Bar --- */
-@media (min-width: 768px) {
-    #prompt-bar-container {
-        max-width: 1024px;
-        padding: 1rem 2.5rem;
-    }
-    #prompt-input {
-        min-height: 48px;
-        display: flex;
-        align-items: center;
-    }
 }
 
