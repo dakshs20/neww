@@ -10,8 +10,8 @@ body {
     position: fixed;
     inset: 0;
     z-index: -1; /* Sit behind all content */
-    /* New gradient using light blue, light purple, and light grey */
-    background: linear-gradient(125deg, #dbeafe, #ede9fe, #f8fafc, #ede9fe, #dbeafe);
+    /* New gradient using a mix of light blues and a hint of cyan */
+    background: linear-gradient(125deg, #e0f2fe, #cffafe, #f8fafc, #e0f2fe, #dbeafe);
     background-size: 400% 400%;
     animation: gradient-flow 15s ease-in-out infinite;
     will-change: background-position;
