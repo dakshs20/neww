@@ -3,6 +3,16 @@ body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+/* --- NEW: Hero and Stats Section --- */
+#hero-section h1 {
+    opacity: 0;
+    transform: translateY(20px);
+}
+.stat-card {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
 /* --- Masonry Gallery Layout (Desktop First) --- */
 #masonry-gallery {
     display: flex;
@@ -12,7 +22,7 @@ body {
 .masonry-column {
     display: flex;
     flex-direction: column;
-    flex: 1; /* This is key to making columns share space */
+    flex: 1;
     gap: 1rem; /* 16px */
 }
 
@@ -58,7 +68,6 @@ body {
 /* --- Mobile Responsiveness --- */
 @media (max-width: 767px) {
     #masonry-gallery {
-        /* On mobile, switch to a single-column block layout */
         display: block;
     }
     
@@ -66,13 +75,12 @@ body {
         display: block;
     }
 
-    /* Hide all columns except the first one, as JS moves all images there */
     .masonry-column:not(:first-child) {
         display: none;
     }
 
     .masonry-item {
-        margin-bottom: 1rem; /* Add spacing between images on mobile */
+        margin-bottom: 1rem;
     }
 }
 
