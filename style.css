@@ -5,12 +5,13 @@ body {
     color: #374151; /* gray-700 */
 }
 
-/* --- NEW: Full-page Animated Gradient Background --- */
+/* --- UPDATED: Full-page Animated Gradient Background --- */
 #animated-gradient-bg {
     position: fixed;
     inset: 0;
     z-index: -1; /* Sit behind all content */
-    background: linear-gradient(125deg, #e0f2fe, #f0f9ff, #ecfccb, #f0f9ff, #e0f2fe);
+    /* New gradient using light blue, light purple, and light grey */
+    background: linear-gradient(125deg, #dbeafe, #ede9fe, #f8fafc, #ede9fe, #dbeafe);
     background-size: 400% 400%;
     animation: gradient-flow 15s ease-in-out infinite;
     will-change: background-position;
