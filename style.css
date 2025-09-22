@@ -24,7 +24,7 @@ body {
     position: absolute;
     border-radius: 50%;
     animation: particles-float 25s infinite linear;
-    background: radial-gradient(circle, rgba(96, 165, 250, 0.1) 0%, rgba(96, 165, 250, 0) 60%);
+    /* The background gradient that caused the unwanted shade has been removed. */
 }
 
 #hero-particles::before {
