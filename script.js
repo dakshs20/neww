@@ -22,7 +22,7 @@ const provider = new GoogleAuthProvider();
 let currentUser;
 let currentUserCredits = 0;
 let isGenerating = false;
-let currentAspectRatio = '1:1';
+let currentAspectRatio = '1:1'; // Default aspect ratio
 let uploadedImageData = null;
 let currentPreviewInputData = null; 
 let timerInterval;
@@ -91,7 +91,9 @@ function initializeEventListeners() {
 
     DOMElements.ratioBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
-        DOMElements.ratioOptions.classList.toggle('hidden');
+        if (!DOMElements.ratioBtn.disabled) {
+            DOMElements.ratioOptions.classList.toggle('hidden');
+        }
     });
     document.addEventListener('click', () => DOMElements.ratioOptions?.classList.add('hidden'));
     DOMElements.ratioOptionBtns.forEach(btn => {
@@ -186,10 +188,10 @@ function initializeAnimations() {
     if (DOMElements.counters.length > 0) {
         DOMElements.counters.forEach(counter => {
             const target = +counter.dataset.target;
-            const proxy = { val: 0 }; // Create a proxy object to animate
+            const proxy = { val: 0 }; 
 
             gsap.to(proxy, {
-                val: target, // Animate the proxy object's value
+                val: target,
                 duration: 2.5,
                 ease: "power2.out",
                 scrollTrigger: {
@@ -197,7 +199,6 @@ function initializeAnimations() {
                     start: "top 90%",
                 },
                 onUpdate: function() {
-                    // Use the proxy value to update the counter's text
                     counter.textContent = Math.ceil(proxy.val);
                 }
             });
@@ -301,6 +302,10 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
     setLoadingState(true);
     startTimer();
     
+    // If an image is uploaded, we don't send an aspect ratio. The model will detect it.
+    // If no image is uploaded, we send the user-selected ratio (defaulting to '1:1').
+    const aspectRatioToSend = imageDataSource ? null : currentAspectRatio;
+    
     const generationInputData = imageDataSource ? {...imageDataSource} : null;
 
     try {
@@ -320,7 +325,7 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
         const response = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ prompt, imageData: generationInputData, aspectRatio: currentAspectRatio })
+            body: JSON.stringify({ prompt, imageData: generationInputData, aspectRatio: aspectRatioToSend })
         });
 
         if (!response.ok) {
@@ -393,6 +398,9 @@ function handleImageUpload(event) {
         uploadedImageData = { mimeType: file.type, data: base64String };
         DOMElements.imagePreview.src = reader.result;
         DOMElements.imagePreviewContainer.classList.remove('hidden');
+        // Disable the ratio button as the image's own ratio will be used
+        DOMElements.ratioBtn.disabled = true;
+        DOMElements.ratioBtn.classList.add('opacity-50', 'cursor-not-allowed');
     };
     reader.readAsDataURL(file);
 }
@@ -402,6 +410,9 @@ function removeUploadedImage() {
     DOMElements.imageUploadInput.value = '';
     DOMElements.imagePreview.src = '';
     DOMElements.imagePreviewContainer.classList.add('hidden');
+    // Re-enable the ratio button
+    DOMElements.ratioBtn.disabled = false;
+    DOMElements.ratioBtn.classList.remove('opacity-50', 'cursor-not-allowed');
 }
 
 // --- Preview Modal ---
