@@ -123,7 +123,7 @@ body {
 /* --- UPDATED: Desktop-specific size for Prompt Bar --- */
 @media (min-width: 768px) {
     #prompt-bar-container {
-        max-width: 1152px; /* Increased max-width significantly (Tailwind's max-w-6xl) */
+        max-width: 1280px; /* Further increased max-width for more length (Tailwind's max-w-7xl) */
         padding: 1.5rem 2.5rem; /* Increased vertical and horizontal padding for more height and length */
     }
     #prompt-input {
