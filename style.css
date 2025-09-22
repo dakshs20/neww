@@ -1,23 +1,24 @@
 /* --- Base Styles --- */
 body {
-    background-color: #f9fafb; /* Off-white background */
+    /* Changed to a slightly off-white for a softer feel */
+    background-color: #f8fafc; 
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     color: #374151; /* gray-700 */
 }
 
-/* --- NEW: Dynamic & Creative Hero Section --- */
-#hero-section {
-    position: relative;
-    overflow: hidden;
-    background-color: #f9fafb;
+/* --- NEW: Full-page Aurora Background --- */
+#hero-particles {
+    background-color: #f8fafc;
     /* Add a subtle spotlight effect that follows the mouse */
-    background-image: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(59, 130, 246, 0.1), transparent 30%);
-    transition: background 0.3s ease-out;
+    background-image: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(59, 130, 246, 0.15), transparent 40%);
+    transition: background 0.4s ease-out;
 }
 
-#hero-headline {
-    opacity: 1; /* JS will handle the animation */
+/* --- Hero and Stats Section --- */
+#hero-section, #stats-section {
+    background-color: transparent; /* Make sections transparent to see the effect */
 }
+
 /* This will style each character span injected by JS */
 #hero-headline .char {
     display: inline-block;
@@ -50,6 +51,7 @@ body {
 #masonry-gallery-wrapper {
     position: relative;
     z-index: 0;
+    background-color: transparent; /* Make gallery wrapper transparent */
 }
 
 
