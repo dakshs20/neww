@@ -39,9 +39,13 @@ document.addEventListener('DOMContentLoaded', () => {
         'download-btn', 'close-preview-btn', 'regenerate-btn', 'header-blur-overlay',
         'image-upload-btn', 'image-upload-input', 'image-preview-container', 'image-preview', 'remove-image-btn',
         'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input',
-        'hero-headline', 'hero-subline'
+        'hero-headline', 'hero-subline', 'typewriter'
     ];
-    ids.forEach(id => DOMElements[id.replace(/-./g, c => c[1].toUpperCase())] = document.getElementById(id));
+    ids.forEach(id => {
+        if (id) {
+            DOMElements[id.replace(/-./g, c => c[1].toUpperCase())] = document.getElementById(id);
+        }
+    });
     DOMElements.closeModalBtns = document.querySelectorAll('.close-modal-btn');
     DOMElements.ratioOptionBtns = document.querySelectorAll('.ratio-option');
     DOMElements.masonryColumns = document.querySelectorAll('.masonry-column');
@@ -89,7 +93,7 @@ function initializeEventListeners() {
         e.stopPropagation();
         DOMElements.ratioOptions.classList.toggle('hidden');
     });
-    document.addEventListener('click', () => DOMElements.ratioOptions.classList.add('hidden'));
+    document.addEventListener('click', () => DOMElements.ratioOptions?.classList.add('hidden'));
     DOMElements.ratioOptionBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             currentAspectRatio = e.currentTarget.dataset.ratio;
@@ -108,7 +112,7 @@ function initializeEventListeners() {
     });
 
     DOMElements.closePreviewBtn?.addEventListener('click', () => toggleModal(DOMElements.previewModal, false));
-    DOMElements.downloadBtn?.addEventListener('click', downloadImage);
+    DOMElements.downloadBtn?.addEventListener('click', downloadPreviewImage);
     DOMElements.regenerateBtn?.addEventListener('click', handleRegeneration);
     DOMElements.changeInputImageBtn?.addEventListener('click', () => DOMElements.previewImageUploadInput.click());
     DOMElements.previewImageUploadInput?.addEventListener('change', handlePreviewImageChange);
@@ -117,18 +121,30 @@ function initializeEventListeners() {
 
 // --- NEW: Animations ---
 function initializeAnimations() {
-    gsap.registerPlugin(TextPlugin);
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
+    
+    gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-    // Animate Hero Text
-    const heroTl = gsap.timeline({ delay: 0.2 });
-    heroTl.to(DOMElements.heroHeadline, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' })
-          .to(DOMElements.heroSubline, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, "-=0.8");
+    // Animate Hero Headline
+    gsap.to(DOMElements.heroHeadline, {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        ease: 'power3.out',
+        delay: 0.2
+    });
+    gsap.to(DOMElements.heroSubline, {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        ease: 'power3.out',
+        delay: 0.4
+    });
 
     // Typewriter effect
     const words = ["creators.", "agencies.", "enterprises."];
-    let masterTl = gsap.timeline({ repeat: -1, delay: 1 });
+    let masterTl = gsap.timeline({ repeat: -1 });
     words.forEach(word => {
         let tl = gsap.timeline({ repeat: 1, yoyo: true, repeatDelay: 1.5 });
         tl.to("#typewriter", { text: word, duration: 1, ease: "none" });
@@ -136,9 +152,9 @@ function initializeAnimations() {
     });
 
     // Animate Stat Cards
-    gsap.from(DOMElements.statCards, {
-        opacity: 0,
-        y: 30,
+    gsap.to(DOMElements.statCards, {
+        opacity: 1,
+        y: 0,
         duration: 0.8,
         stagger: 0.15,
         ease: 'power3.out',
@@ -151,8 +167,11 @@ function initializeAnimations() {
     // Animate Counters
     DOMElements.counters.forEach(counter => {
         const target = +counter.dataset.target;
-        gsap.from(counter, {
-            textContent: 0,
+        const isMillion = target >= 1000000;
+        const isThousand = target >= 1000 && target < 1000000;
+
+        gsap.to(counter, {
+            textContent: target,
             duration: 2.5,
             ease: "power2.out",
             snap: { textContent: 1 },
@@ -161,10 +180,19 @@ function initializeAnimations() {
                 start: "top 90%",
             },
             onUpdate: function() {
-                counter.textContent = Math.ceil(this.targets()[0].textContent).toLocaleString();
+                const currentVal = Math.ceil(this.targets()[0].textContent);
+                if (isMillion) {
+                    counter.textContent = (currentVal / 1000000).toFixed(1);
+                } else if (isThousand) {
+                    counter.textContent = (currentVal / 1000).toFixed(1);
+                } else {
+                    counter.textContent = currentVal;
+                }
             },
              onComplete: function() {
-                counter.textContent = target.toLocaleString();
+                if (isMillion) counter.textContent = target / 1000000;
+                else if (isThousand) counter.textContent = target / 1000;
+                else counter.textContent = target;
             }
         });
     });
@@ -178,6 +206,7 @@ function updateUIForAuthState(user) {
     if (user) {
         nav.innerHTML = `
             <a href="about.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">About</a>
+            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Pricing</a>
             <div id="credits-counter" class="text-sm font-medium text-gray-700">Credits: ...</div>
             <button id="sign-out-btn" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Sign Out</button>
         `;
@@ -403,11 +432,9 @@ function removePreviewInputImage() {
     DOMElements.previewInputImageContainer.classList.add('hidden');
 }
 
-function downloadImage() {
+function downloadPreviewImage() {
     const imageUrl = DOMElements.previewImage.src;
-    if (!imageUrl) return;
-
-    // Convert base64 to blob for robust downloading
+    // Fix for Apple devices
     fetch(imageUrl)
         .then(res => res.blob())
         .then(blob => {
