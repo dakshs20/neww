@@ -35,11 +35,13 @@ body {
     50% { color: #2563eb; } /* blue-600 */
 }
 
-/* --- NEW: Smooth Gallery Fade Overlay --- */
+/* --- CORRECTED: Smooth Gallery Fade Overlay --- */
 #gallery-fade-overlay {
-    background: linear-gradient(to bottom, #f8fafc 80%, rgba(248, 250, 252, 0));
+    background: linear-gradient(to bottom, #f8fafc 50%, rgba(248, 250, 252, 0) 100%);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    position: relative;
+    z-index: 10;
 }
 
 /* --- Masonry Gallery Layout --- */
@@ -93,6 +95,13 @@ body {
     max-height: 150px;
 }
 
+#prompt-bar-container {
+    transition: border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#prompt-bar-container.expanded {
+    border-radius: 1.75rem; /* Corresponds to rounded-3xl */
+}
+
 @keyframes shake {
   10%, 90% { transform: translate3d(-1px, 0, 0); }
   20%, 80% { transform: translate3d(2px, 0, 0); }
@@ -115,10 +124,10 @@ body {
 @media (min-width: 768px) {
     #prompt-bar-container {
         max-width: 1024px;
-        padding: 1.25rem 2.5rem;
+        padding: 1rem 2.5rem;
     }
     #prompt-input {
-        min-height: 52px;
+        min-height: 48px;
         display: flex;
         align-items: center;
     }
