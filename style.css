@@ -3,8 +3,19 @@ body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
-/* --- Hero and Stats Section --- */
-#hero-section h1 {
+/* --- NEW: Hero and Stats Section --- */
+#hero-section {
+    background-color: #f9fafb; /* A very light gray for a subtle texture */
+}
+
+#hero-particles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background: radial-gradient(ellipse at bottom, #dbeafe 0%, #ffffff 60%);
+}
+
+#hero-headline, #hero-subline {
     opacity: 0;
     transform: translateY(20px);
 }
@@ -12,6 +23,14 @@ body {
     opacity: 0;
     transform: translateY(20px);
 }
+.cursor {
+    animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+    from, to { color: transparent; }
+    50% { color: #2563eb; } /* blue-600 */
+}
+
 
 /* --- Masonry Gallery Layout (Desktop First) --- */
 #masonry-gallery {
@@ -19,7 +38,6 @@ body {
     gap: 1rem; /* 16px */
 }
 
-/* The wrapper no longer needs a negative margin as the overlay is removed */
 #masonry-gallery-wrapper {
     position: relative;
     z-index: 0;
