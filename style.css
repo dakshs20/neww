@@ -1,22 +1,34 @@
 /* --- Base Styles --- */
 body {
-    background-color: #f8fafc; 
+    background-color: #f8fafc; /* This is the fallback color */
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     color: #374151; /* gray-700 */
 }
 
-/* --- Full-page Aurora Background --- */
-#hero-particles {
-    background-color: #f8fafc;
-    background-image: radial-gradient(circle at var(--mouse-x) var(--mouse-y), rgba(59, 130, 246, 0.15), transparent 40%);
-    transition: background 0.4s ease-out;
+/* --- NEW: Full-page Animated Gradient Background --- */
+#animated-gradient-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1; /* Sit behind all content */
+    background: linear-gradient(125deg, #e0f2fe, #f0f9ff, #ecfccb, #f0f9ff, #e0f2fe);
+    background-size: 400% 400%;
+    animation: gradient-flow 15s ease-in-out infinite;
+    will-change: background-position;
 }
 
-/* --- Hero and Stats Section --- */
-#hero-section, #stats-section {
+@keyframes gradient-flow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Ensure other containers are transparent to see the background */
+#gallery-container, #hero-section, #stats-section, #masonry-gallery-wrapper {
     background-color: transparent;
 }
 
+
+/* --- Hero and Stats Section --- */
 #hero-headline .char {
     display: inline-block;
     opacity: 0;
@@ -29,7 +41,7 @@ body {
 }
 .stat-card {
     opacity: 0;
-    transform: translateY(30px) scale(0.95); /* Adjusted for smoother animation */
+    transform: translateY(30px) scale(0.95);
     will-change: transform, opacity;
 }
 .cursor {
@@ -37,29 +49,12 @@ body {
 }
 @keyframes blink {
     from, to { color: transparent; }
-    50% { color: #2563eb; } /* blue-600 */
+    50% { color: #2563eb; }
 }
 
 /* --- Masonry Gallery Layout --- */
-#masonry-gallery {
-    display: flex;
-    gap: 1rem;
-}
-
-#masonry-gallery-wrapper {
-    position: relative;
-    z-index: 0;
-    background-color: transparent;
-}
-
-
-.masonry-column {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    gap: 1rem;
-}
-
+#masonry-gallery { display: flex; gap: 1rem; }
+.masonry-column { display: flex; flex-direction: column; flex: 1; gap: 1rem; }
 .masonry-item {
     overflow: hidden;
     border-radius: 0.75rem;
@@ -70,12 +65,10 @@ body {
     background-repeat: no-repeat;
     background-size: 1000px 100%; 
 }
-
 @keyframes shimmer {
     0% { background-position: -500px 0; }
     100% { background-position: 500px 0; }
 }
-
 .masonry-item img {
     width: 100%;
     height: auto;
@@ -85,26 +78,16 @@ body {
 }
 
 /* --- Prompt Bar & UI --- */
-#prompt-input {
-    max-height: 150px;
-}
-
-#prompt-bar-container {
-    transition: border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-#prompt-bar-container.expanded {
-    border-radius: 1.75rem; /* Corresponds to rounded-3xl */
-}
-
+#prompt-input { max-height: 150px; }
+#prompt-bar-container { transition: border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+#prompt-bar-container.expanded { border-radius: 1.75rem; }
 @keyframes shake {
   10%, 90% { transform: translate3d(-1px, 0, 0); }
   20%, 80% { transform: translate3d(2px, 0, 0); }
   30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
   40%, 60% { transform: translate3d(4px, 0, 0); }
 }
-.animate-shake {
-    animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
-}
+.animate-shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 767px) {
