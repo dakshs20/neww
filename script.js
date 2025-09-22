@@ -150,7 +150,6 @@ function initializeAnimations() {
         masterTl.add(tl);
     });
     
-    // Animate Stat Cards with a smoother effect
     if (DOMElements.statCards.length > 0) {
         gsap.to(DOMElements.statCards, {
             opacity: 1,
@@ -166,7 +165,6 @@ function initializeAnimations() {
         });
     }
 
-    // Animate Counters
     if (DOMElements.counters.length > 0) {
         DOMElements.counters.forEach(counter => {
             const target = +counter.dataset.target;
@@ -195,17 +193,17 @@ function updateUIForAuthState(user) {
     const nav = DOMElements.headerNav;
     if (user) {
         nav.innerHTML = `
-            <a href="about.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">About</a>
-            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Pricing</a>
-            <div id="credits-counter" class="text-sm font-medium text-gray-700">Credits: ...</div>
-            <button id="sign-out-btn" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Sign Out</button>
+            <a href="about.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">About</a>
+            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Pricing</a>
+            <div id="credits-counter" class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ...</div>
+            <button id="sign-out-btn" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Sign Out</button>
         `;
         document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
         fetchUserCredits(user);
     } else {
         nav.innerHTML = `
-            <a href="about.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">About</a>
-            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">Pricing</a>
+            <a href="about.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">About</a>
+            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Pricing</a>
             <button id="sign-in-btn" class="text-sm font-medium bg-blue-600 text-white px-4 py-1.5 rounded-full hover:bg-blue-700 transition-colors">Sign In</button>
         `;
         document.getElementById('sign-in-btn').addEventListener('click', signInWithGoogle);
