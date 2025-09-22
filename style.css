@@ -124,7 +124,7 @@ body {
 @media (min-width: 768px) {
     #prompt-bar-container {
         max-width: 1280px; /* Further increased max-width for more length (Tailwind's max-w-7xl) */
-        padding: 1.5rem 2.5rem; /* Increased vertical and horizontal padding for more height and length */
+        padding: 1rem 2.5rem; /* Increased vertical and horizontal padding for more height and length */
     }
     #prompt-input {
         min-height: 56px; /* Set a larger minimum height for the text area itself */
@@ -132,4 +132,5 @@ body {
         align-items: center;
     }
 }
+
 
