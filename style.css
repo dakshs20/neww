@@ -13,19 +13,18 @@ body {
     transform: translateY(20px);
 }
 
-/* --- UPDATED: Softer & Smoother Gallery Fade Overlay --- */
+/* --- CORRECTED: Smoother & More Gradual Gallery Fade Overlay --- */
 #gallery-fade-overlay {
-    height: 12rem; /* Increased height for a more gradual fade (was 6rem) */
+    height: 16rem; /* Increased height for a much longer fade (was 12rem) */
     position: relative;
     z-index: 10;
     pointer-events: none;
-    /* Adjusted gradient to be less sharp at the top */
-    background: linear-gradient(to bottom, white 30%, rgba(255, 255, 255, 0));
+    /* This new gradient is solid white at the top and fades very gradually to transparent at the bottom */
+    background: linear-gradient(to bottom, white 50%, rgba(255, 255, 255, 0) 100%);
     /* Increased blur for a softer effect */
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
-
 
 /* --- Masonry Gallery Layout (Desktop First) --- */
 #masonry-gallery {
@@ -33,9 +32,9 @@ body {
     gap: 1rem; /* 16px */
 }
 
-/* The gallery is pulled up further to sit behind the taller fade overlay */
+/* The gallery is pulled up further to sit perfectly behind the new, taller fade overlay */
 #masonry-gallery-wrapper {
-    margin-top: -12rem; /* Adjusted to match the new overlay height */
+    margin-top: -16rem; /* Adjusted to match the new overlay height */
     position: relative;
     z-index: 0;
 }
