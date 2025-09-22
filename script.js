@@ -405,13 +405,33 @@ function removePreviewInputImage() {
     DOMElements.previewInputImageContainer.classList.add('hidden');
 }
 
+// NEW: Helper function to convert data URL to Blob for robust downloading
+function dataURLtoBlob(dataurl) {
+    let arr = dataurl.split(','),
+        mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[arr.length - 1]),
+        n = bstr.length,
+        u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+}
+
+// UPDATED: downloadPreviewImage function for cross-browser compatibility
 function downloadPreviewImage() {
-    const imageUrl = DOMElements.previewImage.src;
+    const dataUrl = DOMElements.previewImage.src;
+    const blob = dataURLtoBlob(dataUrl);
+    const objectUrl = URL.createObjectURL(blob);
+
     const a = document.createElement('a');
-    a.href = imageUrl;
+    a.href = objectUrl;
     a.download = 'genart-image.png';
     document.body.appendChild(a);
-a.click();
-document.body.removeChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // Clean up the object URL to free memory
+    URL.revokeObjectURL(objectUrl);
 }
 
