@@ -35,7 +35,7 @@ body {
     50% { color: #2563eb; } /* blue-600 */
 }
 
-/* --- Smooth Gallery Fade Overlay --- */
+/* --- CORRECTED: Smooth Gallery Fade Overlay --- */
 #gallery-fade-overlay {
     background: linear-gradient(to bottom, #f8fafc 50%, rgba(248, 250, 252, 0) 100%);
     backdrop-filter: blur(8px);
@@ -54,8 +54,8 @@ body {
     position: relative;
     z-index: 0;
     background-color: transparent;
-    margin-top: -12rem; /* Pull gallery up behind the fade */
-    padding-top: 12rem; /* Add padding to prevent content overlap */
+    margin-top: -16rem; /* Pull gallery up behind the fade */
+    padding-top: 16rem; /* Add padding to prevent content overlap */
 }
 
 
