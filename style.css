@@ -8,13 +8,9 @@ body {
     background-color: #f9fafb; /* A very light gray for a subtle texture */
 }
 
-/* CORRECTED: Blue fade effect is now at the top */
+/* REMOVED: The old hero background effect is no longer needed */
 #hero-particles {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    /* The blue radial gradient now originates from the top and fades out */
-    background: radial-gradient(ellipse at top, #dbeafe 0%, transparent 70%);
+    display: none;
 }
 
 #hero-headline, #hero-subline {
@@ -33,6 +29,16 @@ body {
     50% { color: #2563eb; } /* blue-600 */
 }
 
+/* --- NEW: Smooth Gallery Fade Overlay --- */
+#gallery-fade-overlay {
+    height: 12rem; /* Tall for a very gradual fade */
+    position: relative; /* Sits in the normal document flow */
+    z-index: 10;
+    pointer-events: none; /* Allows clicks/scrolls to pass through */
+    background: linear-gradient(to bottom, white 20%, rgba(255, 255, 255, 0) 100%);
+    margin-bottom: -12rem; /* Pulls the gallery content up from underneath */
+}
+
 
 /* --- Masonry Gallery Layout (Desktop First) --- */
 #masonry-gallery {
@@ -42,7 +48,7 @@ body {
 
 #masonry-gallery-wrapper {
     position: relative;
-    z-index: 0;
+    z-index: 0; /* Sits behind the fade overlay */
 }
 
 
