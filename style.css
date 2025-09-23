@@ -5,15 +5,14 @@ body {
     color: #374151; /* gray-700 */
 }
 
-/* --- UPDATED: Full-page Animated Gradient Background --- */
+/* --- Full-page Animated Gradient Background --- */
 #animated-gradient-bg {
     position: fixed;
     inset: 0;
     z-index: -1; /* Sit behind all content */
-    /* New, lighter gradient using very pale blue, lavender, and mint */
-    background: linear-gradient(125deg, #ebf7ff, #d1e5f4, #f8fafc, #ecfdf5, #e6f5ff);
+    background: linear-gradient(125deg, #e0f2fe, #f5f3ff, #f0fdf4, #f5f3ff, #e0f2fe);
     background-size: 400% 400%;
-    animation: gradient-flow 15s ease-in-out infinite;
+    animation: gradient-flow 20s ease-in-out infinite;
     will-change: background-position;
 }
 
@@ -29,7 +28,7 @@ body {
 }
 
 
-/* --- Hero and Stats Section --- */
+/* --- Hero, Stats, and Masonry Sections --- */
 #hero-headline .char {
     display: inline-block;
     opacity: 0;
@@ -50,7 +49,7 @@ body {
 }
 @keyframes blink {
     from, to { color: transparent; }
-    50% { color: #2563eb; }
+    50% { color: #517CBE; }
 }
 
 /* --- Masonry Gallery Layout --- */
@@ -97,12 +96,4 @@ body {
     .masonry-column:not(:first-child) { display: none; }
     .masonry-item { margin-bottom: 1rem; }
 }
-
-
-
-
-
-
-
-
 
