@@ -16,12 +16,10 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 document.addEventListener('DOMContentLoaded', () => {
-    gsap.registerPlugin(ScrollTrigger, TextPlugin);
+    gsap.registerPlugin(ScrollTrigger);
 
-    // --- Header & Mobile Menu ---
     setupHeader();
 
-    // --- Page Animations ---
     if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
         animateHero();
         animateVision();
@@ -75,50 +73,27 @@ function setupHeader() {
 
 function animateHero() {
     gsap.timeline({ delay: 0.2 })
-    .to("#hero-headline span", {
-        opacity: 1,
-        y: 0,
-        duration: 1.2,
-        stagger: 0.2,
-        ease: "expo.out"
-    })
-    .to("#hero-subline", {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: "expo.out"
-    }, "-=0.9");
+    .to("#hero-headline span", { opacity: 1, y: 0, duration: 1.2, stagger: 0.2, ease: "expo.out" })
+    .to("#hero-subline", { opacity: 1, y: 0, duration: 1, ease: "expo.out" }, "-=0.9");
 }
 
 function animateVision() {
     gsap.timeline({
-        scrollTrigger: {
-            trigger: "#vision-section",
-            start: "top 60%",
-        }
+        scrollTrigger: { trigger: "#vision-section", start: "top 60%" }
     })
-    .to(".title-underline", {
-        scaleX: 1,
-        duration: 1,
-        ease: "expo.out"
-    })
-    .to(".section-paragraph", {
-        opacity: 1,
-        y: 0,
-        stagger: 0.2,
-        duration: 0.8,
-        ease: "power3.out"
-    }, "-=0.7");
+    .to(".title-underline", { scaleX: 1, duration: 1, ease: "expo.out" })
+    .to(".section-paragraph", { opacity: 1, y: 0, stagger: 0.2, duration: 0.8, ease: "power3.out" }, "-=0.7");
     
     const images = gsap.utils.toArray('.vision-image');
-    let currentIndex = 0;
-    
     if (images.length > 0) {
+        let currentIndex = 0;
         const crossfadeImages = () => {
-            images[currentIndex].classList.remove('active');
+            images.forEach((img, index) => {
+                img.classList.toggle('active', index === currentIndex);
+            });
             currentIndex = (currentIndex + 1) % images.length;
-            images[currentIndex].classList.add('active');
-        }
+        };
+        crossfadeImages(); // Show first image immediately
         setInterval(crossfadeImages, 3500);
     }
 }
@@ -146,10 +121,7 @@ function animateTeam() {
         duration: 0.8,
         stagger: 0.15,
         ease: "expo.out",
-        scrollTrigger: {
-            trigger: ".team-card",
-            start: "top 85%",
-        }
+        scrollTrigger: { trigger: ".team-card", start: "top 85%" }
     });
 }
 
@@ -162,18 +134,7 @@ function animateCTA() {
             scrub: 1.2,
         }
     });
-    tl.to("#cta-background-animation", {
-        opacity: 0.15,
-        scale: 1,
-    })
-    .to("#cta-headline", {
-        opacity: 1,
-        y: 0,
-    }, "-=0.2")
-    .to("#cta-button", {
-        opacity: 1,
-        y: 0,
-        scale: 1
-    }, "-=0.2");
+    tl.to("#cta-headline", { opacity: 1, y: 0 })
+      .to("#cta-button", { opacity: 1, y: 0, scale: 1 }, "-=0.2");
 }
 
