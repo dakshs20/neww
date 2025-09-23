@@ -126,7 +126,7 @@ function updateUseCaseImage(index) {
         imageDisplay.onload = () => {
             imageDisplay.classList.remove('fading');
         };
-    }, 400);
+    }, 500); // Increased timeout to match new CSS transition
 }
 
 
@@ -174,7 +174,7 @@ function initializeEventListeners() {
     DOMElements.mobileMenuBtn?.addEventListener('click', () => {
         const isHidden = DOMElements.mobileMenu.classList.toggle('hidden');
         DOMElements.menuOpenIcon.classList.toggle('hidden', !isHidden);
-        DOMElements.menuCloseIcon.classList.toggle('hidden', isHidden);
+        DOMElements.menuCloseIcon.classList.toggle('hidden', ishidden);
     });
 
     // Initial check for gallery restructure
@@ -190,8 +190,7 @@ function initializeAnimations() {
     
     gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-    // NEW: Replaced the character-by-character animation with a simpler, more robust one.
-    // This fixes the text alignment and wrapping issue on mobile.
+    // Replaced the character-by-character animation with a simpler, more robust one.
     if (DOMElements.heroHeadline) {
         gsap.from(DOMElements.heroHeadline, { 
             opacity: 0, 
@@ -249,6 +248,47 @@ function initializeAnimations() {
                     counter.textContent = Math.ceil(proxy.val);
                 }
             });
+        });
+    }
+
+    // GSAP animations for the "Use GenArt today for" section
+    const useCaseSection = document.getElementById('interactive-use-cases');
+    if (useCaseSection) {
+        // Animate the main headline of the section
+        gsap.from("#interactive-use-cases h2", {
+            scrollTrigger: {
+                trigger: useCaseSection,
+                start: "top 80%",
+            },
+            opacity: 0,
+            y: 40,
+            duration: 1,
+            ease: "back.out(1.4)" // More dynamic ease
+        });
+
+        // Animate the category tabs with a stagger effect
+        gsap.from(".use-case-tab", {
+            scrollTrigger: {
+                trigger: useCaseSection,
+                start: "top 70%",
+            },
+            opacity: 0,
+            y: 30,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: "back.out(1.4)" // More dynamic ease
+        });
+
+        // Add a parallax effect to the image container
+        gsap.to("#use-case-image-container", {
+            scrollTrigger: {
+                trigger: useCaseSection,
+                start: "top bottom", 
+                end: "bottom top", 
+                scrub: 1.5 
+            },
+            yPercent: -15, 
+            ease: "none"
         });
     }
 }
