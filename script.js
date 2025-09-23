@@ -39,7 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'download-btn', 'close-preview-btn', 'regenerate-btn',
         'image-upload-btn', 'image-upload-input', 'image-preview-container', 'image-preview', 'remove-image-btn',
         'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input',
-        'hero-section', 'hero-headline', 'hero-subline', 'typewriter', 'prompt-bar-container'
+        'hero-section', 'hero-headline', 'hero-subline', 'typewriter', 'prompt-bar-container',
+        'use-case-track'
     ];
     ids.forEach(id => {
         if (id) {
@@ -56,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeAnimations();
     onAuthStateChanged(auth, user => updateUIForAuthState(user));
     restructureGalleryForMobile();
+    duplicateUseCaseTrack();
 });
 
 function restructureGalleryForMobile() {
@@ -67,6 +69,18 @@ function restructureGalleryForMobile() {
         while (column.firstChild) {
             firstColumn.appendChild(column.firstChild);
         }
+    }
+}
+
+// Duplicate content for seamless scroll
+function duplicateUseCaseTrack() {
+    const track = DOMElements.useCaseTrack;
+    if (track) {
+        const content = Array.from(track.children);
+        content.forEach(item => {
+            const clone = item.cloneNode(true);
+            track.appendChild(clone);
+        });
     }
 }
 
