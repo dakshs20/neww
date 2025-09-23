@@ -37,6 +37,8 @@ let currentAspectRatio = '1:1';
 let uploadedImageData = null;
 let currentPreviewInputData = null; 
 let timerInterval;
+let useCaseInterval;
+let currentUseCaseIndex = 0;
 
 // --- DOM Element Caching ---
 const DOMElements = {};
@@ -95,20 +97,29 @@ function initializeInteractiveUseCases() {
         tab.className = 'use-case-tab';
         tab.textContent = item.title;
         tab.dataset.index = index;
-        if (index === 0) {
-            tab.classList.add('active');
-        }
         tabsContainer.appendChild(tab);
     });
 
-    updateUseCaseImage(0);
+    updateUseCaseImage(currentUseCaseIndex);
+
+    function startUseCaseSlider() {
+        clearInterval(useCaseInterval);
+        useCaseInterval = setInterval(() => {
+            currentUseCaseIndex = (currentUseCaseIndex + 1) % useCaseData.length;
+            updateUseCaseImage(currentUseCaseIndex);
+        }, 4000); // Change image every 4 seconds
+    }
 
     tabsContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('use-case-tab')) {
             const index = parseInt(e.target.dataset.index, 10);
+            currentUseCaseIndex = index;
             updateUseCaseImage(index);
+            startUseCaseSlider(); // Reset the timer when user clicks
         }
     });
+
+    startUseCaseSlider();
 }
 
 function updateUseCaseImage(index) {
@@ -571,5 +582,4 @@ function downloadPreviewImage() {
         })
         .catch(() => alert('An error occurred while downloading the image.'));
 }
-
 
