@@ -22,11 +22,11 @@ const provider = new GoogleAuthProvider();
 // --- NEW: Data for Interactive Use Case Section ---
 // IMPORTANT: Replace these placeholder URLs with your actual image links.
 const useCaseData = [
-    { title: "Marketing", imageUrl: "https://iili.io/KaDoEWF.md.png" },
-    { title: "Advertising", imageUrl: "https://iili.io/KaDn2YQ.md.png" },
-    { title: "Fashion", imageUrl: "https://iili.io/KaDBjJ2.md.png" },
+    { title: "Marketing", imageUrl: "https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=1200&auto=format&fit=crop" },
+    { title: "Advertising", imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1200&auto=format&fit=crop" },
+    { title: "Fashion", imageUrl: "https://images.unsplash.com/photo-1581044777550-4cfa6ce6702e?q=80&w=1200&auto=format&fit=crop" },
     { title: "Graphic Design", imageUrl: "https://images.unsplash.com/photo-1629904853716-f0bc64219b1b?q=80&w=1200&auto=format&fit=crop" },
-    { title: "Realistic Photos", imageUrl: "https://iili.io/KaDqXu1.md.png" }
+    { title: "Realistic Photos", imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1200&auto=format&fit=crop" }
 ];
 
 
@@ -511,3 +511,4 @@ function downloadPreviewImage() {
         })
         .catch(() => alert('An error occurred while downloading the image.'));
 }
+
