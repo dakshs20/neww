@@ -19,8 +19,8 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 
-// --- Data for Interactive Use Case Section ---
-// You can add your image links here
+// --- NEW: Data for Interactive Use Case Section ---
+// IMPORTANT: Replace these placeholder URLs with your actual image links.
 const useCaseData = [
     { title: "Marketing", imageUrl: "https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=1200&auto=format&fit=crop" },
     { title: "Advertising", imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1200&auto=format&fit=crop" },
