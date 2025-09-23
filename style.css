@@ -90,7 +90,7 @@ body {
 .animate-shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
 
 
-/* --- NEW: Interactive Use Case Section --- */
+/* --- Interactive Use Case Section --- */
 .use-case-tab {
     font-size: 1.125rem; /* text-lg */
     font-weight: 600;
@@ -146,5 +146,14 @@ body {
     .masonry-column { display: block; }
     .masonry-column:not(:first-child) { display: none; }
     .masonry-item { margin-bottom: 1rem; }
+
+    /* Adjust hero text for mobile */
+    #hero-headline {
+        font-size: 2.5rem; /* A bit smaller */
+        line-height: 1.1;
+    }
+    #hero-subline {
+        font-size: 1rem;
+    }
 }
 
