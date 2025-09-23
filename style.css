@@ -36,6 +36,12 @@ body {
 
 
 /* --- Hero, Stats, and Masonry Sections --- */
+#hero-headline .char {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(20px);
+    will-change: transform, opacity;
+}
 #hero-subline {
     opacity: 0;
     transform: translateY(20px);
@@ -223,12 +229,14 @@ body {
         line-height: 1.2;
         word-break: break-word; /* Prevents long words from overflowing */
         text-align: center; /* Force centering for the headline */
+        width: 100%; /* Ensure the headline container takes the full width */
     }
 
     #hero-subline {
         font-size: 1rem;
         padding-left: 1rem;
         padding-right: 1rem;
+        text-align: center;
     }
 
     #stats-section .grid {
