@@ -72,9 +72,37 @@ function setupHeader() {
 }
 
 function animateHero() {
-    gsap.timeline({ delay: 0.2 })
-    .to("#hero-headline span", { opacity: 1, y: 0, duration: 1.2, stagger: 0.2, ease: "expo.out" })
-    .to("#hero-subline", { opacity: 1, y: 0, duration: 1, ease: "expo.out" }, "-=0.9");
+    const headlineSpans = gsap.utils.toArray("#hero-headline span");
+
+    headlineSpans.forEach(span => {
+        const chars = span.textContent.split('').map(char => {
+            const isWhitespace = char.trim() === '';
+            return `<span class="char" style="display: inline-block; ${isWhitespace ? 'width: 0.25em;' : ''}">${char}</span>`;
+        }).join('');
+        span.innerHTML = chars;
+    });
+
+    const chars = gsap.utils.toArray(".char");
+
+    gsap.timeline({ delay: 0.3 })
+        .from(chars, {
+            duration: 1.5,
+            opacity: 0,
+            y: 80,
+            rotationX: -90,
+            transformOrigin: "top",
+            ease: "expo.out",
+            stagger: {
+                amount: 0.5,
+                from: "random"
+            },
+        })
+        .to("#hero-subline", {
+            opacity: 1,
+            y: 0,
+            duration: 1.2,
+            ease: "expo.out"
+        }, "-=1.2");
 }
 
 function animateVision() {
