@@ -190,18 +190,14 @@ function initializeAnimations() {
     
     gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-    const headline = DOMElements.heroHeadline;
-    if (headline) {
-        const headlineText = headline.textContent;
-        headline.innerHTML = headlineText.split("").map(char => `<span class="char">${char === ' ' ? '&nbsp;' : char}</span>`).join("");
-        
-        gsap.to(".char", {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.8,
-            stagger: 0.02,
-            ease: 'power4.out'
+    // NEW: Replaced the character-by-character animation with a simpler, more robust one.
+    // This fixes the text alignment and wrapping issue on mobile.
+    if (DOMElements.heroHeadline) {
+        gsap.from(DOMElements.heroHeadline, { 
+            opacity: 0, 
+            y: 25, 
+            duration: 0.8, 
+            ease: 'power3.out' 
         });
     }
 
@@ -210,7 +206,7 @@ function initializeAnimations() {
         y: 0,
         duration: 1,
         ease: 'power3.out',
-        delay: 0.5
+        delay: 0.3
     });
 
     const words = ["creators.", "agencies.", "enterprises."];
@@ -559,3 +555,4 @@ function downloadPreviewImage() {
         })
         .catch(() => alert('An error occurred while downloading the image.'));
 }
+
