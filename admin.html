@@ -3,53 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GenArt - Admin Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>About GenArt — The Future of AI & Imagination</title>
+    <meta name="description" content="Discover the vision behind GenArt. We are pioneering the future of AI-generated art, empowering creators, brands, and innovators worldwide.">
     <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="about.css">
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-white text-slate-800 overflow-x-hidden">
 
-    <div id="password-protection" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-lg shadow-xl text-center">
-            <h2 class="text-2xl font-bold mb-4">Admin Access</h2>
-            <p class="text-gray-600 mb-6">Please enter the password to view the dashboard.</p>
-            <input type="password" id="password-input" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Password">
-            <button id="password-submit" class="w-full mt-4 bg-blue-500 text-white font-semibold py-2 rounded-lg hover:bg-blue-600">Submit</button>
-            <p id="password-error" class="text-red-500 text-sm mt-2 hidden">Incorrect password.</p>
-        </div>
-    </div>
-
-    <div id="dashboard-content" class="hidden container mx-auto p-4 sm:p-6 lg:p-8">
-        <header class="mb-8">
-            <h1 class="text-4xl font-bold text-gray-800">GenArt Admin Dashboard</h1>
-            <p class="text-gray-500">Real-time generation data</p>
-        </header>
-
-        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h2 class="text-2xl font-semibold text-gray-700">Total Images Generated</h2>
-            <p id="total-generations" class="text-5xl font-bold text-blue-500 mt-2">Loading...</p>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-md">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Recent Prompts</h2>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User ID</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prompt</th>
-                        </tr>
-                    </thead>
-                    <tbody id="prompts-table-body" class="bg-white divide-y divide-gray-200">
-                        <!-- Rows will be dynamically inserted here -->
-                        <tr><td colspan="3" class="text-center p-8 text-gray-500">Waiting for new prompts...</td></tr>
-                    </tbody>
-                </table>
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html">
+                <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-7 w-auto">
+            </a>
+            <div id="header-nav-container" class="hidden md:flex items-center space-x-2 bg-white/60 backdrop-blur-md border border-slate-200/80 shadow-lg rounded-full px-3 py-2">
+                <!-- Desktop nav links dynamically inserted by JS -->
             </div>
+             <button id="mobile-menu-btn" class="md:hidden p-2 rounded-full bg-white/60 backdrop-blur-md border border-slate-200/80 text-slate-800 z-50">
+                <svg id="menu-open-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                <svg id="menu-close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
-    </div>
+         <div id="mobile-menu" class="hidden md:hidden fixed inset-0 bg-white/80 backdrop-blur-xl z-40 p-4 pt-24">
+            <!-- Mobile nav links dynamically inserted by JS -->
+        </div>
+    </header>
 
-    <script type="module" src="admin.js"></script>
+    <main>
+        <!-- 1. Hero Section -->
+        <section id="hero-section" class="h-screen w-full flex items-center justify-center relative overflow-hidden">
+            <div class="hero-background-glow"></div>
+            <div class="text-center z-10 p-4">
+                <h1 id="hero-headline" class="text-4xl md:text-7xl font-extrabold text-slate-900 tracking-tight">
+                    <span class="block">We are GenArt —</span>
+                    <span class="block headline-gradient">Where AI Meets Imagination.</span>
+                </h1>
+                <p id="hero-subline" class="mt-6 text-base md:text-xl text-slate-600 max-w-3xl mx-auto">
+                    Empowering creators, brands, and innovators through the future of AI-generated art.
+                </p>
+            </div>
+        </section>
+
+        <!-- 2. Vision & Storytelling Section -->
+        <section id="vision-section" class="py-24 md:py-40">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center px-6">
+                <div id="vision-gallery" class="w-full aspect-square relative">
+                    <div class="vision-gallery-bg-glow"></div>
+                    <img src="https://images.unsplash.com/photo-1634433504902-31a4b27a35c3?q=80&w=1800" alt="AI Generated Art 1" class="vision-image active">
+                    <img src="https://images.unsplash.com/photo-1620421680383-3052a36b52c4?q=80&w=1800" alt="AI Generated Art 2" class="vision-image">
+                    <img src="https://images.unsplash.com/photo-1634433499211-1a4c9c1b0a2b?q=80&w=1800" alt="AI Generated Art 3" class="vision-image">
+                </div>
+                <div class="vision-text-content">
+                    <h2 class="section-title">Our Vision<span class="title-underline"></span></h2>
+                    <p class="section-paragraph">We believe creativity should have no boundaries.</p>
+                    <p class="section-paragraph">GenArt is built to give you limitless power to create, express, and explore.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. How We’re Different (Interactive Scroll) -->
+        <section id="features-section" class="py-24 md:py-40 relative">
+             <div class="max-w-5xl mx-auto px-6">
+                <div class="feature-item">
+                    <div class="feature-icon-wrapper">
+                        <div class="feature-icon">
+                            <svg class="w-10 h-10 icon-gradient" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3V1M12 23V21M3 12H1M23 12H21M4.93 4.93L3.51 3.51M20.49 20.49L19.07 19.07M19.07 4.93L20.49 3.51M3.51 20.49L4.93 19.07M12 5.5A6.5 6.5 0 1018.5 12 6.5 6.5 0 0012 5.5z"></path><path d="M12 8.5A3.5 3.5 0 1015.5 12 3.5 3.5 0 0012 8.5z"></path></svg>
+                        </div>
+                    </div>
+                    <div class="feature-text"><h3>Cutting-edge AI Models</h3><p>Proprietary models trained for unparalleled quality, speed, and style diversity.</p></div>
+                </div>
+                 <div class="feature-item">
+                     <div class="feature-icon-wrapper">
+                         <div class="feature-icon">
+                            <svg class="w-10 h-10 icon-gradient" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path><path d="M12 17.01V17"></path><path d="M12 10v4"></path></svg>
+                         </div>
+                     </div>
+                    <div class="feature-text"><h3>Limitless Possibilities</h3><p>From photorealism to abstract art, your imagination is the only constraint.</p></div>
+                </div>
+                 <div class="feature-item">
+                     <div class="feature-icon-wrapper">
+                        <div class="feature-icon">
+                            <svg class="w-10 h-10 icon-gradient" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15v4c0 1.1.9 2 2 2h4"></path><path d="M17 3h4c1.1 0 2 .9 2 2v4"></path><path d="M21 17v4c0 1.1-.9 2-2 2h-4"></path><path d="M7 3H3c-1.1 0-2 .9-2 2v4"></path><path d="M12 8v8"></path><path d="M8 12h8"></path></svg>
+                        </div>
+                     </div>
+                    <div class="feature-text"><h3>Designed for Creators</h3><p>An intuitive workflow built for artists, designers, and agencies to accelerate creativity.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Team & Innovation Section -->
+        <section class="py-24 md:py-40 bg-slate-50 border-y border-slate-200/80">
+            <div class="max-w-6xl mx-auto px-6 text-center">
+                <h2 class="section-title mb-16">Driven by Innovation</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="team-card">
+                        <div class="team-card-content">
+                            <h4>Mission-Driven</h4>
+                            <p>To democratize creativity and build the next generation of artistic tools.</p>
+                        </div>
+                    </div>
+                     <div class="team-card">
+                        <div class="team-card-content">
+                            <h4>Ethical AI</h4>
+                            <p>Committed to responsible development and empowering artists fairly.</p>
+                        </div>
+                    </div>
+                     <div class="team-card">
+                        <div class="team-card-content">
+                            <h4>Future-Focused</h4>
+                            <p>Continuously pushing the boundaries of what's possible in generative art.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Closing CTA -->
+        <section id="cta-section" class="h-screen w-full flex flex-col items-center justify-center text-center relative p-4 overflow-hidden">
+            <div class="cta-background-glow"></div>
+            <div class="z-10">
+                <h2 id="cta-headline" class="text-4xl md:text-6xl font-extrabold text-slate-900">This is just the beginning.</h2>
+                <a href="index.html" id="cta-button" class="mt-12 inline-block">
+                    <span class="cta-button-text">Start Creating with GenArt</span>
+                </a>
+            </div>
+        </section>
+    </main>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/ScrollTrigger.min.js"></script>
+    <script type="module" src="about.js"></script>
 </body>
 </html>
+
