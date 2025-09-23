@@ -213,14 +213,24 @@ body {
     .masonry-column:not(:first-child) { display: none; }
     .masonry-item { margin-bottom: 1rem; }
 
+    #first-screen-content {
+        padding-left: 1.5rem;  /* Add more space on the sides */
+        padding-right: 1.5rem; /* Add more space on the sides */
+    }
+
     #hero-headline {
         font-size: 2.25rem; /* Slightly smaller for better fit */
         line-height: 1.2;
         word-break: break-word; /* Prevents long words from overflowing */
+        text-align: center; /* Force centering for the headline */
     }
+
     #hero-subline {
         font-size: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
+
     #stats-section .grid {
         gap: 1.5rem; /* Reduce gap on mobile */
     }
