@@ -34,7 +34,6 @@
         <!-- Main Content Scroller -->
         <div id="gallery-container" class="flex-grow overflow-y-auto">
             
-            <!-- NEW: Full-screen wrapper for hero and stats -->
             <div id="first-screen-content" class="min-h-screen flex flex-col items-center justify-center text-center p-4">
                 <!-- Hero Section -->
                 <section id="hero-section" class="relative z-10">
@@ -66,7 +65,7 @@
             </div>
 
             <!-- Masonry Gallery Container -->
-            <div id="masonry-gallery-wrapper" class="px-4 pb-40">
+            <div id="masonry-gallery-wrapper" class="px-4 pb-20">
                 <div id="masonry-gallery">
                      <div class="masonry-column">
                         <div class="masonry-item"><img src="https://iili.io/K7bN7Hl.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
@@ -86,6 +85,50 @@
                     </div>
                 </div>
             </div>
+
+            <!-- NEW: Use Case Section -->
+            <section id="use-case-section" class="py-20 md:py-32 relative z-10 overflow-hidden">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl md:text-5xl font-bold text-gray-800 tracking-tighter">Use GenArt today for.</h2>
+                </div>
+                <div class="use-case-scroller">
+                    <div id="use-case-track" class="use-case-track">
+                        <!-- Items will be duplicated by JS for a seamless loop -->
+                        <div class="use-case-card">
+                            <img src="https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=800&auto=format&fit=crop" alt="Marketing" class="use-case-image">
+                            <div class="use-case-overlay">
+                                <h3 class="use-case-title">Marketing</h3>
+                            </div>
+                        </div>
+                        <div class="use-case-card">
+                            <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=800&auto=format&fit=crop" alt="Advertising" class="use-case-image">
+                            <div class="use-case-overlay">
+                                <h3 class="use-case-title">Advertising</h3>
+                            </div>
+                        </div>
+                        <div class="use-case-card">
+                            <img src="https://images.unsplash.com/photo-1581044777550-4cfa6ce6702e?q=80&w=800&auto=format&fit=crop" alt="Fashion" class="use-case-image">
+                            <div class="use-case-overlay">
+                                <h3 class="use-case-title">Fashion</h3>
+                            </div>
+                        </div>
+                        <div class="use-case-card">
+                            <img src="https://images.unsplash.com/photo-1629904853716-f0bc64219b1b?q=80&w=800&auto=format&fit=crop" alt="Graphic Design" class="use-case-image">
+                            <div class="use-case-overlay">
+                                <h3 class="use-case-title">Graphic Design</h3>
+                            </div>
+                        </div>
+                        <div class="use-case-card">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop" alt="Realistic Photos" class="use-case-image">
+                            <div class="use-case-overlay">
+                                <h3 class="use-case-title">Realistic Photos</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
         </div>
 
         <!-- Prompt Bar -->
