@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF--8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About GenArt — Pioneering the Future of AI Creativity</title>
-    <meta name="description" content="Discover the vision, technology, and mission behind GenArt. We are building the next generation of creative tools to empower human imagination.">
+    <title>About GenArt — The Future of AI & Imagination</title>
+    <meta name="description" content="Discover the vision, technology, and mission behind GenArt. We are pioneering the future of AI-generated art, empowering creators, brands, and innovators worldwide.">
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,72 +35,119 @@
 
     <main>
         <!-- 1. Hero Section -->
-        <section class="hero-section h-screen w-full flex flex-col justify-center items-center text-center relative overflow-hidden p-6">
-            <div class="background-grid"></div>
-            <div class="hero-glow"></div>
-            <h1 class="hero-headline text-4xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight z-10">
-                <span class="animated-line">A new medium</span>
-                <span class="animated-line">for human imagination.</span>
-            </h1>
-            <p class="hero-subline mt-6 text-base md:text-xl text-slate-600 max-w-3xl mx-auto z-10">
-                GenArt is a creative partner that multiplies your potential. We build advanced AI tools to help the world's most creative people bring their ideas to life.
-            </p>
+        <section id="hero-section" class="h-screen w-full flex flex-col justify-center items-center text-center relative p-6">
+            <div id="hero-canvas" class="absolute inset-0 z-0"></div>
+            <div class="relative z-10">
+                <h1 class="hero-headline text-4xl sm:text-6xl md:text-7xl font-extrabold text-slate-900 tracking-tight">
+                    <span class="animated-word">The Future of</span>
+                    <span class="animated-word text-gradient">Creativity, Realized.</span>
+                </h1>
+                <p class="hero-subline mt-8 text-base md:text-xl text-slate-600 max-w-3xl mx-auto">
+                    We build generative AI for the next generation of artists, designers, and storytellers. GenArt is more than a tool—it's a new creative paradigm.
+                </p>
+            </div>
         </section>
 
-        <!-- 2. Pillars Section -->
-        <section class="pillars-section py-24 md:py-40 px-6">
-            <div class="max-w-7xl mx-auto">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                    <div class="pillar-card">
-                        <div class="pillar-icon">
-                            <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3V1M12 23V21M3 12H1M23 12H21M4.93 4.93L3.51 3.51M20.49 20.49L19.07 19.07M19.07 4.93L20.49 3.51M3.51 20.49L4.93 19.07"></path><path d="M12 5.5A6.5 6.5 0 1018.5 12 6.5 6.5 0 0012 5.5z"></path></svg>
+        <!-- 2. Mission Pillars Section -->
+        <section class="mission-section py-24 md:py-40 px-6 bg-slate-50 border-y border-slate-200/80">
+            <div class="max-w-6xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <div class="mission-card">
+                        <div class="mission-icon">
+                           <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3V1M12 23V21M3 12H1M23 12H21M4.93 4.93L3.51 3.51M20.49 20.49L19.07 19.07M19.07 4.93L20.49 3.51M3.51 20.49L4.93 19.07"></path><circle cx="12" cy="12" r="4"></circle></svg>
                         </div>
-                        <h3 class="pillar-title">Pioneering Research</h3>
-                        <p class="pillar-text">Our work is built on foundational research in generative models, pushing the boundaries of quality, coherence, and speed.</p>
+                        <h3 class="mission-title">Creativity Amplified</h3>
+                        <p class="mission-text">Our foundational models are designed to be creative partners, augmenting human imagination, not replacing it.</p>
                     </div>
-                    <div class="pillar-card">
-                        <div class="pillar-icon">
-                            <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15v4c0 1.1.9 2 2 2h4"></path><path d="M17 3h4c1.1 0 2 .9 2 2v4"></path><path d="M21 17v4c0 1.1-.9 2-2 2h-4"></path><path d="M7 3H3c-1.1 0-2 .9-2 2v4"></path></svg>
+                     <div class="mission-card">
+                        <div class="mission-icon">
+                           <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
                         </div>
-                        <h3 class="pillar-title">Creator-Centric Tools</h3>
-                        <p class="pillar-text">We design intuitive, powerful products that augment the creative process, from initial concept to final polish.</p>
+                        <h3 class="mission-title">Technology Distilled</h3>
+                        <p class="mission-text">We translate complex AI research into intuitive, powerful tools that are accessible to everyone, from solo creators to enterprise teams.</p>
                     </div>
-                     <div class="pillar-card">
-                        <div class="pillar-icon">
-                            <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                     <div class="mission-card">
+                        <div class="mission-icon">
+                           <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                         </div>
-                        <h3 class="pillar-title">Ethical AI</h3>
-                        <p class="pillar-text">We are committed to the responsible development of AI, with a focus on safety, fairness, and collaboration with the creative community.</p>
+                        <h3 class="mission-title">Responsibility by Design</h3>
+                        <p class="mission-text">We are committed to the ethical development of AI, prioritizing safety, fairness, and collaboration with the creative community.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Technology Showcase Section -->
+        <section class="tech-section py-24 md:py-40 px-6">
+            <div class="max-w-6xl mx-auto text-center">
+                <h2 class="section-title text-3xl md:text-5xl font-extrabold text-slate-900">Our Engine</h2>
+                <p class="section-subtitle mt-4 text-lg md:text-xl text-slate-600 max-w-3xl mx-auto">GenArt is built on a proprietary stack designed for unparalleled quality, performance, and creative control.</p>
+
+                <div class="mt-20 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                    <div class="tech-card">
+                        <div class="tech-card-glow"></div>
+                        <div class="tech-card-content">
+                            <h4>Proprietary Models</h4>
+                            <p>Trained on a diverse, ethically-sourced dataset, our models produce unique and coherent results at incredible speed.</p>
+                        </div>
+                    </div>
+                    <div class="tech-card">
+                        <div class="tech-card-glow"></div>
+                         <div class="tech-card-content">
+                            <h4>Unreal Speed</h4>
+                            <p>Our inference optimizations deliver high-resolution images in seconds, enabling a fluid, iterative creative workflow.</p>
+                        </div>
+                    </div>
+                     <div class="tech-card">
+                         <div class="tech-card-glow"></div>
+                         <div class="tech-card-content">
+                            <h4>Creative Control</h4>
+                            <p>Go beyond simple prompts with advanced controls for style, composition, and fine-tuning to match your vision perfectly.</p>
+                        </div>
+                    </div>
+                     <div class="tech-card">
+                        <div class="tech-card-glow"></div>
+                         <div class="tech-card-content">
+                            <h4>Ethical Framework</h4>
+                            <p>Integrated safety filters, creator-centric data policies, and transparent development define our responsible approach.</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
         
-        <!-- 3. Showcase Horizontal Scroll -->
-        <section id="showcase-section" class="showcase-section relative">
-             <div class="showcase-container h-screen flex items-center">
-                 <div class="showcase-track flex gap-8">
-                     <div class="showcase-title-card flex-shrink-0 w-screen flex flex-col justify-center items-center text-center p-6">
-                        <h2 class="text-4xl md:text-6xl font-extrabold text-slate-900 tracking-tight">From prompt to publish.</h2>
-                        <p class="mt-4 text-lg md:text-xl text-slate-600 max-w-xl">A glimpse into what's possible with GenArt.</p>
-                     </div>
-                     <div class="showcase-image-card"><img src="https://images.unsplash.com/photo-1575899499834-644855214489?q=80&w=1800" alt="Generated Art Showcase"></div>
-                     <div class="showcase-image-card"><img src="https://images.unsplash.com/photo-1581044777550-4cfa6ce6702e?q=80&w=1800" alt="Generated Art Showcase"></div>
-                     <div class="showcase-image-card"><img src="https://images.unsplash.com/photo-1617791160536-595a724fe65a?q=80&w=1800" alt="Generated Art Showcase"></div>
-                     <div class="showcase-image-card"><img src="https://images.unsplash.com/photo-1620503374956-c942862f0372?q=80&w=1800" alt="Generated Art Showcase"></div>
-                     <div class="showcase-image-card"><img src="https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=1800" alt="Generated Art Showcase"></div>
-                 </div>
-             </div>
+        <!-- 4. Explore Section -->
+        <section class="explore-section py-24 md:py-40 px-6 bg-slate-50 border-y border-slate-200/80">
+             <div class="max-w-6xl mx-auto text-center">
+                <h2 class="section-title text-3xl md:text-5xl font-extrabold text-slate-900">Explore Our World</h2>
+                <div class="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <a href="#" class="explore-card">
+                        <h4>Careers</h4>
+                        <p>Join us in shaping the future of creativity. View open roles.</p>
+                        <span class="explore-arrow">&rarr;</span>
+                    </a>
+                    <a href="#" class="explore-card">
+                        <h4>Research Blog</h4>
+                        <p>Read about our latest breakthroughs in generative AI.</p>
+                         <span class="explore-arrow">&rarr;</span>
+                    </a>
+                    <a href="#" class="explore-card">
+                        <h4>API & Enterprise</h4>
+                        <p>Integrate GenArt's power into your own applications.</p>
+                         <span class="explore-arrow">&rarr;</span>
+                    </a>
+                </div>
+            </div>
         </section>
 
-        <!-- 4. Closing CTA -->
-        <section class="cta-section py-32 md:py-48 text-center px-6">
-            <div class="max-w-3xl mx-auto">
-                <h2 class="cta-headline text-3xl md:text-5xl font-extrabold text-slate-900">Join the next wave of creativity.</h2>
-                <p class="cta-subline mt-6 text-lg md:text-xl text-slate-600">Start creating with the world's most advanced generative AI tools today. Get started for free.</p>
+        <!-- 5. Closing CTA -->
+        <section class="cta-section py-32 md:py-48 text-center px-6 relative overflow-hidden">
+            <div class="cta-glow"></div>
+            <div class="relative z-10">
+                <h2 class="cta-headline text-4xl md:text-6xl font-extrabold text-slate-900">Create What's Next.</h2>
                 <div class="mt-12">
                      <a href="index.html" class="cta-button">
-                        <span class="cta-button-text">Start Creating with GenArt</span>
+                        <span>Start Creating with GenArt</span>
                     </a>
                 </div>
             </div>
@@ -109,6 +156,7 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script type="module" src="about.js"></script>
 </body>
 </html>
