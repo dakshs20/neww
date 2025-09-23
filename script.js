@@ -18,6 +18,18 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+
+// --- Data for Interactive Use Case Section ---
+// You can add your image links here
+const useCaseData = [
+    { title: "Marketing", imageUrl: "https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=1200&auto=format&fit=crop" },
+    { title: "Advertising", imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1200&auto=format&fit=crop" },
+    { title: "Fashion", imageUrl: "https://images.unsplash.com/photo-1581044777550-4cfa6ce6702e?q=80&w=1200&auto=format&fit=crop" },
+    { title: "Graphic Design", imageUrl: "https://images.unsplash.com/photo-1629904853716-f0bc64219b1b?q=80&w=1200&auto=format&fit=crop" },
+    { title: "Realistic Photos", imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1200&auto=format&fit=crop" }
+];
+
+
 // --- Global State ---
 let currentUser;
 let currentUserCredits = 0;
@@ -40,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'image-upload-btn', 'image-upload-input', 'image-preview-container', 'image-preview', 'remove-image-btn',
         'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input',
         'hero-section', 'hero-headline', 'hero-subline', 'typewriter', 'prompt-bar-container',
-        'use-case-track'
+        'use-case-tabs', 'use-case-image-display'
     ];
     ids.forEach(id => {
         if (id) {
@@ -55,9 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeEventListeners();
     initializeAnimations();
+    initializeInteractiveUseCases();
     onAuthStateChanged(auth, user => updateUIForAuthState(user));
     restructureGalleryForMobile();
-    duplicateUseCaseTrack();
 });
 
 function restructureGalleryForMobile() {
@@ -72,16 +84,47 @@ function restructureGalleryForMobile() {
     }
 }
 
-// Duplicate content for seamless scroll
-function duplicateUseCaseTrack() {
-    const track = DOMElements.useCaseTrack;
-    if (track) {
-        const content = Array.from(track.children);
-        content.forEach(item => {
-            const clone = item.cloneNode(true);
-            track.appendChild(clone);
-        });
-    }
+function initializeInteractiveUseCases() {
+    const tabsContainer = DOMElements.useCaseTabs;
+    if (!tabsContainer) return;
+
+    useCaseData.forEach((item, index) => {
+        const tab = document.createElement('button');
+        tab.className = 'use-case-tab';
+        tab.textContent = item.title;
+        tab.dataset.index = index;
+        if (index === 0) {
+            tab.classList.add('active');
+        }
+        tabsContainer.appendChild(tab);
+    });
+
+    updateUseCaseImage(0);
+
+    tabsContainer.addEventListener('click', (e) => {
+        if (e.target.classList.contains('use-case-tab')) {
+            const index = parseInt(e.target.dataset.index, 10);
+            updateUseCaseImage(index);
+        }
+    });
+}
+
+function updateUseCaseImage(index) {
+    const imageDisplay = DOMElements.useCaseImageDisplay;
+    const tabs = document.querySelectorAll('.use-case-tab');
+    if (!imageDisplay || !tabs.length) return;
+
+    tabs.forEach((tab, i) => {
+        tab.classList.toggle('active', i === index);
+    });
+
+    imageDisplay.classList.add('fading');
+    setTimeout(() => {
+        imageDisplay.src = useCaseData[index].imageUrl;
+        imageDisplay.onload = () => {
+            imageDisplay.classList.remove('fading');
+        };
+    }, 400);
 }
 
 
