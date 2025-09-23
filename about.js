@@ -127,8 +127,8 @@ function initHeroCanvas() {
 
 function animateHero() {
     const tl = gsap.timeline({ delay: 0.3 });
-    tl.to(".hero-headline .animated-word > *", { y: 0, stagger: 0.1, duration: 1.2, ease: "expo.out" })
-      .to(".hero-subline", { opacity: 1, duration: 1, ease: "power2.out" }, "-=0.8");
+    tl.to(".hero-headline .animated-word", { y: 0, stagger: 0.1, duration: 1.2, ease: "expo.out" })
+      .fromTo(".hero-subline", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1, ease: "power2.out" }, "-=0.8");
 }
 
 function animateMission() {
@@ -146,18 +146,19 @@ function animateTech() {
     const tl = gsap.timeline({
         scrollTrigger: { trigger: ".tech-section", start: "top 70%" }
     });
-    tl.to(".section-title, .section-subtitle", { opacity: 1, y: 0, duration: 1, ease: "expo.out" })
-      .to(".tech-card", { opacity: 1, y: 0, stagger: 0.1, duration: 0.8, ease: "power2.out" }, "-=0.5");
+    tl.from(".section-title, .section-subtitle", { opacity: 0, y: 20, duration: 1, ease: "expo.out" })
+      .from(".tech-card", { opacity: 0, y: 30, stagger: 0.1, duration: 0.8, ease: "power2.out" }, "-=0.5");
 }
 
 function animateExplore() {
-    gsap.from(".explore-card", {
+    const trigger = ".explore-section";
+    gsap.from(gsap.utils.toArray('.explore-section .section-title, .explore-card'), {
         opacity: 0,
         y: 30,
         stagger: 0.15,
         duration: 0.8,
         ease: "power2.out",
-        scrollTrigger: { trigger: ".explore-section", start: "top 70%" }
+        scrollTrigger: { trigger: trigger, start: "top 70%" }
     });
 }
 
@@ -166,11 +167,11 @@ function animateCTA() {
     const tl = gsap.timeline({
         scrollTrigger: {
             trigger: ctaSection,
-            start: "top 60%",
+            start: "top 70%",
             onEnter: () => ctaSection.classList.add('is-active')
         }
     });
-    tl.to(".cta-headline", { opacity: 1, y: 0, duration: 1, ease: "expo.out" })
-      .to(".cta-button", { opacity: 1, scale: 1, duration: 1, ease: "elastic.out(1, 0.5)" }, "-=0.7");
+    tl.from(".cta-headline", { opacity: 0, y: 30, duration: 1, ease: "expo.out" })
+      .from(".cta-button", { opacity: 0, scale: 0.9, duration: 1, ease: "elastic.out(1, 0.5)" }, "-=0.7");
 }
 
