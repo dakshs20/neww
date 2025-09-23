@@ -85,9 +85,9 @@ function animateHero() {
 }
 
 function animatePillars() {
-    gsap.from(".pillar-card", {
-        opacity: 0,
-        y: 30,
+    gsap.to(".pillar-card", {
+        opacity: 1,
+        y: 0,
         duration: 0.8,
         ease: "expo.out",
         stagger: 0.15,
@@ -121,9 +121,9 @@ function setupHorizontalScroll() {
 
 function animateCTA() {
     const ctaElements = ['.cta-headline', '.cta-subline', '.cta-button'];
-    gsap.from(ctaElements, {
-        opacity: 0,
-        y: 30,
+    gsap.to(ctaElements, {
+        opacity: 1,
+        y: 0,
         duration: 1,
         ease: "expo.out",
         stagger: 0.2,
