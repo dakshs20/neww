@@ -220,22 +220,25 @@ body {
     .masonry-item { margin-bottom: 1rem; }
 
     #first-screen-content {
-        padding-left: 1.5rem;  /* Add more space on the sides */
-        padding-right: 1.5rem; /* Add more space on the sides */
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    #hero-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     #hero-headline {
-        font-size: 2.25rem; /* Slightly smaller for better fit */
-        line-height: 1.2;
-        word-break: break-word; /* Prevents long words from overflowing */
-        text-align: center; /* Force centering for the headline */
-        width: 100%; /* Ensure the headline container takes the full width */
+        font-size: 2.5rem; /* Slightly larger for impact */
+        line-height: 1.15;
+        text-align: center;
     }
 
     #hero-subline {
         font-size: 1rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
+        max-width: 90%;
         text-align: center;
     }
 
