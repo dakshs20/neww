@@ -9,7 +9,7 @@ body {
 #animated-gradient-bg {
     position: fixed;
     inset: 0;
-    z-index: -1; /* Sit behind all content */
+    z-index: -1;
     background: linear-gradient(125deg, #e0f2fe, #f5f3ff, #f0fdf4, #f5f3ff, #e0f2fe);
     background-size: 400% 400%;
     animation: gradient-flow 20s ease-in-out infinite;
@@ -22,11 +22,9 @@ body {
     100% { background-position: 0% 50%; }
 }
 
-/* Ensure other containers are transparent to see the background */
 #gallery-container, #hero-section, #stats-section, #masonry-gallery-wrapper, #interactive-use-cases {
     background-color: transparent;
 }
-
 
 /* --- Hero, Stats, and Masonry Sections --- */
 #hero-headline .char {
@@ -92,9 +90,9 @@ body {
 
 /* --- Interactive Use Case Section --- */
 .use-case-tab {
-    font-size: 1.125rem; /* text-lg */
+    font-size: 1.125rem;
     font-weight: 600;
-    color: #64748b; /* slate-500 */
+    color: #64748b;
     cursor: pointer;
     position: relative;
     padding-bottom: 0.5rem;
@@ -115,7 +113,7 @@ body {
 
 .use-case-tab.active,
 .use-case-tab:hover {
-    color: #334155; /* slate-700 */
+    color: #334155;
 }
 
 .use-case-tab.active {
@@ -128,7 +126,7 @@ body {
 }
 
 #use-case-image-container {
-    background-color: #e2e8f0; /* Placeholder background */
+    background-color: #e2e8f0;
 }
 
 #use-case-image-display {
@@ -147,13 +145,18 @@ body {
     .masonry-column:not(:first-child) { display: none; }
     .masonry-item { margin-bottom: 1rem; }
 
-    /* Adjust hero text for mobile */
     #hero-headline {
-        font-size: 2.5rem; /* A bit smaller */
+        font-size: 2.5rem;
         line-height: 1.1;
     }
     #hero-subline {
         font-size: 1rem;
+    }
+    #stats-section .grid {
+        gap: 1.5rem; /* Reduce gap on mobile */
+    }
+    #stats-section h3 {
+        font-size: 2.25rem; /* text-4xl */
     }
 }
 
