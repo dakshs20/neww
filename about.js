@@ -20,9 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setupHeader();
 
     if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+        initHeroCanvas();
         animateHero();
-        animatePillars();
-        setupHorizontalScroll();
+        animateMission();
+        animateTech();
+        animateExplore();
         animateCTA();
     }
 });
@@ -69,72 +71,106 @@ function setupHeader() {
     });
 }
 
-function animateHero() {
-    gsap.timeline({ delay: 0.2 })
-        .to(".hero-headline .animated-line > *", {
-            y: 0,
-            duration: 1,
-            ease: "expo.out",
-            stagger: 0.1
-        })
-        .to(".hero-subline", {
-            opacity: 1,
-            duration: 1,
-            ease: "power2.out"
-        }, "-=0.5");
-}
+function initHeroCanvas() {
+    const container = document.getElementById('hero-canvas');
+    if (!container) return;
 
-function animatePillars() {
-    gsap.to(".pillar-card", {
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: "expo.out",
-        stagger: 0.15,
-        scrollTrigger: {
-            trigger: ".pillars-section",
-            start: "top 70%",
-        }
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    const particlesCount = 5000;
+    const positions = new Float32Array(particlesCount * 3);
+    for (let i = 0; i < particlesCount * 3; i++) {
+        positions[i] = (Math.random() - 0.5) * 10;
+    }
+
+    const particlesGeometry = new THREE.BufferGeometry();
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const particlesMaterial = new THREE.PointsMaterial({
+        size: 0.015,
+        color: 0x517CBE,
+    });
+    
+    const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particles);
+    camera.position.z = 5;
+    
+    let mouseX = 0;
+    let mouseY = 0;
+    document.addEventListener('mousemove', (event) => {
+        mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+        mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+    });
+
+    const clock = new THREE.Clock();
+    const animate = () => {
+        requestAnimationFrame(animate);
+        const elapsedTime = clock.getElapsedTime();
+        particles.rotation.y = elapsedTime * 0.05;
+        camera.position.x += (mouseX * 0.5 - camera.position.x) * 0.05;
+        camera.position.y += (mouseY * 0.5 - camera.position.y) * 0.05;
+        renderer.render(scene, camera);
+    };
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
     });
 }
 
-function setupHorizontalScroll() {
-    const showcaseTrack = document.querySelector(".showcase-track");
-    const showcaseContainer = document.querySelector(".showcase-container");
-    if (!showcaseTrack || !showcaseContainer) return;
-
-    // Use a timeout to ensure all images are loaded and widths are calculated correctly
-    setTimeout(() => {
-        const scrollAmount = showcaseTrack.offsetWidth - showcaseContainer.offsetWidth;
-
-        gsap.to(showcaseTrack, {
-            x: -scrollAmount,
-            ease: "none",
-            scrollTrigger: {
-                trigger: "#showcase-section",
-                start: "top top",
-                end: "bottom bottom", // <-- FIX: Ensures animation spans the entire section height
-                pin: showcaseContainer, // <-- FIX: Pins the visible container, not the entire scrollable section
-                scrub: 1,
-                invalidateOnRefresh: true,
-            }
-        });
-    }, 100);
+function animateHero() {
+    const tl = gsap.timeline({ delay: 0.3 });
+    tl.to(".hero-headline .animated-word > *", { y: 0, stagger: 0.1, duration: 1.2, ease: "expo.out" })
+      .to(".hero-subline", { opacity: 1, duration: 1, ease: "power2.out" }, "-=0.8");
 }
 
+function animateMission() {
+    gsap.from(".mission-card", {
+        opacity: 0,
+        y: 30,
+        stagger: 0.15,
+        duration: 0.8,
+        ease: "power2.out",
+        scrollTrigger: { trigger: ".mission-section", start: "top 70%" }
+    });
+}
+
+function animateTech() {
+    const tl = gsap.timeline({
+        scrollTrigger: { trigger: ".tech-section", start: "top 70%" }
+    });
+    tl.to(".section-title, .section-subtitle", { opacity: 1, y: 0, duration: 1, ease: "expo.out" })
+      .to(".tech-card", { opacity: 1, y: 0, stagger: 0.1, duration: 0.8, ease: "power2.out" }, "-=0.5");
+}
+
+function animateExplore() {
+    gsap.from(".explore-card", {
+        opacity: 0,
+        y: 30,
+        stagger: 0.15,
+        duration: 0.8,
+        ease: "power2.out",
+        scrollTrigger: { trigger: ".explore-section", start: "top 70%" }
+    });
+}
 
 function animateCTA() {
-    const ctaElements = ['.cta-headline', '.cta-subline', '.cta-button'];
-    gsap.to(ctaElements, {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: "expo.out",
-        stagger: 0.2,
+    const ctaSection = document.querySelector(".cta-section");
+    const tl = gsap.timeline({
         scrollTrigger: {
-            trigger: ".cta-section",
-            start: "top 80%", // Adjusted trigger point for better timing
+            trigger: ctaSection,
+            start: "top 60%",
+            onEnter: () => ctaSection.classList.add('is-active')
         }
     });
+    tl.to(".cta-headline", { opacity: 1, y: 0, duration: 1, ease: "expo.out" })
+      .to(".cta-button", { opacity: 1, scale: 1, duration: 1, ease: "elastic.out(1, 0.5)" }, "-=0.7");
 }
 
