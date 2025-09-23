@@ -25,12 +25,25 @@
                 <a href="index.html">
                     <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 md:h-8 w-auto">
                 </a>
-                <div id="header-nav" class="flex items-center space-x-1 bg-white/70 backdrop-blur-md border border-gray-200/80 shadow-sm rounded-full px-2 py-1">
+                <!-- Desktop Navigation -->
+                <div id="header-nav" class="hidden md:flex items-center space-x-1 bg-white/70 backdrop-blur-md border border-gray-200/80 shadow-sm rounded-full px-2 py-1">
                     <!-- Auth state content injected by script.js -->
+                </div>
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-btn" class="p-2 rounded-full bg-white/70 backdrop-blur-md border border-gray-200/80">
+                        <svg class="w-6 h-6 text-gray-800" id="menu-open-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                        <svg class="w-6 h-6 text-gray-800 hidden" id="menu-close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
                 </div>
             </div>
         </header>
         
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden absolute top-20 right-4 w-60 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/80 z-40 p-2">
+            <!-- Mobile auth state content injected by script.js -->
+        </div>
+
         <!-- Main Content Scroller -->
         <div id="gallery-container" class="flex-grow overflow-y-auto">
             
@@ -100,7 +113,7 @@
         </div>
 
         <!-- Prompt Bar -->
-        <footer class="absolute bottom-0 left-0 right-0 p-4 z-40">
+        <footer class="fixed md:absolute bottom-0 left-0 right-0 p-2 md:p-4 z-40">
             <div id="prompt-bar-container" class="max-w-2xl mx-auto bg-white/70 backdrop-blur-lg border border-gray-200/80 shadow-2xl rounded-full p-2 flex items-center space-x-1.5">
                 <div id="image-preview-container" class="hidden relative w-10 h-10 flex-shrink-0 ml-1">
                     <img id="image-preview" class="w-full h-full object-cover rounded-full" src="" alt="Image preview">
@@ -194,4 +207,3 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
-
