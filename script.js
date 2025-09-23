@@ -20,7 +20,6 @@ const provider = new GoogleAuthProvider();
 
 
 // --- NEW: Data for Interactive Use Case Section ---
-// IMPORTANT: Replace these placeholder URLs with your actual image links.
 const useCaseData = [
     { title: "Marketing", imageUrl: "https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=1200&auto=format&fit=crop" },
     { title: "Advertising", imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=1200&auto=format&fit=crop" },
@@ -44,7 +43,8 @@ const DOMElements = {};
 
 document.addEventListener('DOMContentLoaded', () => {
     const ids = [
-        'header-nav', 'gallery-container', 'masonry-gallery', 'prompt-input',
+        'header-nav', 'mobile-menu', 'mobile-menu-btn', 'menu-open-icon', 'menu-close-icon',
+        'gallery-container', 'masonry-gallery', 'prompt-input',
         'generate-btn', 'generate-icon', 'loading-spinner', 'ratio-btn', 'ratio-options',
         'auth-modal', 'google-signin-btn', 'out-of-credits-modal', 'loading-overlay',
         'timer-text', 'preview-modal', 'preview-image', 'preview-prompt-input',
@@ -69,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeAnimations();
     initializeInteractiveUseCases();
     onAuthStateChanged(auth, user => updateUIForAuthState(user));
-    restructureGalleryForMobile();
 });
 
 function restructureGalleryForMobile() {
@@ -82,7 +81,10 @@ function restructureGalleryForMobile() {
             firstColumn.appendChild(column.firstChild);
         }
     }
+    // Call this only once when DOM is ready and screen is small
+    restructureGalleryForMobile.called = true;
 }
+
 
 function initializeInteractiveUseCases() {
     const tabsContainer = DOMElements.useCaseTabs;
@@ -167,6 +169,18 @@ function initializeEventListeners() {
     DOMElements.changeInputImageBtn?.addEventListener('click', () => DOMElements.previewImageUploadInput.click());
     DOMElements.previewImageUploadInput?.addEventListener('change', handlePreviewImageChange);
     DOMElements.removeInputImageBtn?.addEventListener('click', removePreviewInputImage);
+
+    // Mobile Menu Toggle
+    DOMElements.mobileMenuBtn?.addEventListener('click', () => {
+        const isHidden = DOMElements.mobileMenu.classList.toggle('hidden');
+        DOMElements.menuOpenIcon.classList.toggle('hidden', !isHidden);
+        DOMElements.menuCloseIcon.classList.toggle('hidden', isHidden);
+    });
+
+    // Initial check for gallery restructure
+    if (window.innerWidth < 768 && !restructureGalleryForMobile.called) {
+        restructureGalleryForMobile();
+    }
 }
 
 // --- Animations ---
@@ -207,7 +221,6 @@ function initializeAnimations() {
         masterTl.add(tl);
     });
     
-    // Animate Stat Cards with a smoother effect
     if (DOMElements.statCards.length > 0) {
         gsap.to(DOMElements.statCards, {
             opacity: 1,
@@ -223,7 +236,6 @@ function initializeAnimations() {
         });
     }
 
-    // Animate Counters
     if (DOMElements.counters.length > 0) {
         DOMElements.counters.forEach(counter => {
             const target = +counter.dataset.target;
@@ -249,41 +261,55 @@ function initializeAnimations() {
 // --- Core App Logic ---
 function updateUIForAuthState(user) {
     currentUser = user;
-    const nav = DOMElements.headerNav;
-    const isMobile = window.innerWidth < 768;
+    const desktopNav = DOMElements.headerNav;
+    const mobileNav = DOMElements.mobileMenu;
 
     if (user) {
-        if(isMobile) {
-            nav.innerHTML = `
-                <div id="credits-counter" class="text-xs font-medium text-gray-700 px-2 py-1">Credits: ...</div>
-                <button id="sign-out-btn" class="text-xs font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Sign Out</button>
-            `;
-        } else {
-            nav.innerHTML = `
-                <a href="about.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">About</a>
-                <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Pricing</a>
-                <div id="credits-counter" class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ...</div>
-                <button id="sign-out-btn" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Sign Out</button>
-            `;
-        }
-        document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
+        // Desktop Logged In
+        desktopNav.innerHTML = `
+            <a href="about.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">About</a>
+            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Pricing</a>
+            <div id="credits-counter-desktop" class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ...</div>
+            <button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Sign Out</button>
+        `;
+        // Mobile Logged In
+        mobileNav.innerHTML = `
+            <div class="px-4 py-3">
+                <p class="text-sm text-gray-500">Signed in as</p>
+                <p class="text-sm font-medium text-gray-800 truncate">${user.email}</p>
+            </div>
+            <div id="credits-counter-mobile" class="text-center font-semibold text-gray-700 py-2">Credits: ...</div>
+            <div class="border-t border-gray-200/80 my-1"></div>
+            <a href="about.html" class="mobile-nav-link">About</a>
+            <a href="pricing.html" class="mobile-nav-link">Pricing</a>
+            <div class="border-t border-gray-200/80 my-1"></div>
+            <button id="sign-out-btn-mobile" class="mobile-nav-link w-full text-left">Sign Out</button>
+        `;
+
+        document.getElementById('sign-out-btn-desktop').addEventListener('click', () => signOut(auth));
+        document.getElementById('sign-out-btn-mobile').addEventListener('click', () => signOut(auth));
         fetchUserCredits(user);
     } else {
-         if (isMobile) {
-            nav.innerHTML = `
-                <a href="about.html" class="text-xs font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">About</a>
-                <button id="sign-in-btn" class="text-xs font-medium bg-[#517CBE] text-white px-3 py-1.5 rounded-full hover:bg-opacity-90 transition-colors">Sign In</button>
-            `;
-        } else {
-            nav.innerHTML = `
-                <a href="about.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">About</a>
-                <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Pricing</a>
-                <button id="sign-in-btn" class="text-sm font-medium text-white px-4 py-1.5 rounded-full transition-colors" style="background-color: #517CBE;">Sign In</button>
-            `;
-        }
-        document.getElementById('sign-in-btn').addEventListener('click', signInWithGoogle);
+        // Desktop Logged Out
+        desktopNav.innerHTML = `
+            <a href="about.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">About</a>
+            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Pricing</a>
+            <button id="sign-in-btn-desktop" class="text-sm font-medium text-white px-4 py-1.5 rounded-full transition-colors" style="background-color: #517CBE;">Sign In</button>
+        `;
+        // Mobile Logged Out
+        mobileNav.innerHTML = `
+            <a href="about.html" class="mobile-nav-link">About</a>
+            <a href="pricing.html" class="mobile-nav-link">Pricing</a>
+            <div class="p-2">
+                <button id="sign-in-btn-mobile" class="w-full text-base font-semibold text-white px-4 py-2.5 rounded-xl transition-colors" style="background-color: #517CBE;">Sign In</button>
+            </div>
+        `;
+        
+        document.getElementById('sign-in-btn-desktop').addEventListener('click', signInWithGoogle);
+        document.getElementById('sign-in-btn-mobile').addEventListener('click', signInWithGoogle);
     }
 }
+
 
 async function fetchUserCredits(user) {
     try {
@@ -300,14 +326,13 @@ async function fetchUserCredits(user) {
 }
 
 function updateCreditsDisplay(amount) {
-    const creditsCounter = document.getElementById('credits-counter');
-    if (creditsCounter) {
-        const isMobile = window.innerWidth < 768;
-        if(isMobile) {
-            creditsCounter.textContent = `Credits: ${amount}`;
-        } else {
-            creditsCounter.textContent = `Credits: ${amount}`;
-        }
+    const desktopCounter = document.getElementById('credits-counter-desktop');
+    const mobileCounter = document.getElementById('credits-counter-mobile');
+    if (desktopCounter) {
+        desktopCounter.textContent = `Credits: ${amount}`;
+    }
+    if (mobileCounter) {
+        mobileCounter.textContent = `Credits: ${amount}`;
     }
 }
 
@@ -534,4 +559,3 @@ function downloadPreviewImage() {
         })
         .catch(() => alert('An error occurred while downloading the image.'));
 }
-
