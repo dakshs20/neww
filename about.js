@@ -1,4 +1,3 @@
-// --- Firebase and Auth Initialization ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
@@ -16,98 +15,165 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
-// --- Main Logic ---
 document.addEventListener('DOMContentLoaded', () => {
-    
     gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-    // --- Header Authentication ---
-    const headerNav = document.getElementById('header-nav');
-    function updateUIForAuthState(user) {
-        if (user) {
-            headerNav.innerHTML = `
-                <a href="index.html" class="text-sm font-medium text-slate-300 hover:text-white transition-colors">Generator</a>
-                <a href="about.html" class="text-sm font-medium text-white">About</a>
-                <button id="sign-out-btn" class="text-sm font-medium text-slate-300 hover:text-white transition-colors">Sign Out</button>
-            `;
-            document.getElementById('sign-out-btn').addEventListener('click', () => signOut(auth));
-        } else {
-            headerNav.innerHTML = `
-                <a href="pricing.html" class="text-sm font-medium text-slate-300 hover:text-white transition-colors">Pricing</a>
-                <a href="about.html" class="text-sm font-medium text-white">About</a>
-                <button id="sign-in-btn" class="text-sm font-medium bg-blue-600 text-white px-4 py-1.5 rounded-full hover:bg-blue-700 transition-colors">Sign In</button>
-            `;
-            document.getElementById('sign-in-btn').addEventListener('click', () => signInWithPopup(auth, provider));
-        }
+    // --- Header & Mobile Menu ---
+    setupHeader();
+
+    // --- Page Animations ---
+    if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+        animateHero();
+        animateVision();
+        animateFeatures();
+        animateTeam();
+        animateCTA();
     }
-    onAuthStateChanged(auth, user => updateUIForAuthState(user));
+});
 
-    // --- Animations ---
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) {
-        document.querySelectorAll('.counter, .counter-decimal').forEach(c => c.textContent = c.dataset.target);
-        return;
-    }
+function setupHeader() {
+    const headerNavContainer = document.getElementById('header-nav-container');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const menuOpenIcon = document.getElementById('menu-open-icon');
+    const menuCloseIcon = document.getElementById('menu-close-icon');
 
-    // Hero Animations
-    gsap.from("#hero-headline", { opacity: 0, y: 20, duration: 0.8, ease: "power3.out", delay: 0.2 });
-    gsap.from("#hero-subline", { opacity: 0, y: 20, duration: 0.8, ease: "power3.out", delay: 0.4 });
-    gsap.from("#hero-cta", { opacity: 0, y: 20, duration: 0.8, ease: "power3.out", delay: 0.6 });
-    gsap.from(".micro-demo", { opacity: 0, scale: 0.95, duration: 0.8, ease: "power3.out", delay: 0.8 });
-
-    const words = ["imagination.", "visuals.", "reality."];
-    let masterTl = gsap.timeline({ repeat: -1 });
-    words.forEach(word => {
-        let tl = gsap.timeline({ repeat: 1, yoyo: true, repeatDelay: 1 });
-        tl.to("#typewriter", { text: word, duration: 1, ease: "none" });
-        masterTl.add(tl);
+    mobileMenuBtn?.addEventListener('click', () => {
+        const isHidden = mobileMenu.classList.toggle('hidden');
+        menuOpenIcon.classList.toggle('hidden', !isHidden);
+        menuCloseIcon.classList.toggle('hidden', isHidden);
     });
-    
-    // Animate Pipeline Cards
-    gsap.to(".pipeline-card", {
+
+    onAuthStateChanged(auth, user => {
+        const desktopNav = user ? `
+            <a href="index.html" class="text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors px-3 py-1">Generator</a>
+            <button id="sign-out-desktop" class="text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors px-3 py-1">Sign Out</button>` : `
+            <a href="pricing.html" class="text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors px-3 py-1">Pricing</a>
+            <button id="sign-in-desktop" class="text-sm font-semibold bg-slate-800 text-white px-4 py-2 rounded-full hover:bg-slate-900 transition-colors">Sign In</button>`;
+        
+        const mobileNav = user ? `
+            <a href="index.html" class="mobile-nav-link">Generator</a>
+            <a href="about.html" class="mobile-nav-link">About</a>
+            <div class="border-t border-slate-200 my-2"></div>
+            <button id="sign-out-mobile" class="mobile-nav-link w-full text-left">Sign Out</button>` : `
+            <a href="pricing.html" class="mobile-nav-link">Pricing</a>
+            <a href="about.html" class="mobile-nav-link">About</a>
+            <div class="p-2 mt-4"><button id="sign-in-mobile" class="w-full text-base font-semibold text-white px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-900">Sign In</button></div>`;
+
+        headerNavContainer.innerHTML = desktopNav;
+        mobileMenu.innerHTML = mobileNav;
+
+        if (user) {
+            document.getElementById('sign-out-desktop').addEventListener('click', () => signOut(auth));
+            document.getElementById('sign-out-mobile').addEventListener('click', () => signOut(auth));
+        } else {
+            document.getElementById('sign-in-desktop').addEventListener('click', () => signInWithPopup(auth, provider));
+            document.getElementById('sign-in-mobile').addEventListener('click', () => signInWithPopup(auth, provider));
+        }
+    });
+}
+
+function animateHero() {
+    gsap.timeline({ delay: 0.2 })
+    .to("#hero-headline span", {
+        opacity: 1,
+        y: 0,
+        duration: 1.2,
+        stagger: 0.2,
+        ease: "expo.out"
+    })
+    .to("#hero-subline", {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        ease: "expo.out"
+    }, "-=0.9");
+}
+
+function animateVision() {
+    gsap.timeline({
+        scrollTrigger: {
+            trigger: "#vision-section",
+            start: "top 60%",
+        }
+    })
+    .to(".title-underline", {
+        scaleX: 1,
+        duration: 1,
+        ease: "expo.out"
+    })
+    .to(".section-paragraph", {
         opacity: 1,
         y: 0,
         stagger: 0.2,
         duration: 0.8,
-        ease: 'power3.out',
-        scrollTrigger: {
-            trigger: ".pipeline-card",
-            start: "top 85%",
+        ease: "power3.out"
+    }, "-=0.7");
+    
+    const images = gsap.utils.toArray('.vision-image');
+    let currentIndex = 0;
+    
+    if (images.length > 0) {
+        const crossfadeImages = () => {
+            images[currentIndex].classList.remove('active');
+            currentIndex = (currentIndex + 1) % images.length;
+            images[currentIndex].classList.add('active');
         }
-    });
+        setInterval(crossfadeImages, 3500);
+    }
+}
 
-    // Counters Animation
-    gsap.utils.toArray('.counter').forEach(counter => {
-        gsap.from(counter, {
-            textContent: 0,
-            duration: 2,
-            ease: 'power2.out',
-            snap: { textContent: 1 },
-            scrollTrigger: { trigger: counter, start: 'top 90%' }
-        });
-    });
-     gsap.utils.toArray('.counter-decimal').forEach(counter => {
-        gsap.from(counter, {
-            textContent: 0,
-            duration: 2,
-            ease: 'power2.out',
-            snap: { textContent: 0.1 },
-            scrollTrigger: { trigger: counter, start: 'top 90%' },
-            onUpdate: function() {
-                counter.textContent = parseFloat(this.targets()[0].textContent).toFixed(1);
+function animateFeatures() {
+    const featureItems = gsap.utils.toArray('.feature-item');
+    featureItems.forEach(item => {
+        gsap.to(item, {
+            opacity: 1,
+            scrollTrigger: {
+                trigger: item,
+                start: "top 75%",
+                end: "bottom 75%",
+                scrub: true,
+                toggleClass: "is-inview",
             }
         });
     });
+}
 
-    // Roadmap Timeline Animation
-    const roadmapItems = gsap.utils.toArray('.roadmap-item');
-    roadmapItems.forEach((item) => {
-        ScrollTrigger.create({
-            trigger: item,
-            start: "top center",
-            end: "bottom center",
-            toggleClass: "is-active"
-        });
+function animateTeam() {
+    gsap.to(".team-card", {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: "expo.out",
+        scrollTrigger: {
+            trigger: ".team-card",
+            start: "top 85%",
+        }
     });
-});
+}
+
+function animateCTA() {
+    const tl = gsap.timeline({
+        scrollTrigger: {
+            trigger: "#cta-section",
+            start: "top 50%",
+            end: "bottom bottom",
+            scrub: 1.2,
+        }
+    });
+    tl.to("#cta-background-animation", {
+        opacity: 0.15,
+        scale: 1,
+    })
+    .to("#cta-headline", {
+        opacity: 1,
+        y: 0,
+    }, "-=0.2")
+    .to("#cta-button", {
+        opacity: 1,
+        y: 0,
+        scale: 1
+    }, "-=0.2");
+}
 
