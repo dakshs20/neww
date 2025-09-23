@@ -22,17 +22,20 @@ body {
     100% { background-position: 0% 50%; }
 }
 
-#gallery-container, #hero-section, #stats-section, #masonry-gallery-wrapper, #interactive-use-cases {
+#gallery-container, #hero-section, #stats-section, #masonry-gallery-wrapper {
     background-color: transparent;
 }
 
-/* --- Hero, Stats, and Masonry Sections --- */
-#hero-headline .char {
-    display: inline-block;
-    opacity: 0;
-    transform: translateY(30px) scale(0.9);
+/* --- Header & Mobile Menu --- */
+#mobile-menu a, #mobile-menu button {
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+.mobile-nav-link {
+    @apply block w-full text-left text-base font-semibold text-gray-700 px-4 py-3 rounded-xl hover:bg-gray-200/70;
 }
 
+
+/* --- Hero, Stats, and Masonry Sections --- */
 #hero-subline {
     opacity: 0;
     transform: translateY(20px);
@@ -92,8 +95,8 @@ body {
 #interactive-use-cases {
     position: relative;
     overflow: hidden; /* Contain the pseudo-element */
-    border-top: 1px solid #e5e7eb; /* Subtle separator */
-    border-bottom: 1px solid #e5e7eb;
+    border-top: 1px solid hsl(220 13% 91%);
+    border-bottom: 1px solid hsl(220 13% 91%);
 }
 
 /* New animated background glow */
@@ -105,17 +108,18 @@ body {
     width: 150%;
     padding-bottom: 150%;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(81, 124, 190, 0.12) 0%, rgba(81, 124, 190, 0) 60%);
+    background: radial-gradient(circle, rgba(81, 124, 190, 0.15) 0%, rgba(81, 124, 190, 0) 55%);
     transform-origin: center center;
     transform: translateX(-50%) translateY(-50%) scale(0.8);
-    animation: background-pulse 10s ease-in-out infinite;
+    animation: background-pulse 12s ease-in-out infinite;
     z-index: -1;
+    will-change: transform, opacity;
 }
 
 @keyframes background-pulse {
-    0% { transform: translateX(-50%) translateY(-50%) scale(0.8); opacity: 0.7; }
+    0% { transform: translateX(-50%) translateY(-50%) scale(0.8); opacity: 0.6; }
     50% { transform: translateX(-50%) translateY(-50%) scale(1.1); opacity: 1; }
-    100% { transform: translateX(-50%) translateY(-50%) scale(0.8); opacity: 0.7; }
+    100% { transform: translateX(-50%) translateY(-50%) scale(0.8); opacity: 0.6; }
 }
 
 
@@ -127,6 +131,7 @@ body {
     position: relative;
     padding-bottom: 0.5rem;
     transition: color 0.3s ease;
+    will-change: color;
 }
 
 .use-case-tab::after {
@@ -136,19 +141,21 @@ body {
     left: 50%;
     transform: translateX(-50%);
     width: 0;
-    height: 2px;
+    height: 3px; /* Thicker line */
     background-color: #517CBE;
-    transition: width 0.3s ease;
+    transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1); /* Bouncy transition */
+    border-radius: 2px;
 }
 
 .use-case-tab.active,
 .use-case-tab:hover {
-    color: #334155;
+    color: #1e293b; /* Darker text on hover/active */
 }
 
 .use-case-tab.active {
     color: #517CBE;
-    text-shadow: 0 0 15px rgba(81, 124, 190, 0.5);
+    text-shadow: 0 0 20px rgba(81, 124, 190, 0.4);
+    transition: color 0.4s ease, text-shadow 0.4s ease;
 }
 
 .use-case-tab.active::after {
@@ -157,44 +164,61 @@ body {
 
 #use-case-image-container {
     background-color: #e2e8f0;
+    position: relative;
+    overflow: hidden; /* For the shine effect */
+    will-change: transform;
 }
 
-/* Updated transition for a smoother zoom effect */
+/* NEW: Shine effect on image container */
+#use-case-image-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0) 100%);
+    transform: skewX(-25deg);
+    animation: shine 6s infinite ease-out;
+    animation-delay: 2s;
+    z-index: 1;
+}
+
+@keyframes shine {
+    0% { left: -100%; }
+    40% { left: 150%; }
+    100% { left: 150%; }
+}
+
+
+/* Updated transition for a smoother zoom and blur effect */
 #use-case-image-display {
-    transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
-    transform: scale(1);
+    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out, filter 0.5s ease-in-out;
+    transform: scale(1.05); /* Start slightly zoomed in */
+    will-change: opacity, transform, filter;
+    filter: blur(0px);
 }
 
 #use-case-image-display.fading {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(1);
+    filter: blur(8px);
 }
 
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 767px) {
-    /* --- Layout and Spacing --- */
-    #first-screen-content {
-        justify-content: start;
-        padding-top: 8rem; /* Push content down from header */
-    }
-    #stats-section {
-        margin-top: 4rem; /* Reduce space */
-    }
+    #masonry-gallery { display: block; }
+    .masonry-column { display: block; }
+    .masonry-column:not(:first-child) { display: none; }
+    .masonry-item { margin-bottom: 1rem; }
 
-    /* --- Header --- */
-    header .max-w-7xl a img {
-        height: 1.5rem; /* h-6 */
-    }
-
-    /* --- Hero Section --- */
     #hero-headline {
         font-size: 2.5rem;
-        line-height: 1.15;
+        line-height: 1.1;
     }
     #hero-subline {
         font-size: 1rem;
-        max-width: 95%;
     }
     #stats-section .grid {
         gap: 1.5rem; /* Reduce gap on mobile */
@@ -202,33 +226,9 @@ body {
     #stats-section h3 {
         font-size: 2.25rem; /* text-4xl */
     }
-
-    /* --- Prompt Bar --- */
-    footer {
-        padding: 0.5rem;
-        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)); /* Support for iPhones with notch */
+    
+    footer#prompt-bar-container {
+        position: fixed;
     }
-     #prompt-bar-container {
-        padding-left: 0.5rem;
-        padding-right: 0.25rem;
-    }
-    #prompt-input {
-        padding: 0.5rem;
-        font-size: 1rem;
-    }
-    #image-upload-btn, #ratio-btn, #generate-btn {
-        width: 2.5rem; /* 40px */
-        height: 2.5rem; /* 40px */
-    }
-    #image-preview-container {
-        width: 2.5rem;
-        height: 2.5rem;
-    }
-
-    /* --- Gallery --- */
-    #masonry-gallery { display: block; }
-    .masonry-column { display: block; }
-    .masonry-column:not(:first-child) { display: none; }
-    .masonry-item { margin-bottom: 1rem; }
 }
 
