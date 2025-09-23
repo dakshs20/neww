@@ -17,14 +17,12 @@ const provider = new GoogleAuthProvider();
 
 document.addEventListener('DOMContentLoaded', () => {
     gsap.registerPlugin(ScrollTrigger);
-
     setupHeader();
 
     if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
         animateHero();
-        animateVision();
-        animateFeatures();
-        animateTeam();
+        animatePillars();
+        setupHorizontalScroll();
         animateCTA();
     }
 });
@@ -72,97 +70,67 @@ function setupHeader() {
 }
 
 function animateHero() {
-    const headlineSpans = gsap.utils.toArray("#hero-headline span");
-
-    headlineSpans.forEach(span => {
-        const chars = span.textContent.split('').map(char => {
-            const isWhitespace = char.trim() === '';
-            return `<span class="char" style="display: inline-block; ${isWhitespace ? 'width: 0.25em;' : ''}">${char}</span>`;
-        }).join('');
-        span.innerHTML = chars;
-    });
-
-    const chars = gsap.utils.toArray(".char");
-
-    gsap.timeline({ delay: 0.3 })
-        .from(chars, {
-            duration: 1.5,
-            opacity: 0,
-            y: 80,
-            rotationX: -90,
-            transformOrigin: "top",
-            ease: "expo.out",
-            stagger: {
-                amount: 0.5,
-                from: "random"
-            },
-        })
-        .to("#hero-subline", {
-            opacity: 1,
+    gsap.timeline({ delay: 0.2 })
+        .to(".hero-headline .animated-line > *", {
             y: 0,
-            duration: 1.2,
-            ease: "expo.out"
-        }, "-=1.2");
-}
-
-function animateVision() {
-    gsap.timeline({
-        scrollTrigger: { trigger: "#vision-section", start: "top 60%" }
-    })
-    .to(".title-underline", { scaleX: 1, duration: 1, ease: "expo.out" })
-    .to(".section-paragraph", { opacity: 1, y: 0, stagger: 0.2, duration: 0.8, ease: "power3.out" }, "-=0.7");
-    
-    const images = gsap.utils.toArray('.vision-image');
-    if (images.length > 0) {
-        let currentIndex = 0;
-        const crossfadeImages = () => {
-            images.forEach((img, index) => {
-                img.classList.toggle('active', index === currentIndex);
-            });
-            currentIndex = (currentIndex + 1) % images.length;
-        };
-        crossfadeImages(); // Show first image immediately
-        setInterval(crossfadeImages, 3500);
-    }
-}
-
-function animateFeatures() {
-    const featureItems = gsap.utils.toArray('.feature-item');
-    featureItems.forEach(item => {
-        gsap.to(item, {
+            duration: 1,
+            ease: "expo.out",
+            stagger: 0.1
+        })
+        .to(".hero-subline", {
             opacity: 1,
-            scrollTrigger: {
-                trigger: item,
-                start: "top 75%",
-                end: "bottom 75%",
-                scrub: true,
-                toggleClass: "is-inview",
-            }
-        });
-    });
+            duration: 1,
+            ease: "power2.out"
+        }, "-=0.5");
 }
 
-function animateTeam() {
-    gsap.to(".team-card", {
-        opacity: 1,
-        y: 0,
+function animatePillars() {
+    gsap.from(".pillar-card", {
+        opacity: 0,
+        y: 30,
         duration: 0.8,
-        stagger: 0.15,
         ease: "expo.out",
-        scrollTrigger: { trigger: ".team-card", start: "top 85%" }
-    });
-}
-
-function animateCTA() {
-    const tl = gsap.timeline({
+        stagger: 0.15,
         scrollTrigger: {
-            trigger: "#cta-section",
-            start: "top 50%",
-            end: "bottom bottom",
-            scrub: 1.2,
+            trigger: ".pillars-section",
+            start: "top 70%",
         }
     });
-    tl.to("#cta-headline", { opacity: 1, y: 0 })
-      .to("#cta-button", { opacity: 1, y: 0, scale: 1 }, "-=0.2");
+}
+
+function setupHorizontalScroll() {
+    const showcaseTrack = document.querySelector(".showcase-track");
+    if (!showcaseTrack) return;
+
+    const scrollAmount = showcaseTrack.offsetWidth - window.innerWidth;
+
+    gsap.to(showcaseTrack, {
+        x: -scrollAmount,
+        ease: "none",
+        scrollTrigger: {
+            trigger: "#showcase-section",
+            start: "top top",
+            end: () => `+=${scrollAmount}`,
+            pin: true,
+            scrub: 1,
+            invalidateOnRefresh: true,
+        }
+    });
+}
+
+
+function animateCTA() {
+    const ctaElements = ['.cta-headline', '.cta-subline', '.cta-button'];
+    gsap.from(ctaElements, {
+        opacity: 0,
+        y: 30,
+        duration: 1,
+        ease: "expo.out",
+        stagger: 0.2,
+        scrollTrigger: {
+            trigger: ".cta-section",
+            start: "top 70%",
+        }
+    });
 }
 
