@@ -1,4 +1,4 @@
-// --- Ffirebase and Auth Initialization ---
+// --- Firebase and Auth Initialization ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -45,9 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const ids = [
         'header-nav', 'mobile-menu', 'mobile-menu-btn', 'menu-open-icon', 'menu-close-icon',
         'gallery-container', 'masonry-gallery', 'prompt-input',
-        'generate-btn', 'generate-icon', 'loading-spinner', 'ratio-btn', 'ratio-options',
-        'auth-modal', 'google-signin-btn', 'out-of-credits-modal', 'loading-overlay',
-        'timer-text', 'preview-modal', 'preview-image', 'preview-prompt-input',
+        'generate-btn', 'generate-icon', 'button-timer', 'ratio-btn', 'ratio-options',
+        'auth-modal', 'google-signin-btn', 'out-of-credits-modal',
+        'preview-modal', 'preview-image', 'preview-prompt-input',
         'download-btn', 'close-preview-btn', 'regenerate-btn',
         'image-upload-btn', 'image-upload-input', 'image-preview-container', 'image-preview', 'remove-image-btn',
         'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input',
@@ -126,7 +126,7 @@ function updateUseCaseImage(index) {
         imageDisplay.onload = () => {
             imageDisplay.classList.remove('fading');
         };
-    }, 500); // Increased timeout to match new CSS transition
+    }, 400);
 }
 
 
@@ -174,7 +174,7 @@ function initializeEventListeners() {
     DOMElements.mobileMenuBtn?.addEventListener('click', () => {
         const isHidden = DOMElements.mobileMenu.classList.toggle('hidden');
         DOMElements.menuOpenIcon.classList.toggle('hidden', !isHidden);
-        DOMElements.menuCloseIcon.classList.toggle('hidden', ishidden);
+        DOMElements.menuCloseIcon.classList.toggle('hidden', isHidden);
     });
 
     // Initial check for gallery restructure
@@ -190,13 +190,18 @@ function initializeAnimations() {
     
     gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-    // Replaced the character-by-character animation with a simpler, more robust one.
-    if (DOMElements.heroHeadline) {
-        gsap.from(DOMElements.heroHeadline, { 
-            opacity: 0, 
-            y: 25, 
-            duration: 0.8, 
-            ease: 'power3.out' 
+    const headline = DOMElements.heroHeadline;
+    if (headline) {
+        const headlineText = headline.textContent;
+        headline.innerHTML = headlineText.split("").map(char => `<span class="char">${char === ' ' ? '&nbsp;' : char}</span>`).join("");
+        
+        gsap.to(".char", {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.8,
+            stagger: 0.02,
+            ease: 'power4.out'
         });
     }
 
@@ -205,7 +210,7 @@ function initializeAnimations() {
         y: 0,
         duration: 1,
         ease: 'power3.out',
-        delay: 0.3
+        delay: 0.5
     });
 
     const words = ["creators.", "agencies.", "enterprises."];
@@ -248,47 +253,6 @@ function initializeAnimations() {
                     counter.textContent = Math.ceil(proxy.val);
                 }
             });
-        });
-    }
-
-    // GSAP animations for the "Use GenArt today for" section
-    const useCaseSection = document.getElementById('interactive-use-cases');
-    if (useCaseSection) {
-        // Animate the main headline of the section
-        gsap.from("#interactive-use-cases h2", {
-            scrollTrigger: {
-                trigger: useCaseSection,
-                start: "top 80%",
-            },
-            opacity: 0,
-            y: 40,
-            duration: 1,
-            ease: "back.out(1.4)" // More dynamic ease
-        });
-
-        // Animate the category tabs with a stagger effect
-        gsap.from(".use-case-tab", {
-            scrollTrigger: {
-                trigger: useCaseSection,
-                start: "top 70%",
-            },
-            opacity: 0,
-            y: 30,
-            duration: 0.8,
-            stagger: 0.15,
-            ease: "back.out(1.4)" // More dynamic ease
-        });
-
-        // Add a parallax effect to the image container
-        gsap.to("#use-case-image-container", {
-            scrollTrigger: {
-                trigger: useCaseSection,
-                start: "top bottom", 
-                end: "bottom top", 
-                scrub: 1.5 
-            },
-            yPercent: -15, 
-            ease: "none"
         });
     }
 }
@@ -500,22 +464,34 @@ function setLoadingState(isLoading) {
     isGenerating = isLoading;
     DOMElements.generateBtn.disabled = isLoading;
     DOMElements.generateIcon.classList.toggle('hidden', isLoading);
-    DOMElements.loadingSpinner.classList.toggle('hidden', !isLoading);
+    DOMElements.buttonTimer.classList.toggle('hidden', !isLoading);
+
     if (isLoading) {
-        toggleModal(DOMElements.loadingOverlay, true);
+        DOMElements.generateBtn.classList.remove('w-10');
+        DOMElements.generateBtn.classList.add('w-28'); // Make button wider for timer
     } else {
-        toggleModal(DOMElements.loadingOverlay, false);
+        DOMElements.generateBtn.classList.add('w-10');
+        DOMElements.generateBtn.classList.remove('w-28');
     }
 }
 
 function startTimer() {
-    let seconds = 17;
-    DOMElements.timerText.textContent = `${seconds}s`;
+    let endTime = Date.now() + 17000;
+    DOMElements.buttonTimer.textContent = '17.00s';
+
     timerInterval = setInterval(() => {
-        seconds--;
-        DOMElements.timerText.textContent = `${seconds}s`;
-        if (seconds <= 0) clearInterval(timerInterval);
-    }, 1000);
+        const now = Date.now();
+        const timeLeft = endTime - now;
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            DOMElements.buttonTimer.textContent = '0.00s';
+            return;
+        }
+
+        const secondsLeft = (timeLeft / 1000).toFixed(2);
+        DOMElements.buttonTimer.textContent = `${secondsLeft}s`;
+    }, 50); // Update every 50ms for a smooth countdown
 }
 
 // --- Image Handling & Uploads ---
