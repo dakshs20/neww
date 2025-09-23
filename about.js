@@ -100,22 +100,26 @@ function animatePillars() {
 
 function setupHorizontalScroll() {
     const showcaseTrack = document.querySelector(".showcase-track");
-    if (!showcaseTrack) return;
+    const showcaseContainer = document.querySelector(".showcase-container");
+    if (!showcaseTrack || !showcaseContainer) return;
 
-    const scrollAmount = showcaseTrack.offsetWidth - window.innerWidth;
+    // Use a timeout to ensure all images are loaded and widths are calculated correctly
+    setTimeout(() => {
+        const scrollAmount = showcaseTrack.offsetWidth - showcaseContainer.offsetWidth;
 
-    gsap.to(showcaseTrack, {
-        x: -scrollAmount,
-        ease: "none",
-        scrollTrigger: {
-            trigger: "#showcase-section",
-            start: "top top",
-            end: () => `+=${scrollAmount}`,
-            pin: true,
-            scrub: 1,
-            invalidateOnRefresh: true,
-        }
-    });
+        gsap.to(showcaseTrack, {
+            x: -scrollAmount,
+            ease: "none",
+            scrollTrigger: {
+                trigger: "#showcase-section",
+                start: "top top",
+                end: "bottom bottom", // <-- FIX: Ensures animation spans the entire section height
+                pin: showcaseContainer, // <-- FIX: Pins the visible container, not the entire scrollable section
+                scrub: 1,
+                invalidateOnRefresh: true,
+            }
+        });
+    }, 100);
 }
 
 
@@ -129,7 +133,7 @@ function animateCTA() {
         stagger: 0.2,
         scrollTrigger: {
             trigger: ".cta-section",
-            start: "top 70%",
+            start: "top 80%", // Adjusted trigger point for better timing
         }
     });
 }
