@@ -31,6 +31,7 @@ body {
 /* --- Gradients & Icons --- */
 .headline-gradient {
     background-image: var(--brand-gradient);
+    @apply text-transparent bg-clip-text;
 }
 .icon-gradient {
     color: var(--brand-blue);
@@ -55,7 +56,15 @@ body {
     50% { transform: scale(1.1) rotate(15deg); opacity: 0.15; }
 }
 
-#hero-headline span { opacity: 0; transform: translateY(30px); }
+#hero-headline {
+    perspective: 800px;
+}
+
+#hero-headline .char {
+    display: inline-block;
+    opacity: 0; /* Initially hidden */
+}
+
 #hero-subline { opacity: 0; transform: translateY(20px); }
 
 /* --- Vision Section --- */
