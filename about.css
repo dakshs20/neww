@@ -27,11 +27,11 @@ body {
     filter: blur(10px) saturate(1.5);
     opacity: 0.25;
 }
-.hero-headline .animated-word {
+.hero-headline .animated-word-wrapper {
     display: block;
     clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 }
-.hero-headline .animated-word > * {
+.hero-headline .animated-word {
     display: block;
     transform: translateY(110%);
 }
@@ -59,12 +59,12 @@ body {
 .mission-text { @apply text-base text-slate-600 leading-relaxed; }
 
 /* --- Technology Showcase Section --- */
-.section-title, .section-subtitle {
-    opacity: 0; transform: translateY(20px);
+.section-title, .section-subtitle, .tech-card, .explore-card {
+    opacity: 0; 
+    transform: translateY(30px);
 }
 .tech-card {
     @apply bg-white p-8 rounded-2xl border border-slate-200/80 relative overflow-hidden transition-all duration-300;
-    opacity: 0; transform: translateY(30px);
 }
 .tech-card:hover {
     transform: translateY(-5px) scale(1.02);
@@ -87,7 +87,6 @@ body {
 /* --- Explore Section --- */
 .explore-card {
     @apply block bg-white p-6 rounded-2xl border border-slate-200/80 text-left transition-all duration-300 relative;
-    opacity: 0; transform: translateY(30px);
 }
 .explore-card:hover {
     transform: translateY(-5px);
