@@ -137,20 +137,49 @@ body {
     opacity: 0;
 }
 
+/* --- Mobile Menu Styles --- */
+.mobile-nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #374151;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.mobile-nav-link:hover {
+    background-color: #f3f4f6;
+}
+#mobile-menu .font-semibold {
+    font-size: 1rem;
+}
+
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 767px) {
-    #masonry-gallery { display: block; }
-    .masonry-column { display: block; }
-    .masonry-column:not(:first-child) { display: none; }
-    .masonry-item { margin-bottom: 1rem; }
+    /* --- Layout and Spacing --- */
+    #first-screen-content {
+        justify-content: start;
+        padding-top: 8rem; /* Push content down from header */
+    }
+    #stats-section {
+        margin-top: 4rem; /* Reduce space */
+    }
 
+    /* --- Header --- */
+    header .max-w-7xl a img {
+        height: 1.5rem; /* h-6 */
+    }
+
+    /* --- Hero Section --- */
     #hero-headline {
         font-size: 2.5rem;
-        line-height: 1.1;
+        line-height: 1.15;
     }
     #hero-subline {
         font-size: 1rem;
+        max-width: 95%;
     }
     #stats-section .grid {
         gap: 1.5rem; /* Reduce gap on mobile */
@@ -158,5 +187,32 @@ body {
     #stats-section h3 {
         font-size: 2.25rem; /* text-4xl */
     }
-}
 
+    /* --- Prompt Bar --- */
+    footer {
+        padding: 0.5rem;
+        padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)); /* Support for iPhones with notch */
+    }
+     #prompt-bar-container {
+        padding-left: 0.5rem;
+        padding-right: 0.25rem;
+    }
+    #prompt-input {
+        padding: 0.5rem;
+        font-size: 1rem;
+    }
+    #image-upload-btn, #ratio-btn, #generate-btn {
+        width: 2.5rem; /* 40px */
+        height: 2.5rem; /* 40px */
+    }
+    #image-preview-container {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+
+    /* --- Gallery --- */
+    #masonry-gallery { display: block; }
+    .masonry-column { display: block; }
+    .masonry-column:not(:first-child) { display: none; }
+    .masonry-item { margin-bottom: 1rem; }
+}
