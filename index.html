@@ -18,7 +18,7 @@
     <div id="animated-gradient-bg"></div>
 
     <!-- Header -->
-    <header class="sticky top-0 left-0 right-0 z-30 p-4 transition-all duration-300">
+    <header class="fixed top-0 left-0 right-0 z-30 p-4 transition-all duration-300">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <a href="index.html">
                 <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 md:h-7 w-auto">
@@ -37,10 +37,10 @@
     </header>
 
     <!-- Main Content -->
-    <main class="relative">
+    <main class="relative z-10 pb-40"> <!-- Added padding-bottom to avoid overlap with fixed footer -->
         <div id="first-screen-content" class="min-h-screen flex flex-col items-center justify-center text-center p-4">
             <!-- Hero Section -->
-            <section id="hero-section" class="relative z-10">
+            <section id="hero-section">
                 <h1 id="hero-headline" class="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-800 tracking-tighter">
                     Turn imagination into visuals in seconds.
                 </h1>
@@ -50,7 +50,7 @@
             </section>
 
             <!-- Stats Section -->
-            <section id="stats-section" class="relative z-10 w-full mt-16">
+            <section id="stats-section" class="w-full mt-16">
                 <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div class="stat-card">
                         <h3 class="text-4xl md:text-5xl font-bold text-[#517CBE]"><span class="counter" data-target="50">0</span>M+</h3>
@@ -69,7 +69,7 @@
         </div>
 
         <!-- Masonry Gallery Container -->
-        <div id="masonry-gallery-wrapper" class="px-4 pb-24 md:pb-40">
+        <div id="masonry-gallery-wrapper" class="px-4 pb-24 md:pb-32">
             <div id="masonry-gallery">
                  <div class="masonry-column">
                     <div class="masonry-item"><img src="https://iili.io/K7bN7Hl.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art"></div>
@@ -90,7 +90,7 @@
         </div>
 
         <!-- Testimonial Section -->
-        <section id="testimonial-section" class="relative py-24 md:py-32 overflow-hidden">
+        <section id="testimonial-section" class="py-24 md:py-32 overflow-hidden">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="relative grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
                     <div class="testimonial-image-container">
@@ -176,7 +176,7 @@
                     <div class="relative mt-2 w-fit">
                         <img id="preview-input-image" src="" class="w-24 h-24 object-cover rounded-lg">
                         <div class="absolute top-1 right-1 flex flex-col space-y-1">
-                            <button id="change-input-image-btn" class="bg-white/80 p-1.5 rounded-full text-gray-700 hover:bg-white" title="Change Image"><svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.312 1.312a2.5 2.5 0 013.536 3.536L6.536 17.162a2.5 2.5 0 01-3.536-3.536L15.312 1.312zM7.5 10.5a.5.5 0 01.5-.5h4a.5.5 0 010 1h-4a.5.5 0 01-.5-.5z" clip-rule="evenodd"></path><path d="M1.312 8.312a2.5 2.5 0 013.536-3.536L17.162 17.162a2.5 2.5 0 01-3.536 3.536L1.312 8.312z"></path></svg></button>
+                            <button id="change-input-image-btn" class="bg-white/80 p-1.5 rounded-full text-gray-700 hover:bg-white" title="Change Image"><svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M7.409 4.821a.75.75 0 011.06 0l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.97-2.97-2.97-2.97a.75.75 0 010-1.06zM12.75 9.25a.75.75 0 000-1.5h-5.5a.75.75 0 000 1.5h5.5z"></path></svg></button>
                             <input type="file" id="preview-image-upload-input" class="hidden" accept="image/png, image/jpeg">
                             <button id="remove-input-image-btn" class="bg-white/80 p-1.5 rounded-full text-gray-700 hover:bg-white" title="Remove Image"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                         </div>
