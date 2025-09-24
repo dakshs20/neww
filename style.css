@@ -133,6 +133,8 @@ body {
 }
 .use-case-description.active {
     opacity: 1;
+}
+
 .use-case-tab.active::after {
     width: 100%;
 }
