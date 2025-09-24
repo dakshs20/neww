@@ -22,7 +22,7 @@ const useCaseData = [
     { title: "Marketing", imageUrl: "https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=2000&auto=format&fit=crop", description: "Create compelling visuals for campaigns, social media, and ad content in seconds, not hours." },
     { title: "Advertising", imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2000&auto=format&fit=crop", description: "Generate countless variations of ad creatives to A/B test and find the perfect message for your audience." },
     { title: "Fashion", imageUrl: "https://images.unsplash.com/photo-1581044777550-4cfa6ce6702e?q=80&w=2000&auto=format&fit=crop", description: "Conceptualize and visualize new clothing designs, model shoots, and entire fashion lines instantly." },
-    { title: "Graphic Design", imageUrl: "https://images.unsplash.com/photo-1629904853716-f0bc64219b1b?q=80&w=2000&auto=format&fit=crop", description: "Accelerate your workflow with unique assets, textures, and inspirational concepts for any design project." },
+    { title: "Graphic Design", imageUrl: "https://images.unsplash.com/photo-162990485316-f0bc64219b1b?q=80&w=2000&auto=format&fit=crop", description: "Accelerate your workflow with unique assets, textures, and inspirational concepts for any design project." },
     { title: "Realistic Photos", imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2000&auto=format&fit=crop", description: "Produce hyper-realistic portraits and scenes, perfect for stock photography or artistic reference." }
 ];
 
@@ -213,28 +213,16 @@ function initializeAnimations() {
     
     gsap.registerPlugin(ScrollTrigger, TextPlugin);
 
-    const headline = DOMElements.heroHeadline;
-    if (headline) {
-        const headlineText = headline.textContent;
-        headline.innerHTML = headlineText.split("").map(char => `<span class="char">${char === ' ' ? '&nbsp;' : char}</span>`).join("");
-        
-        gsap.to(".char", {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 0.8,
-            stagger: 0.02,
-            ease: 'power4.out'
-        });
-    }
+    // Simple fade-in for hero headline
+    gsap.fromTo(DOMElements.heroHeadline, 
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 1, ease: 'power3.out', delay: 0.2 }
+    );
 
-    gsap.to(DOMElements.heroSubline, {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: 'power3.out',
-        delay: 0.5
-    });
+    gsap.fromTo(DOMElements.heroSubline, 
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 1, ease: 'power3.out', delay: 0.4 }
+    );
 
     const words = ["creators.", "agencies.", "enterprises."];
     let masterTl = gsap.timeline({ repeat: -1 });
@@ -245,18 +233,16 @@ function initializeAnimations() {
     });
     
     if (DOMElements.statCards.length > 0) {
-        gsap.to(DOMElements.statCards, {
-            opacity: 1,
-            y: 0,
-            scale: 1,
-            duration: 1.2,
-            stagger: 0.2,
-            ease: 'power4.out',
-            scrollTrigger: {
-                trigger: "#stats-section",
-                start: "top 85%",
+        gsap.fromTo(DOMElements.statCards, 
+            { opacity: 0, y: 30, scale: 0.95 },
+            { 
+                opacity: 1, y: 0, scale: 1, duration: 1, stagger: 0.15, ease: 'power3.out',
+                scrollTrigger: {
+                    trigger: "#stats-section",
+                    start: "top 85%",
+                }
             }
-        });
+        );
     }
 
     if (DOMElements.counters.length > 0) {
