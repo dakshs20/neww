@@ -137,76 +137,81 @@ body {
     width: 100%;
 }
 
-#use-case-image-container {
-    background-color: #e2e8f0;
-}
-
-#use-case-image-display {
-    transition: opacity 0.4s ease-in-out;
-}
-
-#use-case-image-display.fading {
-    opacity: 0;
-}
-
-
 /* --- Testimonial Section --- */
 .testimonial-image-container {
     perspective: 1500px;
 }
 .testimonial-image {
-    border-radius: 1.5rem;
+    border-radius: 1.5rem; /* 24px */
     width: 100%;
     height: auto;
     object-fit: cover;
-    transform: rotateY(-5deg) rotateX(3deg) scale(1.05);
-    box-shadow: -20px 20px 40px rgba(0,0,0,0.1);
-    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.testimonial-image-container:hover .testimonial-image {
-    transform: rotateY(0) rotateX(0) scale(1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 .testimonial-card {
-    background-color: rgba(23, 23, 23, 0.8);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 1.5rem;
-    padding: 3rem;
-    padding-top: 5rem;
-    color: #e5e7eb;
+    background-color: rgba(17, 24, 39, 0.8); /* gray-900 with opacity */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 1.5rem; /* 24px */
+    padding: 3rem; /* 48px */
+    padding-top: 5rem; /* 80px */
+    color: #d1d5db; /* gray-300 */
     position: relative;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
 }
 
 .testimonial-text {
-    font-size: 1.125rem;
+    font-size: 1.25rem; /* 20px */
     line-height: 1.75;
     font-weight: 500;
 }
 
 .testimonial-author {
-    margin-top: 2rem;
+    margin-top: 2rem; /* 32px */
+    padding-top: 2rem; /* 32px */
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 2rem;
 }
 
-
 /* --- Mobile Responsiveness --- */
-@media (max-width: 1023px) {
+@media (max-width: 1023px) { /* Apply on tablet and below */
     .testimonial-card-container {
-        margin-top: -4rem; /* Pulls the card up over the image on tablet */
-        padding: 0 1rem;
+       transform: translateY(-4rem); /* Pulls the card up over the image */
+    }
+    .testimonial-card {
+        margin: 0 1rem; /* Add horizontal margin on smaller screens */
     }
 }
 
 
 @media (max-width: 767px) {
+    #hero-headline {
+        font-size: 2.5rem; /* 40px */
+        line-height: 1.1;
+    }
+    #hero-subline {
+        font-size: 1rem; /* 16px */
+    }
+    #stats-section .grid {
+        gap: 1.5rem; /* Reduce gap on mobile */
+    }
+    #stats-section h3 {
+        font-size: 2.25rem; /* text-4xl */
+    }
     #masonry-gallery { display: block; }
     .masonry-column { display: block; }
     .masonry-column:not(:first-child) { display: none; }
     .masonry-item { margin-bottom: 1rem; }
-}
 
+    .testimonial-card-container {
+       transform: translateY(-3rem); /* Adjust overlap for mobile */
+    }
+     .testimonial-card {
+        padding: 2.5rem; /* 40px */
+        padding-top: 4rem; /* 64px */
+    }
+    .testimonial-text {
+        font-size: 1.125rem; /* 18px */
+    }
+}
 
