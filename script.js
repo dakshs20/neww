@@ -19,11 +19,11 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 const useCaseData = [
-    { title: "Marketing", imageUrl: "https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=2000&auto=format&fit=crop" },
-    { title: "Advertising", imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2000&auto=format&fit=crop" },
-    { title: "Fashion", imageUrl: "https://images.unsplash.com/photo-1581044777550-4cfa6ce6702e?q=80&w=2000&auto=format&fit=crop" },
-    { title: "Graphic Design", imageUrl: "https://images.unsplash.com/photo-1629904853716-f0bc64219b1b?q=80&w=2000&auto=format&fit=crop" },
-    { title: "Realistic Photos", imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2000&auto=format&fit=crop" }
+    { title: "Marketing", imageUrl: "https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=2000&auto=format&fit=crop", description: "Create compelling visuals for campaigns, social media, and ad content in seconds, not hours." },
+    { title: "Advertising", imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2000&auto=format&fit=crop", description: "Generate countless variations of ad creatives to A/B test and find the perfect message for your audience." },
+    { title: "Fashion", imageUrl: "https://images.unsplash.com/photo-1581044777550-4cfa6ce6702e?q=80&w=2000&auto=format&fit=crop", description: "Conceptualize and visualize new clothing designs, model shoots, and entire fashion lines instantly." },
+    { title: "Graphic Design", imageUrl: "https://images.unsplash.com/photo-1629904853716-f0bc64219b1b?q=80&w=2000&auto=format&fit=crop", description: "Accelerate your workflow with unique assets, textures, and inspirational concepts for any design project." },
+    { title: "Realistic Photos", imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2000&auto=format&fit=crop", description: "Produce hyper-realistic portraits and scenes, perfect for stock photography or artistic reference." }
 ];
 
 // --- Global State ---
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input',
         'hero-section', 'hero-headline', 'hero-subline', 'typewriter', 'prompt-bar-container',
         'use-case-tabs', 'mobile-menu', 'mobile-menu-btn', 'menu-open-icon', 'menu-close-icon',
-        'button-timer', 'use-case-headline'
+        'button-timer'
     ];
     ids.forEach(id => {
         if (id) {
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeEventListeners();
     initializeAnimations();
-    initializeCinematicUseCases();
+    initializeInteractiveUseCases();
     onAuthStateChanged(auth, user => updateUIForAuthState(user));
     restructureGalleryForMobile();
 });
@@ -83,56 +83,78 @@ function restructureGalleryForMobile() {
     }
 }
 
-function initializeCinematicUseCases() {
+function initializeInteractiveUseCases() {
     const tabsContainer = DOMElements.useCaseTabs;
-    const backgroundContainer = document.getElementById('use-case-background');
-    if (!tabsContainer || !backgroundContainer) return;
+    const descriptionsContainer = document.getElementById('use-case-descriptions');
+    const imageWrapper = document.getElementById('use-case-image-wrapper');
+    
+    if (!tabsContainer || !descriptionsContainer || !imageWrapper) return;
 
     useCaseData.forEach((item, index) => {
+        // Create Tab
         const tab = document.createElement('button');
         tab.className = 'use-case-tab';
         tab.textContent = item.title;
         tab.dataset.index = index;
         tabsContainer.appendChild(tab);
 
+        // Create Description
+        const description = document.createElement('p');
+        description.className = 'use-case-description text-base text-gray-600';
+        description.dataset.index = index;
+        description.innerHTML = item.description.split(' ').map(word => `<span class="word">${word}</span>`).join(' ');
+        descriptionsContainer.appendChild(description);
+
+        // Create Image
         const img = document.createElement('img');
         img.src = item.imageUrl;
         img.alt = item.title;
+        img.className = 'use-case-image';
         img.dataset.index = index;
-        backgroundContainer.appendChild(img);
+        imageWrapper.appendChild(img);
     });
 
     tabsContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('use-case-tab')) {
             const index = parseInt(e.target.dataset.index, 10);
-            updateUseCaseImage(index);
+            updateUseCaseContent(index);
+            // Reset interval on manual click
             clearInterval(useCaseInterval);
             useCaseInterval = setInterval(() => {
                 currentUseCaseIndex = (currentUseCaseIndex + 1) % useCaseData.length;
-                updateUseCaseImage(currentUseCaseIndex);
+                updateUseCaseContent(currentUseCaseIndex);
             }, 5000);
         }
     });
     
-    updateUseCaseImage(0);
+    // Initial state
+    updateUseCaseContent(0);
 
+    // Start auto-play
     useCaseInterval = setInterval(() => {
         currentUseCaseIndex = (currentUseCaseIndex + 1) % useCaseData.length;
-        updateUseCaseImage(currentUseCaseIndex);
+        updateUseCaseContent(currentUseCaseIndex);
     }, 5000);
 }
 
-function updateUseCaseImage(index) {
+function updateUseCaseContent(index) {
     currentUseCaseIndex = index;
-    const allImages = document.querySelectorAll('#use-case-background img');
+    const allImages = document.querySelectorAll('.use-case-image');
     const allTabs = document.querySelectorAll('.use-case-tab');
+    const allDescriptions = document.querySelectorAll('.use-case-description');
 
-    allImages.forEach((img, i) => {
-        img.classList.toggle('active', i === index);
-    });
-
-    allTabs.forEach((tab, i) => {
-        tab.classList.toggle('active', i === index);
+    allTabs.forEach((tab, i) => tab.classList.toggle('active', i === index));
+    allImages.forEach((img, i) => img.classList.toggle('active', i === index));
+    
+    allDescriptions.forEach((desc, i) => {
+        const isActive = i === index;
+        desc.classList.toggle('active', isActive);
+        if(isActive) {
+            gsap.fromTo(desc.querySelectorAll('.word'), 
+                { opacity: 0, y: 10 },
+                { opacity: 1, y: 0, stagger: 0.03, duration: 0.5, ease: 'power2.out' }
+            );
+        }
     });
 }
 
@@ -257,9 +279,9 @@ function initializeAnimations() {
         });
     }
 
-    gsap.to("#use-case-headline", {
-        opacity: 1,
-        y: 0,
+    gsap.from(".use-case-container", {
+        opacity: 0,
+        y: 50,
         duration: 1,
         ease: 'power3.out',
         scrollTrigger: {
