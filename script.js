@@ -177,6 +177,22 @@ function initializeAnimations() {
             });
         });
     }
+
+    // Testimonial Animation
+    const testimonialSection = document.getElementById('testimonial-section');
+    if(testimonialSection) {
+        gsap.from(testimonialSection.querySelectorAll(".testimonial-image, .testimonial-card"), {
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            stagger: 0.2,
+            ease: 'power3.out',
+            scrollTrigger: {
+                trigger: testimonialSection,
+                start: "top 80%",
+            }
+        });
+    }
 }
 
 
