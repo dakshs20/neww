@@ -18,8 +18,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-
-// --- NEW: Data for Interactive Use Case Section ---
 const useCaseData = [
     { title: "Marketing", imageUrl: "https://images.unsplash.com/photo-1557862921-37829c790f19?q=80&w=2000&auto=format&fit=crop" },
     { title: "Advertising", imageUrl: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=2000&auto=format&fit=crop" },
@@ -27,7 +25,6 @@ const useCaseData = [
     { title: "Graphic Design", imageUrl: "https://images.unsplash.com/photo-1629904853716-f0bc64219b1b?q=80&w=2000&auto=format&fit=crop" },
     { title: "Realistic Photos", imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=2000&auto=format&fit=crop" }
 ];
-
 
 // --- Global State ---
 let currentUser;
@@ -45,16 +42,16 @@ const DOMElements = {};
 
 document.addEventListener('DOMContentLoaded', () => {
     const ids = [
-        'header-nav', 'mobile-menu', 'mobile-menu-btn', 'menu-open-icon', 'menu-close-icon',
-        'gallery-container', 'masonry-gallery', 'prompt-input',
-        'generate-btn', 'generate-icon', 'button-timer', 'ratio-btn', 'ratio-options',
-        'auth-modal', 'google-signin-btn', 'out-of-credits-modal',
+        'header-nav', 'gallery-container', 'masonry-gallery', 'prompt-input',
+        'generate-btn', 'generate-icon', 'loading-spinner', 'ratio-btn', 'ratio-options',
+        'auth-modal', 'google-signin-btn', 'out-of-credits-modal', 
         'preview-modal', 'preview-image', 'preview-prompt-input',
         'download-btn', 'close-preview-btn', 'regenerate-btn',
         'image-upload-btn', 'image-upload-input', 'image-preview-container', 'image-preview', 'remove-image-btn',
         'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input',
         'hero-section', 'hero-headline', 'hero-subline', 'typewriter', 'prompt-bar-container',
-        'use-case-tabs', 'use-case-image-display'
+        'use-case-tabs', 'mobile-menu', 'mobile-menu-btn', 'menu-open-icon', 'menu-close-icon',
+        'button-timer', 'use-case-headline'
     ];
     ids.forEach(id => {
         if (id) {
@@ -69,8 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeEventListeners();
     initializeAnimations();
-    initializeInteractiveUseCases();
+    initializeCinematicUseCases();
     onAuthStateChanged(auth, user => updateUIForAuthState(user));
+    restructureGalleryForMobile();
 });
 
 function restructureGalleryForMobile() {
@@ -83,14 +81,12 @@ function restructureGalleryForMobile() {
             firstColumn.appendChild(column.firstChild);
         }
     }
-    // Call this only once when DOM is ready and screen is small
-    restructureGalleryForMobile.called = true;
 }
 
-
-function initializeInteractiveUseCases() {
+function initializeCinematicUseCases() {
     const tabsContainer = DOMElements.useCaseTabs;
-    if (!tabsContainer) return;
+    const backgroundContainer = document.getElementById('use-case-background');
+    if (!tabsContainer || !backgroundContainer) return;
 
     useCaseData.forEach((item, index) => {
         const tab = document.createElement('button');
@@ -98,46 +94,46 @@ function initializeInteractiveUseCases() {
         tab.textContent = item.title;
         tab.dataset.index = index;
         tabsContainer.appendChild(tab);
+
+        const img = document.createElement('img');
+        img.src = item.imageUrl;
+        img.alt = item.title;
+        img.dataset.index = index;
+        backgroundContainer.appendChild(img);
     });
-
-    updateUseCaseImage(currentUseCaseIndex);
-
-    function startUseCaseSlider() {
-        clearInterval(useCaseInterval);
-        useCaseInterval = setInterval(() => {
-            currentUseCaseIndex = (currentUseCaseIndex + 1) % useCaseData.length;
-            updateUseCaseImage(currentUseCaseIndex);
-        }, 4000); // Change image every 4 seconds
-    }
 
     tabsContainer.addEventListener('click', (e) => {
         if (e.target.classList.contains('use-case-tab')) {
             const index = parseInt(e.target.dataset.index, 10);
-            currentUseCaseIndex = index;
             updateUseCaseImage(index);
-            startUseCaseSlider(); // Reset the timer when user clicks
+            clearInterval(useCaseInterval);
+            useCaseInterval = setInterval(() => {
+                currentUseCaseIndex = (currentUseCaseIndex + 1) % useCaseData.length;
+                updateUseCaseImage(currentUseCaseIndex);
+            }, 5000);
         }
     });
+    
+    updateUseCaseImage(0);
 
-    startUseCaseSlider();
+    useCaseInterval = setInterval(() => {
+        currentUseCaseIndex = (currentUseCaseIndex + 1) % useCaseData.length;
+        updateUseCaseImage(currentUseCaseIndex);
+    }, 5000);
 }
 
 function updateUseCaseImage(index) {
-    const imageDisplay = DOMElements.useCaseImageDisplay;
-    const tabs = document.querySelectorAll('.use-case-tab');
-    if (!imageDisplay || !tabs.length) return;
+    currentUseCaseIndex = index;
+    const allImages = document.querySelectorAll('#use-case-background img');
+    const allTabs = document.querySelectorAll('.use-case-tab');
 
-    tabs.forEach((tab, i) => {
-        tab.classList.toggle('active', i === index);
+    allImages.forEach((img, i) => {
+        img.classList.toggle('active', i === index);
     });
 
-    imageDisplay.classList.add('fading');
-    setTimeout(() => {
-        imageDisplay.src = useCaseData[index].imageUrl;
-        imageDisplay.onload = () => {
-            imageDisplay.classList.remove('fading');
-        };
-    }, 400);
+    allTabs.forEach((tab, i) => {
+        tab.classList.toggle('active', i === index);
+    });
 }
 
 
@@ -180,18 +176,12 @@ function initializeEventListeners() {
     DOMElements.changeInputImageBtn?.addEventListener('click', () => DOMElements.previewImageUploadInput.click());
     DOMElements.previewImageUploadInput?.addEventListener('change', handlePreviewImageChange);
     DOMElements.removeInputImageBtn?.addEventListener('click', removePreviewInputImage);
-
-    // Mobile Menu Toggle
+    
     DOMElements.mobileMenuBtn?.addEventListener('click', () => {
         const isHidden = DOMElements.mobileMenu.classList.toggle('hidden');
         DOMElements.menuOpenIcon.classList.toggle('hidden', !isHidden);
         DOMElements.menuCloseIcon.classList.toggle('hidden', isHidden);
     });
-
-    // Initial check for gallery restructure
-    if (window.innerWidth < 768 && !restructureGalleryForMobile.called) {
-        restructureGalleryForMobile();
-    }
 }
 
 // --- Animations ---
@@ -266,61 +256,59 @@ function initializeAnimations() {
             });
         });
     }
+
+    gsap.to("#use-case-headline", {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        ease: 'power3.out',
+        scrollTrigger: {
+            trigger: "#interactive-use-cases",
+            start: "top 70%",
+        }
+    });
 }
 
 
 // --- Core App Logic ---
 function updateUIForAuthState(user) {
     currentUser = user;
-    const desktopNav = DOMElements.headerNav;
+    const nav = DOMElements.headerNav;
     const mobileNav = DOMElements.mobileMenu;
 
     if (user) {
-        // Desktop Logged In
-        desktopNav.innerHTML = `
-            <a href="about.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">About</a>
-            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Pricing</a>
-            <div id="credits-counter-desktop" class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ...</div>
-            <button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Sign Out</button>
+        nav.innerHTML = `
+            <a href="about.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">About</a>
+            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Pricing</a>
+            <div id="credits-counter" class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ...</div>
+            <button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Sign Out</button>
         `;
-        // Mobile Logged In
         mobileNav.innerHTML = `
-            <div class="px-4 py-3">
-                <p class="text-sm text-gray-500">Signed in as</p>
-                <p class="text-sm font-medium text-gray-800 truncate">${user.email}</p>
-            </div>
-            <div id="credits-counter-mobile" class="text-center font-semibold text-gray-700 py-2">Credits: ...</div>
-            <div class="border-t border-gray-200/80 my-1"></div>
-            <a href="about.html" class="mobile-nav-link">About</a>
-            <a href="pricing.html" class="mobile-nav-link">Pricing</a>
-            <div class="border-t border-gray-200/80 my-1"></div>
-            <button id="sign-out-btn-mobile" class="mobile-nav-link w-full text-left">Sign Out</button>
+            <a href="about.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">About</a>
+            <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
+            <div id="credits-counter-mobile" class="text-center text-lg font-semibold text-gray-700 p-3 my-2 border-y">Credits: ...</div>
+            <button id="sign-out-btn-mobile" class="w-full text-left text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Sign Out</button>
         `;
-
         document.getElementById('sign-out-btn-desktop').addEventListener('click', () => signOut(auth));
         document.getElementById('sign-out-btn-mobile').addEventListener('click', () => signOut(auth));
         fetchUserCredits(user);
     } else {
-        // Desktop Logged Out
-        desktopNav.innerHTML = `
-            <a href="about.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">About</a>
-            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE] hover:text-white rounded-full px-3 py-1 transition-colors">Pricing</a>
+        nav.innerHTML = `
+            <a href="about.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">About</a>
+            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Pricing</a>
             <button id="sign-in-btn-desktop" class="text-sm font-medium text-white px-4 py-1.5 rounded-full transition-colors" style="background-color: #517CBE;">Sign In</button>
         `;
-        // Mobile Logged Out
-        mobileNav.innerHTML = `
-            <a href="about.html" class="mobile-nav-link">About</a>
-            <a href="pricing.html" class="mobile-nav-link">Pricing</a>
-            <div class="p-2">
-                <button id="sign-in-btn-mobile" class="w-full text-base font-semibold text-white px-4 py-2.5 rounded-xl transition-colors" style="background-color: #517CBE;">Sign In</button>
+         mobileNav.innerHTML = `
+            <a href="about.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">About</a>
+            <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
+            <div class="p-4 mt-4">
+                 <button id="sign-in-btn-mobile" class="w-full text-lg font-semibold bg-[#517CBE] text-white px-4 py-3 rounded-xl hover:bg-opacity-90 transition-colors">Sign In</button>
             </div>
         `;
-        
         document.getElementById('sign-in-btn-desktop').addEventListener('click', signInWithGoogle);
         document.getElementById('sign-in-btn-mobile').addEventListener('click', signInWithGoogle);
     }
 }
-
 
 async function fetchUserCredits(user) {
     try {
@@ -337,14 +325,10 @@ async function fetchUserCredits(user) {
 }
 
 function updateCreditsDisplay(amount) {
-    const desktopCounter = document.getElementById('credits-counter-desktop');
-    const mobileCounter = document.getElementById('credits-counter-mobile');
-    if (desktopCounter) {
-        desktopCounter.textContent = `Credits: ${amount}`;
-    }
-    if (mobileCounter) {
-        mobileCounter.textContent = `Credits: ${amount}`;
-    }
+    const creditsCounter = document.getElementById('credits-counter');
+    const creditsCounterMobile = document.getElementById('credits-counter-mobile');
+    if (creditsCounter) creditsCounter.textContent = `Credits: ${amount}`;
+    if (creditsCounterMobile) creditsCounterMobile.textContent = `Credits: ${amount}`;
 }
 
 function autoResizeTextarea(e) {
@@ -476,33 +460,21 @@ function setLoadingState(isLoading) {
     DOMElements.generateBtn.disabled = isLoading;
     DOMElements.generateIcon.classList.toggle('hidden', isLoading);
     DOMElements.buttonTimer.classList.toggle('hidden', !isLoading);
-
-    if (isLoading) {
-        DOMElements.generateBtn.classList.remove('w-10');
-        DOMElements.generateBtn.classList.add('w-28'); // Make button wider for timer
-    } else {
-        DOMElements.generateBtn.classList.add('w-10');
-        DOMElements.generateBtn.classList.remove('w-28');
-    }
 }
 
 function startTimer() {
     let endTime = Date.now() + 17000;
-    DOMElements.buttonTimer.textContent = '17.00s';
-
+    DOMElements.buttonTimer.textContent = '17.00';
+    
     timerInterval = setInterval(() => {
-        const now = Date.now();
-        const timeLeft = endTime - now;
-
-        if (timeLeft <= 0) {
+        const remaining = endTime - Date.now();
+        if (remaining <= 0) {
             clearInterval(timerInterval);
-            DOMElements.buttonTimer.textContent = '0.00s';
+            DOMElements.buttonTimer.textContent = '0.00';
             return;
         }
-
-        const secondsLeft = (timeLeft / 1000).toFixed(2);
-        DOMElements.buttonTimer.textContent = `${secondsLeft}s`;
-    }, 50); // Update every 50ms for a smooth countdown
+        DOMElements.buttonTimer.textContent = (remaining / 1000).toFixed(2);
+    }, 50); // Update every 50ms for smoother millisecond display
 }
 
 // --- Image Handling & Uploads ---
