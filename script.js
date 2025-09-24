@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input',
         'hero-section', 'hero-headline', 'hero-subline', 'typewriter', 'prompt-bar-container',
         'mobile-menu', 'mobile-menu-btn', 'menu-open-icon', 'menu-close-icon',
-        'button-timer'
+        'button-timer', 'button-content'
     ];
     ids.forEach(id => {
         if (id) {
@@ -116,6 +116,15 @@ function initializeEventListeners() {
         const isHidden = DOMElements.mobileMenu.classList.toggle('hidden');
         DOMElements.menuOpenIcon.classList.toggle('hidden', !isHidden);
         DOMElements.menuCloseIcon.classList.toggle('hidden', isHidden);
+    });
+
+    window.addEventListener('scroll', () => {
+        const header = document.querySelector('header');
+        if (window.scrollY > 10) {
+            header.classList.add('scrolled');
+        } else {
+            header.classList.remove('scrolled');
+        }
     });
 }
 
@@ -384,7 +393,7 @@ async function handleRegeneration() {
 function setLoadingState(isLoading) {
     isGenerating = isLoading;
     DOMElements.generateBtn.disabled = isLoading;
-    DOMElements.generateIcon.classList.toggle('hidden', isLoading);
+    DOMElements.buttonContent.classList.toggle('hidden', isLoading);
     DOMElements.buttonTimer.classList.toggle('hidden', !isLoading);
 }
 
