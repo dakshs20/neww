@@ -2,7 +2,6 @@
 body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     color: #374151; /* gray-700 */
-    background-color: #f8fafc;
 }
 
 /* --- Full-page Animated Gradient Background --- */
@@ -88,63 +87,86 @@ body {
 .animate-shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
 
 
-/* --- Cinematic Use Case Section --- */
-#use-case-background img {
+/* --- Aesthetic Use Case Section --- */
+.use-case-container {
+    background-color: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4rem; /* Equivalent to rounded-[4rem] */
+    padding: 4rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+}
+
+.use-case-tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.use-case-tab:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+    border-color: rgba(255, 255, 255, 0.8);
+}
+
+.use-case-tab.active {
+    color: #f8fafc;
+    background-color: #517CBE;
+    border-color: #517CBE;
+    box-shadow: 0 4px 14px 0 rgba(81, 124, 190, 0.3);
+}
+
+#use-case-descriptions {
+    position: relative;
+    min-height: 80px; /* Adjust as needed */
+}
+.use-case-description {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+.use-case-description.active {
+    opacity: 1;
+}
+.use-case-description .word {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.use-case-image-frame {
+    aspect-ratio: 4 / 3;
+    border-radius: 2rem; /* equivalent to rounded-3xl */
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+#use-case-image-wrapper {
+    position: absolute;
+    inset: 0;
+}
+
+.use-case-image {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
     opacity: 0;
-    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
-    transform-origin: center center;
+    transform: scale(1.1);
+    transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-#use-case-background img.active {
+.use-case-image.active {
     opacity: 1;
-    animation: kenburns 20s ease-in-out infinite alternate;
-}
-
-@keyframes kenburns {
-    0% { transform: scale(1.0) translate(0, 0); }
-    100% { transform: scale(1.1) translate(1%, -1%); }
-}
-
-.use-case-tab {
-    font-size: 1.125rem;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.7);
-    cursor: pointer;
-    position: relative;
-    padding: 0.5rem 0;
-    transition: all 0.3s ease;
-}
-
-.use-case-tab::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 2px;
-    background-color: white;
-    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.use-case-tab.active,
-.use-case-tab:hover {
-    color: white;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-}
-
-.use-case-tab.active::after {
-    width: 60%;
-}
-
-#use-case-headline {
-    opacity: 0;
-    transform: translateY(20px);
+    transform: scale(1);
 }
 
 /* --- Mobile Responsiveness --- */
@@ -167,6 +189,18 @@ body {
     }
     #stats-section h3 {
         font-size: 2.25rem; /* text-4xl */
+    }
+
+    .use-case-container {
+        padding: 2rem;
+        border-radius: 2rem;
+    }
+
+    .use-case-text-content {
+        text-align: center;
+    }
+    #use-case-tabs {
+        justify-content: center;
     }
 
     #masonry-gallery { display: block; }
