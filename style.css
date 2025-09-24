@@ -21,17 +21,14 @@ body {
     100% { background-position: 0% 50%; }
 }
 
-#gallery-container, #hero-section, #stats-section, #masonry-gallery-wrapper, #interactive-use-cases {
+#gallery-container, #hero-section, #stats-section, #masonry-gallery-wrapper {
     background-color: transparent;
 }
 
 /* --- Hero, Stats, and Masonry Sections --- */
-#hero-headline .char {
-    display: inline-block;
+#hero-headline {
     opacity: 0;
-    transform: translateY(30px) scale(0.9);
 }
-
 #hero-subline {
     opacity: 0;
     transform: translateY(20px);
@@ -87,58 +84,6 @@ body {
 .animate-shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
 
 
-/* --- Aesthetic Use Case Section --- */
-.use-case-container {
-    background-color: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 4rem; /* Equivalent to rounded-[4rem] */
-    padding: 4rem;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
-}
-
-.use-case-tab {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #475569;
-    background-color: transparent;
-    border: 1px solid transparent;
-    border-radius: 9999px;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.use-case-tab:hover {
-    background-color: rgba(255, 255, 255, 0.5);
-    border-color: rgba(255, 255, 255, 0.8);
-}
-
-.use-case-tab.active {
-    color: #f8fafc;
-    background-color: #517CBE;
-    border-color: #517CBE;
-    box-shadow: 0 4px 14px 0 rgba(81, 124, 190, 0.3);
-}
-
-#use-case-descriptions {
-    position: relative;
-    min-height: 80px; /* Adjust as needed */
-}
-.use-case-description {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
-}
-.use-case-description.active {
-    opacity: 1;
-}
-
-.use-case-tab.active::after {
-    width: 100%;
-}
-
 /* --- Testimonial Section --- */
 .testimonial-image-container {
     perspective: 1500px;
@@ -190,9 +135,14 @@ body {
     #hero-headline {
         font-size: 2.5rem; /* 40px */
         line-height: 1.1;
+        text-align: center;
     }
     #hero-subline {
         font-size: 1rem; /* 16px */
+    }
+    #first-screen-content {
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
     #stats-section .grid {
         gap: 1.5rem; /* Reduce gap on mobile */
