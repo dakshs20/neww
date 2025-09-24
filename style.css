@@ -1,8 +1,8 @@
 /* --- Base Styles --- */
 body {
-    background-color: #f8fafc; /* This is the fallback color */
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     color: #374151; /* gray-700 */
+    background-color: #f8fafc;
 }
 
 /* --- Full-page Animated Gradient Background --- */
@@ -22,26 +22,17 @@ body {
     100% { background-position: 0% 50%; }
 }
 
-#gallery-container, #hero-section, #stats-section, #masonry-gallery-wrapper {
+#gallery-container, #hero-section, #stats-section, #masonry-gallery-wrapper, #interactive-use-cases {
     background-color: transparent;
 }
-
-/* --- Header & Mobile Menu --- */
-#mobile-menu a, #mobile-menu button {
-    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
-}
-.mobile-nav-link {
-    @apply block w-full text-left text-base font-semibold text-gray-700 px-4 py-3 rounded-xl hover:bg-gray-200/70;
-}
-
 
 /* --- Hero, Stats, and Masonry Sections --- */
 #hero-headline .char {
     display: inline-block;
     opacity: 0;
-    transform: translateY(20px);
-    will-change: transform, opacity;
+    transform: translateY(30px) scale(0.9);
 }
+
 #hero-subline {
     opacity: 0;
     transform: translateY(20px);
@@ -97,47 +88,36 @@ body {
 .animate-shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
 
 
-/* --- Interactive Use Case Section --- */
-#interactive-use-cases {
-    position: relative;
-    overflow: hidden; /* Contain the pseudo-element */
-    border-top: 1px solid hsl(220 13% 91%);
-    border-bottom: 1px solid hsl(220 13% 91%);
-}
-
-/* New animated background glow */
-#interactive-use-cases::before {
-    content: '';
+/* --- Cinematic Use Case Section --- */
+#use-case-background img {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 150%;
-    padding-bottom: 150%;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(81, 124, 190, 0.15) 0%, rgba(81, 124, 190, 0) 55%);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
     transform-origin: center center;
-    transform: translateX(-50%) translateY(-50%) scale(0.8);
-    animation: background-pulse 12s ease-in-out infinite;
-    z-index: -1;
-    will-change: transform, opacity;
 }
 
-@keyframes background-pulse {
-    0% { transform: translateX(-50%) translateY(-50%) scale(0.8); opacity: 0.6; }
-    50% { transform: translateX(-50%) translateY(-50%) scale(1.1); opacity: 1; }
-    100% { transform: translateX(-50%) translateY(-50%) scale(0.8); opacity: 0.6; }
+#use-case-background img.active {
+    opacity: 1;
+    animation: kenburns 20s ease-in-out infinite alternate;
 }
 
+@keyframes kenburns {
+    0% { transform: scale(1.0) translate(0, 0); }
+    100% { transform: scale(1.1) translate(1%, -1%); }
+}
 
 .use-case-tab {
     font-size: 1.125rem;
-    font-weight: 600;
-    color: #64748b;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
     position: relative;
-    padding-bottom: 0.5rem;
-    transition: color 0.3s ease;
-    will-change: color;
+    padding: 0.5rem 0;
+    transition: all 0.3s ease;
 }
 
 .use-case-tab::after {
@@ -147,123 +127,51 @@ body {
     left: 50%;
     transform: translateX(-50%);
     width: 0;
-    height: 3px; /* Thicker line */
-    background-color: #517CBE;
-    transition: width 0.4s cubic-bezier(0.23, 1, 0.32, 1); /* Bouncy transition */
-    border-radius: 2px;
+    height: 2px;
+    background-color: white;
+    transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .use-case-tab.active,
 .use-case-tab:hover {
-    color: #1e293b; /* Darker text on hover/active */
-}
-
-.use-case-tab.active {
-    color: #517CBE;
-    text-shadow: 0 0 20px rgba(81, 124, 190, 0.4);
-    transition: color 0.4s ease, text-shadow 0.4s ease;
+    color: white;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 .use-case-tab.active::after {
-    width: 100%;
+    width: 60%;
 }
 
-#use-case-image-container {
-    background-color: #e2e8f0;
-    position: relative;
-    overflow: hidden; /* For the shine effect */
-    will-change: transform;
-}
-
-/* NEW: Shine effect on image container */
-#use-case-image-container::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.25) 50%, rgba(255, 255, 255, 0) 100%);
-    transform: skewX(-25deg);
-    animation: shine 6s infinite ease-out;
-    animation-delay: 2s;
-    z-index: 1;
-}
-
-@keyframes shine {
-    0% { left: -100%; }
-    40% { left: 150%; }
-    100% { left: 150%; }
-}
-
-
-/* Updated transition for a smoother zoom and blur effect */
-#use-case-image-display {
-    transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out, filter 0.5s ease-in-out;
-    transform: scale(1.05); /* Start slightly zoomed in */
-    will-change: opacity, transform, filter;
-    filter: blur(0px);
-}
-
-#use-case-image-display.fading {
+#use-case-headline {
     opacity: 0;
-    transform: scale(1);
-    filter: blur(8px);
+    transform: translateY(20px);
 }
-
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 767px) {
-    #masonry-gallery { display: block; }
-    .masonry-column { display: block; }
-    .masonry-column:not(:first-child) { display: none; }
-    .masonry-item { margin-bottom: 1rem; }
-
     #first-screen-content {
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
     }
-
-    #hero-section {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
     #hero-headline {
-        font-size: 2.5rem; /* Slightly larger for impact */
-        line-height: 1.15;
+        font-size: 2.5rem;
+        line-height: 1.1;
         text-align: center;
     }
-
     #hero-subline {
         font-size: 1rem;
-        max-width: 90%;
-        text-align: center;
+        padding: 0 1rem;
     }
-
     #stats-section .grid {
         gap: 1.5rem; /* Reduce gap on mobile */
     }
     #stats-section h3 {
         font-size: 2.25rem; /* text-4xl */
     }
-    
-    footer {
-        position: fixed !important;
-    }
 
-    /* --- Generic Mobile Styles for other pages --- */
-    .pricing-card-mobile {
-        transform: scale(1) !important;
-    }
-
-    .page-title-mobile {
-        font-size: 2rem !important;
-    }
-
-    .page-text-mobile {
-        font-size: 0.95rem !important;
-    }
+    #masonry-gallery { display: block; }
+    .masonry-column { display: block; }
+    .masonry-column:not(:first-child) { display: none; }
+    .masonry-item { margin-bottom: 1rem; }
 }
 
