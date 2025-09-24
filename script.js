@@ -279,19 +279,16 @@ function initializeAnimations() {
         });
     }
 
-    gsap.fromTo("#interactive-use-cases", 
-        { opacity: 0, y: 50 },
-        { 
-            opacity: 1, 
-            y: 0, 
-            duration: 1, 
-            ease: 'power3.out',
-            scrollTrigger: {
-                trigger: "#interactive-use-cases",
-                start: "top 80%",
-            }
+    gsap.from(".use-case-container", {
+        opacity: 0,
+        y: 50,
+        duration: 1,
+        ease: 'power3.out',
+        scrollTrigger: {
+            trigger: "#interactive-use-cases",
+            start: "top 80%",
         }
-    );
+    });
 }
 
 
