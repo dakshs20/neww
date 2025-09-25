@@ -102,13 +102,12 @@ header.scrolled {
 }
 
 .testimonial-card {
-    background-color: #517CBE; /* UPDATED COLOR */
+    background-color: #517CBE;
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-radius: 1.5rem; /* 24px */
     padding: 3rem; /* 48px */
     padding-top: 5rem; /* 80px */
-    color: #d1d5db; /* gray-300 */
     position: relative;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -122,38 +121,54 @@ header.scrolled {
 .testimonial-author {
     margin-top: 2rem; /* 32px */
     padding-top: 2rem; /* 32px */
-    border-top: 1px solid rgba(255, 255, 255, 0.2); /* Adjusted for better visibility */
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* --- Dynamic Use Cases Section --- */
+#use-cases-text-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.use-case-text {
+    position: absolute;
+    opacity: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #517CBE;
+    transform: translateY(30px);
 }
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 1023px) { /* Apply on tablet and below */
     .testimonial-card-container {
-       transform: translateY(-4rem); /* Pulls the card up over the image */
+       transform: translateY(-4rem); 
     }
     .testimonial-card {
-        margin: 0 1rem; /* Add horizontal margin on smaller screens */
+        margin: 0 1rem; 
     }
 }
 
 
 @media (max-width: 767px) {
     #hero-headline {
-        font-size: 2.5rem; /* 40px */
+        font-size: 2.5rem; 
         line-height: 1.1;
         text-align: center;
     }
     #hero-subline {
-        font-size: 1rem; /* 16px */
+        font-size: 1rem; 
     }
     #first-screen-content {
         padding-left: 1rem;
         padding-right: 1rem;
     }
     #stats-section .grid {
-        gap: 1.5rem; /* Reduce gap on mobile */
+        gap: 1.5rem; 
     }
     #stats-section h3 {
-        font-size: 2.25rem; /* text-4xl */
+        font-size: 2.25rem; 
     }
     #masonry-gallery { display: block; }
     .masonry-column { display: block; }
@@ -161,14 +176,21 @@ header.scrolled {
     .masonry-item { margin-bottom: 1rem; }
 
     .testimonial-card-container {
-       transform: translateY(-3rem); /* Adjust overlap for mobile */
+       transform: translateY(-3rem); 
     }
      .testimonial-card {
-        padding: 2.5rem; /* 40px */
-        padding-top: 4rem; /* 64px */
+        padding: 2.5rem;
+        padding-top: 4rem; 
     }
     .testimonial-text {
-        font-size: 1.125rem; /* 18px */
+        font-size: 1.125rem; 
+    }
+
+    #use-cases-headline {
+        font-size: 2.5rem;
+    }
+    .use-case-text {
+        font-size: 1.75rem;
     }
 }
 
