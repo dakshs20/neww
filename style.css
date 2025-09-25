@@ -102,7 +102,7 @@ header.scrolled {
 }
 
 .testimonial-card {
-    background-color: rgba(17, 24, 39, 0.8); /* gray-900 with opacity */
+    background-color: #517CBE; /* UPDATED COLOR */
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-radius: 1.5rem; /* 24px */
@@ -122,7 +122,7 @@ header.scrolled {
 .testimonial-author {
     margin-top: 2rem; /* 32px */
     padding-top: 2rem; /* 32px */
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2); /* Adjusted for better visibility */
 }
 
 /* --- Mobile Responsiveness --- */
