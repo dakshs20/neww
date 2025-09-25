@@ -21,14 +21,10 @@ body {
     100% { background-position: 0% 50%; }
 }
 
-/* --- Header --- */
-header.scrolled {
-    background-color: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+header.scrolled #header-nav {
+    transform: translateY(0);
+    opacity: 1;
 }
-
 
 /* --- Hero, Stats, and Masonry Sections --- */
 #hero-headline {
@@ -90,112 +86,118 @@ header.scrolled {
 
 
 /* --- Testimonial Section --- */
-.testimonial-image-container {
-    perspective: 1500px;
-}
 .testimonial-image {
-    border-radius: 1.5rem; /* 24px */
+    border-radius: 1.5rem;
     width: 100%;
     height: auto;
     object-fit: cover;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 }
 
 .testimonial-card {
     background-color: #517CBE;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-radius: 1.5rem; /* 24px */
-    padding: 3rem; /* 48px */
-    padding-top: 5rem; /* 80px */
+    color: white;
+    border-radius: 1.5rem;
+    padding: 2.5rem;
     position: relative;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(81, 124, 190, 0.25);
 }
 
 .testimonial-text {
-    font-size: 1.25rem; /* 20px */
+    font-size: 1.25rem;
     line-height: 1.75;
     font-weight: 500;
 }
 
 .testimonial-author {
-    margin-top: 2rem; /* 32px */
-    padding-top: 2rem; /* 32px */
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
     border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* --- Dynamic Use Cases Section --- */
-#use-cases-headline {
-    opacity: 0;
+#use-cases-section {
+    position: relative;
+    width: 100%;
+    /* The height is determined by the `end` property in the ScrollTrigger animation */
+}
+
+.use-cases-content {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+}
+
+.use-cases-headline {
+    font-size: 2.25rem; /* text-4xl */
+    font-weight: 700;
+    color: #1f2937; /* gray-800 */
+    margin-bottom: 2rem;
+    opacity: 0; /* Initially hidden */
     transform: translateY(30px);
 }
-#use-cases-text-container {
+
+.use-cases-text-container {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    height: 6rem; /* Adjust based on largest text size */
+    width: 100%;
 }
+
 .use-case-text {
     position: absolute;
-    opacity: 0;
-    font-size: 2.5rem;
-    font-weight: 700;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3rem; /* text-5xl */
+    font-weight: 800;
     color: #517CBE;
+    opacity: 0; /* Initially hidden */
     transform: translateY(30px);
-    white-space: nowrap; 
+    white-space: nowrap; /* Prevents line breaks */
 }
+
 
 /* --- Mobile Responsiveness --- */
-@media (max-width: 1023px) { /* Apply on tablet and below */
-    .testimonial-card-container {
-       transform: translateY(-4rem); 
-    }
-    .testimonial-card {
-        margin: 0 1rem; 
-    }
-}
-
-
 @media (max-width: 767px) {
     #hero-headline {
-        font-size: 2.5rem; 
+        font-size: 2.5rem;
         line-height: 1.1;
         text-align: center;
     }
     #hero-subline {
-        font-size: 1rem; 
+        font-size: 1rem;
     }
     #first-screen-content {
         padding-left: 1rem;
         padding-right: 1rem;
     }
     #stats-section .grid {
-        gap: 1.5rem; 
+        gap: 1.5rem;
     }
     #stats-section h3 {
-        font-size: 2.25rem; 
+        font-size: 2.25rem;
     }
     #masonry-gallery { display: block; }
     .masonry-column { display: block; }
-    .masonry-column:not(:first-child) { display: none; }
     .masonry-item { margin-bottom: 1rem; }
 
-    .testimonial-card-container {
-       transform: translateY(-3rem); 
-    }
-     .testimonial-card {
-        padding: 2.5rem;
-        padding-top: 4rem; 
+    .testimonial-card {
+        padding: 2rem;
     }
     .testimonial-text {
-        font-size: 1.125rem; 
+        font-size: 1.125rem;
     }
-
-    #use-cases-headline {
-        font-size: 2.5rem;
+    .use-cases-headline {
+        font-size: 1.875rem; /* text-3xl */
     }
     .use-case-text {
-        font-size: 1.75rem;
+        font-size: 2.25rem; /* text-4xl */
     }
 }
 
