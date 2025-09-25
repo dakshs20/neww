@@ -125,6 +125,10 @@ header.scrolled {
 }
 
 /* --- Dynamic Use Cases Section --- */
+#use-cases-headline {
+    opacity: 0;
+    transform: translateY(30px);
+}
 #use-cases-text-container {
     position: relative;
     display: flex;
@@ -138,7 +142,7 @@ header.scrolled {
     font-weight: 700;
     color: #517CBE;
     transform: translateY(30px);
-    white-space: nowrap; /* ADDED THIS LINE */
+    white-space: nowrap; 
 }
 
 /* --- Mobile Responsiveness --- */
