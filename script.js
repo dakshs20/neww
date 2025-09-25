@@ -1,7 +1,7 @@
 // --- Firebase and Auth Initialization ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
@@ -200,6 +200,35 @@ function initializeAnimations() {
                 trigger: testimonialSection,
                 start: "top 80%",
             }
+        });
+    }
+
+    // Dynamic Use Cases Scroll Animation
+    const useCasesSection = document.getElementById('use-cases-section');
+    const useCaseTexts = gsap.utils.toArray('.use-case-text');
+
+    if (useCasesSection && useCaseTexts.length > 0) {
+        const tl = gsap.timeline();
+        
+        // Animate the first item in
+        tl.to(useCaseTexts[0], { opacity: 1, y: 0, duration: 0.3 });
+
+        // Loop through the rest to create transitions
+        for (let i = 1; i < useCaseTexts.length; i++) {
+            tl.to(useCaseTexts[i-1], { opacity: 0, y: -30, duration: 0.3 }, "+=0.4"); // Animate out previous
+            tl.to(useCaseTexts[i], { opacity: 1, y: 0, duration: 0.3 }); // Animate in current
+        }
+        
+        // Animate the last one out
+        tl.to(useCaseTexts[useCaseTexts.length - 1], { opacity: 0, y: -30, duration: 0.3 }, "+=0.4");
+
+        ScrollTrigger.create({
+            trigger: useCasesSection,
+            start: "top top",
+            end: "bottom bottom",
+            pin: true,
+            scrub: 0.5,
+            animation: tl,
         });
     }
 }
