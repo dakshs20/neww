@@ -209,38 +209,35 @@ function initializeAnimations() {
     const useCaseTexts = gsap.utils.toArray('.use-case-text');
 
     if (useCasesSection && useCaseHeadline && useCaseTexts.length > 0) {
-        // Animate the headline in separately so it stays visible
-        gsap.to(useCaseHeadline, {
-            opacity: 1,
-            y: 0,
-            duration: 0.5,
+        
+        const tl = gsap.timeline({
             scrollTrigger: {
                 trigger: useCasesSection,
-                start: "top 70%",
-                toggleActions: "play none none none" 
+                start: "top top",
+                end: "+=2500", // A fixed scroll length for the animation
+                pin: true,
+                scrub: 1,
             }
         });
 
-        // Create a timeline just for the scrolling text
-        const tl = gsap.timeline();
-        
-        tl.to(useCaseTexts[0], { opacity: 1, y: 0, duration: 0.3 });
+        // Fade in headline and first text
+        tl.to(useCaseHeadline, { opacity: 1, y: 0, duration: 0.5 }, 0);
+        tl.to(useCaseTexts[0], { opacity: 1, y: 0, duration: 0.5 }, 0.2);
 
-        for (let i = 1; i < useCaseTexts.length; i++) {
-            tl.to(useCaseTexts[i-1], { opacity: 0, y: -30, duration: 0.3 }, "+=0.5");
-            tl.to(useCaseTexts[i], { opacity: 1, y: 0, duration: 0.3 });
-        }
-        
-        tl.to(useCaseTexts[useCaseTexts.length - 1], { opacity: 0, y: -30, duration: 0.3 }, "+=0.5");
-
-        ScrollTrigger.create({
-            trigger: useCasesSection,
-            start: "top top",
-            end: "bottom bottom",
-            pin: true,
-            scrub: 0.5,
-            animation: tl,
+        // Animate through the rest of the texts
+        useCaseTexts.forEach((text, i) => {
+            if (i > 0) {
+                tl.to(useCaseTexts[i - 1], { opacity: 0, y: -30, duration: 0.3 }, `+=${1}`);
+                tl.to(text, { opacity: 1, y: 0, duration: 0.3 });
+            }
         });
+
+        // Fade out the headline and the final text at the end
+        tl.to([useCaseHeadline, useCaseTexts[useCaseTexts.length - 1]], { 
+            opacity: 0, 
+            y: -30, 
+            duration: 0.5,
+        }, `+=${1}`);
     }
 }
 
