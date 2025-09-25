@@ -138,6 +138,7 @@ header.scrolled {
     font-weight: 700;
     color: #517CBE;
     transform: translateY(30px);
+    white-space: nowrap; /* ADDED THIS LINE */
 }
 
 /* --- Mobile Responsiveness --- */
