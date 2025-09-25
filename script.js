@@ -202,43 +202,6 @@ function initializeAnimations() {
             }
         });
     }
-
-    // Dynamic Use Cases Scroll Animation
-    const useCasesSection = document.getElementById('use-cases-section');
-    const useCaseHeadline = document.getElementById('use-cases-headline');
-    const useCaseTexts = gsap.utils.toArray('.use-case-text');
-
-    if (useCasesSection && useCaseHeadline && useCaseTexts.length > 0) {
-        
-        const tl = gsap.timeline({
-            scrollTrigger: {
-                trigger: useCasesSection,
-                start: "top top",
-                end: "+=2500", // A fixed scroll length for the animation
-                pin: true,
-                scrub: 1,
-            }
-        });
-
-        // Fade in headline and first text
-        tl.to(useCaseHeadline, { opacity: 1, y: 0, duration: 0.5 }, 0);
-        tl.to(useCaseTexts[0], { opacity: 1, y: 0, duration: 0.5 }, 0.2);
-
-        // Animate through the rest of the texts
-        useCaseTexts.forEach((text, i) => {
-            if (i > 0) {
-                tl.to(useCaseTexts[i - 1], { opacity: 0, y: -30, duration: 0.3 }, `+=${1}`);
-                tl.to(text, { opacity: 1, y: 0, duration: 0.3 });
-            }
-        });
-
-        // Fade out the headline and the final text at the end
-        tl.to([useCaseHeadline, useCaseTexts[useCaseTexts.length - 1]], { 
-            opacity: 0, 
-            y: -30, 
-            duration: 0.5,
-        }, `+=${1}`);
-    }
 }
 
 
