@@ -75,9 +75,13 @@ export default async function handler(req, res) {
         // We use the aspect ratio selected by the user, defaulting to '1:1'.
         else {
             apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+            // Validate the aspect ratio to ensure only allowed values are sent to the API.
+            const validRatios = ["1:1", "16:9", "9:16", "4:5", "128:27"];
+            const selectedRatio = validRatios.includes(aspectRatio) ? aspectRatio : "1:1";
+
             payload = { 
                 instances: [{ prompt }], 
-                parameters: { "sampleCount": 1, "aspectRatio": aspectRatio || "1:1" }
+                parameters: { "sampleCount": 1, "aspectRatio": selectedRatio }
             };
         }
 
@@ -101,4 +105,3 @@ export default async function handler(req, res) {
         res.status(500).json({ error: 'The API function crashed.', details: error.message });
     }
 }
-
