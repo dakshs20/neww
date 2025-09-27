@@ -73,7 +73,7 @@ function restructureGalleryForMobile() {
 }
 
 function initializeEventListeners() {
-    DOMElements.googleSignInBtn?.addEventListener('click', signInWithGoogle);
+    DOMElements.googleSigninBtn?.addEventListener('click', signInWithGoogle);
     DOMElements.closeModalBtns.forEach(btn => btn.addEventListener('click', closeAllModals));
     DOMElements.generateBtn?.addEventListener('click', handleImageGenerationRequest);
     
@@ -514,4 +514,3 @@ function downloadPreviewImage() {
         })
         .catch(() => alert('An error occurred while downloading the image.'));
 }
-
