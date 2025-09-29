@@ -4,143 +4,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pricing Plans - GenArt</title>
+    <title>Pricing - GenArt</title>
+    <meta name="description" content="Choose a plan that fits your creative needs and scale with confidence.">
+    <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.5/gsap.min.js"></script>
+    <link rel="stylesheet" href="style.css">
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .plan-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-        }
-        .plan-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-        }
-        #billing-toggle-bg {
-            transition: left 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-        }
-        .price-value, .credits-value {
-            transition: opacity 0.3s ease-in-out;
-        }
-    </style>
 </head>
 
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-slate-50 font-sans antialiased">
+    <!-- Full-page animated gradient background -->
+    <div id="animated-gradient-bg"></div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-30 p-4 transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html">
+                <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 md:h-7 w-auto">
+            </a>
+            <nav id="header-nav"
+                class="hidden md:flex items-center space-x-2 bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-sm rounded-full px-2 py-1">
+                <a href="dashboard.html"
+                    class="text-sm font-medium text-gray-700 hover:bg-gray-200/50 rounded-full px-3 py-1 transition-colors">Account</a>
+                <div id="credits-counter" class="text-sm font-medium text-gray-700 px-3 py-1"></div>
+                <button id="auth-btn"
+                    class="text-sm font-medium text-gray-700 hover:bg-gray-200/50 rounded-full px-3 py-1 transition-colors">Sign
+                    In</button>
+            </nav>
+            <button id="mobile-menu-btn" class="md:hidden p-2 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 text-slate-800 z-50">
+                <svg id="menu-open-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                <svg id="menu-close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div id="mobile-menu"
+            class="hidden md:hidden fixed inset-0 bg-white/90 backdrop-blur-xl z-40 p-4 pt-24">
+        </div>
+    </header>
 
-        <!-- Header Section -->
-        <header class="text-center mb-12 sm:mb-16">
-            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight">
-                Plans for every creator
-            </h1>
-            <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
-                Credits are used for generations (1 credit = 1 generation). Speeds are approximate.
-            </p>
-        </header>
+    <!-- Main Content -->
+    <main class="relative z-10 pt-28 pb-16">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Page Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">Plans for every creator</h1>
+                <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">Toggle billing: Monthly or Yearly (billed
+                    once). Yearly purchases distribute credits monthly over 12 months.</p>
+            </div>
 
-        <!-- Billing Toggle -->
-        <div class="flex justify-center mb-10">
-            <div class="relative flex items-center bg-gray-200 rounded-full p-1.5">
-                <div id="billing-toggle-bg" class="absolute h-full w-1/2 top-0 left-0 bg-white rounded-full shadow-md"></div>
-                <button id="monthly-btn" class="relative z-10 w-28 py-2 text-sm font-semibold rounded-full focus:outline-none">Monthly</button>
-                <button id="yearly-btn" class="relative z-10 w-28 py-2 text-sm font-semibold rounded-full focus:outline-none text-gray-500">Yearly</button>
+            <!-- Billing Toggle -->
+            <div class="flex justify-center items-center mb-12">
+                <div class="relative flex items-center bg-gray-200/80 rounded-full p-1.5">
+                    <div id="toggle-bg" class="absolute h-full top-0 left-0 bg-white shadow-md rounded-full transition-all duration-300 ease-in-out" style="width: 100px; transform: translateX(0px);"></div>
+                    <button id="monthly-btn" class="relative z-10 px-6 py-2 text-sm font-semibold text-gray-800 transition-colors duration-300 rounded-full">Monthly</button>
+                    <button id="yearly-btn" class="relative z-10 px-6 py-2 text-sm font-semibold text-gray-500 transition-colors duration-300 rounded-full">Yearly</button>
+                </div>
+            </div>
+
+            <!-- Pricing Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                <!-- Plan Card: Hobby -->
+                <div id="hobby-card" class="plan-card bg-white rounded-2xl border border-slate-200 shadow-lg p-8 transform hover:-translate-y-2 transition-transform duration-300">
+                    <h3 class="text-sm font-semibold text-indigo-500 uppercase">Hobby</h3>
+                    <div class="mt-4 flex items-baseline text-gray-900">
+                        <span class="text-5xl font-extrabold tracking-tight" data-price-monthly="575" data-price-yearly="5750">575</span>
+                        <span class="ml-1 text-xl font-semibold text-gray-500">credits</span>
+                    </div>
+                    <p class="mt-2 text-gray-500">Perfect for hobbyists & casual creators.</p>
+                    <div class="mt-6">
+                        <div class="text-2xl font-bold">
+                            <span class="price-currency">₹</span><span class="price-value" data-price-monthly="798" data-price-yearly="7980">798</span>
+                        </div>
+                        <div class="price-breakdown text-xs text-gray-500 h-8 pt-1">Billed monthly.</div>
+                    </div>
+                    <ul class="mt-6 space-y-4 text-sm text-gray-600">
+                        <li class="flex items-center"><svg class="w-4 h-4 text-indigo-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>17 sec/gen speed</li>
+                        <li class="flex items-center"><svg class="w-4 h-4 text-indigo-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Credits expire in 3 months</li>
+                    </ul>
+                    <button data-plan-id="hobby" data-plan-name="Hobby Plan" class="plan-cta-btn w-full mt-8 bg-indigo-500 text-white font-semibold py-3 rounded-lg hover:bg-indigo-600 transition-colors">Get Started</button>
+                    <p class="text-xs text-gray-500 mt-2 text-center">Instant credits added after payment.</p>
+                </div>
+
+                <!-- Plan Card: Create (POPULAR) -->
+                <div id="create-card" class="plan-card bg-white rounded-2xl border-2 border-indigo-500 shadow-2xl p-8 relative transform hover:-translate-y-2 transition-transform duration-300">
+                    <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-indigo-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase">Popular</div>
+                    <h3 class="text-sm font-semibold text-indigo-500 uppercase">Create</h3>
+                    <div class="mt-4 flex items-baseline text-gray-900">
+                        <span class="text-5xl font-extrabold tracking-tight" data-price-monthly="975" data-price-yearly="9750">975</span>
+                        <span class="ml-1 text-xl font-semibold text-gray-500">credits</span>
+                    </div>
+                    <p class="mt-2 text-gray-500">Perfect for regular creators & freelancers.</p>
+                    <div class="mt-6">
+                        <div class="text-2xl font-bold">
+                             <span class="price-currency">₹</span><span class="price-value" data-price-monthly="1596" data-price-yearly="15960">1596</span>
+                        </div>
+                        <div class="price-breakdown text-xs text-gray-500 h-8 pt-1">Billed monthly.</div>
+                    </div>
+                    <ul class="mt-6 space-y-4 text-sm text-gray-600">
+                        <li class="flex items-center"><svg class="w-4 h-4 text-indigo-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>17 sec/gen speed</li>
+                        <li class="flex items-center"><svg class="w-4 h-4 text-indigo-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Credits expire in 5 months</li>
+                    </ul>
+                    <button data-plan-id="create" data-plan-name="Create Plan" class="plan-cta-btn w-full mt-8 bg-indigo-500 text-white font-semibold py-3 rounded-lg hover:bg-indigo-600 transition-colors">Upgrade Your Workflow</button>
+                    <p class="text-xs text-gray-500 mt-2 text-center">Instant credits added after payment.</p>
+                </div>
+
+                <!-- Plan Card: Elevate -->
+                <div id="elevate-card" class="plan-card bg-white rounded-2xl border border-slate-200 shadow-lg p-8 transform hover:-translate-y-2 transition-transform duration-300">
+                    <h3 class="text-sm font-semibold text-indigo-500 uppercase">Elevate</h3>
+                    <div class="mt-4 flex items-baseline text-gray-900">
+                        <span class="text-5xl font-extrabold tracking-tight" data-price-monthly="1950" data-price-yearly="19500">1950</span>
+                        <span class="ml-1 text-xl font-semibold text-gray-500">credits</span>
+                    </div>
+                    <p class="mt-2 text-gray-500">Perfect for professionals & agencies.</p>
+                    <div class="mt-6">
+                        <div class="text-2xl font-bold">
+                             <span class="price-currency">₹</span><span class="price-value" data-price-monthly="2571" data-price-yearly="25710">2571</span>
+                        </div>
+                        <div class="price-breakdown text-xs text-gray-500 h-8 pt-1">Billed monthly.</div>
+                    </div>
+                    <ul class="mt-6 space-y-4 text-sm text-gray-600">
+                        <li class="flex items-center"><svg class="w-4 h-4 text-indigo-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>17 sec/gen speed</li>
+                        <li class="flex items-center"><svg class="w-4 h-4 text-indigo-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Credits never expire</li>
+                    </ul>
+                    <button data-plan-id="elevate" data-plan-name="Elevate Plan" class="plan-cta-btn w-full mt-8 bg-indigo-500 text-white font-semibold py-3 rounded-lg hover:bg-indigo-600 transition-colors">Scale with Confidence</button>
+                    <p class="text-xs text-gray-500 mt-2 text-center">Instant credits added after payment.</p>
+                </div>
             </div>
         </div>
-
-        <!-- Pricing Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-
-            <!-- Hobby Plan Card -->
-            <div id="hobby-card" data-plan="hobby" class="plan-card bg-white rounded-2xl border border-gray-200 p-8 flex flex-col">
-                <h3 class="text-lg font-semibold text-indigo-600">Hobby Plan</h3>
-                <div class="mt-4">
-                    <span class="credits-value text-5xl font-extrabold text-gray-900">575</span>
-                    <span class="text-lg font-medium text-gray-500">credits</span>
-                </div>
-                 <div class="mt-2">
-                    <span class="text-4xl font-bold">₹<span class="price-value">798</span></span>
-                    <span class="text-gray-500">/mo</span>
-                </div>
-                <p class="text-sm text-gray-500 mt-1 h-12" id="hobby-price-breakdown">&nbsp;</p>
-                <p class="mt-6 text-gray-600 text-sm">Perfect for hobbyists & casual creators.</p>
-                <ul class="mt-6 space-y-3 text-sm text-gray-700 flex-grow">
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>17 sec/gen Speed</li>
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Credits Expire in 3 months</li>
-                </ul>
-                <button class="choose-plan-btn w-full mt-8 bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition-colors">Get Started</button>
-            </div>
-
-            <!-- Create Plan Card -->
-            <div id="create-card" data-plan="create" class="plan-card bg-white rounded-2xl border-2 border-indigo-600 p-8 flex flex-col relative">
-                <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Most Popular</div>
-                <h3 class="text-lg font-semibold text-indigo-600">Create Plan</h3>
-                 <div class="mt-4">
-                    <span class="credits-value text-5xl font-extrabold text-gray-900">975</span>
-                    <span class="text-lg font-medium text-gray-500">credits</span>
-                </div>
-                <div class="mt-2">
-                    <span class="text-4xl font-bold">₹<span class="price-value">1596</span></span>
-                    <span class="text-gray-500">/mo</span>
-                </div>
-                 <p class="text-sm text-gray-500 mt-1 h-12" id="create-price-breakdown">&nbsp;</p>
-                <p class="mt-6 text-gray-600 text-sm">Perfect for regular creators & freelancers.</p>
-                <ul class="mt-6 space-y-3 text-sm text-gray-700 flex-grow">
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>17 sec/gen Speed</li>
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Credits Expire in 5 months</li>
-                </ul>
-                <button class="choose-plan-btn w-full mt-8 bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition-colors">Upgrade Your Workflow</button>
-            </div>
-
-            <!-- Elevate Plan Card -->
-            <div id="elevate-card" data-plan="elevate" class="plan-card bg-white rounded-2xl border border-gray-200 p-8 flex flex-col">
-                <h3 class="text-lg font-semibold text-indigo-600">Elevate Plan</h3>
-                <div class="mt-4">
-                    <span class="credits-value text-5xl font-extrabold text-gray-900">1950</span>
-                    <span class="text-lg font-medium text-gray-500">credits</span>
-                </div>
-                 <div class="mt-2">
-                    <span class="text-4xl font-bold">₹<span class="price-value">2571</span></span>
-                    <span class="text-gray-500">/mo</span>
-                </div>
-                 <p class="text-sm text-gray-500 mt-1 h-12" id="elevate-price-breakdown">&nbsp;</p>
-                <p class="mt-6 text-gray-600 text-sm">Perfect for professionals & agencies.</p>
-                <ul class="mt-6 space-y-3 text-sm text-gray-700 flex-grow">
-                   <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>17 sec/gen Speed</li>
-                    <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>Credits Never Expire</li>
-                </ul>
-                <button class="choose-plan-btn w-full mt-8 bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition-colors">Scale with Confidence</button>
-            </div>
-        </div>
-    </div>
+    </main>
 
     <!-- Checkout Summary Modal -->
-    <div id="checkout-modal" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 invisible" aria-hidden="true">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
-            <h2 class="text-2xl font-bold text-gray-900 mb-4">Order Summary</h2>
-            <div class="space-y-3 text-gray-700">
-                <div class="flex justify-between"><span class="font-medium">Plan:</span> <span id="modal-plan-name"></span></div>
-                <div class="flex justify-between"><span class="font-medium">Billing:</span> <span id="modal-billing-cycle"></span></div>
-                <div class="border-t pt-3 mt-3 flex justify-between text-lg font-bold">
-                    <span>You will be charged:</span>
-                    <span id="modal-total-charge"></span>
-                </div>
-                <div class="text-sm text-gray-500" id="modal-credit-info-now"></div>
-                 <div class="text-sm text-gray-500" id="modal-credit-info-later"></div>
-                <div class="text-sm text-gray-500" id="modal-expiry-info"></div>
+    <div id="checkout-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4 hidden" aria-hidden="true">
+        <div id="checkout-modal-content" class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center transform scale-95 opacity-0 transition-all duration-300">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Order Summary</h2>
+            <div class="text-left space-y-2 text-gray-600">
+                <p><strong>Plan:</strong> <span id="modal-plan-name"></span></p>
+                <p><strong>Billing:</strong> <span id="modal-billing-cycle"></span></p>
+                <p><strong>Total Charge:</strong> <span id="modal-charge-amount" class="font-bold text-gray-900"></span></p>
+                <p><strong>Credits to be added:</strong> <span id="modal-credits-amount"></span></p>
+                <p><strong>Expiry:</strong> <span id="modal-expiry"></span></p>
             </div>
-            <div class="mt-8">
-                <button id="proceed-to-payment-btn" class="w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition-colors">Proceed to Secure Checkout</button>
-                <button id="close-modal-btn" class="w-full mt-3 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
-            </div>
-             <p class="text-xs text-gray-400 text-center mt-4">Secure checkout via Razorpay.</p>
+            <button id="proceed-to-payment-btn" class="w-full mt-6 bg-indigo-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors">
+                Proceed to Secure Checkout
+            </button>
+            <p class="text-xs text-gray-400 mt-2">Secure checkout via Razorpay.</p>
+            <button id="close-modal-btn" class="mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
         </div>
     </div>
-
+    
+    <!-- Auth Modal -->
+    <div id="auth-modal" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 invisible">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In Required</h2>
+            <p class="text-gray-500 mb-6">Please sign in to purchase credits.</p>
+            <button id="google-signin-btn" class="w-full bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 flex items-center justify-center space-x-2">
+                <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4,12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20s20-8.955,20-20c0-2.569-.49-5.025-1.389-7.239z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4,16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083L43.59,20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.571l6.19,5.238C41.38,36.16,44,30.638,44,24c0-1.341-.138-2.65-.389-3.917z"></path></svg>
+                <span>Sign In with Google</span>
+            </button>
+            <button class="close-auth-modal-btn mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+        </div>
+    </div>
+    
+    <!-- This is the correct script tag that links to the new, functional pricing.js -->
     <script type="module" src="pricing.js"></script>
 
 </body>
