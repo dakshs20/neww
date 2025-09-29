@@ -1,238 +1,333 @@
 // --- Firebase and Auth Initialization ---
-// This boilerplate is for user authentication checks.
-// In a real app, you would have a shared file for this.
+// IMPORTANT: Use your actual Firebase configuration.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-const firebaseConfig = { /* PASTE YOUR FIREBASE CONFIG HERE */ };
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+const firebaseConfig = {
+    // This is a placeholder, replace with your actual Firebase config
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-// --- End Firebase ---
+const provider = new GoogleAuthProvider();
+console.log("Firebase Initialized");
 
 
-// --- Plan Data (Client-Side) ---
-const plans = {
+// --- Global State ---
+let currentUser = null;
+let currentBillingCycle = 'monthly'; // 'monthly' or 'yearly'
+let selectedPlan = {};
+
+// --- Plan Details (Single Source of Truth) ---
+const planDetails = {
     hobby: {
-        name: 'Hobby Plan',
+        name: "Hobby Plan",
         credits: 575,
-        expiry: '3 months',
-        prices: { monthly: 798, yearly: 798 * 12 * 0.8 } // Assuming 20% discount
+        priceMonthly: 798,
+        priceYearly: 7980, // (798 * 12) * 0.833 -> ~16.7% discount
+        expiry: "3 months"
     },
     create: {
-        name: 'Create Plan',
+        name: "Create Plan",
         credits: 975,
-        expiry: '5 months',
-        prices: { monthly: 1596, yearly: 1596 * 12 * 0.8 }
+        priceMonthly: 1596,
+        priceYearly: 15960,
+        expiry: "5 months"
     },
     elevate: {
-        name: 'Elevate Plan',
+        name: "Elevate Plan",
         credits: 1950,
-        expiry: 'Never',
-        prices: { monthly: 2571, yearly: 2571 * 12 * 0.8 }
+        priceMonthly: 2571,
+        priceYearly: 25710,
+        expiry: "Never"
     }
 };
 
-// --- State ---
-let billingCycle = 'monthly';
-let currentUser = null;
-let selectedPlan = null;
-
-
-// --- DOM Elements ---
-const DOMElements = {
-    monthlyBtn: document.getElementById('monthly-btn'),
-    yearlyBtn: document.getElementById('yearly-btn'),
-    toggleBg: document.getElementById('billing-toggle-bg'),
-    planCards: document.querySelectorAll('.plan-card'),
-    choosePlanBtns: document.querySelectorAll('.choose-plan-btn'),
-    checkoutModal: document.getElementById('checkout-modal'),
-    closeModalBtn: document.getElementById('close-modal-btn'),
-    proceedToPaymentBtn: document.getElementById('proceed-to-payment-btn'),
-};
-
-
-// --- Initialization ---
+// --- DOMContentLoaded Event Listener ---
+// This ensures the script runs only after the entire HTML page has been loaded.
 document.addEventListener('DOMContentLoaded', () => {
-    onAuthStateChanged(auth, user => { currentUser = user; });
-    initializeEventListeners();
-    updatePricesUI();
-});
+    console.log("DOM fully loaded and parsed");
 
-function initializeEventListeners() {
-    DOMElements.monthlyBtn.addEventListener('click', () => setBillingCycle('monthly'));
-    DOMElements.yearlyBtn.addEventListener('click', () => setBillingCycle('yearly'));
-    DOMElements.choosePlanBtns.forEach(btn => {
-        btn.addEventListener('click', handlePlanSelection);
-    });
-    DOMElements.closeModalBtn.addEventListener('click', () => toggleModal(false));
-    DOMElements.proceedToPaymentBtn.addEventListener('click', initiatePayment);
-}
+    // Cache all necessary DOM elements
+    const monthlyBtn = document.getElementById('monthly-btn');
+    const yearlyBtn = document.getElementById('yearly-btn');
+    const toggleBg = document.getElementById('toggle-bg');
+    const planCards = document.querySelectorAll('.plan-card');
+    const planCtaButtons = document.querySelectorAll('.plan-cta-btn');
+    const checkoutModal = document.getElementById('checkout-modal');
+    const checkoutModalContent = document.getElementById('checkout-modal-content');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const proceedToPaymentBtn = document.getElementById('proceed-to-payment-btn');
+    const authModal = document.getElementById('auth-modal');
+    const googleSignInBtn = document.getElementById('google-signin-btn');
+    const closeAuthModalBtns = document.querySelectorAll('.close-auth-modal-btn');
+    const mainAuthBtn = document.getElementById('auth-btn');
+    const creditsCounter = document.getElementById('credits-counter');
 
 
-// --- UI Logic ---
-
-function setBillingCycle(cycle) {
-    if (cycle === billingCycle) return;
-    billingCycle = cycle;
-
-    DOMElements.monthlyBtn.classList.toggle('text-gray-500', cycle === 'yearly');
-    DOMElements.yearlyBtn.classList.toggle('text-gray-500', cycle === 'monthly');
-    DOMElements.toggleBg.style.left = cycle === 'monthly' ? '0%' : '50%';
-
-    updatePricesUI();
-}
-
-function updatePricesUI() {
-    for (const planId in plans) {
-        const planData = plans[planId];
-        const card = document.getElementById(`${planId}-card`);
-        const priceEl = card.querySelector('.price-value');
-        const breakdownEl = document.getElementById(`${planId}-price-breakdown`);
-
-        let displayPrice;
-        if (billingCycle === 'monthly') {
-            displayPrice = planData.prices.monthly;
-            breakdownEl.innerHTML = '&nbsp;';
+    // --- Authentication Logic ---
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            currentUser = user;
+            console.log("User is signed in:", user.displayName);
+            mainAuthBtn.textContent = 'Sign Out';
+            fetchUserCredits(user);
         } else {
-            const perMonthEquivalent = Math.round(planData.prices.yearly / 12);
-            displayPrice = perMonthEquivalent;
-            breakdownEl.textContent = `Billed once: ₹${Math.round(planData.prices.yearly)} (Credits distributed monthly)`;
+            currentUser = null;
+            console.log("User is signed out");
+            mainAuthBtn.textContent = 'Sign In';
+            if (creditsCounter) creditsCounter.textContent = '';
+        }
+    });
+    
+    async function fetchUserCredits(user) {
+        // This is a placeholder function. In a real app, you would fetch this from your backend.
+        // For now, we'll just show a placeholder.
+        if (creditsCounter) creditsCounter.textContent = 'Credits: 50'; // Example
+    }
+    
+    mainAuthBtn.addEventListener('click', () => {
+        if (currentUser) {
+            signOut(auth);
+        } else {
+            toggleModal(authModal, true);
+        }
+    });
+
+    googleSignInBtn.addEventListener('click', () => {
+        signInWithPopup(auth, provider)
+            .then(() => {
+                toggleModal(authModal, false);
+            })
+            .catch(error => console.error("Auth Error:", error));
+    });
+
+    closeAuthModalBtns.forEach(btn => btn.addEventListener('click', () => toggleModal(authModal, false)));
+
+
+    // --- UI Interaction Logic ---
+    function toggleModal(modal, show) {
+        if (!modal) return;
+        if (show) {
+            modal.classList.remove('hidden');
+            modal.classList.remove('invisible', 'opacity-0');
+        } else {
+            modal.classList.add('invisible', 'opacity-0');
+            // Hide it completely after the transition
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+    }
+
+    // --- Billing Toggle Logic ---
+    function updateBillingCycle(cycle) {
+        currentBillingCycle = cycle;
+        const isYearly = cycle === 'yearly';
+
+        // Animate toggle background
+        toggleBg.style.transform = isYearly ? `translateX(${monthlyBtn.offsetWidth}px)` : 'translateX(0px)';
+        toggleBg.style.width = isYearly ? `${yearlyBtn.offsetWidth}px` : `${monthlyBtn.offsetWidth}px`;
+
+        // Update button styles
+        monthlyBtn.classList.toggle('text-gray-800', !isYearly);
+        monthlyBtn.classList.toggle('text-gray-500', isYearly);
+        yearlyBtn.classList.toggle('text-gray-800', isYearly);
+        yearlyBtn.classList.toggle('text-gray-500', !isYearly);
+        
+        // Update prices on each card
+        planCards.forEach(card => {
+            const priceValueEl = card.querySelector('.price-value');
+            const priceBreakdownEl = card.querySelector('.price-breakdown');
+            
+            const monthlyPrice = priceValueEl.dataset.priceMonthly;
+            const yearlyPrice = priceValueEl.dataset.priceYearly;
+
+            const targetPrice = isYearly ? yearlyPrice : monthlyPrice;
+
+            // Animate price change
+            gsap.to(priceValueEl, {
+                duration: 0.4,
+                innerText: targetPrice,
+                roundProps: "innerText",
+                ease: "power2.inOut"
+            });
+            
+            if (isYearly) {
+                const perMonthEquivalent = (yearlyPrice / 12).toFixed(0);
+                priceBreakdownEl.innerHTML = `Billed once: ₹${yearlyPrice} <br> (equivalent to ₹${perMonthEquivalent}/mo)`;
+            } else {
+                priceBreakdownEl.textContent = 'Billed monthly.';
+            }
+        });
+    }
+
+    if(monthlyBtn && yearlyBtn) {
+        monthlyBtn.addEventListener('click', () => updateBillingCycle('monthly'));
+        yearlyBtn.addEventListener('click', () => updateBillingCycle('yearly'));
+        // Set initial state
+        updateBillingCycle('monthly');
+    } else {
+        console.error("Monthly or Yearly button not found!");
+    }
+
+
+    // --- Checkout Flow ---
+    function openCheckoutModal(planId, planName) {
+        const plan = planDetails[planId];
+        if (!plan) {
+            console.error("Invalid Plan ID:", planId);
+            return;
         }
 
-        // Animate price change
-        priceEl.style.opacity = '0';
-        setTimeout(() => {
-            priceEl.textContent = displayPrice;
-            priceEl.style.opacity = '1';
-        }, 150);
-    }
-}
-
-function handlePlanSelection(event) {
-    if (!currentUser) {
-        alert("Please sign in to choose a plan.");
-        // Here you would trigger your sign-in modal
-        return;
-    }
-    const card = event.target.closest('.plan-card');
-    selectedPlan = card.dataset.plan;
-    
-    populateModal();
-    toggleModal(true);
-}
-
-function populateModal() {
-    const planData = plans[selectedPlan];
-    const totalCharge = billingCycle === 'monthly' ? planData.prices.monthly : Math.round(planData.prices.yearly);
-
-    document.getElementById('modal-plan-name').textContent = planData.name;
-    document.getElementById('modal-billing-cycle').textContent = billingCycle.charAt(0).toUpperCase() + billingCycle.slice(1);
-    document.getElementById('modal-total-charge').textContent = `₹${totalCharge}`;
-    document.getElementById('modal-expiry-info').textContent = `Expiry: ${planData.expiry}`;
-
-    if (billingCycle === 'yearly') {
-        const firstAllocation = Math.floor(planData.credits / 12);
-        document.getElementById('modal-credit-info-now').textContent = `Credits added now: ${firstAllocation} generations.`;
-        document.getElementById('modal-credit-info-later').textContent = `Subsequent allocations: ${firstAllocation} generations per month for 11 months.`;
-    } else {
-        document.getElementById('modal-credit-info-now').textContent = `Credits to be added: ${planData.credits} generations.`;
-        document.getElementById('modal-credit-info-later').textContent = '';
-    }
-}
-
-function toggleModal(show) {
-    if (show) {
-        DOMElements.checkoutModal.classList.remove('opacity-0', 'invisible');
-        DOMElements.checkoutModal.setAttribute('aria-hidden', 'false');
-    } else {
-        DOMElements.checkoutModal.classList.add('opacity-0', 'invisible');
-        DOMElements.checkoutModal.setAttribute('aria-hidden', 'true');
-    }
-}
-
-
-// --- Payment Logic ---
-
-async function initiatePayment() {
-    DOMElements.proceedToPaymentBtn.disabled = true;
-    DOMElements.proceedToPaymentBtn.textContent = 'Processing...';
-
-    try {
-        const token = await currentUser.getIdToken();
-        const response = await fetch('/api/create-order', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                planId: selectedPlan,
-                billingCycle: billingCycle
-            })
-        });
-
-        if (!response.ok) throw new Error('Failed to create order.');
-
-        const orderDetails = await response.json();
-        
-        const options = {
-            key: orderDetails.key,
-            amount: orderDetails.amount,
-            currency: "INR",
-            name: "GenArt",
-            description: `Payment for ${plans[selectedPlan].name}`,
-            order_id: orderDetails.id,
-            subscription_id: orderDetails.subscription_id,
-            handler: handlePaymentSuccess,
-            prefill: {
-                name: currentUser.displayName || "",
-                email: currentUser.email || ""
-            },
-            notes: {
-                userId: currentUser.uid,
-                planId: selectedPlan,
-                billingCycle: billingCycle
-            },
-            theme: { color: "#4F46E5" }
+        selectedPlan = {
+            id: planId,
+            name: plan.name,
+            billingCycle: currentBillingCycle,
+            price: currentBillingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly,
+            credits: plan.credits,
+            expiry: plan.expiry
         };
 
-        const rzp = new Razorpay(options);
-        rzp.open();
-
-    } catch (error) {
-        console.error("Payment Initiation Error:", error);
-        alert("Could not start payment. Please try again.");
-    } finally {
-        DOMElements.proceedToPaymentBtn.disabled = false;
-        DOMElements.proceedToPaymentBtn.textContent = 'Proceed to Secure Checkout';
+        // Populate modal with selected plan info
+        document.getElementById('modal-plan-name').textContent = selectedPlan.name;
+        document.getElementById('modal-billing-cycle').textContent = currentBillingCycle.charAt(0).toUpperCase() + currentBillingCycle.slice(1);
+        document.getElementById('modal-charge-amount').textContent = `₹${selectedPlan.price}`;
+        document.getElementById('modal-credits-amount').textContent = `${selectedPlan.credits} generations`;
+        document.getElementById('modal-expiry').textContent = selectedPlan.expiry;
+        
+        toggleModal(checkoutModal, true);
+        // Animate modal content
+        gsap.to(checkoutModalContent, { duration: 0.3, scale: 1, opacity: 1, ease: 'power2.out' });
     }
-}
 
-async function handlePaymentSuccess(response) {
-    try {
-        const token = await currentUser.getIdToken();
-        const verificationResponse = await fetch('/api/verify-payment', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-                planId: selectedPlan,
-                billingCycle: billingCycle
-            })
+    if (planCtaButtons.length > 0) {
+        planCtaButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (!currentUser) {
+                    toggleModal(authModal, true);
+                    return;
+                }
+                const planId = button.dataset.planId;
+                const planName = button.dataset.planName;
+                openCheckoutModal(planId, planName);
+            });
         });
-
-        if (!verificationResponse.ok) throw new Error('Payment verification failed.');
-
-        alert('Payment successful! Your account will be updated shortly.');
-        window.location.href = '/dashboard.html'; // Redirect to dashboard
-
-    } catch (error) {
-        console.error("Payment Verification Error:", error);
-        alert("Payment verification failed. Please contact support.");
+    } else {
+        console.error("No plan CTA buttons found!");
     }
-}
 
+
+    closeModalBtn.addEventListener('click', () => {
+        gsap.to(checkoutModalContent, { duration: 0.2, scale: 0.95, opacity: 0, ease: 'power2.in', onComplete: () => {
+            toggleModal(checkoutModal, false);
+        }});
+    });
+
+    // --- Razorpay Integration ---
+    async function handlePayment() {
+        if (!currentUser) {
+            alert("You must be signed in to make a purchase.");
+            return;
+        }
+        
+        const proceedButton = document.getElementById('proceed-to-payment-btn');
+        proceedButton.disabled = true;
+        proceedButton.textContent = 'Processing...';
+
+        try {
+            const token = await currentUser.getIdToken();
+            
+            // Call your backend to create an order
+            const response = await fetch('/api/create-order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    planId: selectedPlan.id,
+                    billingCycle: selectedPlan.billingCycle
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to create order.');
+            }
+
+            const orderData = await response.json();
+            
+            // Setup Razorpay options
+            const options = {
+                key: orderData.key,
+                amount: orderData.amount,
+                currency: "INR",
+                name: "GenArt",
+                description: `Payment for ${selectedPlan.name}`,
+                image: "https://iili.io/FsAoG2I.md.png",
+                order_id: orderData.orderId, // For one-time payments
+                subscription_id: orderData.subscriptionId, // For recurring payments
+                handler: async function (response) {
+                    // This function is called after a successful payment
+                    // You should now call your backend to verify the payment
+                    const verificationResponse = await fetch('/api/verify-payment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_subscription_id: response.razorpay_subscription_id,
+                            razorpay_signature: response.razorpay_signature,
+                            billingCycle: selectedPlan.billingCycle
+                        })
+                    });
+                    
+                    if(verificationResponse.ok) {
+                        alert('Payment Successful! Your credits have been added.');
+                        window.location.href = '/dashboard.html';
+                    } else {
+                        alert('Payment verification failed. Please contact support.');
+                    }
+                },
+                prefill: {
+                    name: currentUser.displayName || "",
+                    email: currentUser.email || "",
+                },
+                notes: {
+                    userId: currentUser.uid, // IMPORTANT: Pass user ID to backend
+                    planId: selectedPlan.id
+                },
+                theme: {
+                    color: "#4F46E5" // Indigo color
+                }
+            };
+            
+            // Open Razorpay Checkout
+            const rzp = new Razorpay(options);
+            rzp.open();
+
+        } catch (error) {
+            console.error("Payment Error:", error);
+            alert(`An error occurred: ${error.message}`);
+        } finally {
+            proceedButton.disabled = false;
+            proceedButton.textContent = 'Proceed to Secure Checkout';
+        }
+    }
+    
+    if (proceedToPaymentBtn) {
+        proceedToPaymentBtn.addEventListener('click', handlePayment);
+    } else {
+        console.error("Proceed to payment button not found!");
+    }
+
+}); // End of DOMContentLoaded
