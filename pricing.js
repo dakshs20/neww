@@ -5,12 +5,13 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
 
 const firebaseConfig = {
     // This is a placeholder, replace with your actual Firebase config
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
+    authDomain: "genart-a693a.firebaseapp.com",
+    projectId: "genart-a693a",
+    storageBucket: "genart-a693a.appspot.com",
+    messagingSenderId: "96958671615",
+    appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
+    measurementId: "G-EDCW8VYXY6"
 };
 
 // Initialize Firebase
