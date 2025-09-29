@@ -1,26 +1,28 @@
-// This is a serverless function.
-import admin from 'firebase-admin';
 import crypto from 'crypto';
+import admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 
+// --- Initialize Firebase Admin SDK ---
 if (!admin.apps.length) {
-    // Initialize Firebase Admin
     try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
         admin.initializeApp({
-            credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY))
+            credential: admin.credential.cert(serviceAccount)
         });
     } catch (error) {
-        console.error("Firebase Admin Initialization Error:", error.stack);
+        console.error("Firebase Admin Initialization Error in verify-payment.js:", error);
     }
 }
-const db = admin.firestore();
 
-// --- Plan Data for Credit Allocation ---
-const plans = {
-    hobby: { name: 'Hobby Plan', credits: 575, expiry: '3 months' },
-    create: { name: 'Create Plan', credits: 975, expiry: '5 months' },
-    elevate: { name: 'Elevate Plan', credits: 1950, expiry: 'Never' }
+const db = getFirestore();
+
+// --- Plan Credits (SERVER-SIDE SOURCE OF TRUTH) ---
+const planCredits = {
+    hobby: 575,
+    create: 975,
+    elevate: 1950
 };
-
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -28,82 +30,84 @@ export default async function handler(req, res) {
     }
 
     try {
+        // --- Authenticate User ---
         const idToken = req.headers.authorization?.split('Bearer ')[1];
-        if (!idToken) return res.status(401).json({ error: 'Unauthorized' });
-        const user = await admin.auth().verifyIdToken(idToken);
+        if (!idToken) {
+            return res.status(401).json({ error: 'User not authenticated.' });
+        }
+        const decodedToken = await getAuth().verifyIdToken(idToken);
+        const userId = decodedToken.uid;
         
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, billingCycle } = req.body;
+        const {
+            razorpay_order_id,
+            razorpay_payment_id,
+            razorpay_subscription_id,
+            razorpay_signature,
+            billingCycle
+        } = req.body;
+
+        const webhookSecret = process.env.RAZORPAY_KEY_SECRET;
 
         // --- Verify Signature ---
-        const body = razorpay_order_id + "|" + razorpay_payment_id;
+        // The body for signature verification is different for orders vs. subscriptions.
+        const body = billingCycle === 'monthly' 
+            ? `${razorpay_payment_id}|${razorpay_subscription_id}`
+            : `${razorpay_order_id}|${razorpay_payment_id}`;
+        
         const expectedSignature = crypto
-            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+            .createHmac('sha256', webhookSecret)
             .update(body.toString())
             .digest('hex');
 
         if (expectedSignature !== razorpay_signature) {
-            return res.status(400).json({ error: 'Invalid signature.' });
+            return res.status(400).json({ error: 'Payment verification failed. Signature mismatch.' });
         }
 
-        // --- At this point, payment is verified ---
-        // For monthly subscriptions, we DON'T credit here. The webhook handles it.
-        // We only credit for the FIRST payment of a YEARLY plan.
-        
-        if (billingCycle === 'yearly') {
-            // Fetch order details to get notes
-            // NOTE: In a real app, you would import the Razorpay instance
-            // For simplicity here, we'll assume the notes would be available.
-            // const order = await razorpay.orders.fetch(razorpay_order_id);
-            // const planId = order.notes.planId;
-            const planId = req.body.planId || Object.keys(plans)[0]; // Fallback for demo
+        // --- SIGNATURE IS VERIFIED ---
+        // Now we can safely update the database.
+
+        // Fetch order/subscription details to get the planId from notes
+        // This is more secure than trusting the client.
+        const razorpay = new (await import('razorpay')).default({
+             key_id: process.env.RAZORPAY_KEY_ID,
+             key_secret: process.env.RAZORPAY_KEY_SECRET,
+        });
+
+        const entity = billingCycle === 'monthly'
+            ? await razorpay.subscriptions.fetch(razorpay_subscription_id)
+            : await razorpay.payments.fetch(razorpay_payment_id);
             
-            const plan = plans[planId];
-            const firstAllocation = Math.floor(plan.credits / 12);
+        const planId = entity.notes?.planId;
 
-            const userRef = db.collection('users').doc(user.uid);
-            
-            // Set transaction to be idempotent
-            const transactionRef = db.collection('transactions').doc(razorpay_payment_id);
-            
-            await db.runTransaction(async (t) => {
-                const transactionDoc = await t.get(transactionRef);
-                if (transactionDoc.exists) {
-                    console.log(`Transaction ${razorpay_payment_id} already processed.`);
-                    return;
-                }
-
-                // 1. Update user's credits and subscription info
-                const nextCreditDate = new Date();
-                nextCreditDate.setMonth(nextCreditDate.getMonth() + 1);
-
-                t.set(userRef, {
-                    credits: admin.firestore.FieldValue.increment(firstAllocation),
-                    subscription: {
-                        planId: planId,
-                        planName: plan.name,
-                        billingCycle: 'yearly',
-                        status: 'active',
-                        expiry: plan.expiry,
-                        nextCreditDate: admin.firestore.Timestamp.fromDate(nextCreditDate),
-                        razorpayOrderId: razorpay_order_id
-                    }
-                }, { merge: true });
-
-                // 2. Log the transaction
-                t.set(transactionRef, {
-                    userId: user.uid,
-                    status: 'success',
-                    amount: req.body.amount, // You'd get this from order details
-                    type: 'yearly_initial',
-                    processedAt: admin.firestore.FieldValue.serverTimestamp()
-                });
-            });
+        if (!planId || !planCredits[planId]) {
+            throw new Error(`Invalid planId '${planId}' found in payment notes.`);
         }
-        
-        res.status(200).json({ status: 'success' });
+
+        const creditsToAdd = planCredits[planId];
+        const userRef = db.collection('users').doc(userId);
+
+        // Update user's credits
+        await userRef.update({
+            credits: admin.firestore.FieldValue.increment(creditsToAdd)
+        });
+
+        // Store subscription details for the user for dashboard and scheduler
+        await userRef.collection('subscriptions').doc(razorpay_subscription_id || razorpay_order_id).set({
+            planId: planId,
+            billingCycle: billingCycle,
+            status: 'active',
+            startDate: admin.firestore.FieldValue.serverTimestamp(),
+            razorpaySubscriptionId: razorpay_subscription_id || null,
+            razorpayOrderId: razorpay_order_id || null,
+            razorpayPaymentId: razorpay_payment_id,
+        }, { merge: true });
+
+        console.log(`Successfully verified payment for user ${userId}. Added ${creditsToAdd} credits.`);
+        res.status(200).json({ message: 'Payment verified successfully.' });
 
     } catch (error) {
-        console.error("Verify Payment API Error:", error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        console.error("API Error in /api/verify-payment:", error);
+        res.status(500).json({ error: 'Payment verification failed.', details: error.message });
     }
 }
+
