@@ -1,18 +1,20 @@
 /* --- Base Styles --- */
 body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
     color: #374151; /* gray-700 */
+    background-color: #f8fafc; /* slate-50 */
 }
 
 /* --- Full-page Animated Gradient Background --- */
 #animated-gradient-bg {
     position: fixed;
     inset: 0;
-    z-index: -1;
+    z-index: -2;
     background: linear-gradient(125deg, #e0f2fe, #f5f3ff, #f0fdf4, #f5f3ff, #e0f2fe);
     background-size: 400% 400%;
     animation: gradient-flow 20s ease-in-out infinite;
     will-change: background-position;
+    opacity: 0.6;
 }
 
 @keyframes gradient-flow {
@@ -21,6 +23,36 @@ body {
     100% { background-position: 0% 50%; }
 }
 
+/* --- Pricing Page Specific --- */
+#billing-toggle:checked + div {
+    background-color: #4f46e5; /* indigo-600 */
+}
+
+#billing-toggle:checked + div::after {
+    transform: translateX(100%);
+    border-color: white;
+}
+
+#pricing-grid .price-value,
+#pricing-grid .price-cycle,
+#pricing-grid .price-breakdown {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Checkout Modal --- */
+#checkout-modal-content {
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+#checkout-modal[aria-hidden="true"] #checkout-modal-content {
+    transform: scale(0.95);
+}
+
+/* --- Auth Modal --- */
+.invisible {
+    visibility: hidden;
+}
+
+/* --- General UI from original style.css --- */
 header.scrolled #header-nav {
     transform: translateY(0);
     opacity: 1;
@@ -47,32 +79,20 @@ header.scrolled #header-nav {
     50% { color: #517CBE; }
 }
 
-/* --- Masonry Gallery Layout --- */
 #masonry-gallery { display: flex; gap: 1rem; }
 .masonry-column { display: flex; flex-direction: column; flex: 1; gap: 1rem; }
 .masonry-item {
     overflow: hidden;
     border-radius: 0.75rem;
     background-color: #e2e8f0;
-    min-height: 150px;
-    animation: shimmer 2s infinite linear;
-    background-image: linear-gradient(to right, #e2e8f0 0%, #f1f5f9 20%, #e2e8f0 40%, #e2e8f0 100%);
-    background-repeat: no-repeat;
-    background-size: 1000px 100%; 
-}
-@keyframes shimmer {
-    0% { background-position: -500px 0; }
-    100% { background-position: 500px 0; }
 }
 .masonry-item img {
     width: 100%;
     height: auto;
     display: block;
     border-radius: 0.75rem;
-    transition: opacity 0.5s ease-in-out;
 }
 
-/* --- Prompt Bar & UI --- */
 #prompt-input { max-height: 150px; }
 #prompt-bar-container { transition: border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 #prompt-bar-container.expanded { border-radius: 1.75rem; }
@@ -85,84 +105,6 @@ header.scrolled #header-nav {
 .animate-shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
 
 
-/* --- Testimonial Section --- */
-.testimonial-image {
-    border-radius: 1.5rem;
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-}
-
-.testimonial-card {
-    background-color: #517CBE;
-    color: white;
-    border-radius: 1.5rem;
-    padding: 2.5rem;
-    position: relative;
-    box-shadow: 0 25px 50px -12px rgba(81, 124, 190, 0.25);
-}
-
-.testimonial-text {
-    font-size: 1.25rem;
-    line-height: 1.75;
-    font-weight: 500;
-}
-
-.testimonial-author {
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-/* --- Dynamic Use Cases Section --- */
-#use-cases-section {
-    position: relative;
-    width: 100%;
-    /* The height is determined by the `end` property in the ScrollTrigger animation */
-}
-
-.use-cases-content {
-    height: 100vh;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 1rem;
-}
-
-.use-cases-headline {
-    font-size: 2.25rem; /* text-4xl */
-    font-weight: 700;
-    color: #1f2937; /* gray-800 */
-    margin-bottom: 2rem;
-    opacity: 0; /* Initially hidden */
-    transform: translateY(30px);
-}
-
-.use-cases-text-container {
-    position: relative;
-    height: 6rem; /* Adjust based on largest text size */
-    width: 100%;
-}
-
-.use-case-text {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 3rem; /* text-5xl */
-    font-weight: 800;
-    color: #517CBE;
-    opacity: 0; /* Initially hidden */
-    transform: translateY(30px);
-    white-space: nowrap; /* Prevents line breaks */
-}
-
-
 /* --- Mobile Responsiveness --- */
 @media (max-width: 767px) {
     #hero-headline {
@@ -173,30 +115,7 @@ header.scrolled #header-nav {
     #hero-subline {
         font-size: 1rem;
     }
-    #first-screen-content {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    #stats-section .grid {
-        gap: 1.5rem;
-    }
-    #stats-section h3 {
-        font-size: 2.25rem;
-    }
     #masonry-gallery { display: block; }
     .masonry-column { display: block; }
     .masonry-item { margin-bottom: 1rem; }
-
-    .testimonial-card {
-        padding: 2rem;
-    }
-    .testimonial-text {
-        font-size: 1.125rem;
-    }
-    .use-cases-headline {
-        font-size: 1.875rem; /* text-3xl */
-    }
-    .use-case-text {
-        font-size: 2.25rem; /* text-4xl */
-    }
 }
