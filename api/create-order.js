@@ -1,41 +1,28 @@
-// This is a serverless function.
 import Razorpay from 'razorpay';
+import { getAuth } from 'firebase-admin/auth';
 import admin from 'firebase-admin';
 
-// --- Initialize Firebase Admin ---
+// --- Initialize Firebase Admin SDK ---
+// This must be done once and is safe to run multiple times in a serverless environment.
 if (!admin.apps.length) {
     try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
         admin.initializeApp({
-            credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY))
+            credential: admin.credential.cert(serviceAccount)
         });
     } catch (error) {
-        console.error("Firebase Admin Initialization Error:", error.stack);
+        console.error("Firebase Admin Initialization Error in create-order.js:", error);
     }
 }
 
-// --- Initialize Razorpay ---
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
 
-// --- Plan Data (Backend Source of Truth) ---
-const plans = {
-    hobby: {
-        name: 'Hobby Plan',
-        prices: { monthly: 798, yearly: 798 * 12 * 0.8 },
-        razorpayPlanId: process.env.RAZORPAY_PLAN_HOBBY,
-    },
-    create: {
-        name: 'Create Plan',
-        prices: { monthly: 1596, yearly: 1596 * 12 * 0.8 },
-        razorpayPlanId: process.env.RAZORPAY_PLAN_CREATE,
-    },
-    elevate: {
-        name: 'Elevate Plan',
-        prices: { monthly: 2571, yearly: 2571 * 12 * 0.8 },
-        razorpayPlanId: process.env.RAZORPAY_PLAN_ELEVATE,
-    }
+// --- Plan Details (SERVER-SIDE SOURCE OF TRUTH) ---
+// Prices are defined here to prevent manipulation from the client-side.
+// Prices are in RUPEES. We will convert to paise before sending to Razorpay.
+const planDetails = {
+    hobby: { priceMonthly: 798, priceYearly: 7980, razorpayPlanId: process.env.RAZORPAY_PLAN_HOBBY },
+    create: { priceMonthly: 1596, priceYearly: 15960, razorpayPlanId: process.env.RAZORPAY_PLAN_CREATE },
+    elevate: { priceMonthly: 2571, priceYearly: 25710, razorpayPlanId: process.env.RAZORPAY_PLAN_ELEVATE }
 };
 
 export default async function handler(req, res) {
@@ -44,61 +31,73 @@ export default async function handler(req, res) {
     }
 
     try {
+        // --- Authenticate User ---
         const idToken = req.headers.authorization?.split('Bearer ')[1];
         if (!idToken) {
-            return res.status(401).json({ error: 'Unauthorized: No token provided.' });
+            return res.status(401).json({ error: 'User not authenticated.' });
         }
-        const user = await admin.auth().verifyIdToken(idToken);
+        const decodedToken = await getAuth().verifyIdToken(idToken);
+        const userId = decodedToken.uid;
+
+        // --- Initialize Razorpay ---
+        const razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
+        });
 
         const { planId, billingCycle } = req.body;
+        const selectedPlan = planDetails[planId];
 
-        if (!plans[planId]) {
+        if (!selectedPlan) {
             return res.status(400).json({ error: 'Invalid plan selected.' });
         }
+        
+        const notes = { userId, planId, billingCycle };
 
-        const selectedPlan = plans[planId];
-        let responsePayload;
-
-        const notes = {
-            userId: user.uid,
-            planId: planId,
-            billingCycle: billingCycle,
-        };
-
+        // --- Handle Monthly vs. Yearly Flow ---
         if (billingCycle === 'monthly') {
-            // --- Create a Subscription ---
+            // ** MONTHLY FLOW: Create a Subscription **
+            if (!selectedPlan.razorpayPlanId) {
+                return res.status(500).json({ error: `Razorpay Plan ID for ${planId} is not configured on the server.` });
+            }
+
             const subscription = await razorpay.subscriptions.create({
                 plan_id: selectedPlan.razorpayPlanId,
-                total_count: 12, // For a year, can be changed
+                total_count: 12, // The subscription will run for 12 cycles (1 year)
                 quantity: 1,
                 notes: notes,
             });
-            responsePayload = {
+            
+            res.status(200).json({
                 key: process.env.RAZORPAY_KEY_ID,
-                subscription_id: subscription.id,
-                // amount isn't needed for subscription checkout
-            };
+                subscriptionId: subscription.id,
+                // No orderId is needed for subscriptions
+            });
+
         } else {
-            // --- Create a one-time Order for Yearly Payment ---
-            const amount = Math.round(selectedPlan.prices.yearly);
+            // ** YEARLY FLOW: Create a one-time Order **
+            const amountInRupees = selectedPlan.priceYearly;
+            const amountInPaise = amountInRupees * 100; // CRITICAL: Convert to paise
+
             const options = {
-                amount: amount * 100, // Amount in paisa
-                currency: 'INR',
-                receipt: `receipt_genart_${Date.now()}`,
-                notes: notes,
+                amount: amountInPaise,
+                currency: "INR",
+                receipt: `receipt_user_${userId}_${Date.now()}`,
+                notes: notes
             };
+
             const order = await razorpay.orders.create(options);
-            responsePayload = {
+             res.status(200).json({
                 key: process.env.RAZORPAY_KEY_ID,
-                id: order.id,
                 amount: order.amount,
-            };
+                orderId: order.id,
+                // No subscriptionId for one-time orders
+            });
         }
 
-        res.status(200).json(responsePayload);
-
     } catch (error) {
-        console.error("Create Order API Error:", error);
-        res.status(500).json({ error: 'Internal Server Error', details: error.message });
+        console.error("API Error in /api/create-order:", error);
+        res.status(500).json({ error: 'Could not create order.', details: error.message });
     }
 }
+
