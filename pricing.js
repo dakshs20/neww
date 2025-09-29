@@ -4,7 +4,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 const firebaseConfig = {
-    // This is a placeholder, replace with your actual Firebase config
+    //
+    // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+    //  CRITICAL: Replace these placeholder values with your OWN 
+    //  Firebase project's configuration details. You can find these
+    //  in your Firebase project settings.
+    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+    //
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
     authDomain: "genart-a693a.firebaseapp.com",
     projectId: "genart-a693a",
@@ -32,7 +38,7 @@ const planDetails = {
         name: "Hobby Plan",
         credits: 575,
         priceMonthly: 798,
-        priceYearly: 7980, // (798 * 12) * 0.833 -> ~16.7% discount
+        priceYearly: 7980,
         expiry: "3 months"
     },
     create: {
@@ -52,7 +58,6 @@ const planDetails = {
 };
 
 // --- DOMContentLoaded Event Listener ---
-// This ensures the script runs only after the entire HTML page has been loaded.
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded and parsed");
 
@@ -89,8 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     async function fetchUserCredits(user) {
-        // This is a placeholder function. In a real app, you would fetch this from your backend.
-        // For now, we'll just show a placeholder.
+        // This is a placeholder. In a real app, you'd fetch from your `/api/credits` endpoint.
         if (creditsCounter) creditsCounter.textContent = 'Credits: 50'; // Example
     }
     
@@ -118,10 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!modal) return;
         if (show) {
             modal.classList.remove('hidden');
-            modal.classList.remove('invisible', 'opacity-0');
+            setTimeout(() => modal.classList.remove('invisible', 'opacity-0'), 10);
         } else {
             modal.classList.add('invisible', 'opacity-0');
-            // Hide it completely after the transition
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
     }
@@ -132,14 +135,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const isYearly = cycle === 'yearly';
 
         // Animate toggle background
-        toggleBg.style.transform = isYearly ? `translateX(${monthlyBtn.offsetWidth}px)` : 'translateX(0px)';
-        toggleBg.style.width = isYearly ? `${yearlyBtn.offsetWidth}px` : `${monthlyBtn.offsetWidth}px`;
+        if (monthlyBtn && yearlyBtn && toggleBg) {
+            toggleBg.style.transform = isYearly ? `translateX(${monthlyBtn.offsetWidth}px)` : 'translateX(0px)';
+            toggleBg.style.width = isYearly ? `${yearlyBtn.offsetWidth}px` : `${monthlyBtn.offsetWidth}px`;
 
-        // Update button styles
-        monthlyBtn.classList.toggle('text-gray-800', !isYearly);
-        monthlyBtn.classList.toggle('text-gray-500', isYearly);
-        yearlyBtn.classList.toggle('text-gray-800', isYearly);
-        yearlyBtn.classList.toggle('text-gray-500', !isYearly);
+            monthlyBtn.classList.toggle('text-gray-800', !isYearly);
+            monthlyBtn.classList.toggle('text-gray-500', isYearly);
+            yearlyBtn.classList.toggle('text-gray-800', isYearly);
+            yearlyBtn.classList.toggle('text-gray-500', !isYearly);
+        }
         
         // Update prices on each card
         planCards.forEach(card => {
@@ -148,10 +152,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const monthlyPrice = priceValueEl.dataset.priceMonthly;
             const yearlyPrice = priceValueEl.dataset.priceYearly;
-
             const targetPrice = isYearly ? yearlyPrice : monthlyPrice;
 
-            // Animate price change
             gsap.to(priceValueEl, {
                 duration: 0.4,
                 innerText: targetPrice,
@@ -160,8 +162,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             if (isYearly) {
-                const perMonthEquivalent = (yearlyPrice / 12).toFixed(0);
-                priceBreakdownEl.innerHTML = `Billed once: ₹${yearlyPrice} <br> (equivalent to ₹${perMonthEquivalent}/mo)`;
+                const perMonthEquivalent = Math.round(yearlyPrice / 12);
+                priceBreakdownEl.innerHTML = `Billed once: ₹${yearlyPrice} <br> (equiv. to ₹${perMonthEquivalent}/mo)`;
             } else {
                 priceBreakdownEl.textContent = 'Billed monthly.';
             }
@@ -171,20 +173,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if(monthlyBtn && yearlyBtn) {
         monthlyBtn.addEventListener('click', () => updateBillingCycle('monthly'));
         yearlyBtn.addEventListener('click', () => updateBillingCycle('yearly'));
-        // Set initial state
         updateBillingCycle('monthly');
-    } else {
-        console.error("Monthly or Yearly button not found!");
     }
-
 
     // --- Checkout Flow ---
     function openCheckoutModal(planId, planName) {
         const plan = planDetails[planId];
-        if (!plan) {
-            console.error("Invalid Plan ID:", planId);
-            return;
-        }
+        if (!plan) return;
 
         selectedPlan = {
             id: planId,
@@ -195,7 +190,6 @@ document.addEventListener('DOMContentLoaded', () => {
             expiry: plan.expiry
         };
 
-        // Populate modal with selected plan info
         document.getElementById('modal-plan-name').textContent = selectedPlan.name;
         document.getElementById('modal-billing-cycle').textContent = currentBillingCycle.charAt(0).toUpperCase() + currentBillingCycle.slice(1);
         document.getElementById('modal-charge-amount').textContent = `₹${selectedPlan.price}`;
@@ -203,26 +197,19 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-expiry').textContent = selectedPlan.expiry;
         
         toggleModal(checkoutModal, true);
-        // Animate modal content
-        gsap.to(checkoutModalContent, { duration: 0.3, scale: 1, opacity: 1, ease: 'power2.out' });
+        gsap.fromTo(checkoutModalContent, { scale: 0.95, opacity: 0 }, { duration: 0.3, scale: 1, opacity: 1, ease: 'power2.out' });
     }
 
-    if (planCtaButtons.length > 0) {
-        planCtaButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                if (!currentUser) {
-                    toggleModal(authModal, true);
-                    return;
-                }
-                const planId = button.dataset.planId;
-                const planName = button.dataset.planName;
-                openCheckoutModal(planId, planName);
-            });
+    planCtaButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            if (!currentUser) {
+                toggleModal(authModal, true);
+                return;
+            }
+            const planId = button.dataset.planId;
+            openCheckoutModal(planId);
         });
-    } else {
-        console.error("No plan CTA buttons found!");
-    }
-
+    });
 
     closeModalBtn.addEventListener('click', () => {
         gsap.to(checkoutModalContent, { duration: 0.2, scale: 0.95, opacity: 0, ease: 'power2.in', onComplete: () => {
@@ -244,17 +231,10 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const token = await currentUser.getIdToken();
             
-            // Call your backend to create an order
             const response = await fetch('/api/create-order', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    planId: selectedPlan.id,
-                    billingCycle: selectedPlan.billingCycle
-                })
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ planId: selectedPlan.id, billingCycle: selectedPlan.billingCycle })
             });
 
             if (!response.ok) {
@@ -264,29 +244,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const orderData = await response.json();
             
-            // Setup Razorpay options
             const options = {
                 key: orderData.key,
-                amount: orderData.amount,
+                amount: orderData.amount, // Amount is in paise, sent from backend
                 currency: "INR",
                 name: "GenArt",
                 description: `Payment for ${selectedPlan.name}`,
                 image: "https://iili.io/FsAoG2I.md.png",
-                order_id: orderData.orderId, // For one-time payments
-                subscription_id: orderData.subscriptionId, // For recurring payments
+                order_id: orderData.orderId,
+                subscription_id: orderData.subscriptionId,
                 handler: async function (response) {
-                    // This function is called after a successful payment
-                    // You should now call your backend to verify the payment
                     const verificationResponse = await fetch('/api/verify-payment', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                         body: JSON.stringify({
                             razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_subscription_id: response.razorpay_subscription_id,
+                            razorpay_order_id: orderData.orderId, // Use the orderId from our server
+                            razorpay_subscription_id: orderData.subscriptionId, // Use the subscriptionId from our server
                             razorpay_signature: response.razorpay_signature,
                             billingCycle: selectedPlan.billingCycle
                         })
@@ -296,7 +270,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         alert('Payment Successful! Your credits have been added.');
                         window.location.href = '/dashboard.html';
                     } else {
-                        alert('Payment verification failed. Please contact support.');
+                        const error = await verificationResponse.json();
+                        alert(`Payment verification failed: ${error.details || 'Please contact support.'}`);
                     }
                 },
                 prefill: {
@@ -304,16 +279,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     email: currentUser.email || "",
                 },
                 notes: {
-                    userId: currentUser.uid, // IMPORTANT: Pass user ID to backend
+                    userId: currentUser.uid,
                     planId: selectedPlan.id
                 },
-                theme: {
-                    color: "#4F46E5" // Indigo color
-                }
+                theme: { color: "#4F46E5" }
             };
             
-            // Open Razorpay Checkout
             const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (response){
+                alert(`Payment Failed: ${response.error.description}`);
+            });
             rzp.open();
 
         } catch (error) {
@@ -327,8 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (proceedToPaymentBtn) {
         proceedToPaymentBtn.addEventListener('click', handlePayment);
-    } else {
-        console.error("Proceed to payment button not found!");
     }
+});
 
-}); // End of DOMContentLoaded
