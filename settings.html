@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Settings - GenArt</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'brand': '#3C5B8B',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+            background-color: #f9fafb; /* gray-50 */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .btn-danger {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626; /* red-600 */
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+    </style>
+</head>
+<body class="bg-white">
+    <div id="app-container" class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
+        
+        <header class="relative flex justify-between items-center py-5 px-2 z-20">
+            <a href="index.html">
+                 <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
+            </a>
+             <div id="header-auth-section" class="hidden md:flex items-center space-x-3">
+                <a href="pricing.html" class="text-sm font-semibold text-gray-700 hover:text-brand transition-colors px-2">Pricing</a>
+                <a href="settings.html" class="text-sm font-semibold text-brand bg-brand/10 border border-brand/20 rounded-full px-3 py-1">Settings</a>
+                <div id="generation-counter" class="text-sm font-medium text-gray-600 bg-gray-100 border rounded-full px-3 py-1"></div>
+                <button id="auth-btn" class="text-sm font-semibold border bg-white border-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                    Sign Out
+                </button>
+            </div>
+            <div class="md:hidden">
+                <button id="mobile-menu-btn" class="p-2 rounded-md text-gray-500">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
+            <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-white/90 backdrop-blur-md rounded-lg shadow-xl z-50 border">
+                <div class="p-2">
+                    <a href="pricing.html" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Pricing</a>
+                    <a href="settings.html" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Settings</a>
+                    <div class="border-t my-1"></div>
+                    <div id="mobile-generation-counter" class="px-4 py-2 text-sm text-center text-gray-600"></div>
+                    <button id="mobile-auth-btn" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">
+                        Sign Out
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow w-full max-w-3xl mx-auto py-16 px-4">
+            <h1 class="text-4xl font-extrabold text-gray-900 mb-4">Account Settings</h1>
+            <p class="text-lg text-gray-600 mb-12">Manage your subscription and credit balance.</p>
+
+            <div id="loading-state" class="text-center py-12">
+                <p class="text-gray-500">Loading your details...</p>
+            </div>
+
+            <div id="settings-content" class="hidden space-y-8">
+                <!-- Subscription Details -->
+                <div class="bg-white border border-gray-200 rounded-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">My Subscription</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Current Plan</p>
+                            <p id="current-plan" class="text-lg font-semibold text-brand">--</p>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Remaining Credits</p>
+                            <p id="remaining-credits" class="text-lg font-semibold text-gray-800">--</p>
+                        </div>
+                        <div id="next-billing-date-container" class="hidden">
+                            <p class="text-sm font-medium text-gray-500">Next Billing Date</p>
+                            <p id="next-billing-date" class="text-lg font-semibold text-gray-800">--</p>
+                        </div>
+                         <div id="cancellation-info" class="hidden p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg text-sm">
+                            Your subscription is canceled. You will have access to your credits until the end of your current billing period.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div id="danger-zone-container" class="bg-white border border-red-200 rounded-lg p-8">
+                    <h2 class="text-2xl font-bold text-red-600 mb-2">Danger Zone</h2>
+                    <p class="text-gray-600 mb-6">Canceling your subscription will stop future payments. You will not receive new credits after your current billing cycle ends.</p>
+                    <button id="cancel-subscription-btn" class="btn btn-danger font-semibold px-6 py-3 rounded-lg transition-colors">
+                        Cancel Subscription
+                    </button>
+                </div>
+            </div>
+        </main>
+        
+    </div>
+
+     <!-- Cancellation Confirmation Modal -->
+    <div id="cancel-modal" style="display: none;" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Are you sure?</h2>
+            <p class="text-gray-500 mb-6">This action cannot be undone. You will lose access to new credits at the end of your billing cycle.</p>
+            <div class="flex justify-center space-x-4">
+                <button id="confirm-cancel-btn" class="btn btn-danger font-semibold px-6 py-3 rounded-lg transition-colors w-full">Yes, Cancel</button>
+                <button id="close-modal-btn" class="btn bg-gray-200 text-gray-800 font-semibold px-6 py-3 rounded-lg hover:bg-gray-300 w-full">Go Back</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+             apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
+            authDomain: "genart-a693a.firebaseapp.com",
+            projectId: "genart-a693a",
+            storageBucket: "genart-a693a.appspot.com",
+            messagingSenderId: "96958671615",
+            appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        const DOMElements = {
+            authBtn: document.getElementById('auth-btn'),
+            mobileAuthBtn: document.getElementById('mobile-auth-btn'),
+            generationCounter: document.getElementById('generation-counter'),
+            mobileGenerationCounter: document.getElementById('mobile-generation-counter'),
+            mobileMenuBtn: document.getElementById('mobile-menu-btn'),
+            mobileMenu: document.getElementById('mobile-menu'),
+            loadingState: document.getElementById('loading-state'),
+            settingsContent: document.getElementById('settings-content'),
+            currentPlan: document.getElementById('current-plan'),
+            remainingCredits: document.getElementById('remaining-credits'),
+            nextBillingDateContainer: document.getElementById('next-billing-date-container'),
+            nextBillingDate: document.getElementById('next-billing-date'),
+            cancellationInfo: document.getElementById('cancellation-info'),
+            dangerZoneContainer: document.getElementById('danger-zone-container'),
+            cancelSubscriptionBtn: document.getElementById('cancel-subscription-btn'),
+            cancelModal: document.getElementById('cancel-modal'),
+            confirmCancelBtn: document.getElementById('confirm-cancel-btn'),
+            closeModalBtn: document.getElementById('close-modal-btn'),
+        };
+
+        const updateUIForAuthState = async (user) => {
+            if (user) {
+                try {
+                    const token = await user.getIdToken();
+                    const [creditsResponse, subscriptionResponse] = await Promise.all([
+                        fetch('/api/credits', { headers: { 'Authorization': `Bearer ${token}` } }),
+                        fetch('/api/get-subscription', { headers: { 'Authorization': `Bearer ${token}` } })
+                    ]);
+
+                    if (!creditsResponse.ok || !subscriptionResponse.ok) {
+                        throw new Error('Failed to fetch user data.');
+                    }
+                    
+                    const creditsData = await creditsResponse.json();
+                    const subData = await subscriptionResponse.json();
+
+                    // Update header
+                    DOMElements.generationCounter.textContent = `Credits: ${creditsData.credits}`;
+                    DOMElements.mobileGenerationCounter.textContent = `Credits: ${creditsData.credits}`;
+
+                    // Populate settings page
+                    DOMElements.currentPlan.textContent = `${subData.planName} ${subData.cycle || ''}`.trim();
+                    DOMElements.remainingCredits.textContent = creditsData.credits;
+
+                    if (subData.status === 'active' && subData.nextBillingDate) {
+                        DOMElements.nextBillingDate.textContent = new Date(subData.nextBillingDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                        DOMElements.nextBillingDateContainer.classList.remove('hidden');
+                        DOMElements.dangerZoneContainer.classList.remove('hidden');
+                    } else if (subData.status === 'canceled') {
+                        DOMElements.cancellationInfo.classList.remove('hidden');
+                        DOMElements.dangerZoneContainer.classList.add('hidden');
+                    } else { // Free plan
+                        DOMElements.dangerZoneContainer.classList.add('hidden');
+                    }
+                    
+                    DOMElements.loadingState.classList.add('hidden');
+                    DOMElements.settingsContent.classList.remove('hidden');
+
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                    DOMElements.loadingState.innerHTML = `<p class="text-red-500">Could not load your data. Please try again later.</p>`;
+                }
+            } else {
+                window.location.href = '/index.html'; // Redirect if not logged in
+            }
+        };
+
+        const handleCancellation = async () => {
+            DOMElements.confirmCancelBtn.disabled = true;
+            DOMElements.confirmCancelBtn.innerHTML = `<span class="animate-pulse">Canceling...</span>`;
+            try {
+                const token = await auth.currentUser.getIdToken();
+                const response = await fetch('/api/cancel-subscription', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+
+                if (!response.ok) {
+                    const errorResult = await response.json();
+                    throw new Error(errorResult.error || 'Cancellation failed.');
+                }
+                
+                alert('Subscription canceled successfully.');
+                location.reload();
+
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                toggleModal(DOMElements.cancelModal, false);
+                DOMElements.confirmCancelBtn.disabled = false;
+                DOMElements.confirmCancelBtn.textContent = 'Yes, Cancel';
+            }
+        };
+
+        const toggleModal = (modal, show) => {
+            modal.style.display = show ? 'flex' : 'none';
+            modal.setAttribute('aria-hidden', !show);
+        };
+        
+        onAuthStateChanged(auth, user => updateUIForAuthState(user));
+        
+        [DOMElements.authBtn, DOMElements.mobileAuthBtn].forEach(btn => btn.addEventListener('click', () => signOut(auth)));
+        DOMElements.mobileMenuBtn.addEventListener('click', () => DOMElements.mobileMenu.classList.toggle('hidden'));
+        DOMElements.cancelSubscriptionBtn.addEventListener('click', () => toggleModal(DOMElements.cancelModal, true));
+        DOMElements.closeModalBtn.addEventListener('click', () => toggleModal(DOMElements.cancelModal, false));
+        DOMElements.confirmCancelBtn.addEventListener('click', handleCancellation);
+    </script>
+</body>
+</html>
