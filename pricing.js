@@ -1,307 +1,285 @@
-// --- Firebase and Auth Initialization ---
-// IMPORTANT: Use your actual Firebase configuration.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 const firebaseConfig = {
-    //
-    // ▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
-    //  CRITICAL: Replace these placeholder values with your OWN 
-    //  Firebase project's configuration details. You can find these
-    //  in your Firebase project settings.
-    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
-    //
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
     authDomain: "genart-a693a.firebaseapp.com",
     projectId: "genart-a693a",
     storageBucket: "genart-a693a.appspot.com",
     messagingSenderId: "96958671615",
-    appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
-    measurementId: "G-EDCW8VYXY6"
+    appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
-console.log("Firebase Initialized");
 
-
-// --- Global State ---
-let currentUser = null;
-let currentBillingCycle = 'monthly'; // 'monthly' or 'yearly'
-let selectedPlan = {};
-
-// --- Plan Details (Single Source of Truth) ---
-const planDetails = {
-    hobby: {
-        name: "Hobby Plan",
-        credits: 575,
-        priceMonthly: 798,
-        priceYearly: 7980,
-        expiry: "3 months"
-    },
+const plans = {
     create: {
-        name: "Create Plan",
-        credits: 975,
-        priceMonthly: 1596,
-        priceYearly: 15960,
-        expiry: "5 months"
+        name: 'Create',
+        monthly: { price: 798, credits: 575 },
+        yearly: { price: 7980, credits: 575 },
+        features: {
+            "Image Resolution": "Standard",
+            "Generation Speed": "~17s",
+            "Commercial License": true,
+            "Support": "Standard"
+        }
     },
     elevate: {
-        name: "Elevate Plan",
-        credits: 1950,
-        priceMonthly: 2571,
-        priceYearly: 25710,
-        expiry: "Never"
+        name: 'Elevate',
+        monthly: { price: 1596, credits: 975 },
+        yearly: { price: 15960, credits: 975 },
+        features: {
+            "Image Resolution": "High",
+            "Generation Speed": "~17s",
+            "Commercial License": true,
+            "Support": "Priority"
+        }
+    },
+    pro: {
+        name: 'Pro',
+        monthly: { price: 2571, credits: 1950 },
+        yearly: { price: 25710, credits: 1950 },
+        features: {
+             "Image Resolution": "Highest (4K+)",
+            "Generation Speed": "Fastest",
+            "Commercial License": true,
+            "Support": "Dedicated"
+        }
     }
 };
 
-// --- DOMContentLoaded Event Listener ---
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM fully loaded and parsed");
+const faqData = [
+    { question: "How do credits work?", answer: "One credit allows you to generate one image at standard resolution. Higher resolution images may consume more credits. Your monthly credits are added to your account automatically after each successful subscription payment." },
+    { question: "Can I cancel my subscription anytime?", answer: "Yes, you can cancel your subscription at any time from your account settings. You will retain access to your credits until the end of your current billing period." },
+    { question: "What happens if I use all my credits?", answer: "If you run out of credits, you can upgrade to a higher plan to get more credits immediately. One-time credit packs will also be available for purchase soon." },
+    { question: "What payment methods do you accept?", answer: "We accept all major credit cards, debit cards, UPI, and other popular payment methods through our secure payment partner, Razorpay." }
+];
 
-    // Cache all necessary DOM elements
-    const monthlyBtn = document.getElementById('monthly-btn');
-    const yearlyBtn = document.getElementById('yearly-btn');
-    const toggleBg = document.getElementById('toggle-bg');
-    const planCards = document.querySelectorAll('.plan-card');
-    const planCtaButtons = document.querySelectorAll('.plan-cta-btn');
-    const checkoutModal = document.getElementById('checkout-modal');
-    const checkoutModalContent = document.getElementById('checkout-modal-content');
-    const closeModalBtn = document.getElementById('close-modal-btn');
-    const proceedToPaymentBtn = document.getElementById('proceed-to-payment-btn');
-    const authModal = document.getElementById('auth-modal');
-    const googleSignInBtn = document.getElementById('google-signin-btn');
-    const closeAuthModalBtns = document.querySelectorAll('.close-auth-modal-btn');
-    const mainAuthBtn = document.getElementById('auth-btn');
-    const creditsCounter = document.getElementById('credits-counter');
+const DOMElements = {
+    billingToggle: document.getElementById('billing-toggle'),
+    pricingCards: document.querySelectorAll('.pricing-card'),
+    monthlyLabel: document.getElementById('monthly-label'),
+    yearlyLabel: document.getElementById('yearly-label'),
+    authBtn: document.getElementById('auth-btn'),
+    mobileAuthBtn: document.getElementById('mobile-auth-btn'),
+    authModal: document.getElementById('auth-modal'),
+    googleSignInBtn: document.getElementById('google-signin-btn'),
+    closeModalBtn: document.getElementById('close-modal-btn'),
+    generationCounter: document.getElementById('generation-counter'),
+    mobileGenerationCounter: document.getElementById('mobile-generation-counter'),
+    selectPlanBtns: document.querySelectorAll('.select-plan-btn'),
+    mobileMenuBtn: document.getElementById('mobile-menu-btn'),
+    mobileMenu: document.getElementById('mobile-menu'),
+    userPlanDisplayContainer: document.getElementById('user-plan-display-container'),
+    userPlanDisplay: document.getElementById('user-plan-display'),
+    featuresTable: document.getElementById('features-table'),
+    faqContainer: document.getElementById('faq-container'),
+};
 
-
-    // --- Authentication Logic ---
-    onAuthStateChanged(auth, user => {
-        if (user) {
-            currentUser = user;
-            console.log("User is signed in:", user.displayName);
-            mainAuthBtn.textContent = 'Sign Out';
-            fetchUserCredits(user);
-        } else {
-            currentUser = null;
-            console.log("User is signed out");
-            mainAuthBtn.textContent = 'Sign In';
-            if (creditsCounter) creditsCounter.textContent = '';
-        }
+const fetchUserPlan = async (token) => {
+    const response = await fetch('/api/get-subscription', {
+        headers: { 'Authorization': `Bearer ${token}` }
     });
-    
-    async function fetchUserCredits(user) {
-        // This is a placeholder. In a real app, you'd fetch from your `/api/credits` endpoint.
-        if (creditsCounter) creditsCounter.textContent = 'Credits: 50'; // Example
+    if (!response.ok) {
+        console.error("Failed to fetch user plan");
+        return { plan: 'Free Plan' };
     }
-    
-    mainAuthBtn.addEventListener('click', () => {
-        if (currentUser) {
-            signOut(auth);
-        } else {
-            toggleModal(authModal, true);
-        }
-    });
+    const data = await response.json();
+    return { plan: data.planName };
+};
 
-    googleSignInBtn.addEventListener('click', () => {
-        signInWithPopup(auth, provider)
-            .then(() => {
-                toggleModal(authModal, false);
-            })
-            .catch(error => console.error("Auth Error:", error));
-    });
+const updatePricing = (isYearly) => {
+    DOMElements.monthlyLabel.classList.toggle('text-brand', !isYearly);
+    DOMElements.yearlyLabel.classList.toggle('text-brand', isYearly);
 
-    closeAuthModalBtns.forEach(btn => btn.addEventListener('click', () => toggleModal(authModal, false)));
+    DOMElements.pricingCards.forEach(card => {
+        const planName = card.dataset.plan;
+        const planData = plans[planName];
+        if (!planData) return;
 
-
-    // --- UI Interaction Logic ---
-    function toggleModal(modal, show) {
-        if (!modal) return;
-        if (show) {
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.classList.remove('invisible', 'opacity-0'), 10);
-        } else {
-            modal.classList.add('invisible', 'opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        }
-    }
-
-    // --- Billing Toggle Logic ---
-    function updateBillingCycle(cycle) {
-        currentBillingCycle = cycle;
-        const isYearly = cycle === 'yearly';
-
-        // Animate toggle background
-        if (monthlyBtn && yearlyBtn && toggleBg) {
-            toggleBg.style.transform = isYearly ? `translateX(${monthlyBtn.offsetWidth}px)` : 'translateX(0px)';
-            toggleBg.style.width = isYearly ? `${yearlyBtn.offsetWidth}px` : `${monthlyBtn.offsetWidth}px`;
-
-            monthlyBtn.classList.toggle('text-gray-800', !isYearly);
-            monthlyBtn.classList.toggle('text-gray-500', isYearly);
-            yearlyBtn.classList.toggle('text-gray-800', isYearly);
-            yearlyBtn.classList.toggle('text-gray-500', !isYearly);
-        }
+        const currentCycle = isYearly ? 'yearly' : 'monthly';
+        const newPrice = planData[currentCycle].price;
+        const periodText = isYearly ? '/year' : '/month';
         
-        // Update prices on each card
-        planCards.forEach(card => {
-            const priceValueEl = card.querySelector('.price-value');
-            const priceBreakdownEl = card.querySelector('.price-breakdown');
-            
-            const monthlyPrice = priceValueEl.dataset.priceMonthly;
-            const yearlyPrice = priceValueEl.dataset.priceYearly;
-            const targetPrice = isYearly ? yearlyPrice : monthlyPrice;
-
-            gsap.to(priceValueEl, {
-                duration: 0.4,
-                innerText: targetPrice,
-                roundProps: "innerText",
-                ease: "power2.inOut"
-            });
-            
-            if (isYearly) {
-                const perMonthEquivalent = Math.round(yearlyPrice / 12);
-                priceBreakdownEl.innerHTML = `Billed once: ₹${yearlyPrice} <br> (equiv. to ₹${perMonthEquivalent}/mo)`;
-            } else {
-                priceBreakdownEl.textContent = 'Billed monthly.';
-            }
-        });
-    }
-
-    if(monthlyBtn && yearlyBtn) {
-        monthlyBtn.addEventListener('click', () => updateBillingCycle('monthly'));
-        yearlyBtn.addEventListener('click', () => updateBillingCycle('yearly'));
-        updateBillingCycle('monthly');
-    }
-
-    // --- Checkout Flow ---
-    function openCheckoutModal(planId, planName) {
-        const plan = planDetails[planId];
-        if (!plan) return;
-
-        selectedPlan = {
-            id: planId,
-            name: plan.name,
-            billingCycle: currentBillingCycle,
-            price: currentBillingCycle === 'monthly' ? plan.priceMonthly : plan.priceYearly,
-            credits: plan.credits,
-            expiry: plan.expiry
-        };
-
-        document.getElementById('modal-plan-name').textContent = selectedPlan.name;
-        document.getElementById('modal-billing-cycle').textContent = currentBillingCycle.charAt(0).toUpperCase() + currentBillingCycle.slice(1);
-        document.getElementById('modal-charge-amount').textContent = `₹${selectedPlan.price}`;
-        document.getElementById('modal-credits-amount').textContent = `${selectedPlan.credits} generations`;
-        document.getElementById('modal-expiry').textContent = selectedPlan.expiry;
+        const priceEl = card.querySelector('.price-amount');
+        const periodEl = card.querySelector('.price-period');
         
-        toggleModal(checkoutModal, true);
-        gsap.fromTo(checkoutModalContent, { scale: 0.95, opacity: 0 }, { duration: 0.3, scale: 1, opacity: 1, ease: 'power2.out' });
-    }
-
-    planCtaButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            if (!currentUser) {
-                toggleModal(authModal, true);
-                return;
-            }
-            const planId = button.dataset.planId;
-            openCheckoutModal(planId);
-        });
+        animateValue(priceEl, parseInt(priceEl.innerText.replace(/,/g, '')), newPrice, 300);
+        periodEl.textContent = periodText;
     });
+};
 
-    closeModalBtn.addEventListener('click', () => {
-        gsap.to(checkoutModalContent, { duration: 0.2, scale: 0.95, opacity: 0, ease: 'power2.in', onComplete: () => {
-            toggleModal(checkoutModal, false);
-        }});
-    });
+const handleAuthAction = () => auth.currentUser ? signOut(auth) : toggleModal(DOMElements.authModal, true);
+const signInWithGoogle = () => signInWithPopup(auth, provider).then(() => toggleModal(DOMElements.authModal, false)).catch(console.error);
 
-    // --- Razorpay Integration ---
-    async function handlePayment() {
-        if (!currentUser) {
-            alert("You must be signed in to make a purchase.");
-            return;
-        }
-        
-        const proceedButton = document.getElementById('proceed-to-payment-btn');
-        proceedButton.disabled = true;
-        proceedButton.textContent = 'Processing...';
+const updateUIForAuthState = async (user) => {
+    const signedIn = !!user;
+    DOMElements.authBtn.textContent = signedIn ? 'Sign Out' : 'Sign In';
+    DOMElements.mobileAuthBtn.textContent = signedIn ? 'Sign Out' : 'Sign In';
+    DOMElements.userPlanDisplayContainer.classList.toggle('hidden', !signedIn);
 
+    if (signedIn) {
         try {
-            const token = await currentUser.getIdToken();
-            
-            const response = await fetch('/api/create-order', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ planId: selectedPlan.id, billingCycle: selectedPlan.billingCycle })
-            });
+            const token = await user.getIdToken();
+            const [creditsResponse, planResponse] = await Promise.all([
+                fetch('/api/credits', { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetchUserPlan(token)
+            ]);
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to create order.');
+            if (creditsResponse.ok) {
+                const data = await creditsResponse.json();
+                DOMElements.generationCounter.textContent = `Credits: ${data.credits}`;
+                DOMElements.mobileGenerationCounter.textContent = `Credits: ${data.credits}`;
+            } else { throw new Error("Failed to fetch credits"); }
+
+            const planName = planResponse.plan || 'Free Plan';
+            if (planName !== 'Free') {
+                DOMElements.userPlanDisplay.textContent = `${planName} Plan`;
+            } else {
+                DOMElements.userPlanDisplayContainer.classList.add('hidden');
             }
-
-            const orderData = await response.json();
-            
-            const options = {
-                key: orderData.key,
-                amount: orderData.amount, // Amount is in paise, sent from backend
-                currency: "INR",
-                name: "GenArt",
-                description: `Payment for ${selectedPlan.name}`,
-                image: "https://iili.io/FsAoG2I.md.png",
-                order_id: orderData.orderId,
-                subscription_id: orderData.subscriptionId,
-                handler: async function (response) {
-                    const verificationResponse = await fetch('/api/verify-payment', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_order_id: orderData.orderId, // Use the orderId from our server
-                            razorpay_subscription_id: orderData.subscriptionId, // Use the subscriptionId from our server
-                            razorpay_signature: response.razorpay_signature,
-                            billingCycle: selectedPlan.billingCycle
-                        })
-                    });
-                    
-                    if(verificationResponse.ok) {
-                        alert('Payment Successful! Your credits have been added.');
-                        window.location.href = '/dashboard.html';
-                    } else {
-                        const error = await verificationResponse.json();
-                        alert(`Payment verification failed: ${error.details || 'Please contact support.'}`);
-                    }
-                },
-                prefill: {
-                    name: currentUser.displayName || "",
-                    email: currentUser.email || "",
-                },
-                notes: {
-                    userId: currentUser.uid,
-                    planId: selectedPlan.id
-                },
-                theme: { color: "#4F46E5" }
-            };
-            
-            const rzp = new Razorpay(options);
-            rzp.on('payment.failed', function (response){
-                alert(`Payment Failed: ${response.error.description}`);
-            });
-            rzp.open();
-
         } catch (error) {
-            console.error("Payment Error:", error);
-            alert(`An error occurred: ${error.message}`);
-        } finally {
-            proceedButton.disabled = false;
-            proceedButton.textContent = 'Proceed to Secure Checkout';
+            console.error("Error fetching user data:", error);
+            DOMElements.generationCounter.textContent = "Credits: Error";
         }
+    } else {
+        DOMElements.generationCounter.textContent = 'Sign in for credits';
+    }
+};
+
+async function handlePlanSelection(event) {
+    const button = event.currentTarget;
+    if (!auth.currentUser) {
+        toggleModal(DOMElements.authModal, true);
+        return;
     }
     
-    if (proceedToPaymentBtn) {
-        proceedToPaymentBtn.addEventListener('click', handlePayment);
-    }
-});
+    const card = button.closest('.pricing-card');
+    const planId = card.dataset.plan;
+    const isYearly = DOMElements.billingToggle.checked;
+    const cycle = isYearly ? 'yearly' : 'monthly';
+    
+    button.disabled = true;
+    button.innerHTML = `<span class="animate-pulse">Processing...</span>`;
 
+    try {
+        const token = await auth.currentUser.getIdToken();
+        const response = await fetch('/api/razorpay-subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ plan: planId, cycle: cycle })
+        });
+
+        if (!response.ok) throw new Error(await response.text());
+        const { subscription_id, razorpay_key_id } = await response.json();
+        
+        const rzp = new Razorpay({
+            key: razorpay_key_id,
+            subscription_id: subscription_id,
+            name: 'GenArt Subscription',
+            description: `GenArt ${plans[planId].name} - ${cycle}`,
+            handler: () => {
+                alert('Payment Successful! Your subscription is being processed.');
+                window.location.href = '/settings.html';
+            },
+            modal: {
+                ondismiss: function(){
+                    button.disabled = false;
+                    button.innerHTML = 'Select Plan';
+                }
+            },
+            prefill: { name: auth.currentUser.displayName, email: auth.currentUser.email },
+            theme: { color: '#3C5B8B' }
+        });
+        rzp.open();
+    } catch (error) {
+        console.error('Subscription failed:', error);
+        alert(`Could not start the subscription. Please try again.`);
+        button.disabled = false;
+        button.innerHTML = 'Select Plan';
+    }
+}
+
+const toggleModal = (modal, show) => {
+    modal.style.display = show ? 'flex' : 'none';
+    modal.setAttribute('aria-hidden', !show);
+};
+
+function animateValue(obj, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = Math.floor(progress * (end - start) + start).toLocaleString('en-IN');
+        if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+}
+
+function buildFeaturesTable() {
+    const features = [...new Set(Object.values(plans).flatMap(p => Object.keys(p.features)))];
+    const checkIcon = `<svg class="w-6 h-6 mx-auto text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+    
+    let headHTML = `<thead class="bg-gray-50"><tr class="text-sm text-gray-600"><th class="py-4 px-4 font-semibold text-left">Features</th>`;
+    Object.values(plans).forEach(plan => {
+        headHTML += `<th class="py-4 px-4 font-semibold w-1/5 text-center">${plan.name}</th>`;
+    });
+    headHTML += `</tr></thead>`;
+
+    let bodyHTML = `<tbody>`;
+    features.forEach((feature) => {
+        bodyHTML += `<tr class="border-b border-gray-200"><td class="py-4 px-4 font-medium">${feature}</td>`;
+        Object.values(plans).forEach(plan => {
+            const value = plan.features[feature];
+            bodyHTML += `<td class="py-4 px-4 text-center text-sm font-medium text-gray-700">${value === true ? checkIcon : (value || '–')}</td>`;
+        });
+        bodyHTML += `</tr>`;
+    });
+    bodyHTML += `</tbody>`;
+    DOMElements.featuresTable.innerHTML = headHTML + bodyHTML;
+}
+
+function buildFAQ() {
+    let faqHTML = '';
+    faqData.forEach(item => {
+        faqHTML += `
+            <div class="faq-item border-b border-gray-200">
+                <button class="faq-question w-full flex justify-between items-center text-left py-5">
+                    <span class="font-semibold text-gray-800 pr-4">${item.question}</span>
+                    <svg class="faq-arrow w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div class="faq-answer">
+                    <p class="pt-0 pb-5 pr-8 text-left text-gray-600 leading-relaxed">${item.answer}</p>
+                </div>
+            </div>
+        `;
+    });
+    DOMElements.faqContainer.innerHTML = faqHTML;
+    DOMElements.faqContainer.querySelectorAll('.faq-question').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const parent = btn.parentElement;
+            
+            const currentlyActive = document.querySelector('.faq-item.active');
+            if (currentlyActive && currentlyActive !== parent) {
+                currentlyActive.classList.remove('active');
+            }
+
+            parent.classList.toggle('active');
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    buildFeaturesTable();
+    buildFAQ();
+    onAuthStateChanged(auth, user => updateUIForAuthState(user));
+    
+    [DOMElements.authBtn, DOMElements.mobileAuthBtn].forEach(btn => btn?.addEventListener('click', handleAuthAction));
+    DOMElements.googleSignInBtn?.addEventListener('click', signInWithGoogle);
+    DOMElements.closeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.authModal, false));
+    DOMElements.billingToggle.addEventListener('change', (e) => updatePricing(e.target.checked));
+    DOMElements.mobileMenuBtn?.addEventListener('click', () => DOMElements.mobileMenu.classList.toggle('hidden'));
+    DOMElements.selectPlanBtns.forEach(btn => btn.addEventListener('click', handlePlanSelection));
+});
