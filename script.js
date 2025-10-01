@@ -73,7 +73,7 @@ function restructureGalleryForMobile() {
 }
 
 function initializeEventListeners() {
-    DOMElements.googleSigninBtn?.addEventListener('click', signInWithGoogle);
+    DOMElements.googleSignInBtn?.addEventListener('click', signInWithGoogle);
     DOMElements.closeModalBtns.forEach(btn => btn.addEventListener('click', closeAllModals));
     DOMElements.generateBtn?.addEventListener('click', handleImageGenerationRequest);
     
@@ -202,35 +202,6 @@ function initializeAnimations() {
             }
         });
     }
-
-    // Dynamic Use Cases Scroll Animation
-    const useCasesSection = document.getElementById('use-cases-section');
-    const useCaseTexts = gsap.utils.toArray('.use-case-text');
-
-    if (useCasesSection && useCaseTexts.length > 0) {
-        const tl = gsap.timeline();
-        
-        // Animate the first item in
-        tl.to(useCaseTexts[0], { opacity: 1, y: 0, duration: 0.3 });
-
-        // Loop through the rest to create transitions
-        for (let i = 1; i < useCaseTexts.length; i++) {
-            tl.to(useCaseTexts[i-1], { opacity: 0, y: -30, duration: 0.3 }, "+=0.4"); // Animate out previous
-            tl.to(useCaseTexts[i], { opacity: 1, y: 0, duration: 0.3 }); // Animate in current
-        }
-        
-        // Animate the last one out
-        tl.to(useCaseTexts[useCaseTexts.length - 1], { opacity: 0, y: -30, duration: 0.3 }, "+=0.4");
-
-        ScrollTrigger.create({
-            trigger: useCasesSection,
-            start: "top top",
-            end: "bottom bottom",
-            pin: true,
-            scrub: 0.5,
-            animation: tl,
-        });
-    }
 }
 
 
@@ -243,11 +214,13 @@ function updateUIForAuthState(user) {
     if (user) {
         nav.innerHTML = `
             <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Pricing</a>
+            <a href="settings.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Settings</a>
             <div id="credits-counter" class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ...</div>
             <button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Sign Out</button>
         `;
         mobileNav.innerHTML = `
             <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
+            <a href="settings.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Settings</a>
             <div id="credits-counter-mobile" class="text-center text-lg font-semibold text-gray-700 p-3 my-2 border-y">Credits: ...</div>
             <button id="sign-out-btn-mobile" class="w-full text-left text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Sign Out</button>
         `;
