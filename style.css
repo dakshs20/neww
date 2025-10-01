@@ -1,69 +1,62 @@
-/* --- Base Styles --- */
+/* --- Base & Global Styles --- */
 body {
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-    color: #374151; /* gray-700 */
-    background-color: #f8fafc; /* slate-50 */
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    color: #1f2937; /* gray-800 */
+    background-color: #ffffff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-/* --- Full-page Animated Gradient Background --- */
+/* --- Animations & Utilities --- */
+.cursor {
+    animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+    from, to { color: transparent; }
+    50% { color: #3C5B8B; }
+}
+
+.fade-in-slide-up {
+    animation: fade-in-slide-up 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    opacity: 0;
+}
+@keyframes fade-in-slide-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-shake {
+    animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+}
+@keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+
+/* --- Index Page: Animated Background --- */
 #animated-gradient-bg {
     position: fixed;
     inset: 0;
-    z-index: -2;
+    z-index: -1;
     background: linear-gradient(125deg, #e0f2fe, #f5f3ff, #f0fdf4, #f5f3ff, #e0f2fe);
     background-size: 400% 400%;
     animation: gradient-flow 20s ease-in-out infinite;
     will-change: background-position;
-    opacity: 0.6;
 }
-
 @keyframes gradient-flow {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
 
-/* --- Pricing Page Specific --- */
-#billing-toggle:checked + div {
-    background-color: #4f46e5; /* indigo-600 */
-}
-
-#billing-toggle:checked + div::after {
-    transform: translateX(100%);
-    border-color: white;
-}
-
-#pricing-grid .price-value,
-#pricing-grid .price-cycle,
-#pricing-grid .price-breakdown {
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* --- Checkout Modal --- */
-#checkout-modal-content {
-    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-}
-#checkout-modal[aria-hidden="true"] #checkout-modal-content {
-    transform: scale(0.95);
-}
-
-/* --- Auth Modal --- */
-.invisible {
-    visibility: hidden;
-}
-
-/* --- General UI from original style.css --- */
-header.scrolled #header-nav {
-    transform: translateY(0);
-    opacity: 1;
-}
-
-/* --- Hero, Stats, and Masonry Sections --- */
-#hero-headline {
+/* --- Index Page: Hero & Stats --- */
+#hero-headline, #hero-subline {
     opacity: 0;
 }
 #hero-subline {
-    opacity: 0;
     transform: translateY(20px);
 }
 .stat-card {
@@ -71,14 +64,8 @@ header.scrolled #header-nav {
     transform: translateY(30px) scale(0.95);
     will-change: transform, opacity;
 }
-.cursor {
-    animation: blink 1s step-end infinite;
-}
-@keyframes blink {
-    from, to { color: transparent; }
-    50% { color: #517CBE; }
-}
 
+/* --- Index Page: Masonry Gallery --- */
 #masonry-gallery { display: flex; gap: 1rem; }
 .masonry-column { display: flex; flex-direction: column; flex: 1; gap: 1rem; }
 .masonry-item {
@@ -93,16 +80,99 @@ header.scrolled #header-nav {
     border-radius: 0.75rem;
 }
 
-#prompt-input { max-height: 150px; }
-#prompt-bar-container { transition: border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-#prompt-bar-container.expanded { border-radius: 1.75rem; }
-@keyframes shake {
-  10%, 90% { transform: translate3d(-1px, 0, 0); }
-  20%, 80% { transform: translate3d(2px, 0, 0); }
-  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-  40%, 60% { transform: translate3d(4px, 0, 0); }
+/* --- Index Page: Testimonial --- */
+.testimonial-image {
+    border-radius: 1.5rem;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
 }
-.animate-shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
+.testimonial-card {
+    background-color: #517CBE;
+    color: white;
+    border-radius: 1.5rem;
+    padding: 2.5rem;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(81, 124, 190, 0.25);
+}
+.testimonial-text {
+    font-size: 1.25rem;
+    line-height: 1.75;
+    font-weight: 500;
+}
+.testimonial-author {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* --- Shared Footer: Prompt Bar --- */
+#prompt-bar-container { 
+    transition: border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+}
+#prompt-bar-container.expanded { 
+    border-radius: 1.75rem; 
+}
+
+
+/* --- Pricing Page --- */
+.pricing-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.pricing-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.08);
+}
+.select-plan-btn {
+    transition: all 0.2s ease-in-out;
+}
+.select-plan-btn:active {
+    transform: scale(0.97);
+}
+.billing-toggle-input:checked + .toggle-bg {
+    background-color: #3C5B8B;
+    border-color: #3C5B8B;
+}
+.billing-toggle-input:focus-visible + .toggle-bg {
+     box-shadow: 0 0 0 4px rgb(60 91 139 / 0.3);
+}
+.toggle-bg, .toggle-dot {
+     transition: all 0.2s ease-in-out;
+}
+.billing-toggle-input:checked + .toggle-bg .toggle-dot {
+    transform: translateX(100%);
+    background-color: white;
+}
+#features-table tbody tr:hover {
+    background-color: #f9fafb; /* gray-50 */
+}
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.faq-item.active .faq-answer {
+    max-height: 500px;
+}
+.faq-item .faq-arrow {
+    transition: transform 0.3s ease;
+}
+.faq-item.active .faq-arrow {
+    transform: rotate(180deg);
+}
+
+/* --- Settings Page --- */
+.btn-danger {
+    background-color: #ef4444; /* red-500 */
+    color: white;
+}
+.btn-danger:hover {
+    background-color: #dc2626; /* red-600 */
+}
+.btn:active {
+    transform: scale(0.97);
+}
 
 
 /* --- Mobile Responsiveness --- */
@@ -115,7 +185,30 @@ header.scrolled #header-nav {
     #hero-subline {
         font-size: 1rem;
     }
-    #masonry-gallery { display: block; }
-    .masonry-column { display: block; }
-    .masonry-item { margin-bottom: 1rem; }
+    #first-screen-content {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    #stats-section .grid {
+        gap: 1.5rem;
+    }
+    #stats-section h3 {
+        font-size: 2.25rem;
+    }
+    #masonry-gallery { 
+        display: block; 
+    }
+    .masonry-column { 
+        display: block; 
+    }
+    .masonry-item { 
+        margin-bottom: 1rem; 
+    }
+    .testimonial-card {
+        padding: 2rem;
+    }
+    .testimonial-text {
+        font-size: 1.125rem;
+    }
 }
+
