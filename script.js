@@ -1,514 +1,265 @@
-// --- Firebase and Auth Initialization ---
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-const firebaseConfig = {
-    apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
-    authDomain: "genart-a693a.firebaseapp.com",
-    projectId: "genart-a693a",
-    storageBucket: "genart-a693a.appspot.com",
-    messagingSenderId: "96958671615",
-    appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
-    measurementId: "G-EDCW8VYXY6"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
-
-// --- Set Auth Persistence ---
-setPersistence(auth, browserLocalPersistence)
-  .catch((error) => {
-    console.error("Firebase persistence error:", error.code, error.message);
-  });
-
-
-// --- Global State ---
-let currentUser;
-let currentUserCredits = 0;
-let isGenerating = false;
-let currentAspectRatio = '1:1';
-let uploadedImageData = null;
-let currentPreviewInputData = null; 
-let timerInterval;
-
-// --- DOM Element Caching ---
-const DOMElements = {};
-
-document.addEventListener('DOMContentLoaded', () => {
-    const ids = [
-        'header-nav', 'gallery-container', 'masonry-gallery', 'prompt-input',
-        'generate-btn', 'generate-icon', 'loading-spinner', 'ratio-btn', 'ratio-options',
-        'auth-modal', 'google-signin-btn', 'out-of-credits-modal', 
-        'preview-modal', 'preview-image', 'preview-prompt-input',
-        'download-btn', 'close-preview-btn', 'regenerate-btn',
-        'image-upload-btn', 'image-upload-input', 'image-preview-container', 'image-preview', 'remove-image-btn',
-        'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input',
-        'hero-section', 'hero-headline', 'hero-subline', 'typewriter', 'prompt-bar-container',
-        'mobile-menu', 'mobile-menu-btn', 'menu-open-icon', 'menu-close-icon',
-        'button-timer', 'button-content', 'welcome-modal', 'close-welcome-modal-btn'
-    ];
-    ids.forEach(id => {
-        if (id) {
-            DOMElements[id.replace(/-./g, c => c[1].toUpperCase())] = document.getElementById(id);
-        }
-    });
-    DOMElements.closeModalBtns = document.querySelectorAll('.close-modal-btn');
-    DOMElements.ratioOptionBtns = document.querySelectorAll('.ratio-option');
-    DOMElements.masonryColumns = document.querySelectorAll('.masonry-column');
-    DOMElements.statCards = document.querySelectorAll('.stat-card');
-    DOMElements.counters = document.querySelectorAll('.counter');
-
-    initializeEventListeners();
-    initializeAnimations();
-    onAuthStateChanged(auth, user => updateUIForAuthState(user));
-    restructureGalleryForMobile();
-});
-
-function restructureGalleryForMobile() {
-    if (window.innerWidth >= 768) return;
-    const firstColumn = DOMElements.masonryColumns[0];
-    if (!firstColumn) return;
-    for (let i = 1; i < DOMElements.masonryColumns.length; i++) {
-        const column = DOMElements.masonryColumns[i];
-        while (column.firstChild) {
-            firstColumn.appendChild(column.firstChild);
-        }
-    }
-}
-
-function initializeEventListeners() {
-    DOMElements.googleSignInBtn?.addEventListener('click', signInWithGoogle);
-    DOMElements.closeModalBtns.forEach(btn => btn.addEventListener('click', closeAllModals));
-    DOMElements.generateBtn?.addEventListener('click', handleImageGenerationRequest);
-    
-    DOMElements.promptInput?.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            handleImageGenerationRequest();
-        }
-    });
-
-    DOMElements.promptInput?.addEventListener('input', autoResizeTextarea);
-    
-    DOMElements.imageUploadBtn?.addEventListener('click', () => DOMElements.imageUploadInput.click());
-    DOMElements.imageUploadInput?.addEventListener('change', handleImageUpload);
-    DOMElements.removeImageBtn?.addEventListener('click', removeUploadedImage);
-
-    DOMElements.ratioBtn?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (!DOMElements.ratioBtn.disabled) {
-            DOMElements.ratioOptions.classList.toggle('hidden');
-        }
-    });
-    document.addEventListener('click', () => DOMElements.ratioOptions?.classList.add('hidden'));
-    DOMElements.ratioOptionBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            currentAspectRatio = e.currentTarget.dataset.ratio;
-            DOMElements.ratioOptionBtns.forEach(b => b.classList.remove('selected'));
-            e.currentTarget.classList.add('selected');
-        });
-    });
-
-    DOMElements.closePreviewBtn?.addEventListener('click', () => toggleModal(DOMElements.previewModal, false));
-    DOMElements.downloadBtn?.addEventListener('click', downloadPreviewImage);
-    DOMElements.regenerateBtn?.addEventListener('click', handleRegeneration);
-    DOMElements.changeInputImageBtn?.addEventListener('click', () => DOMElements.previewImageUploadInput.click());
-    DOMElements.previewImageUploadInput?.addEventListener('change', handlePreviewImageChange);
-    DOMElements.removeInputImageBtn?.addEventListener('click', removePreviewInputImage);
-    
-    DOMElements.mobileMenuBtn?.addEventListener('click', () => {
-        const isHidden = DOMElements.mobileMenu.classList.toggle('hidden');
-        DOMElements.menuOpenIcon.classList.toggle('hidden', !isHidden);
-        DOMElements.menuCloseIcon.classList.toggle('hidden', isHidden);
-    });
-    
-    DOMElements.closeWelcomeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.welcomeModal, false));
-
-
-    window.addEventListener('scroll', () => {
-        const header = document.querySelector('header');
-        if (window.scrollY > 10) {
-            header.classList.add('scrolled');
-        } else {
-            header.classList.remove('scrolled');
-        }
-    });
-}
-
-// --- Animations ---
-function initializeAnimations() {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
-    
-    gsap.registerPlugin(ScrollTrigger, TextPlugin);
-
-    // Simple fade-in for hero headline
-    gsap.fromTo(DOMElements.heroHeadline, 
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 1, ease: 'power3.out', delay: 0.2 }
-    );
-
-    gsap.fromTo(DOMElements.heroSubline, 
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 1, ease: 'power3.out', delay: 0.4 }
-    );
-
-    const words = ["creators.", "agencies.", "enterprises."];
-    let masterTl = gsap.timeline({ repeat: -1 });
-    words.forEach(word => {
-        let tl = gsap.timeline({ repeat: 1, yoyo: true, repeatDelay: 1.5 });
-        tl.to("#typewriter", { text: word, duration: 1, ease: "none" });
-        masterTl.add(tl);
-    });
-    
-    if (DOMElements.statCards.length > 0) {
-        gsap.fromTo(DOMElements.statCards, 
-            { opacity: 0, y: 30, scale: 0.95 },
-            { 
-                opacity: 1, y: 0, scale: 1, duration: 1, stagger: 0.15, ease: 'power3.out',
-                scrollTrigger: {
-                    trigger: "#stats-section",
-                    start: "top 85%",
-                }
-            }
-        );
-    }
-
-    if (DOMElements.counters.length > 0) {
-        DOMElements.counters.forEach(counter => {
-            const target = +counter.dataset.target;
-            const proxy = { val: 0 }; 
-
-            gsap.to(proxy, {
-                val: target,
-                duration: 2.5,
-                ease: "power2.out",
-                scrollTrigger: {
-                    trigger: counter,
-                    start: "top 90%",
-                },
-                onUpdate: function() {
-                    counter.textContent = Math.ceil(proxy.val);
-                }
-            });
-        });
-    }
-
-    // Testimonial Animation
-    const testimonialSection = document.getElementById('testimonial-section');
-    if(testimonialSection) {
-        gsap.from(testimonialSection.querySelectorAll(".testimonial-image, .testimonial-card"), {
-            opacity: 0,
-            y: 50,
-            duration: 1,
-            stagger: 0.2,
-            ease: 'power3.out',
-            scrollTrigger: {
-                trigger: testimonialSection,
-                start: "top 80%",
-            }
-        });
-    }
-}
-
-
-// --- Core App Logic ---
-async function updateUIForAuthState(user) {
-    currentUser = user;
-    const nav = DOMElements.headerNav;
-    const mobileNav = DOMElements.mobileMenu;
-
-    if (user) {
-        nav.innerHTML = `
-            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Pricing</a>
-            <div id="credits-counter" class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ...</div>
-            <button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Sign Out</button>
-        `;
-        mobileNav.innerHTML = `
-            <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
-            <div id="credits-counter-mobile" class="text-center text-lg font-semibold text-gray-700 p-3 my-2 border-y">Credits: ...</div>
-            <button id="sign-out-btn-mobile" class="w-full text-left text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Sign Out</button>
-        `;
-        document.getElementById('sign-out-btn-desktop').addEventListener('click', () => signOut(auth));
-        document.getElementById('sign-out-btn-mobile').addEventListener('click', () => signOut(auth));
-        
-        const userData = await fetchUserCredits(user);
-        if (userData && userData.isNewUser) {
-             setTimeout(() => toggleModal(DOMElements.welcomeModal, true), 500);
-        }
-
-    } else {
-        nav.innerHTML = `
-            <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Pricing</a>
-            <button id="sign-in-btn-desktop" class="text-sm font-medium text-white px-4 py-1.5 rounded-full transition-colors" style="background-color: #517CBE;">Sign In</button>
-        `;
-         mobileNav.innerHTML = `
-            <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
-            <div class="p-4 mt-4">
-                 <button id="sign-in-btn-mobile" class="w-full text-lg font-semibold bg-[#517CBE] text-white px-4 py-3 rounded-xl hover:bg-opacity-90 transition-colors">Sign In</button>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>GenArt: AI Image Generator</title>
+        <link rel="icon" type="image/png" href="favicon.png">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="style.css">
+        <!-- GSAP for animations -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+    </head>
+    <body>
+        <!-- Full-page animated gradient background -->
+        <div id="animated-gradient-bg"></div>
+        <!-- Header -->
+        <header class="fixed top-0 left-0 right-0 z-30 p-4 transition-all duration-300">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <a href="/">
+                    <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 md:h-7 w-auto">
+                </a>
+                <div id="header-nav" class="hidden md:flex items-center space-x-2 bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-sm rounded-full px-2 py-1">
+                <!-- Auth state content injected by script.js -->
+                </div>
+                <button id="mobile-menu-btn" class="md:hidden p-2 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 text-slate-800 z-50">
+                    <svg id="menu-open-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                    <svg id="menu-close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
             </div>
-        `;
-        document.getElementById('sign-in-btn-desktop').addEventListener('click', () => toggleModal(DOMElements.authModal, true));
-        document.getElementById('sign-in-btn-mobile').addEventListener('click', () => toggleModal(DOMElements.authModal, true));
-    }
-}
-
-async function fetchUserCredits(user) {
-    try {
-        const token = await user.getIdToken(true);
-        const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${token}` } });
-        if (!response.ok) throw new Error('Failed to fetch credits');
-        const data = await response.json();
-        currentUserCredits = data.credits;
-        updateCreditsDisplay(currentUserCredits);
-        return data; // Return the full data object
-    } catch (error) {
-        console.error("Error fetching credits:", error);
-        updateCreditsDisplay('Error');
-        return null;
-    }
-}
-
-function updateCreditsDisplay(amount) {
-    const creditsCounter = document.getElementById('credits-counter');
-    const creditsCounterMobile = document.getElementById('credits-counter-mobile');
-    if (creditsCounter) creditsCounter.textContent = `Credits: ${amount}`;
-    if (creditsCounterMobile) creditsCounterMobile.textContent = `Credits: ${amount}`;
-}
-
-function autoResizeTextarea(e) {
-    const textarea = e.target;
-    const promptBarContainer = DOMElements.promptBarContainer;
-    if (!textarea || !promptBarContainer) return;
-
-    textarea.style.height = 'auto';
-    textarea.style.height = `${textarea.scrollHeight}px`;
-
-    const lineHeight = parseFloat(window.getComputedStyle(textarea).lineHeight);
-    const numLines = Math.round(textarea.scrollHeight / lineHeight);
-
-    if (numLines > 1) { 
-        promptBarContainer.classList.add('expanded');
-    } else {
-        promptBarContainer.classList.remove('expanded');
-    }
-}
-
-function toggleModal(modal, show) {
-    if (!modal) return;
-    const innerCard = modal.querySelector('div > div');
-    if (show) {
-        modal.style.display = 'flex';
-        setTimeout(() => {
-            modal.classList.remove('opacity-0', 'invisible');
-            if (innerCard) innerCard.classList.remove('scale-95');
-        }, 10);
-    } else {
-        modal.classList.add('opacity-0', 'invisible');
-        if (innerCard) innerCard.classList.add('scale-95');
-        setTimeout(() => modal.style.display = 'none', 300);
-    }
-}
-
-function closeAllModals() {
-    document.querySelectorAll('[role="dialog"], #welcome-modal').forEach(modal => toggleModal(modal, false));
-}
-
-function signInWithGoogle() {
-    signInWithPopup(auth, provider)
-    .then(() => {
-        closeAllModals();
-    })
-    .catch(console.error);
-}
-
-// --- Image Generation ---
-async function handleImageGenerationRequest(promptOverride = null, fromRegenerate = false) {
-    if (isGenerating) return;
-    if (!currentUser) {
-        toggleModal(DOMElements.authModal, true);
-        return;
-    }
-    if (currentUserCredits <= 0) {
-        toggleModal(DOMElements.outOfCreditsModal, true);
-        return;
-    }
-
-    const imageDataSource = fromRegenerate ? currentPreviewInputData : uploadedImageData;
-    const prompt = fromRegenerate ? promptOverride : DOMElements.promptInput.value.trim();
-
-    if (!prompt && !imageDataSource) {
-        const promptBar = DOMElements.promptInput.parentElement;
-        promptBar.classList.add('animate-shake');
-        setTimeout(() => promptBar.classList.remove('animate-shake'), 500);
-        return;
-    }
-
-    isGenerating = true;
-    setLoadingState(true);
-    startTimer();
-    
-    const aspectRatioToSend = imageDataSource ? null : currentAspectRatio;
-    const generationInputData = imageDataSource ? {...imageDataSource} : null;
-
-    try {
-        const token = await currentUser.getIdToken();
-        
-        const deductResponse = await fetch('/api/credits', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (!deductResponse.ok) throw new Error('Credit deduction failed. Please try again.');
-        
-        const creditData = await deductResponse.json();
-        currentUserCredits = creditData.newCredits;
-        updateCreditsDisplay(currentUserCredits);
-
-        const response = await fetch('/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ prompt, imageData: generationInputData, aspectRatio: aspectRatioToSend })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`API generation failed: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        const base64Data = generationInputData
-            ? result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data 
-            : result.predictions?.[0]?.bytesBase64Encoded;
-            
-        if (!base64Data) throw new Error("No image data in API response");
-        
-        const imageUrl = `data:image/png;base64,${base64Data}`;
-        
-        showPreviewModal(imageUrl, prompt, generationInputData);
-
-    } catch (error) {
-        console.error("Generation Error:", error);
-        alert(`An error occurred during generation: ${error.message}`);
-    } finally {
-        clearInterval(timerInterval);
-        setLoadingState(false);
-        if(!fromRegenerate) {
-            DOMElements.promptInput.value = '';
-            autoResizeTextarea({target: DOMElements.promptInput});
-            removeUploadedImage();
-        }
-    }
-}
-
-async function handleRegeneration() {
-    const newPrompt = DOMElements.previewPromptInput.value;
-    if (!newPrompt && !currentPreviewInputData) return;
-    
-    toggleModal(DOMElements.previewModal, false);
-    await handleImageGenerationRequest(newPrompt, true);
-}
-
-function setLoadingState(isLoading) {
-    isGenerating = isLoading;
-    DOMElements.generateBtn.disabled = isLoading;
-    DOMElements.buttonContent.classList.toggle('hidden', isLoading);
-    DOMElements.buttonTimer.classList.toggle('hidden', !isLoading);
-}
-
-function startTimer() {
-    let endTime = Date.now() + 17000;
-    DOMElements.buttonTimer.textContent = '17.00';
-    
-    timerInterval = setInterval(() => {
-        const remaining = endTime - Date.now();
-        if (remaining <= 0) {
-            clearInterval(timerInterval);
-            DOMElements.buttonTimer.textContent = '0.00';
-            return;
-        }
-        DOMElements.buttonTimer.textContent = (remaining / 1000).toFixed(2);
-    }, 50); // Update every 50ms for smoother millisecond display
-}
-
-// --- Image Handling & Uploads ---
-function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-        const base64String = reader.result.split(',')[1];
-        uploadedImageData = { mimeType: file.type, data: base64String };
-        DOMElements.imagePreview.src = reader.result;
-        DOMElements.imagePreviewContainer.classList.remove('hidden');
-        DOMElements.ratioBtn.disabled = true;
-        DOMElements.ratioBtn.classList.add('opacity-50', 'cursor-not-allowed');
-    };
-    reader.readAsDataURL(file);
-}
-
-function removeUploadedImage() {
-    uploadedImageData = null;
-    DOMElements.imageUploadInput.value = '';
-    DOMElements.imagePreview.src = '';
-    DOMElements.imagePreviewContainer.classList.add('hidden');
-    DOMElements.ratioBtn.disabled = false;
-    DOMElements.ratioBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-}
-
-// --- Preview Modal ---
-function showPreviewModal(imageUrl, prompt, inputImageData) {
-    DOMElements.previewImage.src = imageUrl;
-    DOMElements.previewPromptInput.value = prompt;
-    currentPreviewInputData = inputImageData;
-
-    if (inputImageData) {
-        const dataUrl = `data:${inputImageData.mimeType};base64,${inputImageData.data}`;
-        DOMElements.previewInputImage.src = dataUrl;
-        DOMElements.previewInputImageContainer.classList.remove('hidden');
-    } else {
-        DOMElements.previewInputImageContainer.classList.add('hidden');
-    }
-    toggleModal(DOMElements.previewModal, true);
-}
-
-function handlePreviewImageChange(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-        const base64String = reader.result.split(',')[1];
-        currentPreviewInputData = { mimeType: file.type, data: base64String };
-        DOMElements.previewInputImage.src = reader.result;
-    };
-    reader.readAsDataURL(file);
-}
-
-function removePreviewInputImage() {
-    currentPreviewInputData = null;
-    DOMElements.previewImageUploadInput.value = '';
-    DOMElements.previewInputImage.src = '';
-    DOMElements.previewInputImageContainer.classList.add('hidden');
-}
-
-function downloadPreviewImage() {
-    const imageUrl = DOMElements.previewImage.src;
-    fetch(imageUrl)
-        .then(res => res.blob())
-        .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = 'genart-image.png';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        })
-        .catch(() => alert('An error occurred while downloading the image.'));
-}
+            <div id="mobile-menu" class="hidden md:hidden fixed inset-0 bg-white/90 backdrop-blur-xl z-40 p-4 pt-24">
+            <!-- Mobile nav content injected by script.js -->
+            </div>
+        </header>
+        <!-- Main Content -->
+        <main class="relative z-10 pb-40">
+            <!-- Added padding-bottom to avoid overlap with fixed footer -->
+            <div id="first-screen-content" class="min-h-screen flex flex-col items-center justify-center text-center p-4">
+                <!-- Hero Section -->
+                <section id="hero-section">
+                    <h1 id="hero-headline" class="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-800 tracking-tighter">Turn imagination into visuals in seconds.
+                </h1>
+                    <p id="hero-subline" class="mt-4 text-base md:text-xl text-gray-500 max-w-3xl mx-auto">
+                        The world's most advanced generative AI, built for <span id="typewriter" class="font-semibold text-[#517CBE]"></span>
+                        <span class="cursor">|</span>
+                    </p>
+                </section>
+                <!-- Stats Section -->
+                <section id="stats-section" class="w-full mt-16">
+                    <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="stat-card">
+                            <h3 class="text-4xl md:text-5xl font-bold text-[#517CBE]">
+                                <span class="counter" data-target="50">0</span>
+                                M+
+                            </h3>
+                            <p class="text-sm text-gray-500 mt-2">Generations</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 class="text-4xl md:text-5xl font-bold text-[#517CBE]">
+                                <span class="counter" data-target="500">0</span>
+                                K+
+                            </h3>
+                            <p class="text-sm text-gray-500 mt-2">Happy Creators</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 class="text-4xl md:text-5xl font-bold text-[#517CBE]">&lt;17s</h3>
+                            <p class="text-sm text-gray-500 mt-2">Avg. Generation Speed</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <!-- Masonry Gallery Container -->
+            <div id="masonry-gallery-wrapper" class="px-4 pb-24 md:pb-32">
+                <div id="masonry-gallery">
+                    <div class="masonry-column">
+                        <div class="masonry-item">
+                            <img src="https://iili.io/K7bN7Hl.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art">
+                        </div>
+                        <div class="masonry-item">
+                            <img src="https://iili.io/K7b6OPV.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art">
+                        </div>
+                    </div>
+                    <div class="masonry-column">
+                        <div class="masonry-item">
+                            <img src="https://iili.io/K7bOTzP.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art">
+                        </div>
+                    </div>
+                    <div class="masonry-column">
+                        <div class="masonry-item">
+                            <img src="https://iili.io/K7yYoqN.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art">
+                        </div>
+                        <div class="masonry-item">
+                            <img src="https://iili.io/K7b894e.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art">
+                        </div>
+                    </div>
+                    <div class="masonry-column">
+                        <div class="masonry-item">
+                            <img src="https://iili.io/K7bk3Ku.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art">
+                        </div>
+                        <div class="masonry-item">
+                            <img src="https://iili.io/K7y1cUN.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Testimonial Section -->
+            <section id="testimonial-section" class="py-24 md:py-32 overflow-hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="relative grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+                        <div class="testimonial-image-container">
+                            <!-- IMPORTANT: Replace this src with your image link -->
+                            <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=2000&auto=format&fit=crop" alt="AI art collage" class="testimonial-image">
+                        </div>
+                        <div class="testimonial-card-container">
+                            <div class="testimonial-card">
+                                <svg class="w-12 h-12 text-gray-400/80 absolute top-8 left-8" fill="currentColor" viewBox="0 0 32 32">
+                                    <path d="M9.333 12h-2.667c-1.473 0-2.667 1.193-2.667 2.667v8c0 1.473 1.193 2.667 2.667 2.667h2.667v-13.333zM25.333 12h-2.667c-1.473 0-2.667 1.193-2.667 2.667v8c0 1.473 1.193 2.667 2.667 2.667h2.667v-13.333z"></path>
+                                </svg>
+                                <p class="testimonial-text">"I like to describe it as 'photoshop on steroids.' GenArt's advanced capabilities enable us to seamlessly blend and enhance images, resulting in highly detailed and expressive visual assets."
+                            </p>
+                                <div class="testimonial-author">
+                                    <p class="font-semibold text-gray-200">Chris Charles</p>
+                                    <p class="text-sm text-gray-400">CEO, Charles Group</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <!-- Prompt Bar -->
+        <footer class="fixed bottom-0 left-0 right-0 p-4 z-40">
+            <div id="prompt-bar-container" class="max-w-2xl mx-auto bg-white/70 backdrop-blur-lg border border-gray-200/80 shadow-2xl rounded-full p-2 flex items-center space-x-1.5">
+                <div id="image-preview-container" class="hidden relative w-10 h-10 flex-shrink-0 ml-1">
+                    <img id="image-preview" class="w-full h-full object-cover rounded-full" src="" alt="Image preview">
+                    <button id="remove-image-btn" class="absolute -top-1 -right-1 bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-black">&times;</button>
+                </div>
+                <input type="file" id="image-upload-input" class="hidden" accept="image/png, image/jpeg">
+                <button id="image-upload-btn" class="w-10 h-10 rounded-full hover:bg-gray-200/70 transition-colors flex-shrink-0 flex items-center justify-center" title="Upload Image">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                </button>
+                <textarea id="prompt-input" rows="1" class="w-full bg-transparent text-gray-800 placeholder-gray-500 focus:outline-none resize-none text-base py-2 px-2" placeholder="Describe your vision..."></textarea>
+                <div class="relative flex-shrink-0">
+                    <button id="ratio-btn" class="w-10 h-10 rounded-full hover:bg-gray-200/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center" title="Aspect Ratio">
+                        <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        </svg>
+                    </button>
+                    <div id="ratio-options" class="hidden absolute bottom-full right-0 mb-2 w-48 bg-white/80 backdrop-blur-md rounded-lg border border-gray-200/80 shadow-xl p-1">
+                        <button class="ratio-option selected w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md" data-ratio="1:1">
+                            Square <span class="text-xs opacity-60">1:1</span>
+                        </button>
+                        <button class="ratio-option w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md" data-ratio="16:9">
+                            Landscape <span class="text-xs opacity-60">16:9</span>
+                        </button>
+                        <button class="ratio-option w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md" data-ratio="9:16">
+                            Portrait <span class="text-xs opacity-60">9:16</span>
+                        </button>
+                        <button class="ratio-option w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md" data-ratio="4:5">
+                            Instagram <span class="text-xs opacity-60">4:5</span>
+                        </button>
+                    </div>
+                </div>
+                <button id="generate-btn" class="w-10 h-10 text-white rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0 disabled:opacity-50 mr-1 bg-[#517CBE] relative">
+                    <span id="button-content" class="flex items-center justify-center">
+                        <svg id="generate-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"></path>
+                        </svg>
+                    </span>
+                    <span id="button-timer" class="absolute inset-0 flex items-center justify-center font-semibold text-sm hidden">17.00</span>
+                </button>
+            </div>
+        </footer>
+        <!-- Modals -->
+        <div id="auth-modal" role="dialog" aria-hidden="true" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;" onclick="this.setAttribute('aria-hidden', 'true')">
+            <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In Required</h2>
+                <p class="text-gray-500 mb-6">Please sign in to continue.</p>
+                <button id="google-signin-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2">
+                    <span>Sign In with Google</span>
+                </button>
+                <button class="close-modal-btn mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+            </div>
+        </div>
+        <div id="out-of-credits-modal" role="dialog" aria-hidden="true" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;" onclick="this.setAttribute('aria-hidden', 'true')">
+            <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Out of Credits</h2>
+                <p class="text-gray-500 mb-6">Please purchase more to continue.</p>
+                <a href="/pricing" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 block">Buy Credits</a>
+                <button class="close-modal-btn mt-4 text-sm text-gray-500 hover:text-gray-700">Not now</button>
+            </div>
+        </div>
+        <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+            <div class="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
+                <div class="md:w-2/3 h-64 md:h-auto bg-gray-100 flex items-center justify-center">
+                    <img id="preview-image" src="" alt="Generated Image" class="max-w-full max-h-full object-contain">
+                </div>
+                <div class="md:w-1/3 p-6 flex flex-col">
+                    <h3 class="text-lg font-bold text-gray-800">Edit & Regenerate</h3>
+                    <div id="preview-input-image-container" class="hidden mt-4">
+                        <label class="text-sm font-semibold text-gray-500">YOUR UPLOADED IMAGE</label>
+                        <div class="relative mt-2 w-fit">
+                            <img id="preview-input-image" src="" class="w-24 h-24 object-cover rounded-lg">
+                            <div class="absolute top-1 right-1 flex flex-col space-y-1">
+                                <button id="change-input-image-btn" class="bg-white/80 p-1.5 rounded-full text-gray-700 hover:bg-white" title="Change Image">
+                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M7.409 4.821a.75.75 0 011.06 0l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.97-2.97-2.97-2.97a.75.75 0 010-1.06zM12.75 9.25a.75.75 0 000-1.5h-5.5a.75.75 0 000 1.5h5.5z"></path>
+                                    </svg>
+                                </button>
+                                <input type="file" id="preview-image-upload-input" class="hidden" accept="image/png, image/jpeg">
+                                <button id="remove-input-image-btn" class="bg-white/80 p-1.5 rounded-full text-gray-700 hover:bg-white" title="Remove Image">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex-grow flex flex-col">
+                        <label class="text-sm font-semibold text-gray-500" for="preview-prompt-input">PROMPT</label>
+                        <textarea id="preview-prompt-input" rows="5" class="mt-2 w-full text-gray-800 bg-gray-100 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition flex-grow"></textarea>
+                    </div>
+                    <div class="mt-4">
+                        <button id="regenerate-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center space-x-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22"></path>
+                            </svg>
+                            <span>Regenerate</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="absolute top-4 right-4 md:right-auto md:left-4 flex space-x-2">
+                    <button id="download-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Download Image">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                    </button>
+                    <button id="close-preview-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Close">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Welcome Credits Modal -->
+        <div id="welcome-credits-modal" role="dialog" aria-hidden="true" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;" onclick="this.setAttribute('aria-hidden', 'true')">
+            <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Congratulations!</h2>
+                <p class="text-gray-600 mb-6">You've received <span class="font-bold text-blue-600">10 free credits</span> to start creating. Enjoy!</p>
+                <button class="close-modal-btn w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">Start Generating</button>
+            </div>
+        </div>
+        <script type="module" src="script.js"></script>
+    </body>
+</html>
 
