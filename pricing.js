@@ -17,7 +17,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 // --- Set Auth Persistence ---
-// This ensures the user's login session is remembered across browser tabs and sessions.
 setPersistence(auth, browserLocalPersistence)
   .catch((error) => {
     console.error("Firebase persistence error:", error.code, error.message);
@@ -26,7 +25,7 @@ setPersistence(auth, browserLocalPersistence)
 
 // --- Plan Details (Source of Truth) ---
 const planDetails = {
-    'free': { name: 'Free', credits: 0 },
+    'free': { name: 'Free', credits: 10 },
     'starter': { name: 'Starter', credits: 575 },
     'pro': { name: 'Pro', credits: 975 },
     'elite': { name: 'Elite', credits: 1950 },
@@ -36,7 +35,6 @@ const planDetails = {
 const DOMElements = {};
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Cache all DOM elements once to avoid repeated lookups
     DOMElements.headerAuthSection = document.getElementById('header-auth-section');
     DOMElements.mobileMenu = document.getElementById('mobile-menu');
     DOMElements.authModal = document.getElementById('auth-modal');
@@ -49,9 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
     DOMElements.menuOpenIcon = document.getElementById('menu-open-icon');
     DOMElements.menuCloseIcon = document.getElementById('menu-close-icon');
     DOMElements.faqItems = document.querySelectorAll('.faq-item');
+    DOMElements.welcomeModal = document.getElementById('welcome-modal');
+    DOMElements.closeWelcomeModalBtn = document.getElementById('close-welcome-modal-btn');
 
     initializeEventListeners();
-    // This is the key change: onAuthStateChanged will handle the entire UI update flow.
     onAuthStateChanged(auth, user => updateUIforUser(user));
 });
 
@@ -59,36 +58,28 @@ function initializeEventListeners() {
     DOMElements.googleSignInBtn?.addEventListener('click', signInWithGoogle);
     DOMElements.closeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.authModal, false));
     DOMElements.authModal?.addEventListener('click', (e) => {
-        if (e.target === DOMElements.authModal) {
-            toggleModal(DOMElements.authModal, false);
-        }
+        if (e.target === DOMElements.authModal) toggleModal(DOMElements.authModal, false);
     });
     DOMElements.mobileMenuBtn?.addEventListener('click', toggleMobileMenu);
-
-    DOMElements.ctaBtns.forEach(btn => {
-        btn.addEventListener('click', (event) => handleCtaClick(event));
-    });
-
+    DOMElements.ctaBtns.forEach(btn => btn.addEventListener('click', (event) => handleCtaClick(event)));
     DOMElements.faqItems.forEach(item => {
         const question = item.querySelector('.faq-question');
-        const answer = item.querySelector('.faq-answer');
-        question.addEventListener('click', () => {
-            const isOpen = item.classList.toggle('open');
-            answer.style.maxHeight = isOpen ? `${answer.scrollHeight}px` : '0';
-            answer.style.paddingTop = isOpen ? '0.5rem' : '0';
-            answer.style.paddingBottom = isOpen ? '1.25rem' : '0';
-        });
+        question.addEventListener('click', () => item.classList.toggle('open'));
     });
+    DOMElements.closeWelcomeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.welcomeModal, false));
 }
 
 // --- Core UI & State Management ---
 
 function toggleModal(modal, show) {
     if (!modal) return;
+    const innerCard = modal.querySelector('div > div');
     if (show) {
         modal.classList.remove('opacity-0', 'invisible');
+        if(innerCard) innerCard.classList.remove('scale-95');
     } else {
         modal.classList.add('opacity-0', 'invisible');
+        if(innerCard) innerCard.classList.add('scale-95');
     }
 }
 
@@ -98,52 +89,41 @@ function toggleMobileMenu() {
     DOMElements.menuCloseIcon.classList.toggle('hidden', isHidden);
 }
 
-/**
- * Main function to handle UI updates based on authentication state.
- * It immediately shows a generic signed-in state, then fetches details.
- * This prevents the UI from flashing a "Sign In" button for logged-in users.
- */
 async function updateUIforUser(user) {
     if (user) {
-        // 1. Immediately render a generic "logged in" header.
         renderInitialLoggedInHeader();
-
-        // 2. Fetch detailed user data from the backend.
         try {
-            const token = await user.getIdToken(true); // Force refresh token if needed
+            const token = await user.getIdToken(true);
             const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${token}` } });
             if (!response.ok) throw new Error(`Failed to fetch user data: ${response.statusText}`);
             
             const userData = await response.json();
-
-            // 3. Render the full UI with the fetched data.
             renderDetailedLoggedInUI(user, userData);
 
+            if (userData.isNewUser) {
+                setTimeout(() => toggleModal(DOMElements.welcomeModal, true), 500); // Show welcome pop-up for new users
+            }
         } catch (error) {
             console.error("Error fetching user data:", error);
-            // If fetching fails, show an error state but keep the user logged in.
             renderLoggedInErrorState();
         }
     } else {
-        // If there's no user, render the logged-out state.
         renderLoggedOutState();
     }
 }
 
 function renderInitialLoggedInHeader() {
-    // Desktop Header
     DOMElements.headerAuthSection.innerHTML = `
         <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Pricing</a>
-        <div id="credits-counter" class="text-sm font-medium text-gray-700 px-3 py-1">Loading...</div>
+        <div class="text-sm font-medium text-gray-700 px-3 py-1">Loading...</div>
         <button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Sign Out</button>
     `;
     DOMElements.headerAuthSection.querySelector('#sign-out-btn-desktop').addEventListener('click', () => signOut(auth));
 
-    // Mobile Menu
     DOMElements.mobileMenu.innerHTML = `
         <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
         <div class="p-4 text-center">
-             <div id="credits-counter-mobile" class="text-lg font-semibold my-3">Loading...</div>
+             <div class="text-lg font-semibold my-3">Loading...</div>
              <button id="sign-out-btn-mobile" class="w-full text-left text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Sign Out</button>
         </div>
     `;
@@ -151,35 +131,32 @@ function renderInitialLoggedInHeader() {
 }
 
 function renderDetailedLoggedInUI(user, userData) {
-    const { plan, credits, nextBilling } = userData;
-    const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
+    const { plan, credits, nextBilling, isNewUser } = userData;
+    const planName = planDetails[plan]?.name;
     const totalCredits = planDetails[plan]?.credits;
 
-    // --- Update Header with specific details ---
     DOMElements.headerAuthSection.innerHTML = `
         <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Pricing</a>
         <span class="plan-badge ${plan}">${planName}</span>
-        <div id="credits-counter" class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ${credits}</div>
+        <div class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ${credits}</div>
         <button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Sign Out</button>
     `;
     DOMElements.headerAuthSection.querySelector('#sign-out-btn-desktop').addEventListener('click', () => signOut(auth));
     
-    // --- Update Mobile Menu with specific details ---
      DOMElements.mobileMenu.innerHTML = `
         <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
         <div class="p-4 text-center">
              <span class="plan-badge ${plan}">${planName}</span>
-             <div id="credits-counter-mobile" class="text-lg font-semibold my-3">Credits: ${credits}</div>
+             <div class="text-lg font-semibold my-3">Credits: ${credits}</div>
              <button id="sign-out-btn-mobile" class="w-full text-left text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Sign Out</button>
         </div>
     `;
     DOMElements.mobileMenu.querySelector('#sign-out-btn-mobile').addEventListener('click', () => signOut(auth));
 
-    // --- Update Hero Section ---
     if (plan === 'free') {
         DOMElements.heroSection.innerHTML = `
              <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">You are on the Free Plan</h1>
-             <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">Upgrade your plan to get more credits, faster generation, and premium features.</p>
+             <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">You have ${credits} credits remaining. Upgrade for more credits and faster generation.</p>
         `;
     } else {
         const nextBillingDate = nextBilling ? new Date(nextBilling).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'N/A';
@@ -192,46 +169,39 @@ function renderDetailedLoggedInUI(user, userData) {
         `;
     }
 
-    // --- Update Plan Cards ---
     DOMElements.planCards.forEach(card => {
         const cardPlan = card.dataset.plan;
         card.classList.remove('active');
         const cta = card.querySelector('.cta-btn');
-        if (cta) cta.disabled = false;
+        if (!cta) return;
+        cta.disabled = false;
+        cta.classList.remove('current');
 
         if (cardPlan === plan) {
             card.classList.add('active');
-            if(cta) {
-                cta.textContent = 'Your Current Plan';
-                cta.classList.add('current');
-                cta.disabled = true;
-            }
+            cta.textContent = 'Your Current Plan';
+            cta.classList.add('current');
+            cta.disabled = true;
         } else {
-            if(cta) {
-                cta.classList.remove('current');
-                const isUpgrade = Object.keys(planDetails).indexOf(cardPlan) > Object.keys(planDetails).indexOf(plan);
-                const planName = cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1);
-                cta.textContent = isUpgrade ? `Upgrade to ${planName}` : `Downgrade to ${planName}`;
-            }
+            const planName = planDetails[cardPlan]?.name;
+            const isUpgrade = Object.keys(planDetails).indexOf(cardPlan) > Object.keys(planDetails).indexOf(plan);
+            cta.textContent = isUpgrade ? `Upgrade to ${planName}` : `Downgrade to ${planName}`;
         }
     });
 }
 
 function renderLoggedInErrorState() {
-    const creditCounters = document.querySelectorAll('#credits-counter, #credits-counter-mobile');
-    creditCounters.forEach(el => el.textContent = "Credits: Error");
+    document.querySelectorAll('#credits-counter, #credits-counter-mobile').forEach(el => el.textContent = "Credits: Error");
     DOMElements.heroSection.innerHTML = `<p class="text-red-600">Could not load your subscription details. Please refresh the page.</p>`;
 }
 
 function renderLoggedOutState() {
-    // --- Update Header ---
     DOMElements.headerAuthSection.innerHTML = `
         <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Pricing</a>
         <button id="auth-btn" class="text-sm font-medium bg-slate-800 text-white px-4 py-1.5 rounded-full hover:bg-slate-900 transition-colors">Sign In</button>
     `;
     DOMElements.headerAuthSection.querySelector('#auth-btn').addEventListener('click', () => toggleModal(DOMElements.authModal, true));
 
-    // --- Update Mobile Menu ---
     DOMElements.mobileMenu.innerHTML = `
         <div class="p-4">
             <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
@@ -242,11 +212,10 @@ function renderLoggedOutState() {
     `;
     DOMElements.mobileMenu.querySelector('#mobile-auth-btn').addEventListener('click', () => toggleModal(DOMElements.authModal, true));
 
-    // --- Update Hero ---
     DOMElements.heroSection.innerHTML = `
         <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">Simple, credit-based pricing</h1>
         <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-             <a href="#" id="hero-signin-link" class="text-blue-600 font-semibold hover:underline">Sign in</a> to see your plan details and get started.
+             <a href="#" id="hero-signin-link" class="text-blue-600 font-semibold hover:underline">Sign in</a> to get 10 free credits and get started.
         </p>
     `;
     DOMElements.heroSection.querySelector('#hero-signin-link').addEventListener('click', (e) => {
@@ -254,7 +223,6 @@ function renderLoggedOutState() {
         toggleModal(DOMElements.authModal, true)
     });
 
-    // --- Reset Plan Cards ---
     DOMElements.planCards.forEach(card => {
         card.classList.remove('active', 'current');
         const cta = card.querySelector('.cta-btn');
@@ -262,12 +230,7 @@ function renderLoggedOutState() {
             cta.disabled = false;
             cta.classList.remove('current');
             const cardPlan = cta.dataset.plan;
-            if (cardPlan && cardPlan !== 'free') {
-                 const planName = cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1);
-                 cta.textContent = `Get Started`;
-            } else if (cardPlan === 'free') {
-                cta.textContent = 'Sign in to start';
-            }
+            cta.textContent = (cardPlan === 'free') ? 'Sign in to start' : 'Get Started';
         }
     });
 }
@@ -275,15 +238,11 @@ function renderLoggedOutState() {
 function handleCtaClick(event) {
     const clickedButton = event.currentTarget;
     const plan = clickedButton.dataset.plan;
-
     if (!auth.currentUser) {
         toggleModal(DOMElements.authModal, true);
         return;
     }
-
-    if (plan && plan !== 'free') {
-        handlePurchase(plan, clickedButton);
-    }
+    if (plan && plan !== 'free') handlePurchase(plan, clickedButton);
 }
 
 function signInWithGoogle() {
@@ -305,21 +264,15 @@ async function handlePurchase(plan, button) {
         const token = await auth.currentUser.getIdToken();
         const response = await fetch('/api/payu', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ plan })
         });
-
         if (!response.ok) {
             const errorResult = await response.json();
             throw new Error(errorResult.error || `Server Error: ${response.status}`);
         }
-
         const { paymentData } = await response.json();
         redirectToPayU(paymentData);
-
     } catch (error) {
         console.error('Payment initiation failed:', error);
         alert(`Could not start the payment process: ${error.message}. Please try again.`);
@@ -332,7 +285,6 @@ function redirectToPayU(data) {
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = 'https://secure.payu.in/_payment'; 
-
     for (const key in data) {
         if (Object.hasOwnProperty.call(data, key)) {
             const input = document.createElement('input');
@@ -342,7 +294,6 @@ function redirectToPayU(data) {
             form.appendChild(input);
         }
     }
-
     document.body.appendChild(form);
     form.submit();
 }
