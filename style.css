@@ -7,15 +7,54 @@ body {
     background-color: #f8fafc; /* bg-slate-50 */
 }
 
-/* --- Pricing Page Specific Styles --- */
+/* --- Original Main Page Styles (Untouched) --- */
+#animated-gradient-bg{position:fixed;inset:0;z-index:-1;background:linear-gradient(125deg,#e0f2fe,#f5f3ff,#f0fdf4,#f5f3ff,#e0f2fe);background-size:400% 400%;animation:gradient-flow 20s ease-in-out infinite;will-change:background-position}
+@keyframes gradient-flow{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+header.scrolled #header-nav{transform:translateY(0);opacity:1}
+#hero-headline{opacity:0}
+#hero-subline{opacity:0;transform:translateY(20px)}
+.stat-card{opacity:0;transform:translateY(30px) scale(.95);will-change:transform,opacity}
+.cursor{animation:blink 1s step-end infinite}
+@keyframes blink{0%,to{color:transparent}50%{color:#517cbe}}
+#masonry-gallery{display:flex;gap:1rem}
+.masonry-column{display:flex;flex-direction:column;flex:1;gap:1rem}
+.masonry-item{overflow:hidden;border-radius:.75rem;background-color:#e2e8f0;min-height:150px;animation:shimmer 2s infinite linear;background-image:linear-gradient(to right,#e2e8f0 0,#f1f5f9 20%,#e2e8f0 40%,#e2e8f0 100%);background-repeat:no-repeat;background-size:1000px 100%}
+@keyframes shimmer{0%{background-position:-500px 0}100%{background-position:500px 0}}
+.masonry-item img{width:100%;height:auto;display:block;border-radius:.75rem;transition:opacity .5s ease-in-out}
+#prompt-input{max-height:150px}
+#prompt-bar-container{transition:border-radius .4s cubic-bezier(.4,0,.2,1)}
+#prompt-bar-container.expanded{border-radius:1.75rem}
+@keyframes shake{10%,90%{transform:translate3d(-1px,0,0)}20%,80%{transform:translate3d(2px,0,0)}30%,50%,70%{transform:translate3d(-4px,0,0)}40%,60%{transform:translate3d(4px,0,0)}}
+.animate-shake{animation:shake .82s cubic-bezier(.36,.07,.19,.97) both}
+.testimonial-image{border-radius:1.5rem;width:100%;height:auto;object-fit:cover;box-shadow:0 25px 50px -12px rgba(0,0,0,.15)}
+.testimonial-card{background-color:#517cbe;color:#fff;border-radius:1.5rem;padding:2.5rem;position:relative;box-shadow:0 25px 50px -12px rgba(81,124,190,.25)}
+.testimonial-text{font-size:1.25rem;line-height:1.75;font-weight:500}
+.testimonial-author{margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid hsla(0,0%,100%,.2)}
+#use-cases-section{position:relative;width:100%}
+.use-cases-content{height:100vh;width:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:1rem}
+.use-cases-headline{font-size:2.25rem;font-weight:700;color:#1f2937;margin-bottom:2rem;opacity:0;transform:translateY(30px)}
+.use-cases-text-container{position:relative;height:6rem;width:100%}
+.use-case-text{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;font-size:3rem;font-weight:800;color:#517cbe;opacity:0;transform:translateY(30px);white-space:nowrap}
+@media (max-width:767px){#hero-headline{font-size:2.5rem;line-height:1.1;text-align:center}
+#hero-subline{font-size:1rem}
+#first-screen-content{padding-left:1rem;padding-right:1rem}
+#stats-section .grid{gap:1.5rem}
+#stats-section h3{font-size:2.25rem}
+#masonry-gallery{display:block}
+.masonry-column{display:block}
+.masonry-item{margin-bottom:1rem}
+.testimonial-card{padding:2rem}
+.testimonial-text{font-size:1.125rem}
+.use-cases-headline{font-size:1.875rem}
+.use-case-text{font-size:2.25rem}}
+
+/* --- NEW Pricing Page Styles --- */
 .plan-card {
     background-color: white;
     border-radius: 1.5rem; /* rounded-2xl */
     border: 1px solid #e5e7eb; /* border-gray-200 */
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex;
-    flex-direction: column;
     position: relative;
     will-change: transform, box-shadow;
 }
@@ -36,6 +75,10 @@ body {
     background: radial-gradient(circle at 50% 0%, #f0f9ff, white 60%);
 }
 
+.free-plan-card {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+}
+
 .cta-btn {
     font-weight: 600;
     padding: 0.875rem 1rem;
@@ -46,13 +89,22 @@ body {
     box-shadow: 0 4px 14px 0 rgba(0, 118, 255, 0.39);
 }
 
+.plan-card:not(.recommended) .cta-btn {
+    background-color: #374151;
+    box-shadow: 0 4px 14px 0 rgba(55, 65, 81, 0.3);
+}
+
+.plan-card:not(.recommended) .cta-btn:hover {
+    background-color: #1f2937;
+    box-shadow: 0 6px 20px 0 rgba(55, 65, 81, 0.23);
+}
+
 .plan-card.recommended .cta-btn {
     background-color: #2563eb;
 }
 
 
 .cta-btn:hover {
-    background-color: #1d4ed8; /* hover:bg-blue-700 */
     transform: translateY(-2px);
     box-shadow: 0 6px 20px 0 rgba(0, 118, 255, 0.23);
 }
@@ -80,13 +132,13 @@ body {
     line-height: 1;
 }
 .credit-amount {
-    font-size: 4.5rem; /* text-7xl */
+    font-size: 3.75rem; /* text-6xl */
     font-weight: 800; /* font-extrabold */
     color: #111827; /* text-gray-900 */
     letter-spacing: -0.05em; /* tracking-tighter */
 }
 .credit-label {
-    font-size: 1.125rem; /* text-lg */
+    font-size: 1rem; /* text-base */
     font-weight: 500; /* font-medium */
     color: #4b5563; /* text-gray-600 */
     margin-left: 0.5rem; /* ml-2 */
@@ -148,6 +200,77 @@ body {
     font-size: 1rem;
     color: #6b7280;
 }
+
+/* Feature Comparison Table */
+.feature-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    gap: 1rem;
+    align-items: center;
+}
+.feature-header {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4b5563;
+    text-align: center;
+}
+.feature-header:first-child { text-align: left; }
+.feature-name {
+    font-weight: 500;
+    color: #1f2937;
+    padding: 0.75rem 0;
+    border-top: 1px solid #f3f4f6;
+}
+.feature-grid > div:not(.feature-header):not(.feature-name) {
+    text-align: center;
+    font-weight: 500;
+    color: #374151;
+    padding: 0.75rem 0;
+    border-top: 1px solid #f3f4f6;
+}
+.feature-tick { color: #22c55e; font-weight: 700; }
+.feature-cross { color: #ef4444; font-weight: 700; }
+
+/* FAQ Section */
+.faq-item {
+    background-color: white;
+    border-radius: 1rem;
+    border: 1px solid #e5e7eb;
+}
+.faq-question {
+    width: 100%;
+    text-align: left;
+    padding: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+.faq-question::after {
+    content: '+';
+    font-size: 1.5rem;
+    font-weight: 300;
+    transition: transform 0.2s;
+}
+.faq-item.open .faq-question::after {
+    transform: rotate(45deg);
+}
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+    padding: 0 1.25rem;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+/* Mobile Responsiveness for Grid */
+@media (max-width: 767px) {
+    .feature-grid { grid-template-columns: 2fr repeat(4, 1fr); gap: 0.5rem; font-size: 0.8rem; }
+}
+
 
 /* --- Fade In Animation for Modal --- */
 .fade-in-slide-up {
