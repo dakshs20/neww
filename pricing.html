@@ -13,130 +13,190 @@
 </head>
 <body class="bg-slate-50 font-sans antialiased">
     <!-- Main App Container -->
-    <div id="app-container" class="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col min-h-screen">
+    <div id="app-container" class="w-full mx-auto flex flex-col min-h-screen">
         
-        <header class="relative flex justify-between items-center py-5 px-2 z-20">
-            <a href="index.html">
-                 <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-7 w-auto">
-            </a>
-            <div id="header-auth-section" class="hidden md:flex items-center space-x-2 bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-sm rounded-full px-2 py-1">
-                <!-- Dynamic header content will be injected here by pricing.js -->
+        <header class="sticky top-0 bg-slate-50/80 backdrop-blur-lg z-50">
+             <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:px-8">
+                <div class="relative flex justify-between items-center">
+                    <a href="index.html">
+                         <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-7 w-auto">
+                    </a>
+                    <div id="header-auth-section" class="hidden md:flex items-center space-x-2 bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-sm rounded-full px-2 py-1">
+                        <!-- Dynamic header content will be injected here by pricing.js -->
+                    </div>
+                    <div class="md:hidden">
+                        <button id="mobile-menu-btn" class="p-2 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 text-slate-800 z-50">
+                            <svg id="menu-open-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                            <svg id="menu-close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="md:hidden">
-                <button id="mobile-menu-btn" class="p-2 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 text-slate-800 z-50">
-                    <svg id="menu-open-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                    <svg id="menu-close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div id="mobile-menu" class="hidden md:hidden fixed inset-0 bg-white/90 backdrop-blur-xl z-40 p-4 pt-24">
+             <div id="mobile-menu" class="hidden md:hidden fixed inset-0 bg-white/90 backdrop-blur-xl z-40 p-4 pt-24">
                 <!-- Mobile nav content injected here -->
             </div>
         </header>
 
-        <main class="flex-grow flex flex-col items-center justify-center text-center p-4">
+        <main class="flex-grow flex flex-col items-center text-center p-4 sm:p-6 lg:p-8">
             <!-- Dynamic Hero/Top Section -->
             <section id="hero-section" class="w-full max-w-4xl mb-16 text-center">
                 <!-- Content will be dynamically inserted by pricing.js -->
             </section>
             
-            <div id="plans-container" class="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-7xl">
-                <!-- Starter Plan -->
-                <div id="plan-starter" class="plan-card" data-plan="starter">
-                     <div class="p-8">
-                        <h2 class="text-2xl font-bold text-gray-800">Starter</h2>
-                        <p class="text-gray-500 mt-2 min-h-[40px]">Perfect for hobbyists & casual creators.</p>
+            <div id="plans-container" class="grid grid-cols-1 lg:grid-cols-4 gap-8 w-full max-w-7xl">
+                <!-- Free Plan Card (spans 1 column) -->
+                <div id="plan-free" class="plan-card free-plan-card" data-plan="free">
+                     <div class="p-8 flex flex-col h-full">
+                        <h2 class="text-2xl font-bold text-gray-800">Free</h2>
+                        <p class="text-gray-500 mt-2 min-h-[40px] flex-grow">A starting point for new creators.</p>
                         <div class="my-8 text-center">
-                            <div class="credit-display">
-                                <span class="credit-amount">575</span>
-                                <span class="credit-label">credits</span>
-                            </div>
-                            <p class="price-label">for ₹798 / month</p>
+                           <span class="text-4xl font-extrabold text-gray-900">0</span>
+                           <span class="text-base font-medium text-gray-500">credits</span>
+                           <p class="text-sm text-gray-500 mt-2">30s per image</p>
                         </div>
-                        <button class="cta-btn w-full" data-plan="starter">Upgrade to Starter</button>
-                    </div>
-                    <div class="p-8 border-t border-gray-200/80">
-                         <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider text-left">What's Included</h3>
-                         <ul class="mt-4 space-y-3 text-left text-gray-600">
-                            <li class="flex items-start"><svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span><strong>575</strong> credits per month</span></li>
-                            <li class="flex items-start"><svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span><strong>17s</strong> average generation speed</span></li>
-                            <li class="flex items-start"><svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span>Standard image quality</span></li>
-                         </ul>
+                        <button class="cta-btn w-full mt-auto">Your Current Plan</button>
                     </div>
                 </div>
 
-                <!-- Pro Plan -->
-                <div id="plan-pro" class="plan-card recommended" data-plan="pro">
-                    <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
-                        <span class="bg-blue-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg border-2 border-white">Recommended</span>
-                    </div>
-                     <div class="p-8">
-                        <h2 class="text-2xl font-bold text-gray-800">Pro</h2>
-                        <p class="text-gray-500 mt-2 min-h-[40px]">Ideal for frequent creators and professionals.</p>
-                        <div class="my-8 text-center">
-                            <div class="credit-display">
-                                <span class="credit-amount">975</span>
-                                <span class="credit-label">credits</span>
+                <!-- Paid Plans Container (spans 3 columns) -->
+                <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Starter Plan -->
+                    <div id="plan-starter" class="plan-card" data-plan="starter">
+                         <div class="p-8">
+                            <h2 class="text-xl font-bold text-gray-800">Starter</h2>
+                            <p class="text-gray-500 mt-2 text-sm">For hobbyists.</p>
+                            <div class="my-8 text-center">
+                                <div class="credit-display">
+                                    <span class="credit-amount">575</span>
+                                    <span class="credit-label">credits</span>
+                                </div>
+                                <p class="price-label">for ₹798 / month</p>
                             </div>
-                            <p class="price-label">for ₹1596 / month</p>
+                            <button class="cta-btn w-full" data-plan="starter">Get Started</button>
                         </div>
-                        <button class="cta-btn w-full" data-plan="pro">Upgrade to Pro</button>
                     </div>
-                     <div class="p-8 border-t border-gray-200/80">
-                         <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider text-left">Everything in Starter, plus</h3>
-                         <ul class="mt-4 space-y-3 text-left text-gray-600">
-                            <li class="flex items-start"><svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span><strong>975</strong> credits per month</span></li>
-                            <li class="flex items-start"><svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span>Priority generation queue</span></li>
-                            <li class="flex items-start"><svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span>Enhanced image quality options</span></li>
-                            <li class="flex items-start"><svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span>Priority support</span></li>
-                         </ul>
-                    </div>
-                </div>
 
-                <!-- Elite Plan -->
-                <div id="plan-elite" class="plan-card" data-plan="elite">
-                     <div class="p-8">
-                        <h2 class="text-2xl font-bold text-gray-800">Elite</h2>
-                        <p class="text-gray-500 mt-2 min-h-[40px]">For power users and businesses.</p>
-                        <div class="my-8 text-center">
-                            <div class="credit-display">
-                                <span class="credit-amount">1950</span>
-                                <span class="credit-label">credits</span>
-                            </div>
-                            <p class="price-label">for ₹2571 / month</p>
+                    <!-- Pro Plan -->
+                    <div id="plan-pro" class="plan-card recommended" data-plan="pro">
+                        <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
+                            <span class="bg-blue-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg border-2 border-white">Recommended</span>
                         </div>
-                        <button class="cta-btn w-full" data-plan="elite">Upgrade to Elite</button>
+                         <div class="p-8">
+                            <h2 class="text-xl font-bold text-gray-800">Pro</h2>
+                            <p class="text-gray-500 mt-2 text-sm">For professionals.</p>
+                            <div class="my-8 text-center">
+                                <div class="credit-display">
+                                    <span class="credit-amount">975</span>
+                                    <span class="credit-label">credits</span>
+                                </div>
+                                <p class="price-label">for ₹1596 / month</p>
+                            </div>
+                            <button class="cta-btn w-full" data-plan="pro">Get Started</button>
+                        </div>
                     </div>
-                    <div class="p-8 border-t border-gray-200/80">
-                         <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider text-left">Everything in Pro, plus</h3>
-                         <ul class="mt-4 space-y-3 text-left text-gray-600">
-                            <li class="flex items-start"><svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span><strong>1950</strong> credits per month</span></li>
-                            <li class="flex items-start"><svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span>Credit rollover up to 20%</span></li>
-                            <li class="flex items-start"><svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span>Access to beta features</span></li>
-                            <li class="flex items-start"><svg class="w-5 h-5 text-blue-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg><span>Dedicated support agent</span></li>
-                         </ul>
+
+                    <!-- Elite Plan -->
+                    <div id="plan-elite" class="plan-card" data-plan="elite">
+                         <div class="p-8">
+                            <h2 class="text-xl font-bold text-gray-800">Elite</h2>
+                            <p class="text-gray-500 mt-2 text-sm">For power users.</p>
+                            <div class="my-8 text-center">
+                                <div class="credit-display">
+                                    <span class="credit-amount">1950</span>
+                                    <span class="credit-label">credits</span>
+                                </div>
+                                <p class="price-label">for ₹2571 / month</p>
+                            </div>
+                            <button class="cta-btn w-full" data-plan="elite">Get Started</button>
+                        </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Trust & Security Block -->
-            <section class="w-full max-w-7xl mt-20 text-center">
-                 <div class="bg-white rounded-2xl border border-gray-200/80 p-8">
-                     <h3 class="text-xl font-bold text-gray-800 mb-6">A plan for every creator</h3>
-                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center text-sm text-gray-500">
-                        <div class="flex items-center justify-center space-x-3">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e6/PayU_logo.svg" alt="PayU Logo" class="h-6">
-                            <span>100% Secure Payments</span>
-                        </div>
-                        <div class="flex items-center justify-center space-x-3">
-                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span>14-Day Money-Back Guarantee</span>
-                        </div>
-                        <div class="flex items-center justify-center space-x-3">
-                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span><a href="#" class="font-semibold hover:underline">24/7 Customer Support</a></span>
-                        </div>
+            <!-- Feature Comparison Table -->
+            <section class="w-full max-w-7xl mt-24 text-left">
+                <h2 class="text-3xl font-extrabold text-center text-gray-900 mb-12">Compare Plan Features</h2>
+                <div class="bg-white rounded-2xl border border-gray-200/80 shadow-lg p-6 md:p-8">
+                    <div class="feature-grid">
+                        <div class="feature-header">Feature</div>
+                        <div class="feature-header">Free</div>
+                        <div class="feature-header">Starter</div>
+                        <div class="feature-header">Pro</div>
+                        <div class="feature-header">Elite</div>
+
+                        <!-- Credits -->
+                        <div class="feature-name">Monthly Credits</div>
+                        <div>0</div>
+                        <div>575</div>
+                        <div>975</div>
+                        <div>1950</div>
+
+                        <!-- Speed -->
+                        <div class="feature-name">Generation Speed</div>
+                        <div>~30 seconds</div>
+                        <div>~17 seconds</div>
+                        <div>~17 seconds</div>
+                        <div>~17 seconds</div>
+                        
+                        <!-- Queue -->
+                         <div class="feature-name">Generation Queue</div>
+                        <div>Standard</div>
+                        <div>Standard</div>
+                        <div><span class="feature-tick">✔</span> Priority</div>
+                        <div><span class="feature-tick">✔</span> Priority</div>
+
+                        <!-- Quality -->
+                        <div class="feature-name">Enhanced Quality</div>
+                        <div><span class="feature-cross">✖</span></div>
+                        <div><span class="feature-cross">✖</span></div>
+                        <div><span class="feature-tick">✔</span></div>
+                        <div><span class="feature-tick">✔</span></div>
+
+                        <!-- Rollover -->
+                        <div class="feature-name">Credit Rollover</div>
+                        <div><span class="feature-cross">✖</span></div>
+                        <div><span class="feature-cross">✖</span></div>
+                        <div><span class="feature-cross">✖</span></div>
+                        <div><span class="feature-tick">✔</span> Up to 20%</div>
+
+                        <!-- Beta Access -->
+                        <div class="feature-name">Beta Feature Access</div>
+                        <div><span class="feature-cross">✖</span></div>
+                        <div><span class="feature-cross">✖</span></div>
+                        <div><span class="feature-cross">✖</span></div>
+                        <div><span class="feature-tick">✔</span></div>
+                        
+                        <!-- Support -->
+                        <div class="feature-name">Support</div>
+                        <div>Community</div>
+                        <div>Standard</div>
+                        <div>Priority</div>
+                        <div>Dedicated</div>
                     </div>
-                 </div>
+                </div>
+            </section>
+
+             <!-- FAQ Section -->
+            <section class="w-full max-w-4xl mt-24 text-left">
+                <h2 class="text-3xl font-extrabold text-center text-gray-900 mb-12">Frequently Asked Questions</h2>
+                <div class="space-y-4">
+                    <div class="faq-item">
+                        <button class="faq-question">What are credits and how are they used?</button>
+                        <div class="faq-answer">One credit allows you to generate one standard image. Some advanced features or higher-resolution outputs may use more credits, but the cost will always be displayed before you generate. Your credits reset at the start of each monthly billing cycle.</div>
+                    </div>
+                     <div class="faq-item">
+                        <button class="faq-question">Can I cancel my subscription at any time?</button>
+                        <div class="faq-answer">Yes, absolutely. You can cancel your subscription at any time from your account settings. Your plan will remain active until the end of the current billing period, and you will not be charged again.</div>
+                    </div>
+                     <div class="faq-item">
+                        <button class="faq-question">What is your refund policy?</button>
+                        <div class="faq-answer">We offer a 14-day money-back guarantee on all our plans. If you are not satisfied with the service within the first 14 days of your subscription, please contact support for a full refund.</div>
+                    </div>
+                     <div class="faq-item">
+                        <button class="faq-question">What happens if I upgrade or downgrade my plan?</button>
+                        <div class="faq-answer">If you upgrade, we will prorate the charges, and your new credit allowance and features will be available immediately. Downgrades take effect at the end of your current billing cycle.</div>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
