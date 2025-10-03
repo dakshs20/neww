@@ -14,6 +14,19 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+// --- Special Credits for Specific Users ---
+const specialUsers = [
+    { email: "developer.techsquadz@gmail.com", credits: 5000, plan: 'elite' },
+    { email: "interactweb24@gmail.com", credits: 10000, plan: 'elite' },
+    { email: "anuj.suthar@gmail.com", credits: 5000, plan: 'elite' },
+    { email: "nilsone230384.002@gmail.com", credits: 5000, plan: 'elite' },
+    { email: "omnp646@gmail.com", credits: 5000, plan: 'elite' },
+    { email: "raginisuthar.2008@gmail.com", credits: 5000, plan: 'elite' },
+    { email: "rajiv.ranjan.prakash786@gmail.com", credits: 10000, plan: 'elite' },
+    { email: "parth@genart.space", credits: 5000, plan: 'elite' },
+    { email: "mehul@genart.space", credits: 5000, plan: 'elite' },
+];
+
 export default async function handler(req, res) {
     const idToken = req.headers.authorization?.split('Bearer ')[1];
     if (!idToken) {
@@ -24,44 +37,49 @@ export default async function handler(req, res) {
         const user = await admin.auth().verifyIdToken(idToken);
         const userRef = db.collection('users').doc(user.uid);
 
-        // --- Handle GET request (Fetch full subscription details) ---
+        // Handle GET request (Fetch user data)
         if (req.method === 'GET') {
             const userDoc = await userRef.get();
+            const isNew = !userDoc.exists;
 
-            // Handle existing users
+            // Handle special users
+            const specialUser = specialUsers.find(su => su.email === user.email);
+            if (specialUser) {
+                 await userRef.set({
+                    email: user.email,
+                    credits: specialUser.credits,
+                    plan: specialUser.plan || 'elite'
+                }, { merge: true });
+                return res.status(200).json({ credits: specialUser.credits, plan: specialUser.plan || 'elite', isNewUser: isNew });
+            }
+            
+            // Handle existing regular user
             if (userDoc.exists) {
                 const userData = userDoc.data();
-                const responseData = {
-                    plan: userData.plan || 'free',
-                    credits: userData.credits || 0,
-                    nextBilling: userData.nextBilling ? userData.nextBilling.toDate().toISOString() : null,
-                    isNewUser: false // This is an existing user
-                };
-                return res.status(200).json(responseData);
-            } else {
-                // This is a new user. Create a default "Free" plan with 10 credits.
-                const initialCredits = 10;
-                const newUserDoc = {
+                return res.status(200).json({ 
+                    credits: userData.credits, 
+                    plan: userData.plan || 'free', // Default to free if plan isn't set
+                    isNewUser: false 
+                });
+            } 
+            // Handle new regular user
+            else {
+                const initialCredits = 10; // Grant 10 free credits to new users
+                await userRef.set({
                     email: user.email,
-                    plan: 'free',
                     credits: initialCredits,
-                    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-                    nextBilling: null // Free plans do not have a billing date.
-                };
-                await userRef.set(newUserDoc);
-                console.log(`Created new 'free' plan user with ${initialCredits} credits for ${user.email}`);
-
-                // Return the data for the newly created user, flagging them as new.
-                return res.status(200).json({
-                    plan: newUserDoc.plan,
-                    credits: newUserDoc.credits,
-                    nextBilling: newUserDoc.nextBilling,
-                    isNewUser: true // Flag to trigger the frontend pop-up
+                    plan: 'free',
+                    createdAt: admin.firestore.FieldValue.serverTimestamp()
+                });
+                return res.status(200).json({ 
+                    credits: initialCredits, 
+                    plan: 'free',
+                    isNewUser: true 
                 });
             }
         }
 
-        // --- Handle POST request (Deduct credit for image generation) ---
+        // Handle POST request (Deduct credit)
         if (req.method === 'POST') {
             const userDoc = await userRef.get();
             if (!userDoc.exists || userDoc.data().credits <= 0) {
@@ -80,7 +98,7 @@ export default async function handler(req, res) {
     } catch (error) {
         console.error("API Error in /api/credits:", error);
         if (error.code === 'auth/id-token-expired') {
-            return res.status(401).json({ error: 'Your session has expired. Please sign in again.' });
+            return res.status(401).json({ error: 'Token expired.' });
         }
         return res.status(500).json({ error: 'A server error has occurred.' });
     }
