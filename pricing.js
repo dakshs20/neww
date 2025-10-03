@@ -2,7 +2,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
     authDomain: "genart-a693a.firebaseapp.com",
@@ -15,23 +14,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
-// --- Set Auth Persistence ---
 setPersistence(auth, browserLocalPersistence)
-  .catch((error) => {
-    console.error("Firebase persistence error:", error.code, error.message);
-  });
+  .catch((error) => console.error("Firebase persistence error:", error.code, error.message));
 
-
-// --- Plan Details (Source of Truth) ---
-const planDetails = {
-    'free': { name: 'Free', credits: 10 },
-    'starter': { name: 'Starter', credits: 575 },
-    'pro': { name: 'Pro', credits: 975 },
-    'elite': { name: 'Elite', credits: 1950 },
-};
-
-// --- DOM Element Caching for Performance ---
+// --- DOM Element Caching ---
 const DOMElements = {};
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -40,18 +28,15 @@ document.addEventListener('DOMContentLoaded', () => {
     DOMElements.authModal = document.getElementById('auth-modal');
     DOMElements.googleSignInBtn = document.getElementById('google-signin-btn');
     DOMElements.closeModalBtn = document.querySelector('#auth-modal .close-modal-btn');
-    DOMElements.heroSection = document.getElementById('hero-section');
-    DOMElements.planCards = document.querySelectorAll('.plan-card');
     DOMElements.ctaBtns = document.querySelectorAll('.cta-btn');
+    DOMElements.planCards = document.querySelectorAll('.plan-card');
     DOMElements.mobileMenuBtn = document.getElementById('mobile-menu-btn');
     DOMElements.menuOpenIcon = document.getElementById('menu-open-icon');
     DOMElements.menuCloseIcon = document.getElementById('menu-close-icon');
     DOMElements.faqItems = document.querySelectorAll('.faq-item');
-    DOMElements.welcomeModal = document.getElementById('welcome-modal');
-    DOMElements.closeWelcomeModalBtn = document.getElementById('close-welcome-modal-btn');
 
     initializeEventListeners();
-    onAuthStateChanged(auth, user => updateUIforUser(user));
+    onAuthStateChanged(auth, user => updateUIForAuthState(user));
 });
 
 function initializeEventListeners() {
@@ -61,26 +46,27 @@ function initializeEventListeners() {
         if (e.target === DOMElements.authModal) toggleModal(DOMElements.authModal, false);
     });
     DOMElements.mobileMenuBtn?.addEventListener('click', toggleMobileMenu);
-    DOMElements.ctaBtns.forEach(btn => btn.addEventListener('click', (event) => handleCtaClick(event)));
+
+    DOMElements.ctaBtns.forEach(btn => {
+        btn.addEventListener('click', handleCtaClick);
+    });
+
     DOMElements.faqItems.forEach(item => {
         const question = item.querySelector('.faq-question');
-        question.addEventListener('click', () => item.classList.toggle('open'));
+        const answer = item.querySelector('.faq-answer');
+        question.addEventListener('click', () => {
+            const isOpen = item.classList.toggle('open');
+            if (isOpen) {
+                answer.style.maxHeight = answer.scrollHeight + 'px';
+                answer.style.paddingTop = '0.5rem';
+                answer.style.paddingBottom = '1.25rem';
+            } else {
+                answer.style.maxHeight = '0';
+                answer.style.paddingTop = '0';
+                answer.style.paddingBottom = '0';
+            }
+        });
     });
-    DOMElements.closeWelcomeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.welcomeModal, false));
-}
-
-// --- Core UI & State Management ---
-
-function toggleModal(modal, show) {
-    if (!modal) return;
-    const innerCard = modal.querySelector('div > div');
-    if (show) {
-        modal.classList.remove('opacity-0', 'invisible');
-        if(innerCard) innerCard.classList.remove('scale-95');
-    } else {
-        modal.classList.add('opacity-0', 'invisible');
-        if(innerCard) innerCard.classList.add('scale-95');
-    }
 }
 
 function toggleMobileMenu() {
@@ -89,23 +75,27 @@ function toggleMobileMenu() {
     DOMElements.menuCloseIcon.classList.toggle('hidden', isHidden);
 }
 
-async function updateUIforUser(user) {
+function toggleModal(modal, show) {
+    if (!modal) return;
+    if (show) {
+        modal.classList.remove('opacity-0', 'invisible');
+    } else {
+        modal.classList.add('opacity-0', 'invisible');
+    }
+}
+
+async function updateUIForAuthState(user) {
     if (user) {
         renderInitialLoggedInHeader();
         try {
             const token = await user.getIdToken(true);
             const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!response.ok) throw new Error(`Failed to fetch user data: ${response.statusText}`);
-            
+            if (!response.ok) throw new Error('Failed to fetch user data');
             const userData = await response.json();
-            renderDetailedLoggedInUI(user, userData);
-
-            if (userData.isNewUser) {
-                setTimeout(() => toggleModal(DOMElements.welcomeModal, true), 500); // Show welcome pop-up for new users
-            }
+            renderDetailedLoggedInUI(userData);
         } catch (error) {
             console.error("Error fetching user data:", error);
-            renderLoggedInErrorState();
+            // Optionally show an error state in the header
         }
     } else {
         renderLoggedOutState();
@@ -113,67 +103,36 @@ async function updateUIforUser(user) {
 }
 
 function renderInitialLoggedInHeader() {
+    // Desktop
     DOMElements.headerAuthSection.innerHTML = `
-        <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Pricing</a>
-        <div class="text-sm font-medium text-gray-700 px-3 py-1">Loading...</div>
-        <button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Sign Out</button>
+        <a href="/pricing" class="text-sm font-medium text-gray-900">Pricing</a>
+        <div id="generation-counter" class="text-sm font-medium text-gray-500">Loading...</div>
+        <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100">Sign Out</button>
     `;
-    DOMElements.headerAuthSection.querySelector('#sign-out-btn-desktop').addEventListener('click', () => signOut(auth));
-
+    // Mobile
     DOMElements.mobileMenu.innerHTML = `
-        <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
-        <div class="p-4 text-center">
-             <div class="text-lg font-semibold my-3">Loading...</div>
-             <button id="sign-out-btn-mobile" class="w-full text-left text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Sign Out</button>
+        <div class="p-2">
+            <a href="/pricing" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Pricing</a>
+            <div class="border-t my-1"></div>
+            <div id="mobile-generation-counter" class="px-2 py-2 text-sm text-center text-gray-600">Loading...</div>
+            <button id="mobile-auth-btn" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Sign Out</button>
         </div>
     `;
-    DOMElements.mobileMenu.querySelector('#sign-out-btn-mobile').addEventListener('click', () => signOut(auth));
+    addAuthEventListeners();
 }
 
-function renderDetailedLoggedInUI(user, userData) {
-    const { plan, credits, nextBilling, isNewUser } = userData;
-    const planName = planDetails[plan]?.name;
-    const totalCredits = planDetails[plan]?.credits;
+function renderDetailedLoggedInUI(userData) {
+    const { plan, credits } = userData;
 
-    DOMElements.headerAuthSection.innerHTML = `
-        <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Pricing</a>
-        <span class="plan-badge ${plan}">${planName}</span>
-        <div class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ${credits}</div>
-        <button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Sign Out</button>
-    `;
-    DOMElements.headerAuthSection.querySelector('#sign-out-btn-desktop').addEventListener('click', () => signOut(auth));
-    
-     DOMElements.mobileMenu.innerHTML = `
-        <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
-        <div class="p-4 text-center">
-             <span class="plan-badge ${plan}">${planName}</span>
-             <div class="text-lg font-semibold my-3">Credits: ${credits}</div>
-             <button id="sign-out-btn-mobile" class="w-full text-left text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Sign Out</button>
-        </div>
-    `;
-    DOMElements.mobileMenu.querySelector('#sign-out-btn-mobile').addEventListener('click', () => signOut(auth));
+    // Update credit counters
+    document.getElementById('generation-counter').textContent = `Credits: ${credits}`;
+    document.getElementById('mobile-generation-counter').textContent = `Credits: ${credits}`;
 
-    if (plan === 'free') {
-        DOMElements.heroSection.innerHTML = `
-             <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">You are on the Free Plan</h1>
-             <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">You have ${credits} credits remaining. Upgrade for more credits and faster generation.</p>
-        `;
-    } else {
-        const nextBillingDate = nextBilling ? new Date(nextBilling).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'N/A';
-        DOMElements.heroSection.innerHTML = `
-             <div class="hero-summary">
-                <span>Plan: <strong class="capitalize">${plan}</strong></span>
-                <span class="hero-credit-balance"><span class="remaining">${credits}</span><span class="total"> / ${totalCredits} credits remaining</span></span>
-                <span>Next renewal: <strong>${nextBillingDate}</strong></span>
-            </div>
-        `;
-    }
-
+    // Update plan cards
     DOMElements.planCards.forEach(card => {
         const cardPlan = card.dataset.plan;
         card.classList.remove('active');
         const cta = card.querySelector('.cta-btn');
-        if (!cta) return;
         cta.disabled = false;
         cta.classList.remove('current');
 
@@ -183,70 +142,61 @@ function renderDetailedLoggedInUI(user, userData) {
             cta.classList.add('current');
             cta.disabled = true;
         } else {
-            const planName = planDetails[cardPlan]?.name;
-            const isUpgrade = Object.keys(planDetails).indexOf(cardPlan) > Object.keys(planDetails).indexOf(plan);
-            cta.textContent = isUpgrade ? `Upgrade to ${planName}` : `Downgrade to ${planName}`;
+             cta.textContent = plan === 'free' ? 'Upgrade Plan' : 'Change Plan';
         }
     });
-}
-
-function renderLoggedInErrorState() {
-    document.querySelectorAll('#credits-counter, #credits-counter-mobile').forEach(el => el.textContent = "Credits: Error");
-    DOMElements.heroSection.innerHTML = `<p class="text-red-600">Could not load your subscription details. Please refresh the page.</p>`;
+    document.querySelector('#plan-free .cta-btn').textContent = 'Your Current Plan';
 }
 
 function renderLoggedOutState() {
+    // Desktop
     DOMElements.headerAuthSection.innerHTML = `
-        <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Pricing</a>
-        <button id="auth-btn" class="text-sm font-medium bg-slate-800 text-white px-4 py-1.5 rounded-full hover:bg-slate-900 transition-colors">Sign In</button>
+        <a href="/pricing" class="text-sm font-medium text-gray-900">Pricing</a>
+        <div id="generation-counter" class="text-sm font-medium text-gray-500"></div>
+        <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100">Sign In</button>
     `;
-    DOMElements.headerAuthSection.querySelector('#auth-btn').addEventListener('click', () => toggleModal(DOMElements.authModal, true));
-
+    // Mobile
     DOMElements.mobileMenu.innerHTML = `
-        <div class="p-4">
-            <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
-            <div class="p-4 mt-4">
-                <button id="mobile-auth-btn" class="w-full text-lg font-semibold bg-slate-800 text-white px-4 py-3 rounded-xl hover:bg-opacity-90 transition-colors">Sign In</button>
-            </div>
+        <div class="p-2">
+            <a href="/pricing" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Pricing</a>
+            <div class="border-t my-1"></div>
+            <button id="mobile-auth-btn" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Sign In</button>
         </div>
     `;
-    DOMElements.mobileMenu.querySelector('#mobile-auth-btn').addEventListener('click', () => toggleModal(DOMElements.authModal, true));
+    addAuthEventListeners();
 
-    DOMElements.heroSection.innerHTML = `
-        <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">Simple, credit-based pricing</h1>
-        <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-             <a href="#" id="hero-signin-link" class="text-blue-600 font-semibold hover:underline">Sign in</a> to get 10 free credits and get started.
-        </p>
-    `;
-    DOMElements.heroSection.querySelector('#hero-signin-link').addEventListener('click', (e) => {
-        e.preventDefault();
-        toggleModal(DOMElements.authModal, true)
-    });
-
+     // Reset plan cards
     DOMElements.planCards.forEach(card => {
-        card.classList.remove('active', 'current');
+        card.classList.remove('active');
         const cta = card.querySelector('.cta-btn');
-        if (cta) {
-            cta.disabled = false;
-            cta.classList.remove('current');
-            const cardPlan = cta.dataset.plan;
-            cta.textContent = (cardPlan === 'free') ? 'Sign in to start' : 'Get Started';
-        }
+        cta.textContent = 'Get Started';
+        cta.disabled = false;
+        cta.classList.remove('current');
     });
 }
 
+function addAuthEventListeners() {
+    document.getElementById('auth-btn')?.addEventListener('click', handleAuthAction);
+    document.getElementById('mobile-auth-btn')?.addEventListener('click', handleAuthAction);
+}
+
+function handleAuthAction() {
+    if (auth.currentUser) {
+        signOut(auth);
+    } else {
+        toggleModal(DOMElements.authModal, true);
+    }
+}
+
 function handleCtaClick(event) {
-    const clickedButton = event.currentTarget;
-    const plan = clickedButton.dataset.plan;
     if (!auth.currentUser) {
         toggleModal(DOMElements.authModal, true);
         return;
     }
-    if (plan && plan !== 'free') handlePurchase(plan, clickedButton);
+    handlePurchase(event);
 }
 
 function signInWithGoogle() {
-    const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
         .then(() => toggleModal(DOMElements.authModal, false))
         .catch(error => {
@@ -255,10 +205,15 @@ function signInWithGoogle() {
         });
 }
 
-async function handlePurchase(plan, button) {
-    const originalButtonText = button.innerHTML;
-    button.disabled = true;
-    button.innerHTML = `<span class="animate-pulse">Redirecting...</span>`;
+async function handlePurchase(event) {
+    const clickedButton = event.currentTarget;
+    const plan = clickedButton.dataset.plan;
+
+    if (!plan || plan === 'free') return;
+
+    const originalButtonText = clickedButton.innerHTML;
+    clickedButton.disabled = true;
+    clickedButton.innerHTML = `<span class="animate-pulse">Processing...</span>`;
 
     try {
         const token = await auth.currentUser.getIdToken();
@@ -267,24 +222,27 @@ async function handlePurchase(plan, button) {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ plan })
         });
+
         if (!response.ok) {
             const errorResult = await response.json();
             throw new Error(errorResult.error || `Server Error: ${response.status}`);
         }
+
         const { paymentData } = await response.json();
         redirectToPayU(paymentData);
+
     } catch (error) {
         console.error('Payment initiation failed:', error);
         alert(`Could not start the payment process: ${error.message}. Please try again.`);
-        button.disabled = false;
-        button.innerHTML = originalButtonText;
+        clickedButton.disabled = false;
+        clickedButton.innerHTML = originalButtonText;
     }
 }
 
 function redirectToPayU(data) {
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = 'https://secure.payu.in/_payment'; 
+    form.action = 'https://secure.payu.in/_payment';
     for (const key in data) {
         if (Object.hasOwnProperty.call(data, key)) {
             const input = document.createElement('input');
