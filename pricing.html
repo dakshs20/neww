@@ -3,209 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Plans & Pricing - GenArt</title>
-    <meta name="description" content="Choose a GenArt plan that fits your creative needs. Get more credits, faster generation, and premium features.">
+    <title>Pricing Plans - GenArt AI Image Generator</title>
+    <meta name="description" content="Choose a credit plan that fits your creative needs. GenArt offers simple, flexible pricing for everyone from hobbyists to professionals.">
     <link rel="canonical" href="https://www.genartml.com/pricing" />
     <link rel="icon" type="image/png" href="favicon.png">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.genartml.com/pricing">
+    <meta property="og:title" content="Pricing Plans - GenArt AI Image Generator">
+    <meta property="og:description" content="Choose a credit plan that fits your creative needs. Simple, flexible pricing for everyone.">
+    <meta property="og:image" content="https://iili.io/K7bN7Hl.md.png"> <!-- Consistent preview image -->
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.genartml.com/pricing">
+    <meta property="twitter:title" content="Pricing Plans - GenArt AI Image Generator">
+    <meta property="twitter:description" content="Choose a credit plan that fits your creative needs. Simple, flexible pricing for everyone.">
+    <meta property="twitter:image" content="https://iili.io/K7bN7Hl.md.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- JSON-LD Structured Data for Pricing Page -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "Pricing Plans",
+      "url": "https://www.genartml.com/pricing",
+      "description": "Flexible and simple credit-based pricing plans for the GenArt AI Image Generator.",
+      "mainEntity": {
+        "@type": "OfferCatalog",
+        "name": "GenArt Subscription Plans",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "name": "Starter",
+            "price": "798",
+            "priceCurrency": "INR",
+            "description": "575 credits per month, perfect for hobbyists."
+          },
+          {
+            "@type": "Offer",
+            "name": "Pro",
+            "price": "1596",
+            "priceCurrency": "INR",
+            "description": "975 credits per month, ideal for frequent creators."
+          },
+          {
+            "@type": "Offer",
+            "name": "Elite",
+            "price": "2571",
+            "priceCurrency": "INR",
+            "description": "1950 credits per month, best for professional and heavy users."
+          }
+        ]
+      }
+    }
+    </script>
 </head>
-<body class="bg-slate-50 font-sans antialiased">
+<body class="bg-slate-50 antialiased">
+
     <!-- Main App Container -->
-    <div id="app-container" class="w-full mx-auto flex flex-col min-h-screen">
+    <div id="app-container" class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col min-h-screen">
         
-        <header class="sticky top-0 bg-slate-50/80 backdrop-blur-lg z-50 border-b border-slate-200/80">
-             <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:px-8">
-                <div class="relative flex justify-between items-center">
-                    <a href="index.html">
-                         <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-7 w-auto">
-                    </a>
-                    <div id="header-auth-section" class="hidden md:flex items-center space-x-2 bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-sm rounded-full px-2 py-1">
-                        <!-- Dynamic header content will be injected here by pricing.js -->
-                    </div>
-                    <div class="md:hidden">
-                        <button id="mobile-menu-btn" class="p-2 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 text-slate-800 z-50">
-                            <svg id="menu-open-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                            <svg id="menu-close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        </button>
-                    </div>
+        <header class="fixed top-0 left-0 right-0 z-30 p-4 transition-all duration-300">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <a href="/">
+                    <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 md:h-7 w-auto">
+                </a>
+                <div id="header-auth-section" class="hidden md:flex items-center space-x-2 bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-sm rounded-full px-2 py-1">
+                     <!-- Auth state content injected by pricing.js -->
                 </div>
+                 <button id="mobile-menu-btn" class="md:hidden p-2 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 text-slate-800 z-50">
+                    <svg id="menu-open-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                    <svg id="menu-close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
             </div>
-             <div id="mobile-menu" class="hidden md:hidden fixed inset-0 bg-white/90 backdrop-blur-xl z-40 p-4 pt-24">
-                <!-- Mobile nav content injected here -->
+             <div id="mobile-menu" class="hidden md:hidden fixed inset-0 bg-white/95 backdrop-blur-xl z-40 p-4 pt-24">
+                <!-- Mobile nav content injected by pricing.js -->
             </div>
         </header>
 
-        <main class="flex-grow flex flex-col items-center text-center p-4 sm:p-6 lg:p-8">
-            <!-- Dynamic Hero/Top Section -->
-            <section id="hero-section" class="w-full max-w-4xl my-12 text-center">
-                <!-- Content will be dynamically inserted by pricing.js -->
+        <main class="flex-grow pt-24 pb-16">
+            <section id="hero-section" class="text-center py-12" aria-labelledby="pricing-main-heading">
+                 <h1 id="pricing-main-heading" class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">Simple, credit-based pricing</h1>
+                 <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+                     <a href="#" id="hero-signin-link" class="text-blue-600 font-semibold hover:underline">Sign in</a> to get 10 free credits and get started.
+                 </p>
             </section>
             
-            <div id="plans-container" class="grid grid-cols-1 lg:grid-cols-4 gap-8 w-full max-w-7xl">
-                <!-- Free Plan Card (spans 1 column) -->
-                <div id="plan-free" class="plan-card free-plan-card" data-plan="free">
-                     <div class="p-8 flex flex-col h-full">
-                        <h2 class="text-2xl font-bold text-gray-800">Free</h2>
-                        <p class="text-gray-500 mt-2 min-h-[40px] flex-grow">A starting point for new creators.</p>
-                        <div class="my-8 text-center">
-                           <span class="text-4xl font-extrabold text-gray-900">0</span>
-                           <span class="text-base font-medium text-gray-500">credits</span>
-                           <p class="text-sm text-gray-500 mt-2">30s per image</p>
+            <section id="pricing-grid" aria-label="Pricing Plans" class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <!-- Free Plan -->
+                <div id="plan-free" data-plan="free" class="plan-card">
+                    <div class="p-8">
+                        <h3 class="plan-name">Free</h3>
+                        <p class="plan-tagline">Get started — free images in 30s</p>
+                        <div class="plan-credits-display">
+                            <span class="plan-credits-amount">10</span>
+                            <span class="plan-credits-label">one-time credits</span>
                         </div>
-                        <button class="cta-btn w-full mt-auto" disabled>Your Current Plan</button>
+                        <p class="plan-price">Free Forever</p>
+                        <ul class="plan-features">
+                            <li><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>30s per image generation</li>
+                            <li><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Standard image quality</li>
+                            <li><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Community support</li>
+                        </ul>
+                    </div>
+                    <div class="p-6">
+                        <button class="cta-btn" data-plan="free">Sign in to start</button>
                     </div>
                 </div>
 
-                <!-- Paid Plans Container (spans 3 columns) -->
-                <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <!-- Starter Plan -->
-                    <div id="plan-starter" class="plan-card" data-plan="starter">
-                         <div class="p-8 flex flex-col h-full">
-                            <h2 class="text-xl font-bold text-gray-800">Starter</h2>
-                            <p class="text-gray-500 mt-2 text-sm flex-grow">For hobbyists.</p>
-                            <div class="my-8 text-center">
-                                <div class="credit-display">
-                                    <span class="credit-amount">575</span>
-                                    <span class="credit-label">credits</span>
-                                </div>
-                                <p class="price-label">for ₹798 / month</p>
-                            </div>
-                            <button class="cta-btn w-full mt-auto" data-plan="starter">Get Started</button>
+                <!-- Starter Plan -->
+                <div id="plan-starter" data-plan="starter" class="plan-card">
+                    <div class="p-8">
+                        <h3 class="plan-name">Starter</h3>
+                        <p class="plan-tagline">Perfect for hobbyists & casual creators</p>
+                        <div class="plan-credits-display">
+                            <span class="plan-credits-amount">575</span>
+                            <span class="plan-credits-label">credits / month</span>
                         </div>
+                        <p class="plan-price">₹798 <span class="text-slate-500 font-normal">/ month</span></p>
+                         <ul class="plan-features">
+                            <li><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><strong>17s</strong> per generation</li>
+                            <li><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Premium image quality</li>
+                             <li><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Access to all styles</li>
+                        </ul>
                     </div>
-
-                    <!-- Pro Plan -->
-                    <div id="plan-pro" class="plan-card recommended" data-plan="pro">
-                        <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
-                            <span class="bg-blue-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg border-2 border-white">Recommended</span>
-                        </div>
-                         <div class="p-8 flex flex-col h-full">
-                            <h2 class="text-xl font-bold text-gray-800">Pro</h2>
-                            <p class="text-gray-500 mt-2 text-sm flex-grow">For professionals.</p>
-                            <div class="my-8 text-center">
-                                <div class="credit-display">
-                                    <span class="credit-amount">975</span>
-                                    <span class="credit-label">credits</span>
-                                </div>
-                                <p class="price-label">for ₹1596 / month</p>
-                            </div>
-                            <button class="cta-btn w-full mt-auto" data-plan="pro">Get Started</button>
-                        </div>
-                    </div>
-
-                    <!-- Elite Plan -->
-                    <div id="plan-elite" class="plan-card" data-plan="elite">
-                         <div class="p-8 flex flex-col h-full">
-                            <h2 class="text-xl font-bold text-gray-800">Elite</h2>
-                            <p class="text-gray-500 mt-2 text-sm flex-grow">For power users.</p>
-                            <div class="my-8 text-center">
-                                <div class="credit-display">
-                                    <span class="credit-amount">1950</span>
-                                    <span class="credit-label">credits</span>
-                                </div>
-                                <p class="price-label">for ₹2571 / month</p>
-                            </div>
-                            <button class="cta-btn w-full mt-auto" data-plan="elite">Get Started</button>
-                        </div>
+                     <div class="p-6">
+                        <button class="cta-btn" data-plan="starter">Get Started</button>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Feature Comparison Table -->
-            <section class="w-full max-w-7xl mt-24 text-left">
-                <h2 class="text-3xl font-extrabold text-center text-gray-900 mb-12">Compare Plan Features</h2>
-                <div class="bg-white rounded-2xl border border-gray-200/80 shadow-lg p-6 md:p-8">
-                    <div class="feature-grid">
-                        <div class="feature-header">Feature</div>
-                        <div class="feature-header">Free</div>
-                        <div class="feature-header">Starter</div>
-                        <div class="feature-header">Pro</div>
-                        <div class="feature-header">Elite</div>
 
-                        <!-- Credits -->
-                        <div class="feature-name">Monthly Credits</div>
-                        <div>0</div>
-                        <div>575</div>
-                        <div>975</div>
-                        <div>1950</div>
+                <!-- Pro Plan -->
+                <div id="plan-pro" data-plan="pro" class="plan-card recommended">
+                    <div class="p-8">
+                         <div class="plan-badge-pro">Recommended</div>
+                        <h3 class="plan-name">Pro</h3>
+                        <p class="plan-tagline">Ideal for frequent creators</p>
+                         <div class="plan-credits-display">
+                            <span class="plan-credits-amount">975</span>
+                            <span class="plan-credits-label">credits / month</span>
+                        </div>
+                        <p class="plan-price">₹1596 <span class="text-slate-500 font-normal">/ month</span></p>
+                         <ul class="plan-features">
+                             <li><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><strong>Everything in Starter, plus:</strong></li>
+                            <li><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Priority generation queue</li>
+                             <li><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Early access to new features</li>
+                        </ul>
+                    </div>
+                     <div class="p-6">
+                        <button class="cta-btn" data-plan="pro">Get Started</button>
+                    </div>
+                </div>
 
-                        <!-- Speed -->
-                        <div class="feature-name">Generation Speed</div>
-                        <div>~30 seconds</div>
-                        <div>~17 seconds</div>
-                        <div>~17 seconds</div>
-                        <div>~17 seconds</div>
-                        
-                        <!-- Queue -->
-                         <div class="feature-name">Generation Queue</div>
-                        <div>Standard</div>
-                        <div>Standard</div>
-                        <div><span class="feature-tick">✔</span> Priority</div>
-                        <div><span class="feature-tick">✔</span> Priority</div>
-
-                        <!-- Quality -->
-                        <div class="feature-name">Enhanced Quality</div>
-                        <div><span class="feature-cross">✖</span></div>
-                        <div><span class="feature-cross">✖</span></div>
-                        <div><span class="feature-tick">✔</span></div>
-                        <div><span class="feature-tick">✔</span></div>
-
-                        <!-- Rollover -->
-                        <div class="feature-name">Credit Rollover</div>
-                        <div><span class="feature-cross">✖</span></div>
-                        <div><span class="feature-cross">✖</span></div>
-                        <div><span class="feature-cross">✖</span></div>
-                        <div><span class="feature-tick">✔</span> Up to 20%</div>
-
-                        <!-- Beta Access -->
-                        <div class="feature-name">Beta Feature Access</div>
-                        <div><span class="feature-cross">✖</span></div>
-                        <div><span class="feature-cross">✖</span></div>
-                        <div><span class="feature-cross">✖</span></div>
-                        <div><span class="feature-tick">✔</span></div>
-                        
-                        <!-- Support -->
-                        <div class="feature-name">Support</div>
-                        <div>Community</div>
-                        <div>Standard</div>
-                        <div>Priority</div>
-                        <div>Dedicated</div>
+                <!-- Elite Plan -->
+                <div id="plan-elite" data-plan="elite" class="plan-card">
+                    <div class="p-8">
+                        <h3 class="plan-name">Elite</h3>
+                        <p class="plan-tagline">Best for professional & heavy users</p>
+                        <div class="plan-credits-display">
+                            <span class="plan-credits-amount">1950</span>
+                            <span class="plan-credits-label">credits / month</span>
+                        </div>
+                        <p class="plan-price">₹2571 <span class="text-slate-500 font-normal">/ month</span></p>
+                         <ul class="plan-features">
+                            <li><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><strong>Everything in Pro, plus:</strong></li>
+                            <li><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Dedicated support</li>
+                            <li><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Private generation mode</li>
+                        </ul>
+                    </div>
+                     <div class="p-6">
+                        <button class="cta-btn" data-plan="elite">Get Started</button>
                     </div>
                 </div>
             </section>
+            
+            <section class="text-center mt-16 text-slate-500 text-sm">
+                <p>Payments secured by PayU <span class="mx-1">·</span> 14-day money-back guarantee <span class="mx-1">·</span> <a href="#" class="font-medium text-blue-600 hover:underline">Contact Support</a></p>
+            </section>
 
-             <!-- FAQ Section -->
-            <section class="w-full max-w-4xl mt-24 text-left">
-                <h2 class="text-3xl font-extrabold text-center text-gray-900 mb-12">Frequently Asked Questions</h2>
+             <section id="faq-section" class="max-w-3xl mx-auto py-24">
+                <h2 class="text-3xl font-bold text-center text-slate-800 mb-12">Frequently Asked Questions</h2>
                 <div class="space-y-4">
+                    <!-- FAQ Item 1 -->
                     <div class="faq-item">
-                        <button class="faq-question">What are credits and how are they used?</button>
-                        <div class="faq-answer">One credit allows you to generate one standard image. Some advanced features or higher-resolution outputs may use more credits, but the cost will always be displayed before you generate. Your credits reset at the start of each monthly billing cycle.</div>
+                        <button class="faq-question">What is a credit?</button>
+                        <div class="faq-answer"><p>One credit allows one standard image generation. Some advanced modes may cost more; costs are shown before you generate.</p></div>
                     </div>
-                     <div class="faq-item">
-                        <button class="faq-question">Can I cancel my subscription at any time?</button>
-                        <div class="faq-answer">Yes, absolutely. You can cancel your subscription at any time from your account settings. Your plan will remain active until the end of the current billing period, and you will not be charged again.</div>
+                    <!-- FAQ Item 2 -->
+                    <div class="faq-item">
+                        <button class="faq-question">Do my credits roll over?</button>
+                        <div class="faq-answer"><p>Unused credits expire at the end of your monthly billing cycle. This allows us to offer the best possible pricing on our plans.</p></div>
                     </div>
-                     <div class="faq-item">
-                        <button class="faq-question">What is your refund policy?</button>
-                        <div class="faq-answer">We offer a 14-day money-back guarantee on all our plans. If you are not satisfied with the service within the first 14 days of your subscription, please contact support for a full refund.</div>
-                    </div>
-                     <div class="faq-item">
-                        <button class="faq-question">What happens if I upgrade or downgrade my plan?</button>
-                        <div class="faq-answer">If you upgrade, we will prorate the charges, and your new credit allowance and features will be available immediately. Downgrades take effect at the end of your current billing cycle.</div>
+                    <!-- FAQ Item 3 -->
+                    <div class="faq-item">
+                        <button class="faq-question">Can I cancel anytime?</button>
+                        <div class="faq-answer"><p>Absolutely. You can cancel your subscription at any time. Your plan will remain active until the end of the current billing period, and you will not be charged again.</p></div>
                     </div>
                 </div>
             </section>
+
         </main>
+
+        <footer class="text-center py-8 mt-auto border-t border-slate-200">
+            <p class="text-xs text-slate-500">&copy; 2025 GenArt. All rights reserved.</p>
+             <a href="/privacy-policy" class="text-xs text-slate-500 hover:text-slate-800 mt-2 inline-block">Privacy Policy</a>
+        </footer>
     </div>
 
     <!-- Sign In Modal -->
-    <div id="auth-modal" aria-hidden="true" class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm flex items-center justify-center p-4 z-50 transition-opacity duration-300 opacity-0 invisible">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center fade-in-slide-up" onclick="event.stopPropagation()">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In to Continue</h2>
-            <p class="text-gray-500 mb-6">View your plan and manage your subscription.</p>
+    <div id="auth-modal" role="dialog" aria-labelledby="auth-heading" aria-modal="true" aria-hidden="true" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 invisible">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
+            <h2 id="auth-heading" class="text-2xl font-semibold text-gray-800 mb-2">Sign In</h2>
+            <p class="text-gray-500 mb-6">Sign in to manage your plan and credits.</p>
             <button id="google-signin-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 flex items-center justify-center space-x-2">
                 <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4,12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20s20-8.955,20-20c0-2.569-.49-5.025-1.389-7.239z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4,16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083L43.59,20H24v8h11.303c-0.792,2.237-2.231,4.166-4.089,5.571l6.19,5.238C41.38,36.16,44,30.638,44,24c0-1.341-.138-2.65-.389-3.917z"></path></svg>
                 <span>Sign In with Google</span>
@@ -214,6 +231,17 @@
         </div>
     </div>
     
+    <!-- Welcome Modal -->
+    <div id="welcome-modal" role="dialog" aria-modal="true" aria-labelledby="welcome-heading" aria-hidden="true" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 invisible transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center transform scale-95 transition-transform duration-300">
+            <h2 id="welcome-heading" class="text-2xl font-bold text-gray-800 mb-4">Congratulations!</h2>
+            <p class="text-gray-600 mb-6">You've received <span class="font-bold text-blue-600">10 free credits</span> to start creating. Enjoy!</p>
+            <button id="close-welcome-modal-btn" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">
+                Start Creating
+            </button>
+        </div>
+    </div>
+
     <script type="module" src="pricing.js"></script>
 </body>
 </html>
