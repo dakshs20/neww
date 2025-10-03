@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
     DOMElements.menuOpenIcon = document.getElementById('menu-open-icon');
     DOMElements.menuCloseIcon = document.getElementById('menu-close-icon');
     DOMElements.faqItems = document.querySelectorAll('.faq-item');
+    DOMElements.welcomeCreditsModal = document.getElementById('welcome-credits-modal');
+
 
     initializeEventListeners();
     onAuthStateChanged(auth, user => updateUIForAuthState(user));
@@ -67,6 +69,10 @@ function initializeEventListeners() {
             }
         });
     });
+    
+    DOMElements.welcomeCreditsModal.querySelector('.close-modal-btn').addEventListener('click', () => {
+        toggleModal(DOMElements.welcomeCreditsModal, false);
+    });
 }
 
 function toggleMobileMenu() {
@@ -78,9 +84,11 @@ function toggleMobileMenu() {
 function toggleModal(modal, show) {
     if (!modal) return;
     if (show) {
-        modal.classList.remove('opacity-0', 'invisible');
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.remove('opacity-0', 'invisible'), 10);
     } else {
         modal.classList.add('opacity-0', 'invisible');
+        setTimeout(() => modal.style.display = 'none', 300);
     }
 }
 
@@ -93,9 +101,12 @@ async function updateUIForAuthState(user) {
             if (!response.ok) throw new Error('Failed to fetch user data');
             const userData = await response.json();
             renderDetailedLoggedInUI(userData);
+            if(userData.isNewUser) {
+                toggleModal(DOMElements.welcomeCreditsModal, true);
+            }
         } catch (error) {
             console.error("Error fetching user data:", error);
-            // Optionally show an error state in the header
+            document.getElementById('generation-counter').textContent = "Error loading credits";
         }
     } else {
         renderLoggedOutState();
@@ -106,6 +117,7 @@ function renderInitialLoggedInHeader() {
     // Desktop
     DOMElements.headerAuthSection.innerHTML = `
         <a href="/pricing" class="text-sm font-medium text-gray-900">Pricing</a>
+        <div id="plan-display" class="text-sm font-medium text-gray-500"></div>
         <div id="generation-counter" class="text-sm font-medium text-gray-500">Loading...</div>
         <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100">Sign Out</button>
     `;
@@ -113,7 +125,7 @@ function renderInitialLoggedInHeader() {
     DOMElements.mobileMenu.innerHTML = `
         <div class="p-2">
             <a href="/pricing" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Pricing</a>
-            <div class="border-t my-1"></div>
+            <div id="mobile-plan-display" class="px-2 py-2 text-sm text-center text-gray-600"></div>
             <div id="mobile-generation-counter" class="px-2 py-2 text-sm text-center text-gray-600">Loading...</div>
             <button id="mobile-auth-btn" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Sign Out</button>
         </div>
@@ -123,9 +135,12 @@ function renderInitialLoggedInHeader() {
 
 function renderDetailedLoggedInUI(userData) {
     const { plan, credits } = userData;
+    const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
 
-    // Update credit counters
+    // Update plan and credit counters
+    document.getElementById('plan-display').textContent = `Plan: ${planName}`;
     document.getElementById('generation-counter').textContent = `Credits: ${credits}`;
+    document.getElementById('mobile-plan-display').textContent = `Plan: ${planName}`;
     document.getElementById('mobile-generation-counter').textContent = `Credits: ${credits}`;
 
     // Update plan cards
@@ -145,21 +160,18 @@ function renderDetailedLoggedInUI(userData) {
              cta.textContent = plan === 'free' ? 'Upgrade Plan' : 'Change Plan';
         }
     });
-    document.querySelector('#plan-free .cta-btn').textContent = 'Your Current Plan';
 }
 
 function renderLoggedOutState() {
     // Desktop
     DOMElements.headerAuthSection.innerHTML = `
         <a href="/pricing" class="text-sm font-medium text-gray-900">Pricing</a>
-        <div id="generation-counter" class="text-sm font-medium text-gray-500"></div>
         <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100">Sign In</button>
     `;
     // Mobile
     DOMElements.mobileMenu.innerHTML = `
         <div class="p-2">
             <a href="/pricing" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Pricing</a>
-            <div class="border-t my-1"></div>
             <button id="mobile-auth-btn" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Sign In</button>
         </div>
     `;
