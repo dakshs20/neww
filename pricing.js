@@ -119,21 +119,23 @@ function renderLoggedInState(user, userData) {
 
     // --- Update Header ---
     DOMElements.headerAuthSection.innerHTML = `
+        <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Pricing</a>
         <span class="plan-badge ${plan}">${planName}</span>
-        <div id="generation-counter" class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ${credits}</div>
-        <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-1.5 rounded-full hover:bg-gray-100 transition-colors">Sign Out</button>
+        <div id="credits-counter" class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ${credits}</div>
+        <button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Sign Out</button>
     `;
-    DOMElements.headerAuthSection.querySelector('#auth-btn').addEventListener('click', () => signOut(auth));
+    DOMElements.headerAuthSection.querySelector('#sign-out-btn-desktop').addEventListener('click', () => signOut(auth));
 
     // --- Update Mobile Menu ---
     DOMElements.mobileMenu.innerHTML = `
+        <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
         <div class="p-4 text-center">
-            <span class="plan-badge ${plan}">${planName}</span>
-            <div id="mobile-generation-counter" class="text-lg font-semibold my-3">Credits: ${credits}</div>
-            <button id="mobile-auth-btn" class="w-full text-left text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Sign Out</button>
+             <span class="plan-badge ${plan}">${planName}</span>
+             <div id="credits-counter-mobile" class="text-lg font-semibold my-3">Credits: ${credits}</div>
+             <button id="sign-out-btn-mobile" class="w-full text-left text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Sign Out</button>
         </div>
     `;
-    DOMElements.mobileMenu.querySelector('#mobile-auth-btn').addEventListener('click', () => signOut(auth));
+    DOMElements.mobileMenu.querySelector('#sign-out-btn-mobile').addEventListener('click', () => signOut(auth));
 
 
     // --- Update Hero Section ---
@@ -180,7 +182,7 @@ function renderLoggedInState(user, userData) {
 function renderLoggedOutState() {
     // --- Update Header ---
     DOMElements.headerAuthSection.innerHTML = `
-        <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-slate-100 rounded-full px-3 py-1 transition-colors">Pricing</a>
+        <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Pricing</a>
         <button id="auth-btn" class="text-sm font-medium bg-slate-800 text-white px-4 py-1.5 rounded-full hover:bg-slate-900 transition-colors">Sign In</button>
     `;
     DOMElements.headerAuthSection.querySelector('#auth-btn').addEventListener('click', () => toggleModal(DOMElements.authModal, true));
@@ -216,13 +218,14 @@ function renderLoggedOutState() {
             cta.disabled = false;
             cta.classList.remove('current');
             const cardPlan = cta.dataset.plan;
-            if (cardPlan) {
+            if (cardPlan && cardPlan !== 'free') {
                  const planName = cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1);
                  cta.textContent = `Get Started with ${planName}`;
             }
         }
     });
      document.querySelector('#plan-free .cta-btn').textContent = 'Sign in to start';
+     document.querySelector('#plan-free .cta-btn').disabled = false;
 }
 
 function handleCtaClick(event) {
