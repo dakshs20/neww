@@ -33,6 +33,7 @@ body {
 
 .plan-card.recommended {
     border-color: #3b82f6;
+    background: radial-gradient(circle at 50% 0%, #f0f9ff, white 60%);
 }
 
 .cta-btn {
@@ -40,10 +41,16 @@ body {
     padding: 0.875rem 1rem;
     border-radius: 0.75rem; /* rounded-lg */
     transition: all 0.2s ease-in-out;
-    background-color: #2563eb; /* bg-blue-600 */
+    background-color: #3b82f6; /* bg-blue-500 */
     color: white;
     box-shadow: 0 4px 14px 0 rgba(0, 118, 255, 0.39);
 }
+
+.plan-card.recommended .cta-btn {
+    background-color: #2563eb;
+}
+
+
 .cta-btn:hover {
     background-color: #1d4ed8; /* hover:bg-blue-700 */
     transform: translateY(-2px);
@@ -53,19 +60,43 @@ body {
     background-color: #9ca3af; /* bg-gray-400 */
     cursor: not-allowed;
     box-shadow: none;
+    transform: none;
 }
 .cta-btn.current {
-    background-color: #4b5563; /* bg-gray-600 */
+    background-color: #10b981; /* bg-emerald-500 */
     color: white;
     cursor: default;
     box-shadow: none;
 }
-.cta-btn.free-cta {
-    background-color: #1f2937; /* bg-gray-800 */
+.cta-btn.current:hover {
+    background-color: #10b981;
 }
-.cta-btn.free-cta:hover {
-    background-color: #111827; /* hover:bg-gray-900 */
+
+/* --- Credit First Design --- */
+.credit-display {
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    line-height: 1;
 }
+.credit-amount {
+    font-size: 4.5rem; /* text-7xl */
+    font-weight: 800; /* font-extrabold */
+    color: #111827; /* text-gray-900 */
+    letter-spacing: -0.05em; /* tracking-tighter */
+}
+.credit-label {
+    font-size: 1.125rem; /* text-lg */
+    font-weight: 500; /* font-medium */
+    color: #4b5563; /* text-gray-600 */
+    margin-left: 0.5rem; /* ml-2 */
+}
+.price-label {
+    margin-top: 0.5rem; /* mt-2 */
+    color: #6b7280; /* text-gray-500 */
+    font-size: 0.875rem; /* text-sm */
+}
+
 
 /* --- Hero Section on Pricing Page --- */
 .hero-summary {
@@ -75,9 +106,10 @@ body {
     border: 1px solid #e5e7eb;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 1.5rem;
+    gap: 1rem 2rem;
     font-size: 1rem;
     color: #4b5563;
     animation: fade-in 0.5s ease-out;
@@ -117,32 +149,6 @@ body {
     color: #6b7280;
 }
 
-/* --- Cursor --- */
-.cursor-dot, .cursor-outline {
-    pointer-events: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    border-radius: 50%;
-    opacity: 0;
-    transform: translate(-50%, -50%);
-    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-    z-index: 9999;
-}
-.cursor-dot {
-    width: 8px;
-    height: 8px;
-    background-color: #3b82f6;
-}
-.cursor-outline {
-    width: 40px;
-    height: 40px;
-    background-color: rgba(59, 130, 246, 0.2);
-}
-body:hover .cursor-dot, body:hover .cursor-outline { opacity: 1; }
-.cursor-outline.cursor-hover { transform: translate(-50%, -50%) scale(1.5); }
-
-
 /* --- Fade In Animation for Modal --- */
 .fade-in-slide-up {
     animation: fade-in-slide 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
@@ -150,14 +156,5 @@ body:hover .cursor-dot, body:hover .cursor-outline { opacity: 1; }
 @keyframes fade-in-slide {
   0% { opacity: 0; transform: translateY(20px); }
   100% { opacity: 1; transform: translateY(0); }
-}
-
-/* --- Mobile Responsiveness for Hero Summary --- */
-@media (max-width: 767px) {
-    .hero-summary {
-        flex-direction: column;
-        gap: 0.75rem;
-        padding: 1rem;
-    }
 }
 
