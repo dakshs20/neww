@@ -19,7 +19,6 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // --- Set Auth Persistence ---
-// This ensures the user's login session is remembered across browser tabs and sessions.
 setPersistence(auth, browserLocalPersistence)
   .catch((error) => {
     console.error("Firebase persistence error:", error.code, error.message);
@@ -49,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'preview-input-image-container', 'preview-input-image', 'change-input-image-btn', 'remove-input-image-btn', 'preview-image-upload-input',
         'hero-section', 'hero-headline', 'hero-subline', 'typewriter', 'prompt-bar-container',
         'mobile-menu', 'mobile-menu-btn', 'menu-open-icon', 'menu-close-icon',
-        'button-timer', 'button-content'
+        'button-timer', 'button-content', 'welcome-modal', 'close-welcome-modal-btn'
     ];
     ids.forEach(id => {
         if (id) {
@@ -125,6 +124,9 @@ function initializeEventListeners() {
         DOMElements.menuOpenIcon.classList.toggle('hidden', !isHidden);
         DOMElements.menuCloseIcon.classList.toggle('hidden', isHidden);
     });
+    
+    DOMElements.closeWelcomeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.welcomeModal, false));
+
 
     window.addEventListener('scroll', () => {
         const header = document.querySelector('header');
@@ -210,40 +212,11 @@ function initializeAnimations() {
             }
         });
     }
-
-    // Dynamic Use Cases Scroll Animation
-    const useCasesSection = document.getElementById('use-cases-section');
-    const useCaseTexts = gsap.utils.toArray('.use-case-text');
-
-    if (useCasesSection && useCaseTexts.length > 0) {
-        const tl = gsap.timeline();
-        
-        // Animate the first item in
-        tl.to(useCaseTexts[0], { opacity: 1, y: 0, duration: 0.3 });
-
-        // Loop through the rest to create transitions
-        for (let i = 1; i < useCaseTexts.length; i++) {
-            tl.to(useCaseTexts[i-1], { opacity: 0, y: -30, duration: 0.3 }, "+=0.4"); // Animate out previous
-            tl.to(useCaseTexts[i], { opacity: 1, y: 0, duration: 0.3 }); // Animate in current
-        }
-        
-        // Animate the last one out
-        tl.to(useCaseTexts[useCaseTexts.length - 1], { opacity: 0, y: -30, duration: 0.3 }, "+=0.4");
-
-        ScrollTrigger.create({
-            trigger: useCasesSection,
-            start: "top top",
-            end: "bottom bottom",
-            pin: true,
-            scrub: 0.5,
-            animation: tl,
-        });
-    }
 }
 
 
 // --- Core App Logic ---
-function updateUIForAuthState(user) {
+async function updateUIForAuthState(user) {
     currentUser = user;
     const nav = DOMElements.headerNav;
     const mobileNav = DOMElements.mobileMenu;
@@ -261,7 +234,12 @@ function updateUIForAuthState(user) {
         `;
         document.getElementById('sign-out-btn-desktop').addEventListener('click', () => signOut(auth));
         document.getElementById('sign-out-btn-mobile').addEventListener('click', () => signOut(auth));
-        fetchUserCredits(user);
+        
+        const userData = await fetchUserCredits(user);
+        if (userData && userData.isNewUser) {
+             setTimeout(() => toggleModal(DOMElements.welcomeModal, true), 500);
+        }
+
     } else {
         nav.innerHTML = `
             <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Pricing</a>
@@ -273,8 +251,8 @@ function updateUIForAuthState(user) {
                  <button id="sign-in-btn-mobile" class="w-full text-lg font-semibold bg-[#517CBE] text-white px-4 py-3 rounded-xl hover:bg-opacity-90 transition-colors">Sign In</button>
             </div>
         `;
-        document.getElementById('sign-in-btn-desktop').addEventListener('click', signInWithGoogle);
-        document.getElementById('sign-in-btn-mobile').addEventListener('click', signInWithGoogle);
+        document.getElementById('sign-in-btn-desktop').addEventListener('click', () => toggleModal(DOMElements.authModal, true));
+        document.getElementById('sign-in-btn-mobile').addEventListener('click', () => toggleModal(DOMElements.authModal, true));
     }
 }
 
@@ -286,9 +264,11 @@ async function fetchUserCredits(user) {
         const data = await response.json();
         currentUserCredits = data.credits;
         updateCreditsDisplay(currentUserCredits);
+        return data; // Return the full data object
     } catch (error) {
         console.error("Error fetching credits:", error);
         updateCreditsDisplay('Error');
+        return null;
     }
 }
 
@@ -319,21 +299,30 @@ function autoResizeTextarea(e) {
 
 function toggleModal(modal, show) {
     if (!modal) return;
+    const innerCard = modal.querySelector('div > div');
     if (show) {
         modal.style.display = 'flex';
-        setTimeout(() => modal.setAttribute('aria-hidden', 'false'), 10);
+        setTimeout(() => {
+            modal.classList.remove('opacity-0', 'invisible');
+            if (innerCard) innerCard.classList.remove('scale-95');
+        }, 10);
     } else {
-        modal.setAttribute('aria-hidden', 'true');
+        modal.classList.add('opacity-0', 'invisible');
+        if (innerCard) innerCard.classList.add('scale-95');
         setTimeout(() => modal.style.display = 'none', 300);
     }
 }
 
 function closeAllModals() {
-    document.querySelectorAll('[role="dialog"]').forEach(modal => toggleModal(modal, false));
+    document.querySelectorAll('[role="dialog"], #welcome-modal').forEach(modal => toggleModal(modal, false));
 }
 
 function signInWithGoogle() {
-    signInWithPopup(auth, provider).catch(console.error);
+    signInWithPopup(auth, provider)
+    .then(() => {
+        closeAllModals();
+    })
+    .catch(console.error);
 }
 
 // --- Image Generation ---
@@ -522,5 +511,4 @@ function downloadPreviewImage() {
         })
         .catch(() => alert('An error occurred while downloading the image.'));
 }
-
 
