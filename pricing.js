@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     DOMElements.menuCloseIcon = document.getElementById('menu-close-icon');
     DOMElements.faqItems = document.querySelectorAll('.faq-item');
     DOMElements.welcomeCreditsModal = document.getElementById('welcome-credits-modal');
+    DOMElements.heroSection = document.getElementById('hero-section');
 
 
     initializeEventListeners();
@@ -70,9 +71,12 @@ function initializeEventListeners() {
         });
     });
     
-    DOMElements.welcomeCreditsModal.querySelector('.close-modal-btn').addEventListener('click', () => {
-        toggleModal(DOMElements.welcomeCreditsModal, false);
-    });
+    const welcomeModalCloseBtn = DOMElements.welcomeCreditsModal.querySelector('.close-modal-btn');
+    if(welcomeModalCloseBtn) {
+        welcomeModalCloseBtn.addEventListener('click', () => {
+            toggleModal(DOMElements.welcomeCreditsModal, false);
+        });
+    }
 }
 
 function toggleMobileMenu() {
@@ -83,109 +87,140 @@ function toggleMobileMenu() {
 
 function toggleModal(modal, show) {
     if (!modal) return;
-    if (show) {
-        modal.style.display = 'flex';
-        setTimeout(() => modal.classList.remove('opacity-0', 'invisible'), 10);
-    } else {
-        modal.classList.add('opacity-0', 'invisible');
-        setTimeout(() => modal.style.display = 'none', 300);
+    // Check if the modal is inside the pricing.html context before manipulating style
+    if (document.body.contains(modal)) {
+        if (show) {
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.remove('opacity-0', 'invisible'), 10);
+        } else {
+            modal.classList.add('opacity-0', 'invisible');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
     }
 }
 
+
 async function updateUIForAuthState(user) {
+    const headerAuth = DOMElements.headerAuthSection;
+    const mobileMenu = DOMElements.mobileMenu;
+
     if (user) {
-        renderInitialLoggedInHeader();
         try {
             const token = await user.getIdToken(true);
             const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!response.ok) throw new Error('Failed to fetch user data');
+            if (!response.ok) throw new Error('Could not load your subscription details. Please refresh the page.');
+            
             const userData = await response.json();
-            renderDetailedLoggedInUI(userData);
-            if(userData.isNewUser) {
+            const { plan, credits, isNewUser } = userData;
+            const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
+
+            // Render Desktop Header
+            headerAuth.innerHTML = `
+                <a href="/pricing" class="text-sm font-medium text-gray-900">Pricing</a>
+                <span class="text-sm font-semibold text-gray-800 bg-slate-200/80 rounded-full px-3 py-1">Plan: ${planName}</span>
+                <div id="generation-counter" class="text-sm font-medium text-gray-700">Credits: ${credits}</div>
+                <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100">Sign Out</button>
+            `;
+
+            // Render Mobile Menu
+            mobileMenu.innerHTML = `
+                <div class="p-2">
+                    <a href="/pricing" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Pricing</a>
+                    <div class="px-2 py-2 text-sm text-center text-gray-600 font-semibold">Plan: ${planName}</div>
+                    <div id="mobile-generation-counter" class="px-2 py-2 text-sm text-center text-gray-600">Credits: ${credits}</div>
+                    <button id="mobile-auth-btn" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Sign Out</button>
+                </div>
+            `;
+            
+            // Show welcome modal for new users
+            if (isNewUser) {
                 toggleModal(DOMElements.welcomeCreditsModal, true);
             }
+
+            // Update plan cards on pricing page
+            updatePlanCardsUI(plan);
+            updateHeroUI(true, {plan, credits});
+
+
         } catch (error) {
             console.error("Error fetching user data:", error);
-            document.getElementById('generation-counter').textContent = "Error loading credits";
+            headerAuth.innerHTML = `<div class="text-sm text-red-500">${error.message}</div>`;
         }
     } else {
-        renderLoggedOutState();
+        // Render Logged Out State
+        headerAuth.innerHTML = `
+            <a href="/pricing" class="text-sm font-medium text-gray-900">Pricing</a>
+            <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100">Sign In</button>
+        `;
+        mobileMenu.innerHTML = `
+             <div class="p-2">
+                <a href="/pricing" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Pricing</a>
+                <div class="border-t my-1"></div>
+                <button id="mobile-auth-btn" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Sign In</button>
+            </div>
+        `;
+        updatePlanCardsUI(null);
+        updateHeroUI(false);
     }
-}
-
-function renderInitialLoggedInHeader() {
-    // Desktop
-    DOMElements.headerAuthSection.innerHTML = `
-        <a href="/pricing" class="text-sm font-medium text-gray-900">Pricing</a>
-        <div id="plan-display" class="text-sm font-medium text-gray-500"></div>
-        <div id="generation-counter" class="text-sm font-medium text-gray-500">Loading...</div>
-        <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100">Sign Out</button>
-    `;
-    // Mobile
-    DOMElements.mobileMenu.innerHTML = `
-        <div class="p-2">
-            <a href="/pricing" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Pricing</a>
-            <div id="mobile-plan-display" class="px-2 py-2 text-sm text-center text-gray-600"></div>
-            <div id="mobile-generation-counter" class="px-2 py-2 text-sm text-center text-gray-600">Loading...</div>
-            <button id="mobile-auth-btn" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Sign Out</button>
-        </div>
-    `;
+    
+    // Re-add event listeners to new elements
     addAuthEventListeners();
 }
 
-function renderDetailedLoggedInUI(userData) {
-    const { plan, credits } = userData;
-    const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
-
-    // Update plan and credit counters
-    document.getElementById('plan-display').textContent = `Plan: ${planName}`;
-    document.getElementById('generation-counter').textContent = `Credits: ${credits}`;
-    document.getElementById('mobile-plan-display').textContent = `Plan: ${planName}`;
-    document.getElementById('mobile-generation-counter').textContent = `Credits: ${credits}`;
-
-    // Update plan cards
-    DOMElements.planCards.forEach(card => {
+function updatePlanCardsUI(currentPlan) {
+     DOMElements.planCards.forEach(card => {
         const cardPlan = card.dataset.plan;
         card.classList.remove('active');
         const cta = card.querySelector('.cta-btn');
         cta.disabled = false;
         cta.classList.remove('current');
 
-        if (cardPlan === plan) {
-            card.classList.add('active');
-            cta.textContent = 'Your Current Plan';
-            cta.classList.add('current');
-            cta.disabled = true;
+        if (currentPlan) {
+            if (cardPlan === currentPlan) {
+                card.classList.add('active');
+                cta.textContent = 'Your Current Plan';
+                cta.classList.add('current');
+                cta.disabled = true;
+            } else {
+                 cta.textContent = currentPlan === 'free' ? 'Upgrade Plan' : 'Change Plan';
+            }
         } else {
-             cta.textContent = plan === 'free' ? 'Upgrade Plan' : 'Change Plan';
+            // Logged out state
+            cta.textContent = 'Get Started';
         }
     });
 }
 
-function renderLoggedOutState() {
-    // Desktop
-    DOMElements.headerAuthSection.innerHTML = `
-        <a href="/pricing" class="text-sm font-medium text-gray-900">Pricing</a>
-        <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100">Sign In</button>
-    `;
-    // Mobile
-    DOMElements.mobileMenu.innerHTML = `
-        <div class="p-2">
-            <a href="/pricing" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Pricing</a>
-            <button id="mobile-auth-btn" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Sign In</button>
-        </div>
-    `;
-    addAuthEventListeners();
-
-     // Reset plan cards
-    DOMElements.planCards.forEach(card => {
-        card.classList.remove('active');
-        const cta = card.querySelector('.cta-btn');
-        cta.textContent = 'Get Started';
-        cta.disabled = false;
-        cta.classList.remove('current');
-    });
+function updateHeroUI(isLoggedIn, userData = {}) {
+    if (isLoggedIn) {
+        if (userData.plan === 'free') {
+            DOMElements.heroSection.innerHTML = `
+                 <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">You are on the Free Plan</h1>
+                 <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">You have ${userData.credits} credits remaining. Upgrade to get more!</p>
+            `;
+        } else {
+            DOMElements.heroSection.innerHTML = `
+                <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">Welcome back!</h1>
+                <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">You are on the <span class="capitalize font-bold">${userData.plan}</span> plan with ${userData.credits} credits.</p>
+            `;
+        }
+    } else {
+         DOMElements.heroSection.innerHTML = `
+             <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">Simple, credit-based pricing</h1>
+             <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+                 <a href="#" id="hero-signin-link" class="text-blue-600 font-semibold hover:underline">Sign in</a> to get 10 free credits and get started.
+             </p>
+        `;
+        const signInLink = document.getElementById('hero-signin-link');
+        if(signInLink) {
+            signInLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleModal(DOMElements.authModal, true);
+            });
+        }
+    }
 }
+
 
 function addAuthEventListeners() {
     document.getElementById('auth-btn')?.addEventListener('click', handleAuthAction);
