@@ -25,6 +25,7 @@ setPersistence(auth, browserLocalPersistence)
 
 // --- Plan Details (Source of Truth) ---
 const planDetails = {
+    'free': { name: 'Free', credits: 0 },
     'starter': { name: 'Starter', credits: 575 },
     'pro': { name: 'Pro', credits: 975 },
     'elite': { name: 'Elite', credits: 1950 },
@@ -46,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     DOMElements.mobileMenuBtn = document.getElementById('mobile-menu-btn');
     DOMElements.menuOpenIcon = document.getElementById('menu-open-icon');
     DOMElements.menuCloseIcon = document.getElementById('menu-close-icon');
+    DOMElements.faqItems = document.querySelectorAll('.faq-item');
 
     initializeEventListeners();
 });
@@ -60,6 +62,17 @@ function initializeEventListeners() {
 
     DOMElements.ctaBtns.forEach(btn => {
         btn.addEventListener('click', (event) => handleCtaClick(event));
+    });
+
+    DOMElements.faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        const answer = item.querySelector('.faq-answer');
+        question.addEventListener('click', () => {
+            const isOpen = item.classList.toggle('open');
+            answer.style.maxHeight = isOpen ? `${answer.scrollHeight}px` : '0';
+            answer.style.paddingTop = isOpen ? '0.5rem' : '0';
+            answer.style.paddingBottom = isOpen ? '1.25rem' : '0';
+        });
     });
 }
 
@@ -187,7 +200,7 @@ function renderLoggedOutState() {
     DOMElements.heroSection.innerHTML = `
         <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">Simple, credit-based pricing</h1>
         <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-             <a href="#" id="hero-signin-link" class="text-blue-600 font-semibold hover:underline">Sign in</a> to manage your subscription.
+             <a href="#" id="hero-signin-link" class="text-blue-600 font-semibold hover:underline">Sign in</a> to see your plan details and get started.
         </p>
     `;
     DOMElements.heroSection.querySelector('#hero-signin-link').addEventListener('click', (e) => {
@@ -209,6 +222,7 @@ function renderLoggedOutState() {
             }
         }
     });
+     document.querySelector('#plan-free .cta-btn').textContent = 'Sign in to start';
 }
 
 function handleCtaClick(event) {
@@ -220,7 +234,7 @@ function handleCtaClick(event) {
         return;
     }
 
-    if (plan) {
+    if (plan && plan !== 'free') {
         handlePurchase(plan, clickedButton);
     }
 }
