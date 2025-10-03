@@ -113,18 +113,19 @@
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="relative grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
                         <div class="testimonial-image-container">
+                            <!-- IMPORTANT: Replace this src with your image link -->
                             <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=2000&auto=format&fit=crop" alt="AI art collage" class="testimonial-image">
                         </div>
                         <div class="testimonial-card-container">
                             <div class="testimonial-card">
-                                <svg class="w-12 h-12 text-gray-400/80 absolute top-8 left-8" fill="currentColor" viewBox="0 0 32 32">
+                                <svg class="w-12 h-12 text-white/20 absolute top-8 left-8" fill="currentColor" viewBox="0 0 32 32" aria-hidden="true">
                                     <path d="M9.333 12h-2.667c-1.473 0-2.667 1.193-2.667 2.667v8c0 1.473 1.193 2.667 2.667 2.667h2.667v-13.333zM25.333 12h-2.667c-1.473 0-2.667 1.193-2.667 2.667v8c0 1.473 1.193 2.667 2.667 2.667h2.667v-13.333z"></path>
                                 </svg>
                                 <p class="testimonial-text">"I like to describe it as 'photoshop on steroids.' GenArt's advanced capabilities enable us to seamlessly blend and enhance images, resulting in highly detailed and expressive visual assets."
                             </p>
                                 <div class="testimonial-author">
-                                    <p class="font-semibold text-gray-200">Chris Charles</p>
-                                    <p class="text-sm text-gray-400">CEO, Charles Group</p>
+                                    <p class="font-semibold text-white">Chris Charles</p>
+                                    <p class="text-sm text-white/60">CEO, Charles Group</p>
                                 </div>
                             </div>
                         </div>
@@ -178,7 +179,7 @@
             </div>
         </footer>
         <!-- Modals -->
-        <div id="auth-modal" role="dialog" aria-hidden="true" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;" onclick="this.setAttribute('aria-hidden', 'true')">
+        <div id="auth-modal" role="dialog" aria-hidden="true" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;">
             <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-2">Sign In Required</h2>
                 <p class="text-gray-500 mb-6">Please sign in to continue.</p>
@@ -188,7 +189,7 @@
                 <button class="close-modal-btn mt-4 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
             </div>
         </div>
-        <div id="out-of-credits-modal" role="dialog" aria-hidden="true" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;" onclick="this.setAttribute('aria-hidden', 'true')">
+        <div id="out-of-credits-modal" role="dialog" aria-hidden="true" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;">
             <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-2">Out of Credits</h2>
                 <p class="text-gray-500 mb-6">Please purchase more to continue.</p>
@@ -248,6 +249,17 @@
                         </svg>
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Welcome Modal -->
+        <div id="welcome-modal" role="dialog" aria-hidden="true" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full text-center transform scale-95 transition-transform duration-300">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Congratulations!</h2>
+                <p class="text-gray-600 mb-6">You've received <span class="font-bold text-blue-600">10 free credits</span> to start creating. Enjoy!</p>
+                <button id="close-welcome-modal-btn" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700">
+                    Start Creating
+                </button>
             </div>
         </div>
         <script type="module" src="script.js"></script>
