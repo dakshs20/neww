@@ -1,6 +1,6 @@
 // --- Firebase and Auth Initialization ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -15,7 +15,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
+
+// --- Set Auth Persistence ---
+setPersistence(auth, browserLocalPersistence)
+  .catch((error) => {
+    console.error("Firebase persistence error:", error.code, error.message);
+  });
+
 
 // --- Plan Details (Source of Truth) ---
 const planDetails = {
@@ -37,14 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
     DOMElements.heroSection = document.getElementById('hero-section');
     DOMElements.planCards = document.querySelectorAll('.plan-card');
     DOMElements.ctaBtns = document.querySelectorAll('.cta-btn');
-    DOMElements.cursorDot = document.querySelector('.cursor-dot');
-    DOMElements.cursorOutline = document.querySelector('.cursor-outline');
     DOMElements.mobileMenuBtn = document.getElementById('mobile-menu-btn');
     DOMElements.menuOpenIcon = document.getElementById('menu-open-icon');
     DOMElements.menuCloseIcon = document.getElementById('menu-close-icon');
 
     initializeEventListeners();
-    initializeCursor();
 });
 
 function initializeEventListeners() {
@@ -123,12 +126,11 @@ function renderLoggedInState(user, userData) {
     // --- Update Hero Section ---
     if (plan === 'free') {
         DOMElements.heroSection.innerHTML = `
-            <div class="hero-summary">
-                <span><span class="plan-badge free">Plan: Free</span> • Free images in 30 s • Upgrade anytime</span>
-            </div>
+             <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">You are on the Free Plan</h1>
+             <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">Upgrade your plan to get more credits, faster generation, and premium features.</p>
         `;
     } else {
-        const nextBillingDate = nextBilling ? new Date(nextBilling).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'N/A';
+        const nextBillingDate = nextBilling ? new Date(nextBilling).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A';
         DOMElements.heroSection.innerHTML = `
              <div class="hero-summary">
                 <span>Plan: <strong class="capitalize">${plan}</strong></span>
@@ -148,24 +150,18 @@ function renderLoggedInState(user, userData) {
         if (cardPlan === plan) {
             card.classList.add('active');
             if(cta) {
-                cta.textContent = 'Current Plan';
+                cta.textContent = 'Your Current Plan';
                 cta.classList.add('current');
                 cta.disabled = true;
             }
         } else {
             if(cta) {
                 cta.classList.remove('current');
-                const priceText = card.querySelector('.price')?.textContent || '';
-                cta.textContent = `Upgrade`;
-                 if(priceText.includes('month')) {
-                    cta.textContent += ` — ${priceText.split('/')[0].trim()}`;
-                }
+                const planName = cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1);
+                cta.textContent = `Upgrade to ${planName}`;
             }
         }
     });
-    
-    document.getElementById('plan-free').classList.toggle('active', plan === 'free');
-
 }
 
 function renderLoggedOutState() {
@@ -189,9 +185,9 @@ function renderLoggedOutState() {
 
     // --- Update Hero ---
     DOMElements.heroSection.innerHTML = `
-        <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-2">Choose Your Plan</h1>
-        <p class="text-lg md:text-xl text-gray-500">
-             <a href="#" id="hero-signin-link" class="text-blue-600 font-semibold hover:underline">Sign in</a> to see your plan and remaining credits.
+        <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">Simple, credit-based pricing</h1>
+        <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
+             <a href="#" id="hero-signin-link" class="text-blue-600 font-semibold hover:underline">Sign in</a> to manage your subscription.
         </p>
     `;
     DOMElements.heroSection.querySelector('#hero-signin-link').addEventListener('click', (e) => {
@@ -206,10 +202,10 @@ function renderLoggedOutState() {
         if (cta) {
             cta.disabled = false;
             cta.classList.remove('current');
-            if (cta.dataset.plan) {
-                 cta.textContent = 'Sign in to subscribe';
-            } else {
-                 cta.textContent = 'Start free';
+            const cardPlan = cta.dataset.plan;
+            if (cardPlan) {
+                 const planName = cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1);
+                 cta.textContent = `Get Started with ${planName}`;
             }
         }
     });
@@ -230,6 +226,7 @@ function handleCtaClick(event) {
 }
 
 function signInWithGoogle() {
+    const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
         .then(() => toggleModal(DOMElements.authModal, false))
         .catch(error => {
@@ -241,7 +238,7 @@ function signInWithGoogle() {
 async function handlePurchase(plan, button) {
     const originalButtonText = button.innerHTML;
     button.disabled = true;
-    button.innerHTML = `<span class="animate-pulse">Processing...</span>`;
+    button.innerHTML = `<span class="animate-pulse">Redirecting...</span>`;
 
     try {
         const token = await auth.currentUser.getIdToken();
@@ -289,29 +286,3 @@ function redirectToPayU(data) {
     form.submit();
 }
 
-// --- Utility: Custom Cursor ---
-function initializeCursor() {
-    if (!DOMElements.cursorDot || !DOMElements.cursorOutline) return;
-    
-    let mouseX = 0, mouseY = 0, outlineX = 0, outlineY = 0;
-    window.addEventListener('mousemove', e => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-    });
-
-    const animate = () => {
-        DOMElements.cursorDot.style.left = `${mouseX}px`;
-        DOMElements.cursorDot.style.top = `${mouseY}px`;
-        const ease = 0.15;
-        outlineX += (mouseX - outlineX) * ease;
-        outlineY += (mouseY - outlineY) * ease;
-        DOMElements.cursorOutline.style.transform = `translate(calc(${outlineX}px - 50%), calc(${outlineY}px - 50%))`;
-        requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-
-    document.querySelectorAll('a, button').forEach(el => {
-        el.addEventListener('mouseover', () => DOMElements.cursorOutline.classList.add('cursor-hover'));
-        el.addEventListener('mouseout', () => DOMElements.cursorOutline.classList.remove('cursor-hover'));
-    });
-}
