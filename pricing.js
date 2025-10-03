@@ -17,6 +17,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
 // --- Set Auth Persistence ---
+// This ensures the user's login session is remembered across browser tabs and sessions.
 setPersistence(auth, browserLocalPersistence)
   .catch((error) => {
     console.error("Firebase persistence error:", error.code, error.message);
@@ -50,14 +51,18 @@ document.addEventListener('DOMContentLoaded', () => {
     DOMElements.faqItems = document.querySelectorAll('.faq-item');
 
     initializeEventListeners();
+    // This is the key change: onAuthStateChanged will handle the entire UI update flow.
+    onAuthStateChanged(auth, user => updateUIforUser(user));
 });
 
 function initializeEventListeners() {
-    onAuthStateChanged(auth, user => updateUIForAuthState(user));
-
     DOMElements.googleSignInBtn?.addEventListener('click', signInWithGoogle);
     DOMElements.closeModalBtn?.addEventListener('click', () => toggleModal(DOMElements.authModal, false));
-    DOMElements.authModal?.addEventListener('click', () => toggleModal(DOMElements.authModal, false));
+    DOMElements.authModal?.addEventListener('click', (e) => {
+        if (e.target === DOMElements.authModal) {
+            toggleModal(DOMElements.authModal, false);
+        }
+    });
     DOMElements.mobileMenuBtn?.addEventListener('click', toggleMobileMenu);
 
     DOMElements.ctaBtns.forEach(btn => {
@@ -93,31 +98,64 @@ function toggleMobileMenu() {
     DOMElements.menuCloseIcon.classList.toggle('hidden', isHidden);
 }
 
-async function updateUIForAuthState(user) {
+/**
+ * Main function to handle UI updates based on authentication state.
+ * It immediately shows a generic signed-in state, then fetches details.
+ * This prevents the UI from flashing a "Sign In" button for logged-in users.
+ */
+async function updateUIforUser(user) {
     if (user) {
+        // 1. Immediately render a generic "logged in" header.
+        renderInitialLoggedInHeader();
+
+        // 2. Fetch detailed user data from the backend.
         try {
-            const token = await user.getIdToken();
+            const token = await user.getIdToken(true); // Force refresh token if needed
             const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${token}` } });
-            if (!response.ok) throw new Error("Failed to fetch user data");
+            if (!response.ok) throw new Error(`Failed to fetch user data: ${response.statusText}`);
             
             const userData = await response.json();
-            renderLoggedInState(user, userData);
+
+            // 3. Render the full UI with the fetched data.
+            renderDetailedLoggedInUI(user, userData);
 
         } catch (error) {
             console.error("Error fetching user data:", error);
-            renderLoggedOutState(); // Fallback to logged out state on error
+            // If fetching fails, show an error state but keep the user logged in.
+            renderLoggedInErrorState();
         }
     } else {
+        // If there's no user, render the logged-out state.
         renderLoggedOutState();
     }
 }
 
-function renderLoggedInState(user, userData) {
+function renderInitialLoggedInHeader() {
+    // Desktop Header
+    DOMElements.headerAuthSection.innerHTML = `
+        <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Pricing</a>
+        <div id="credits-counter" class="text-sm font-medium text-gray-700 px-3 py-1">Loading...</div>
+        <button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Sign Out</button>
+    `;
+    DOMElements.headerAuthSection.querySelector('#sign-out-btn-desktop').addEventListener('click', () => signOut(auth));
+
+    // Mobile Menu
+    DOMElements.mobileMenu.innerHTML = `
+        <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
+        <div class="p-4 text-center">
+             <div id="credits-counter-mobile" class="text-lg font-semibold my-3">Loading...</div>
+             <button id="sign-out-btn-mobile" class="w-full text-left text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Sign Out</button>
+        </div>
+    `;
+    DOMElements.mobileMenu.querySelector('#sign-out-btn-mobile').addEventListener('click', () => signOut(auth));
+}
+
+function renderDetailedLoggedInUI(user, userData) {
     const { plan, credits, nextBilling } = userData;
     const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
     const totalCredits = planDetails[plan]?.credits;
 
-    // --- Update Header ---
+    // --- Update Header with specific details ---
     DOMElements.headerAuthSection.innerHTML = `
         <a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Pricing</a>
         <span class="plan-badge ${plan}">${planName}</span>
@@ -125,9 +163,9 @@ function renderLoggedInState(user, userData) {
         <button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-slate-100/80 rounded-full px-3 py-1 transition-colors">Sign Out</button>
     `;
     DOMElements.headerAuthSection.querySelector('#sign-out-btn-desktop').addEventListener('click', () => signOut(auth));
-
-    // --- Update Mobile Menu ---
-    DOMElements.mobileMenu.innerHTML = `
+    
+    // --- Update Mobile Menu with specific details ---
+     DOMElements.mobileMenu.innerHTML = `
         <a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a>
         <div class="p-4 text-center">
              <span class="plan-badge ${plan}">${planName}</span>
@@ -137,7 +175,6 @@ function renderLoggedInState(user, userData) {
     `;
     DOMElements.mobileMenu.querySelector('#sign-out-btn-mobile').addEventListener('click', () => signOut(auth));
 
-
     // --- Update Hero Section ---
     if (plan === 'free') {
         DOMElements.heroSection.innerHTML = `
@@ -145,7 +182,7 @@ function renderLoggedInState(user, userData) {
              <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">Upgrade your plan to get more credits, faster generation, and premium features.</p>
         `;
     } else {
-        const nextBillingDate = nextBilling ? new Date(nextBilling).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A';
+        const nextBillingDate = nextBilling ? new Date(nextBilling).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : 'N/A';
         DOMElements.heroSection.innerHTML = `
              <div class="hero-summary">
                 <span>Plan: <strong class="capitalize">${plan}</strong></span>
@@ -172,11 +209,18 @@ function renderLoggedInState(user, userData) {
         } else {
             if(cta) {
                 cta.classList.remove('current');
+                const isUpgrade = Object.keys(planDetails).indexOf(cardPlan) > Object.keys(planDetails).indexOf(plan);
                 const planName = cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1);
-                cta.textContent = `Upgrade to ${planName}`;
+                cta.textContent = isUpgrade ? `Upgrade to ${planName}` : `Downgrade to ${planName}`;
             }
         }
     });
+}
+
+function renderLoggedInErrorState() {
+    const creditCounters = document.querySelectorAll('#credits-counter, #credits-counter-mobile');
+    creditCounters.forEach(el => el.textContent = "Credits: Error");
+    DOMElements.heroSection.innerHTML = `<p class="text-red-600">Could not load your subscription details. Please refresh the page.</p>`;
 }
 
 function renderLoggedOutState() {
@@ -212,7 +256,7 @@ function renderLoggedOutState() {
 
     // --- Reset Plan Cards ---
     DOMElements.planCards.forEach(card => {
-        card.classList.remove('active');
+        card.classList.remove('active', 'current');
         const cta = card.querySelector('.cta-btn');
         if (cta) {
             cta.disabled = false;
@@ -220,12 +264,12 @@ function renderLoggedOutState() {
             const cardPlan = cta.dataset.plan;
             if (cardPlan && cardPlan !== 'free') {
                  const planName = cardPlan.charAt(0).toUpperCase() + cardPlan.slice(1);
-                 cta.textContent = `Get Started with ${planName}`;
+                 cta.textContent = `Get Started`;
+            } else if (cardPlan === 'free') {
+                cta.textContent = 'Sign in to start';
             }
         }
     });
-     document.querySelector('#plan-free .cta-btn').textContent = 'Sign in to start';
-     document.querySelector('#plan-free .cta-btn').disabled = false;
 }
 
 function handleCtaClick(event) {
