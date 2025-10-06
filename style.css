@@ -85,6 +85,36 @@ header.scrolled #header-nav {
 .animate-shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
 
 
+/* --- Style Selector --- */
+.style-btn {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: 9999px;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    background-color: rgba(255, 255, 255, 0.7);
+    color: #4b5563;
+    transition: all 0.2s ease-in-out;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+.style-btn:hover {
+    background-color: rgba(229, 231, 235, 0.7);
+}
+.style-btn.selected {
+    background-color: #517CBE;
+    color: white;
+    border-color: #517CBE;
+    box-shadow: 0 4px 14px 0 rgba(81, 124, 190, 0.3);
+}
+
+/* --- NEW: Google Drive Button Connected State --- */
+#drive-btn.connected #drive-btn-text {
+    color: #16a34a; /* green-600 */
+    font-weight: 600;
+}
+
+
 /* --- Testimonial Section --- */
 .testimonial-image {
     border-radius: 1.5rem;
@@ -115,188 +145,25 @@ header.scrolled #header-nav {
     border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* --- NEW PRICING PAGE STYLES --- */
-.plan-card {
-    background-color: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 1rem;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    transition: all 0.3s ease-in-out;
-}
-.plan-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-}
-.plan-card.recommended {
-    border: 2px solid #2563eb;
-    position: relative;
-}
-.plan-card.active {
-    border: 2px solid #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-}
-.plan-name {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1e293b;
-}
-.plan-tagline {
-    font-size: 0.875rem;
-    color: #64748b;
-    margin-bottom: 1.5rem;
-    min-height: 40px;
-}
-.plan-credits-display {
-    margin-bottom: 1rem;
-}
-.plan-credits-amount {
-    font-size: 3rem;
-    font-weight: 800;
-    color: #0f172a;
-    line-height: 1;
-}
-.plan-credits-label {
-    font-size: 0.875rem;
-    color: #64748b;
-    margin-left: 0.25rem;
-}
-.plan-price {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: #334155;
-    margin-bottom: 1.5rem;
-}
-.plan-features {
-    font-size: 0.875rem;
-    color: #475569;
-    space-y: 0.75rem;
-}
-.plan-features li {
-    display: flex;
-    align-items: center;
-}
-.plan-features svg {
-    color: #2563eb;
-    flex-shrink: 0;
-}
-.cta-btn {
-    width: 100%;
-    text-align: center;
-    font-weight: 600;
-    padding: 0.75rem 1rem;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease-in-out;
-}
-.plan-card:not(.recommended) .cta-btn {
-    background-color: #1e293b;
-    color: white;
-}
-.plan-card:not(.recommended) .cta-btn:hover {
-    background-color: #0f172a;
-}
-.recommended .cta-btn {
-    background-color: #2563eb;
-    color: white;
-}
-.recommended .cta-btn:hover {
-    background-color: #1d4ed8;
-}
-.cta-btn.current {
-    background-color: #e2e8f0;
-    color: #64748b;
-    cursor: not-allowed;
-}
-.plan-badge-pro {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: #2563eb;
-    color: white;
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-/* --- FAQ Section --- */
-.faq-item {
-    background-color: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.75rem;
-    overflow: hidden;
-}
-.faq-question {
-    width: 100%;
-    text-align: left;
-    font-weight: 600;
-    color: #1e293b;
-    padding: 1.25rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    background-color: transparent;
-    border: none;
-}
-.faq-question:hover {
-    background-color: #f8fafc;
-}
-.faq-question::after {
-    content: '+';
-    font-size: 1.5rem;
-    font-weight: 300;
-    color: #94a3b8;
-    transition: transform 0.3s ease-in-out;
-}
-.faq-item.open .faq-question::after {
-    transform: rotate(45deg);
-}
-.faq-answer {
-    color: #475569;
-    font-size: 0.9rem;
-    padding: 0 1.25rem;
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
-}
-.faq-answer p {
-    padding-bottom: 1.25rem;
-    line-height: 1.6;
+/* --- Toast Notification --- */
+#toast-notification.show {
+    transform: translateY(0);
+    opacity: 1;
 }
 
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 767px) {
-    #hero-headline {
-        font-size: 2.5rem;
-        line-height: 1.1;
-        text-align: center;
-    }
-    #hero-subline {
-        font-size: 1rem;
-    }
-    #first-screen-content {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    #stats-section .grid {
-        gap: 1.5rem;
-    }
-    #stats-section h3 {
-        font-size: 2.25rem;
-    }
+    main { padding-bottom: 10rem; /* More space for taller footer */ }
+    #hero-headline { font-size: 2.5rem; line-height: 1.1; text-align: center; }
+    #hero-subline { font-size: 1rem; }
+    #first-screen-content { padding-left: 1rem; padding-right: 1rem; }
+    #stats-section .grid { gap: 1.5rem; }
+    #stats-section h3 { font-size: 2.25rem; }
     #masonry-gallery { display: block; }
     .masonry-column { display: block; }
     .masonry-item { margin-bottom: 1rem; }
 
-    .testimonial-card {
-        padding: 2rem;
-    }
-    .testimonial-text {
-        font-size: 1.125rem;
-    }
+    .testimonial-card { padding: 2rem; }
+    .testimonial-text { font-size: 1.125rem; }
 }
-
