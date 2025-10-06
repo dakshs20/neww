@@ -11,9 +11,6 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
-        <!-- Google API Libraries -->
-        <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-        <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
     </head>
     <body>
         <!-- Full-page animated gradient background -->
@@ -25,16 +22,7 @@
                     <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 md:h-7 w-auto">
                 </a>
                 <div id="header-nav" class="hidden md:flex items-center space-x-2 bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-sm rounded-full px-2 py-1">
-                    <!-- NEW: Google Drive Button -->
-                    <button id="drive-btn" class="text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-full px-3 py-1.5 transition-colors flex items-center space-x-2">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M7.22727 2L13.7727 12.5L20.3182 2H7.22727Z" fill="#3777E3"></path>
-                            <path d="M0.681818 21.5L7.22727 11L3.95455 5.75L0.681818 11V21.5Z" fill="#3777E3"></path>
-                            <path d="M10.5 21.5L17.0455 11L23.5909 21.5H10.5Z" fill="#3777E3"></path>
-                        </svg>
-                        <span id="drive-btn-text">Connect Drive</span>
-                    </button>
-                    <!-- Auth state content injected by script.js -->
+                <!-- Auth state content injected by script.js -->
                 </div>
                 <button id="mobile-menu-btn" class="md:hidden p-2 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 text-slate-800 z-50">
                     <svg id="menu-open-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -253,6 +241,16 @@
                 </div>
             </div>
         </div>
+        
+        <!-- New User Welcome Modal -->
+        <div id="new-user-credits-modal" role="dialog" aria-hidden="true" class="modal-backdrop fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;">
+            <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Congratulations!</h2>
+                <p class="text-gray-500 mb-6">You've received <span class="font-bold text-[#517CBE]">10 free credits</span> to start creating your masterpieces.</p>
+                <button class="close-modal-btn w-full bg-[#517CBE] text-white font-semibold py-3 px-4 rounded-lg hover:bg-[#4168a3] block">Start Generating</button>
+            </div>
+        </div>
+
         <div id="out-of-credits-modal" role="dialog" aria-hidden="true" class="modal-backdrop fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;">
             <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
                 <h2 class="text-2xl font-semibold text-gray-800 mb-2">Out of Credits</h2>
@@ -261,52 +259,6 @@
                 <button class="close-modal-btn mt-4 text-sm text-gray-500 hover:text-gray-700">Not now</button>
             </div>
         </div>
-        <!-- NEW: Google Drive Modal -->
-        <div id="drive-modal" role="dialog" aria-hidden="true" class="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display: none;">
-            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden" onclick="event.stopPropagation()">
-                <div class="p-8 relative">
-                    <button class="close-modal-btn absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                    <div class="flex flex-col items-center text-center">
-                        <svg class="w-16 h-16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M7.22727 2L13.7727 12.5L20.3182 2H7.22727Z" fill="#3777E3"></path>
-                            <path d="M0.681818 21.5L7.22727 11L3.95455 5.75L0.681818 11V21.5Z" fill="#3777E3"></path>
-                            <path d="M10.5 21.5L17.0455 11L23.5909 21.5H10.5Z" fill="#3777E3"></path>
-                        </svg>
-                        <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mt-4">Connect Google Drive</h2>
-                        <p id="drive-modal-subtitle" class="text-gray-500 mt-3 mb-6">Save your amazing creations directly to your Google Drive. Never lose an image again!</p>
-                        
-                        <div id="drive-connected-content" class="hidden w-full">
-                            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg relative text-left mb-6">
-                                <strong class="font-bold">Google Drive is connected!</strong>
-                                <span class="block sm:inline">You can now save images.</span>
-                            </div>
-                             <h3 class="text-lg font-semibold text-gray-700 mb-3">Save Options</h3>
-                            <div class="space-y-3 text-left">
-                                <label for="drive-save-auto" class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                                    <input type="radio" id="drive-save-auto" name="drive-save-option" value="auto" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                                    <span class="ml-3 text-sm font-medium text-gray-800">Save automatically after every generation.</span>
-                                </label>
-                                <label for="drive-save-manual" class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                                    <input type="radio" id="drive-save-manual" name="drive-save-option" value="manual" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                                    <span class="ml-3 text-sm font-medium text-gray-800">I want to save images manually.</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div id="drive-disconnected-content" class="w-full">
-                           <button id="connect-drive-btn" class="w-full bg-[#4285F4] text-white font-semibold py-3 px-4 rounded-lg hover:bg-[#357ae8] flex items-center justify-center space-x-3 transition-colors shadow-md hover:shadow-lg">
-                                <span>Connect Google Drive</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4">
             <div class="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
                 <div class="md:w-2/3 h-64 md:h-auto bg-gray-100 flex items-center justify-center">
@@ -347,15 +299,7 @@
                         </button>
                     </div>
                 </div>
-                <div class="absolute top-4 right-4 md:right-auto md:left-4 flex space-x-2 z-10">
-                     <!-- NEW: Save to Drive Button -->
-                    <button id="save-to-drive-btn" class="hidden bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Save to Google Drive">
-                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M7.22727 2L13.7727 12.5L20.3182 2H7.22727Z" fill="#3777E3"></path>
-                            <path d="M0.681818 21.5L7.22727 11L3.95455 5.75L0.681818 11V21.5Z" fill="#3777E3"></path>
-                            <path d="M10.5 21.5L17.0455 11L23.5909 21.5H10.5Z" fill="#3777E3"></path>
-                        </svg>
-                    </button>
+                <div class="absolute top-4 right-4 md:right-auto md:left-4 flex space-x-2">
                     <button id="download-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Download Image">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                             <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
@@ -369,12 +313,7 @@
                 </div>
             </div>
         </div>
-
-        <!-- NEW: Toast Notification -->
-        <div id="toast-notification" class="fixed bottom-24 right-4 md:right-6 bg-gray-800 text-white py-3 px-5 rounded-lg shadow-xl text-sm transition-transform translate-y-20 opacity-0 z-50">
-            <p>Image saved to Google Drive!</p>
-        </div>
-
         <script type="module" src="script.js"></script>
     </body>
 </html>
+
