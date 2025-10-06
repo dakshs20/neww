@@ -34,8 +34,8 @@ const DOMElements = {};
 // --- GOOGLE DRIVE INTEGRATION STATE ---
 // IMPORTANT: Replace with your Google Cloud project's credentials.
 // You can get these from the Google Cloud Console: https://console.cloud.google.com/apis/credentials
-const GOOGLE_API_KEY = "YOUR_GOOGLE_API_KEY_HERE"; // Can be same as Firebase key
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID_HERE.apps.googleusercontent.com";
+const GOOGLE_API_KEY = "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y"; // Can be same as Firebase key
+const GOOGLE_CLIENT_ID = "520534975282-ca7f413hr2le5vgkcqt1fuuptv2am9e5.apps.googleusercontent.com";
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 let tokenClient;
@@ -642,3 +642,4 @@ function showToast(message, isError = false) {
         toast.classList.remove('show');
     }, 3000);
 }
+
