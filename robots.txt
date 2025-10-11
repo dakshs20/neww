@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://genart.space/sitemap.xml

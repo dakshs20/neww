@@ -1,0 +1,25 @@
+/* --- Pricing Page Specific Animations --- */
+
+/* Initial state for animation elements */
+.pricing-card-white, .pricing-page h1, .pricing-page p {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+/* Keyframe for the subtle glow effect on hover */
+@keyframes popular-glow {
+    0% { box-shadow: 0 0 15px rgba(79, 70, 229, 0.2), 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
+    50% { box-shadow: 0 0 25px rgba(79, 70, 229, 0.4), 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
+    100% { box-shadow: 0 0 15px rgba(79, 70, 229, 0.2), 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
+}
+
+/* Apply the glow animation to the popular card on hover */
+.pricing-card-white.popular:hover {
+    animation: popular-glow 2s ease-in-out infinite;
+}
+
+/* Style for the feature list items for staggered animation */
+.pricing-card-white ul li {
+    opacity: 0;
+    transform: translateX(-10px);
+}

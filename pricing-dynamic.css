@@ -1,0 +1,187 @@
+/* Inter font for a clean, professional look */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* Apply font and background to the pricing page */
+.pricing-page {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc; /* light gray */
+    overflow-x: hidden; /* Prevent horizontal scroll from animations */
+}
+
+/* Mouse-follow gradient effect */
+.pricing-page::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: radial-gradient(
+        600px circle at var(--x) var(--y),
+        rgba(79, 70, 229, 0.1), /* subtle indigo */
+        transparent 40%
+    );
+    z-index: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+#app-container { position: relative; z-index: 1; }
+
+/* --- Initial Animation States --- */
+.pricing-title, .pricing-subtitle, .pricing-card-wrapper {
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+/* --- Card Styling & 3D Hover Effects --- */
+.grid {
+    align-items: stretch; /* Ensures cards in the same row stretch to the same height */
+}
+
+.pricing-card-wrapper { 
+    perspective: 1500px;
+    display: flex; /* Allows the card inside to have 100% height */
+}
+
+.pricing-card-white {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 1.25rem;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    will-change: transform, box-shadow;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    padding: 2rem;
+    /* --- CRITICAL ALIGNMENT STRUCTURE --- */
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card-white:hover {
+    transform: translateY(-12px) rotateX(7deg) scale(1.03);
+    box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.15);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.pricing-card-white.popular {
+    border-color: rgba(79, 70, 229, 0.5);
+    transform: scale(1.05);
+}
+
+.pricing-card-white.popular:hover {
+    transform: translateY(-12px) rotateX(7deg) scale(1.08);
+}
+
+/* --- Card Content Alignment --- */
+.card-content {
+    flex-grow: 1; /* This is the key: it makes this area take all available vertical space */
+}
+.card-footer {
+    margin-top: auto; /* Pushes this element to the bottom of the flex container */
+    padding-top: 2rem;
+}
+.plan-badge-container {
+    height: 1.5rem; /* Reserve space for badge */
+    margin-bottom: 0.5rem;
+}
+
+.popular-badge-white {
+    background: linear-gradient(to right, #6366f1, #8b5cf6);
+    color: white; font-size: 0.75rem; font-weight: 600;
+    padding: 0.25rem 0.75rem; border-radius: 9999px;
+    display: inline-block;
+    box-shadow: 0 2px 10px rgba(100, 102, 241, 0.5);
+}
+
+.buy-now-btn-white {
+    width: 100%;
+    background-color: #1f2937;
+    color: white;
+    font-weight: 600;
+    padding-top: 0.75rem; padding-bottom: 0.75rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.buy-now-btn-white:hover {
+    background-color: #000;
+    transform: translateY(-2px); /* Subtle lift on hover */
+}
+
+.buy-now-btn-white.popular-btn {
+    background: linear-gradient(to right, #4f46e5, #6d28d9);
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+}
+.buy-now-btn-white.popular-btn:hover {
+    box-shadow: 0 12px 25px rgba(79, 70, 229, 0.5);
+}
+
+/* Button Shine Effect */
+.buy-now-btn-white { position: relative; overflow: hidden; }
+.buy-now-btn-white::after {
+    content: ''; position: absolute; top: -50%; left: -50%;
+    width: 20px; height: 200%; background: rgba(255, 255, 255, 0.2);
+    transform: rotate(45deg); opacity: 0; transition: opacity 0.3s;
+}
+.buy-now-btn-white:hover::after {
+    opacity: 1;
+    animation: shine 1.5s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+@keyframes shine { to { left: 150%; } }
+
+/* Inner card content styling */
+.plan-price-amount { display: inline-block; transition: all 0.3s ease; }
+.pricing-card-white ul li { opacity: 0; transform: translateX(-15px); }
+.feature-icon-white { transition: transform 0.3s ease; }
+.pricing-card-white ul li:hover .feature-icon-white { transform: scale(1.2); }
+
+.plan-status-badge {
+    color: #4f46e5;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    height: 1.5rem; /* Reserve space to prevent layout shift */
+}
+
+.active-plan-badge {
+    background: #10b981;
+    color: white; font-size: 0.75rem; font-weight: 600;
+    padding: 0.25rem 0.75rem; border-radius: 9999px;
+    /* Positioned via badge-container now, no need for absolute */
+}
+
+/* Polished Modal Styles */
+.modal-backdrop {
+    position: fixed; inset: 0;
+    background-color: rgba(17, 24, 39, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 50; display: none; align-items: center; justify-content: center;
+    padding: 1rem; opacity: 0; transition: opacity 0.3s ease;
+}
+.modal-backdrop[aria-hidden="false"] { display: flex; opacity: 1; }
+
+.modal-content {
+    background-color: white; border-radius: 1rem;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    padding: 2rem; max-width: 24rem; width: 100%; text-align: center;
+    transform: scale(0.95); transition: transform 0.3s ease;
+}
+.modal-backdrop[aria-hidden="false"] .modal-content { transform: scale(1); }
+.modal-title { font-size: 1.5rem; line-height: 2rem; font-weight: 700; color: #111827; }
+.modal-body { margin-top: 0.5rem; margin-bottom: 1.5rem; color: #4b5563; }
+.modal-primary-btn {
+    width: 100%; background-color: #4f46e5; color: white; font-weight: 600;
+    padding: 0.75rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer;
+    transition: background-color 0.2s;
+}
+.modal-primary-btn:hover { background-color: #4338ca; }
+.modal-secondary-btn {
+    margin-top: 0.75rem; color: #4b5563; font-weight: 500; cursor: pointer;
+    background: none; border: none; padding: 0.5rem;
+}
+.modal-secondary-btn:hover { color: #111827; }
+
