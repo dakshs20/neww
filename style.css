@@ -85,30 +85,6 @@ header.scrolled #header-nav {
 .animate-shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
 
 
-/* --- NEW: Style Selector --- */
-.style-btn {
-    padding: 0.25rem 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    border-radius: 9999px;
-    border: 1px solid rgba(229, 231, 235, 0.8);
-    background-color: rgba(255, 255, 255, 0.7);
-    color: #4b5563;
-    transition: all 0.2s ease-in-out;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-.style-btn:hover {
-    background-color: rgba(229, 231, 235, 0.7);
-}
-.style-btn.selected {
-    background-color: #517CBE;
-    color: white;
-    border-color: #517CBE;
-    box-shadow: 0 4px 14px 0 rgba(81, 124, 190, 0.3);
-}
-
-
 /* --- Testimonial Section --- */
 .testimonial-image {
     border-radius: 1.5rem;
@@ -139,23 +115,131 @@ header.scrolled #header-nav {
     border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* --- Dynamic Use Cases Section (Not in use on main page) --- */
-.use-cases-content { display: none; }
+/* --- Dynamic Use Cases Section --- */
+#use-cases-section {
+    position: relative;
+    width: 100%;
+    /* The height is determined by the `end` property in the ScrollTrigger animation */
+}
+
+.use-cases-content {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 1rem;
+}
+
+.use-cases-headline {
+    font-size: 2.25rem; /* text-4xl */
+    font-weight: 700;
+    color: #1f2937; /* gray-800 */
+    margin-bottom: 2rem;
+    opacity: 0; /* Initially hidden */
+    transform: translateY(30px);
+}
+
+.use-cases-text-container {
+    position: relative;
+    height: 6rem; /* Adjust based on largest text size */
+    width: 100%;
+}
+
+.use-case-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 3rem; /* text-5xl */
+    font-weight: 800;
+    color: #517CBE;
+    opacity: 0; /* Initially hidden */
+    transform: translateY(30px);
+    white-space: nowrap; /* Prevents line breaks */
+}
 
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 767px) {
-    main { padding-bottom: 10rem; /* More space for taller footer */ }
-    #hero-headline { font-size: 2.5rem; line-height: 1.1; text-align: center; }
-    #hero-subline { font-size: 1rem; }
-    #first-screen-content { padding-left: 1rem; padding-right: 1rem; }
-    #stats-section .grid { gap: 1.5rem; }
-    #stats-section h3 { font-size: 2.25rem; }
+    #hero-headline {
+        font-size: 2.5rem;
+        line-height: 1.1;
+        text-align: center;
+    }
+    #hero-subline {
+        font-size: 1rem;
+    }
+    #first-screen-content {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    #stats-section .grid {
+        gap: 1.5rem;
+    }
+    #stats-section h3 {
+        font-size: 2.25rem;
+    }
     #masonry-gallery { display: block; }
     .masonry-column { display: block; }
     .masonry-item { margin-bottom: 1rem; }
 
-    .testimonial-card { padding: 2rem; }
-    .testimonial-text { font-size: 1.125rem; }
+    .testimonial-card {
+        padding: 2rem;
+    }
+    .testimonial-text {
+        font-size: 1.125rem;
+    }
+    .use-cases-headline {
+        font-size: 1.875rem; /* text-3xl */
+    }
+    .use-case-text {
+        font-size: 2.25rem; /* text-4xl */
+    }
 }
+
+/* style.css */
+body {
+    @apply bg-white text-gray-800;
+}
+
+.dark body {
+    @apply bg-gray-900 text-gray-200;
+}
+
+/* Example for cards */
+.stat-card {
+    @apply bg-white shadow-md rounded-lg p-4;
+}
+.dark .stat-card {
+    @apply bg-gray-800 shadow-lg;
+}
+
+/* Hero section */
+#hero-section h1 {
+    @apply text-gray-800;
+}
+.dark #hero-section h1 {
+    @apply text-gray-200;
+}
+
+/* Footer / Prompt bar */
+#prompt-bar-container {
+    @apply bg-white/70;
+}
+.dark #prompt-bar-container {
+    @apply bg-gray-800/70;
+}
+
+
+.dark body { background-color: #111; color: #eee; }
+
+/* If you’re not using Tailwind, you can add this CSS */
+.star-empty { color: #ccc; }
+.star-filled { color: gold; }
+
+
 
