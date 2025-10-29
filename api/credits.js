@@ -27,6 +27,7 @@ const specialUsers = [
     { email: "mehul@genart.space", credits: 5000 },
     { email: "preetvirenrajpara@gmail.com", credits: 5000 },
     { email: "shachibathwal@gmail.com", credits: 5000 },
+    { email: "parth.jadeja2003@gmail.com", credits: 5000 },
 ];
 
 export default async function handler(req, res) {
