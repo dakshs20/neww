@@ -116,6 +116,19 @@ function initializeAnimations() {
         }
     });
 
+    // NEW: Animate chat bubbles inside collab window
+    gsap.from(".chat-bubble-container", {
+        opacity: 0,
+        y: 20,
+        duration: 0.6,
+        stagger: 0.2,
+        ease: 'power3.out',
+        scrollTrigger: {
+            trigger: ".collab-content",
+            start: "top 90%",
+        }
+    });
+
     // Benefits Cards Animation
     gsap.from(".benefit-card", {
         opacity: 0,
