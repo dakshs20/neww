@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenArt — Team Image Generator</title>
+    <meta name="description" content="The GenArt team image generator workspace.">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Full-page animated gradient background -->
+    <div id="animated-gradient-bg"></div>
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-30 p-4 transition-all duration-300 bg-white/70 backdrop-blur-md border-b border-slate-200/80">
+        <div class="max-w-full mx-auto flex justify-between items-center px-4">
+            <!-- Left Side: Title & Context -->
+            <div class="flex items-center space-x-4">
+                <a href="index.html">
+                    <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 md:h-7 w-auto">
+                </a>
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-500">
+                    <span class="font-semibold text-gray-700">Team Generator</span>
+                    <span class="text-gray-300">/</span>
+                    <button class="hover:text-gray-900">Project ▸ Client</button>
+                    <span class="text-gray-300">/</span>
+                    <button class="hover:text-gray-900">Campaign</button>
+                </div>
+            </div>
+            
+            <!-- Right Side: Generate Button & User Nav -->
+            <div class="flex items-center space-x-4">
+                <button id="main-generate-btn-header" class="team-cta-button team-cta-primary hidden md:flex text-sm py-2 px-4">
+                    <span>Generate (</span><span id="credits-count-header">10</span><span>)</span>
+                    <!-- Loading state -->
+                    <div id="generate-loader-header" class="hidden w-40 h-5 bg-blue-300 rounded-full overflow-hidden">
+                        <div class="h-full bg-blue-500 rounded-full progress-bar-indeterminate"></div>
+                    </div>
+                </button>
+                <!-- Desktop Navigation (Dynamically populated by generator.js) -->
+                <div id="header-nav" class="hidden md:flex items-center space-x-2">
+                    <!-- Auth state content injected by generator.js -->
+                </div>
+                <!-- Mobile Menu Button -->
+                <button id="mobile-menu-btn" class="md:hidden p-2 rounded-full text-slate-800 z-50">
+                    <svg id="menu-open-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                    <svg id="menu-close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu (Dynamically populated by generator.js) -->
+        <div id="mobile-menu" class="hidden md:hidden fixed inset-0 bg-white/90 backdrop-blur-xl z-40 p-4 pt-24">
+            <!-- Mobile nav content injected by generator.js -->
+        </div>
+    </header>
+
+    <!-- Main Generator Body -->
+    <main class="relative z-10 pt-20 md:pt-24 overflow-hidden">
+        <div class="flex flex-col lg:flex-row">
+
+            <!-- 1. Creation Dock (Left Column) -->
+            <aside id="creation-dock" class="w-full lg:w-[360px] lg:flex-shrink-0 bg-white border-r border-gray-200 p-4 lg:p-6 lg:h-[calc(100vh-96px)] lg:sticky lg:top-24 overflow-y-auto generator-dock fixed inset-x-0 bottom-0 lg:relative lg:translate-y-0 transform translate-y-full transition-transform duration-300 z-20 shadow-lg lg:shadow-none rounded-t-2xl lg:rounded-none">
+                <button id="mobile-dock-handle" class="lg:hidden absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 w-12 h-1.5 bg-gray-300 rounded-full"></button>
+                
+                <div class="space-y-6 pb-24 lg:pb-6">
+                    <!-- A. Prompt Area -->
+                    <section>
+                        <label for="prompt-input" class="text-sm font-semibold text-gray-700">Prompt</label>
+                        <textarea id="prompt-input" rows="4" class="w-full mt-2 p-3 text-sm bg-gray-50 rounded-lg border border-gray-300 focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition" placeholder="Describe the visual you want. Add mood, camera, lighting…"></textarea>
+                        
+                        <div class="mt-2 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="enhance-toggle" class="text-sm text-gray-700">Enhance Prompt</label>
+                                <button id="enhance-toggle" role="switch" aria-checked="false" class="w-9 h-5 bg-gray-200 rounded-full flex items-center p-0.5 transition-colors">
+                                    <span class="w-4 h-4 bg-white rounded-full shadow-md transform transition-transform"></span>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-500">Refine tone, style, and detail with AI</p>
+                        </div>
+
+                        <div class="mt-3 flex space-x-2 overflow-x-auto">
+                            <button class="idea-spark-chip">Add brand tone</button>
+                            <button class="idea-spark-chip">Make it cinematic</button>
+                            <button class="idea-spark-chip">Add product focus</button>
+                        </div>
+                    </section>
+                    
+                    <!-- B. Styles -->
+                    <section>
+                        <label class="text-sm font-semibold text-gray-700">Styles</label>
+                        <div id="style-carousel" class="flex space-x-2 overflow-x-auto py-2 mt-2 scrollbar-thin">
+                            <button class="style-chip selected" data-style="Clean Product">Clean Product</button>
+                            <button class="style-chip" data-style="Editorial">Editorial</button>
+                            <button class="style-chip" data-style="Cinematic">Cinematic</button>
+                            <button class="style-chip" data-style="3D Render">3D Render</button>
+                            <button class="style-chip" data-style="Illustration">Illustration</button>
+                            <button class="style-chip" data-style="Minimalist">Minimalist</button>
+                            <button class="style-chip" data-style="Vintage">Vintage</button>
+                        </div>
+                        <div id="style-intensity-slider" class="mt-2 hidden">
+                            <label for="style-intensity" class="text-xs text-gray-500">Style Intensity: <span id="style-intensity-value">100</span></label>
+                            <input type="range" min="0" max="100" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-1 custom-slider">
+                        </div>
+                    </section>
+                    
+                    <!-- C. Custom Image Ratio -->
+                    <section>
+                        <label class="text-sm font-semibold text-gray-700">Image Ratio</label>
+                        <div class="grid grid-cols-6 gap-2 mt-2">
+                            <button class="ratio-chip selected" data-ratio="1:1">1:1</button>
+                            <button class="ratio-chip" data-ratio="4:5">4:5</button>
+                            <button class="ratio-chip" data-ratio="3:2">3:2</button>
+                            <button class="ratio-chip" data-ratio="16:9">16:9</button>
+                            <button class="ratio-chip" data-ratio="9:16">9:16</button>
+                            <button class="ratio-chip" data-ratio="Custom">Custom</button>
+                        </div>
+                    </section>
+                    
+                    <!-- D. Image Quality -->
+                    <section>
+                        <label class="text-sm font-semibold text-gray-700">Image Quality</label>
+                        <input id="quality-slider" type="range" min="0" max="3" value="1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-3 custom-slider">
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>Draft</span><span>Standard</span><span>High</span><span>Ultra</span>
+                        </div>
+                        <div class="mt-3 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="upscale-toggle" class="text-sm text-gray-700">Upscale & Clean</label>
+                                <button id="upscale-toggle" role="switch" aria-checked="false" class="w-9 h-5 bg-gray-200 rounded-full flex items-center p-0.5 transition-colors">
+                                    <span class="w-4 h-4 bg-white rounded-full shadow-md transform transition-transform"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- E. Number of Images -->
+                    <section>
+                        <label class="text-sm font-semibold text-gray-700">Number of Images</label>
+                        <div class="flex items-center justify-center mt-2 space-x-4">
+                            <button id="image-step-down" class="stepper-btn">-</button>
+                            <span id="image-count-display" class="text-lg font-bold w-12 text-center">4</span>
+                            <button id="image-step-up" class="stepper-btn">+</button>
+                        </div>
+                    </section>
+                    
+                    <!-- F. Action -->
+                    <section class="lg:sticky lg:bottom-0 lg:bg-white lg:py-4">
+                        <button id="main-generate-btn-dock" class="w-full team-cta-button team-cta-primary text-lg py-3">
+                            <span>Generate (</span><span id="credits-count-dock">4</span><span> credits)</span>
+                            <!-- Loading state -->
+                            <div id="generate-loader-dock" class="hidden w-full h-5 bg-blue-300 rounded-full overflow-hidden">
+                                <div class="h-full bg-blue-500 rounded-full progress-bar-indeterminate"></div>
+                            </div>
+                        </button>
+                        <div class="flex justify-between items-center mt-3">
+                            <button class="text-xs text-gray-500 hover:text-gray-900">⭐ Save Settings</button>
+                            <button class="text-xs text-gray-500 hover:text-gray-900">Reset to default</button>
+                        </div>
+                        <p class="text-xs text-gray-400 text-center mt-2 hidden lg:block">Press <kbd class="font-semibold text-gray-500">G</kbd> to generate</p>
+                    </section>
+                </div>
+            </aside>
+            
+            <!-- Mobile "Show Controls" Button -->
+            <button id="show-controls-btn" class="lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-30 team-cta-button team-cta-primary shadow-lg">
+                Show Controls
+            </button>
+
+
+            <!-- 2. Canvas & Results (Center Column) -->
+            <section id="canvas-results" class="flex-1 min-h-screen p-4 md:p-8 relative z-0">
+                <!-- A. Empty State -->
+                <div id="empty-state" class="flex-col items-center justify-center text-center h-[calc(100vh-200px)]">
+                    <div class="w-full h-full flex flex-col items-center justify-center bg-gray-100 rounded-xl border border-gray-200 border-dashed">
+                        <h2 class="text-2xl font-semibold text-gray-700">Ready to create with your team.</h2>
+                        <div class="flex space-x-4 mt-4">
+                            <span class="text-sm text-gray-500">Try a style</span>
+                            <span class="text-sm text-gray-500">Use Enhance Prompt</span>
+                            <span class="text-sm text-gray-500">Generate 4 options</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- B. Result Grid -->
+                <div id="results-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Results will be injected here by generator.js -->
+                </div>
+            </section>
+
+            <!-- 3. Right Rail (Contextual) -->
+            <aside class="hidden lg:block w-[320px] flex-shrink-0 bg-white border-l border-gray-200 p-6 h-[calc(100vh-96px)] sticky top-24 overflow-y-auto">
+                <div class="space-y-6">
+                    <!-- A. History & Presets -->
+                    <section>
+                        <h3 class="text-sm font-semibold text-gray-700">Team Presets</h3>
+                        <div class="space-y-2 mt-3">
+                            <button class="preset-card">
+                                <span class="font-semibold">Performance Ad</span>
+                                <span class="text-xs">4:5, High, Bold Ads, 4 imgs</span>
+                            </button>
+                            <button class="preset-card">
+                                <span class="font-semibold">Hero Banner</span>
+                                <span class="text-xs">16:9, Ultra + 2x, Cinematic, 2 imgs</span>
+                            </button>
+                            <button class="preset-card">
+                                <span class="font-semibold">Catalog Clean</span>
+                                <span class="text-xs">1:1, Standard, Clean Product, 6 imgs</span>
+                            </button>
+                            <button class="preset-card">
+                                <span class="font-semibold">Story Visual</span>
+                                <span class="text-xs">9:16, High, Editorial, 4 imgs</span>
+                            </button>
+                        </div>
+                    </section>
+                    
+                    <section>
+                        <h3 class="text-sm font-semibold text-gray-700">History</h3>
+                        <div id="history-container" class="mt-3 text-sm text-gray-500">
+                            No generations yet.
+                        </div>
+                    </section>
+                    
+                    <!-- B. Guidance & Guardrails -->
+                    <section>
+                        <h3 class="text-sm font-semibold text-gray-700">Guidance</h3>
+                        <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <span class="font-semibold text-blue-700">Brand Guard</span>
+                                <span class="px-2 py-0.5 text-xs font-medium text-green-700 bg-green-100 rounded-full">Consistent ✅</span>
+                            </div>
+                            <p class="text-xs text-blue-600 mt-1">Brand palette and typography are locked.</p>
+                        </div>
+                        <div class="mt-3 text-xs text-gray-500 space-y-2">
+                            <p><strong>Tip:</strong> Ultra + Upscale 4x = best detail for hero banners.</p>
+                            <p><strong>Tip:</strong> Try 4 images → pick 1 → enhance.</p>
+                        </div>
+                    </section>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Template for Result Image Card -->
+    <template id="result-card-template">
+        <div class="result-image-card group">
+            <img src="https://placehold.co/400x400/e0f2fe/517CBE?text=Generating..." alt="Generated image" class="w-full h-auto object-cover rounded-lg">
+            <div class="result-image-overlay">
+                <div class="flex items-center space-x-1">
+                    <button title="Approve" class="overlay-btn">✅</button>
+                    <button title="Variations" class="overlay-btn">♻️</button>
+                    <button title="Enhance" class="overlay-btn">✨</button>
+                    <button title="Download" class="overlay-btn">⬇️</button>
+                    <button title="Share" class="overlay-btn">🔗</button>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <!-- Auth Modals (copied from teams.html) -->
+    <div id="auth-modal" role="dialog" aria-hidden="true" class="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display: none;">
+        <!-- ... content from auth-modal in teams.html ... -->
+    </div>
+    <div id="new-user-credits-modal" role="dialog" aria-hidden="true" class="modal-backdrop fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;">
+        <!-- ... content from new-user-credits-modal in teams.html ... -->
+    </div>
+
+    <script type="module" src="generator.js"></script>
+</body>
+</html>
