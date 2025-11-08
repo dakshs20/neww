@@ -4,13 +4,13 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBWDZZ-zLYyCrvnnnTeZ1w_IBWQvTrf-hM",
-  authDomain: "gena-c597d.firebaseapp.com",
-  projectId: "gena-c597d",
-  storageBucket: "gena-c597d.firebasestorage.app",
-  messagingSenderId: "926192855864",
-  appId: "1:926192855864:web:728ec3e47624fe2d672fcd",
-  measurementId: "G-SYK9TMY47N"
+    apiKey: "AIzaSyCcSkzSdz_GtjYQBV5sTUuPxu1BwTZAq7Y",
+    authDomain: "genart-a693a.firebaseapp.com",
+    projectId: "genart-a693a",
+    storageBucket: "genart-a693a.appspot.com",
+    messagingSenderId: "96958671615",
+    appId: "1:96958671615:web:6a0d3aa6bf42c6bda17aca",
+    measurementId: "G-EDCW8VYXY6"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -27,6 +27,18 @@ let currentStyle = 'Realistic'; // Default style
 let uploadedImageData = null;
 let currentPreviewInputData = null; 
 let timerInterval;
+
+// --- WATERMARK SECTION ---
+// vvv REPLACE THIS LINK vvv
+// This is where you add the link for your watermark image.
+// Make sure the image is accessible via this URL (e.g., uploaded to imgbb, iili.io, or your own server).
+const WATERMARK_URL = 'https://iili.io/KD205DG.md.png'; // <-- USER: REPLACE THIS LINK
+const WATERMARK_MARGIN = 20; // Pixels from edge
+const WATERMARK_SIZE_RATIO = 0.06; // Watermark size as a ratio of the image's smaller dimension (e.g., 0.15 = 15%)
+const WATERMARK_OPACITY = 0.7; // Opacity from 0.0 (transparent) to 1.0 (opaque)
+// ^^^ REPLACE THIS LINK ^^^
+// --- END WATERMARK SECTION ---
+
 
 // --- DOM Element Caching ---
 const DOMElements = {};
@@ -188,17 +200,40 @@ function updateUIForAuthState(user) {
     currentUser = user;
     const nav = DOMElements.headerNav;
     const mobileNav = DOMElements.mobileMenu;
+    const linkClasses = "text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors";
+    const mobileLinkClasses = "block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100";
+
     if (user) {
-        nav.innerHTML = `<a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Pricing</a><div id="credits-counter" class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ...</div><button id="sign-out-btn-desktop" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Sign Out</button>`;
-        mobileNav.innerHTML = `<a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a><div id="credits-counter-mobile" class="text-center text-lg font-semibold text-gray-700 p-3 my-2 border-y">Credits: ...</div><button id="sign-out-btn-mobile" class="w-full text-left text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Sign Out</button>`;
+        nav.innerHTML = `
+            <a href="teams.html" class="${linkClasses}">For Teams</a>
+            <a href="pricing.html" class="${linkClasses}">Pricing</a>
+            <div id="credits-counter" class="text-sm font-medium text-gray-700 px-3 py-1">Credits: ...</div>
+            <button id="sign-out-btn-desktop" class="${linkClasses}">Sign Out</button>
+        `;
+        mobileNav.innerHTML = `
+            <a href="teams.html" class="${mobileLinkClasses}">For Teams</a>
+            <a href="pricing.html" class="${mobileLinkClasses}">Pricing</a>
+            <div id="credits-counter-mobile" class="text-center text-lg font-semibold text-gray-700 p-3 my-2 border-y">Credits: ...</div>
+            <button id="sign-out-btn-mobile" class="w-full text-left ${mobileLinkClasses}">Sign Out</button>
+        `;
         document.getElementById('sign-out-btn-desktop').addEventListener('click', () => signOut(auth));
         document.getElementById('sign-out-btn-mobile').addEventListener('click', () => signOut(auth));
         fetchUserCredits(user);
     } else {
-        nav.innerHTML = `<a href="pricing.html" class="text-sm font-medium text-gray-700 hover:bg-[#517CBE]/10 rounded-full px-3 py-1 transition-colors">Pricing</a><button id="sign-in-btn-desktop" class="text-sm font-medium text-white px-4 py-1.5 rounded-full transition-colors" style="background-color: #517CBE;">Sign In</button>`;
-        mobileNav.innerHTML = `<a href="pricing.html" class="block text-lg font-semibold text-gray-700 p-3 rounded-lg hover:bg-gray-100">Pricing</a><div class="p-4 mt-4"><button id="sign-in-btn-mobile" class="w-full text-lg font-semibold bg-[#517CBE] text-white px-4 py-3 rounded-xl hover:bg-opacity-90 transition-colors">Sign In</button></div>`;
-        document.getElementById('sign-in-btn-desktop').addEventListener('click', signInWithGoogle);
-        document.getElementById('sign-in-btn-mobile').addEventListener('click', signInWithGoogle);
+        nav.innerHTML = `
+            <a href="teams.html" class="${linkClasses}">For Teams</a>
+            <a href="pricing.html" class="${linkClasses}">Pricing</a>
+            <button id="sign-in-btn-desktop" class="text-sm font-medium text-white px-4 py-1.5 rounded-full transition-colors" style="background-color: #517CBE;">Sign In</button>
+        `;
+        mobileNav.innerHTML = `
+            <a href="teams.html" class="${mobileLinkClasses}">For Teams</a>
+            <a href="pricing.html" class="${mobileLinkClasses}">Pricing</a>
+            <div class="p-4 mt-4">
+                <button id="sign-in-btn-mobile" class="w-full text-lg font-semibold bg-[#517CBE] text-white px-4 py-3 rounded-xl hover:bg-opacity-90 transition-colors">Sign In</button>
+            </div>
+        `;
+        document.getElementById('sign-in-btn-desktop').addEventListener('click', () => toggleModal(DOMElements.authModal, true));
+        document.getElementById('sign-in-btn-mobile').addEventListener('click', () => toggleModal(DOMElements.authModal, true));
     }
 }
 
@@ -206,7 +241,24 @@ async function fetchUserCredits(user) {
     try {
         const token = await user.getIdToken(true);
         const response = await fetch('/api/credits', { headers: { 'Authorization': `Bearer ${token}` } });
-        if (!response.ok) throw new Error('Failed to fetch credits');
+        
+        // --- MODIFIED SECTION START ---
+        // This improved error handling will show the *real* server error in your console.
+        if (!response.ok) {
+            let serverError;
+            try {
+                // Try to parse the JSON error message from the server
+                const errorData = await response.json();
+                serverError = errorData.error || `Server responded with status ${response.status}`;
+            } catch (e) {
+                // If the response isn't JSON, just use the status text
+                serverError = response.statusText || `Server responded with status ${response.status}`;
+            }
+            // Throw a more informative error
+            throw new Error(`Failed to fetch credits. Server says: "${serverError}"`);
+        }
+        // --- MODIFIED SECTION END ---
+
         const data = await response.json();
         currentUserCredits = data.credits;
         updateCreditsDisplay(currentUserCredits);
@@ -220,7 +272,7 @@ async function fetchUserCredits(user) {
         }
         
     } catch (error) {
-        console.error("Error fetching credits:", error);
+        console.error("Error fetching credits:", error); // This will now log the detailed error
         updateCreditsDisplay('Error');
     }
 }
@@ -262,6 +314,82 @@ async function signInWithGoogle() {
         console.error("Google Sign-In Error:", error);
     }
 }
+
+
+// --- NEW WATERMARK FUNCTION ---
+/**
+ * Adds a watermark to a base64 image.
+ * @param {string} base64Image - The base64 data URL of the source image.
+ * @returns {Promise<string>} A promise that resolves with the base64 data URL of the watermarked image.
+ */
+async function addWatermark(base64Image) {
+    // 1. Create a canvas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 2. Load the main image
+    const mainImage = new Image();
+    const mainImageLoadPromise = new Promise((resolve, reject) => {
+        mainImage.onload = resolve;
+        mainImage.onerror = reject;
+        mainImage.src = base64Image;
+    });
+
+    try {
+        await mainImageLoadPromise;
+    } catch (error) {
+        console.error("Could not load generated image:", error);
+        return base64Image; // Return original image if it fails to load
+    }
+
+
+    // 3. Set canvas dimensions
+    canvas.width = mainImage.width;
+    canvas.height = mainImage.height;
+
+    // 4. Draw the main image
+    ctx.drawImage(mainImage, 0, 0);
+
+    // 5. Load the watermark image
+    try {
+        const watermarkImage = new Image();
+        // Set crossOrigin to "anonymous" to avoid canvas tainting if the URL is from a different origin
+        watermarkImage.crossOrigin = "anonymous"; 
+        
+        const watermarkLoadPromise = new Promise((resolve, reject) => {
+            watermarkImage.onload = resolve;
+            watermarkImage.onerror = (err) => reject(new Error(`Failed to load watermark image from ${WATERMARK_URL}. Check the URL and CORS policy.`));
+            watermarkImage.src = WATERMARK_URL;
+        });
+        
+        await watermarkLoadPromise;
+
+        // 6. Calculate watermark dimensions and position
+        const smallerDimension = Math.min(canvas.width, canvas.height);
+        let wmWidth = smallerDimension * WATERMARK_SIZE_RATIO;
+        let wmHeight = (watermarkImage.height / watermarkImage.width) * wmWidth;
+
+        // Optional: Add max/min size constraints if needed
+        // Example: if (wmWidth > 200) { wmWidth = 200; wmHeight = ... }
+
+        const x = canvas.width - wmWidth - WATERMARK_MARGIN;
+        const y = canvas.height - wmHeight - WATERMARK_MARGIN;
+
+        // 7. Draw the watermark
+        ctx.globalAlpha = WATERMARK_OPACITY; // Set watermark opacity
+        ctx.drawImage(watermarkImage, x, y, wmWidth, wmHeight);
+        ctx.globalAlpha = 1.0; // Reset opacity
+
+    } catch (error) {
+        console.error("Watermark could not be applied. Returning original image.", error);
+        // If watermark fails to load or draw, we still have the original image on the canvas
+        // We will just return that (which is what's done below)
+    }
+
+    // 8. Return the new watermarked image as base64
+    return canvas.toDataURL('image/png');
+}
+
 
 // --- Image Generation ---
 async function handleImageGenerationRequest(promptOverride = null, fromRegenerate = false) {
@@ -315,8 +443,14 @@ async function handleImageGenerationRequest(promptOverride = null, fromRegenerat
             : result.predictions?.[0]?.bytesBase64Encoded;
         if (!base64Data) throw new Error("No image data in API response");
         
+        // --- MODIFIED SECTION START ---
+        // Add watermark
+        const watermarkedBase64 = await addWatermark(`data:image/png;base64,${base64Data}`);
+        // --- MODIFIED SECTION END ---
+        
         // IMPORTANT: Show the original user prompt in the modal, not the modified one
-        showPreviewModal(`data:image/png;base64,${base64Data}`, userPrompt, generationInputData);
+        // Use the new watermarked image
+        showPreviewModal(watermarkedBase64, userPrompt, generationInputData);
 
     } catch (error) {
         console.error("Generation Error:", error);
@@ -335,6 +469,7 @@ async function handleRegeneration() {
     if (!newPrompt && !currentPreviewInputData) return;
     toggleModal(DOMElements.previewModal, false);
     // handleImageGenerationRequest will automatically add the currently selected style
+    // and apply the watermark to the new result.
     await handleImageGenerationRequest(newPrompt, true);
 }
 
@@ -387,7 +522,7 @@ function removeUploadedImage() {
 
 // --- Preview Modal ---
 function showPreviewModal(imageUrl, prompt, inputImageData) {
-    DOMElements.previewImage.src = imageUrl;
+    DOMElements.previewImage.src = imageUrl; // This will now be the watermarked image URL
     DOMElements.previewPromptInput.value = prompt; // Show original user prompt
     currentPreviewInputData = inputImageData;
     DOMElements.previewInputImageContainer.classList.toggle('hidden', !inputImageData);
@@ -417,6 +552,8 @@ function removePreviewInputImage() {
 }
 
 function downloadPreviewImage() {
+    // This function will automatically download the watermarked image
+    // as it's pulling the src directly from the preview-image element.
     fetch(DOMElements.previewImage.src)
         .then(res => res.blob())
         .then(blob => {
@@ -432,5 +569,3 @@ function downloadPreviewImage() {
         })
         .catch(() => console.error('An error occurred while downloading the image.'));
 }
-
-
