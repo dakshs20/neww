@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ids = [
         'header-nav', 'auth-modal', 'google-signin-btn', 'new-user-credits-modal',
         'mobile-menu', 'mobile-menu-btn', 'menu-open-icon', 'menu-close-icon',
-        'scroll-to-collab-btn', 'scroll-to-collab-btn-2', 'collaboration-section'
+        'see-how-it-works-btn', 'workflow-section'
     ];
     ids.forEach(id => {
         if (id) {
@@ -67,13 +67,12 @@ function initializeEventListeners() {
     });
     
     // --- Page-specific Scroll Listeners ---
-    const scrollTarget = DOMElements.collaborationSection;
+    const scrollTarget = DOMElements.workflowSection;
     if (scrollTarget) {
-        const scrollToCollab = () => {
+        const scrollToWorkflow = () => {
             scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
-        DOMElements.scrollToCollabBtn?.addEventListener('click', scrollToCollab);
-        DOMElements.scrollToCollabBtn2?.addEventListener('click', scrollToCollab);
+        DOMElements.seeHowItWorksBtn?.addEventListener('click', scrollToWorkflow);
     }
 }
 
@@ -84,7 +83,7 @@ function initializeAnimations() {
     
     gsap.registerPlugin(ScrollTrigger);
 
-    // Hero Animation
+    // 1. Hero Animation
     gsap.from(".team-hero-item", {
         opacity: 0,
         y: 30,
@@ -94,68 +93,106 @@ function initializeAnimations() {
         delay: 0.2
     });
 
-    // Collaboration Section Animation
-    gsap.from(".collab-item-text", {
-        opacity: 0,
-        x: -50,
-        duration: 1,
-        ease: 'power3.out',
-        scrollTrigger: {
-            trigger: "#collaboration-section",
-            start: "top 80%",
-        }
-    });
-    gsap.from(".collab-item-visual", {
-        opacity: 0,
-        x: 50,
-        duration: 1,
-        ease: 'power3.out',
-        scrollTrigger: {
-            trigger: "#collaboration-section",
-            start: "top 80%",
-        }
-    });
-
-    // NEW: Animate chat bubbles inside collab window
-    gsap.from(".chat-bubble-container", {
-        opacity: 0,
-        y: 20,
-        duration: 0.6,
-        stagger: 0.2,
-        ease: 'power3.out',
-        scrollTrigger: {
-            trigger: ".collab-content",
-            start: "top 90%",
-        }
-    });
-
-    // Benefits Cards Animation
-    gsap.from(".benefit-card", {
+    // 2. "Why Teams Love GenArt" Cards
+    gsap.from(".love-card", {
         opacity: 0,
         y: 40,
         duration: 0.8,
         stagger: 0.1,
         ease: 'power3.out',
         scrollTrigger: {
-            trigger: ".benefit-card",
-            start: "top 85%",
-        }
-    });
-    
-    // Testimonial Animation
-    gsap.from(".team-testimonial-card", {
-        opacity: 0,
-        scale: 0.9,
-        duration: 1,
-        ease: 'power3.out',
-        scrollTrigger: {
-            trigger: ".team-testimonial-card",
+            trigger: ".love-card",
             start: "top 85%",
         }
     });
 
-    // Final CTA Animation
-    gsap.from(".team-cta-item", {
+    // 3. Workflow Showcase
+    gsap.from(".workflow-step", {
+        opacity: 0,
+        y: 50,
+        duration: 0.8,
+        stagger: 0.2,
+        ease: 'power3.out',
+        scrollTrigger: {
+            trigger: "#workflow-section",
+            start: "top 80%",
+        }
+    });
+    gsap.from(".workflow-line-glow", {
+        scaleX: 0,
+        duration: 1.5,
+        ease: 'power3.out',
+        transformOrigin: 'left center',
+        scrollTrigger: {
+            trigger: "#workflow-section",
+            start: "top 80%",
+        }
+    });
+
+    // 4. "Built for Agencies" Cards
+    gsap.from(".agency-card", {
+        opacity: 0,
+        y: 40,
+        duration: 0.8,
+        stagger: 0.1,
+        ease: 'power3.out',
+        scrollTrigger: {
+            trigger: ".agency-card",
+            start: "top 85%",
+        }
+    });
+    
+    // 5. Collaboration Features
+    gsap.from(".feature-card", {
+        opacity: 0,
+        y: 40,
+        duration: 0.8,
+        stagger: 0.1,
+        ease: 'power3.out',
+        scrollTrigger: {
+            trigger: ".feature-card",
+            start: "top 85%",
+        }
+    });
+    gsap.from(".feature-visual", {
+        opacity: 0,
+        scale: 0.95,
+        duration: 1,
+        ease: 'power3.out',
+        scrollTrigger: {
+            trigger: ".feature-visual",
+            start: "top 85%",
+        }
+    });
+    
+    // 6. Security Section
+    gsap.from(".security-item", {
+        opacity: 0,
+        y: 40,
+        duration: 1,
+        stagger: 0.2,
+        ease: 'power3.out',
+        scrollTrigger: {
+            trigger: ".security-item",
+            start: "top 85%",
+        }
+    });
+    
+    // 8. Testimonials
+    gsap.from(".team-testimonial-item", {
+        opacity: 0,
+        y: 40,
+        duration: 0.8,
+        stagger: 0.2,
+        ease: 'power3.out',
+        scrollTrigger: {
+            trigger: ".team-testimonial-item",
+            start: "top 85%",
+        }
+    });
+
+    // 10. Final CTA Animation
+    gsap.from(".final-cta-item", {
         opacity: 0,
         y: 30,
         duration: 0.8,
