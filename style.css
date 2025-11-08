@@ -183,10 +183,11 @@ header.scrolled #header-nav {
     padding: 1.5rem;
     transition: all 0.3s ease;
     opacity: 0; /* For GSAP */
+    box-shadow: 0 4px 10px -5px rgba(0, 0, 0, 0.02);
 }
 .benefit-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.07);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 22px -8px rgba(0, 0, 0, 0.08);
 }
 
 /* --- Team Testimonial Card --- */
@@ -208,6 +209,20 @@ header.scrolled #header-nav {
     inset: 0;
     background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
     opacity: 0.5;
+}
+
+/* --- NEW: Collab Window Styles --- */
+.collab-window {
+    padding: 0;
+    overflow: hidden;
+}
+.collab-content {
+    /* making the content scrollable if it gets too long, more realistic */
+    max-height: 400px;
+    overflow-y: auto;
+}
+.chat-bubble-container {
+    opacity: 0; /* For GSAP */
 }
 
 
@@ -232,5 +247,5 @@ header.scrolled #header-nav {
         padding-right: 1rem;
     }
     .team-testimonial-card { padding: 2rem; }
-    .collab-item-visual { padding: 1rem; }
+    .collab-item-visual { padding: 0; } /* Change padding to 0 to let window header span */
 }
