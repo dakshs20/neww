@@ -27,15 +27,13 @@ header.scrolled #header-nav {
 }
 
 /* --- Hero, Stats, and Masonry Sections --- */
-#hero-headline {
-    opacity: 0;
-}
+/* REMOVED: opacity: 0; from hero elements */
 #hero-subline {
-    opacity: 0;
+    /* REMOVED: opacity: 0; */
     transform: translateY(20px);
 }
 .stat-card {
-    opacity: 0;
+    /* REMOVED: opacity: 0; */
     transform: translateY(30px) scale(0.95);
     will-change: transform, opacity;
 }
@@ -148,9 +146,11 @@ header.scrolled #header-nav {
 --- */
 
 /* --- GSAP Animation Base --- */
-.team-hero-item, .love-card, .workflow-step, .agency-card, .feature-card, .feature-visual, .security-item, .team-testimonial-item, .final-cta-item, .section-title, .workflow-line-glow {
-    opacity: 0;
-}
+/* REMOVED the entire block that set opacity: 0;
+Your JS files (script.js and teams.js) already handle
+this by using gsap.from() and setting opacity: 0
+as the starting point. This is the correct way.
+*/
 
 /* --- Team CTA Buttons --- */
 .team-cta-button {
