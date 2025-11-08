@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GenArt for Teams</title>
+    <meta name="description" content="Empower your entire creative team to generate stunning visuals — faster, together.">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+</head>
+<body class="bg-white">
+
+    <!-- Full-page animated gradient background -->
+    <div id="animated-gradient-bg"></div>
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-30 p-4 transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <a href="index.html">
+                <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 md:h-7 w-auto">
+            </a>
+            <!-- Desktop Navigation (Dynamically populated by teams.js) -->
+            <div id="header-nav" class="hidden md:flex items-center space-x-2 bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-sm rounded-full px-2 py-1">
+                <!-- Auth state content injected by teams.js -->
+            </div>
+            <!-- Mobile Menu Button -->
+            <button id="mobile-menu-btn" class="md:hidden p-2 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 text-slate-800 z-50">
+                <svg id="menu-open-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                </svg>
+                <svg id="menu-close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        <!-- Mobile Menu (Dynamically populated by teams.js) -->
+        <div id="mobile-menu" class="hidden md:hidden fixed inset-0 bg-white/90 backdrop-blur-xl z-40 p-4 pt-24">
+            <!-- Mobile nav content injected by teams.js -->
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="relative z-10 pt-24 md:pt-32 overflow-x-hidden">
+
+        <!-- Hero Section -->
+        <section id="team-hero-section" class="py-20 md:py-32 text-center relative">
+            <div class="max-w-4xl mx-auto px-4">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-800 tracking-tighter team-hero-item">
+                    GenArt for Teams
+                </h1>
+                <p class="mt-4 text-lg md:text-xl text-gray-500 max-w-2xl mx-auto team-hero-item">
+                    Empower your entire creative team to generate stunning visuals — faster, together.
+                </p>
+                <div class="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4 team-hero-item">
+                    <button id="scroll-to-collab-btn" class="team-cta-button team-cta-secondary">
+                        Use it
+                    </button>
+                    <!-- This button redirects to the main app, ideally with a param for team mode -->
+                    <a href="index.html" class="team-cta-button team-cta-primary">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Collaboration Showcase Section -->
+        <section id="collaboration-section" class="py-24 md:py-32 bg-white/50 backdrop-blur-md">
+            <div class="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
+                <div class="collab-item-text">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight">
+                        Collaborate in real-time. Create as one.
+                    </h2>
+                    <p class="mt-4 text-lg text-gray-600">
+                        Stop passing files back and forth. With GenArt's shared workspace, your entire team can generate, edit, and approve visuals in one place. See changes instantly and build on each other's ideas for rapid creative iteration.
+                    </p>
+                </div>
+                <!-- Visual Element: Mockup of collaborative prompts -->
+                <div class="collab-item-visual p-6 bg-white rounded-2xl shadow-xl border border-gray-200/80">
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-3">
+                            <img src="https://placehold.co/40x40/517CBE/FFFFFF?text=A&font=sans-serif" alt="Avatar A" class="w-10 h-10 rounded-full">
+                            <div class="flex-1 bg-gray-100 rounded-xl p-3">
+                                <p class="text-sm text-gray-800">"A cinematic shot of a futuristic cityscape at dusk, neon-lit..."</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3 justify-end">
+                            <div class="flex-1 bg-blue-100 rounded-xl p-3 max-w-xs">
+                                <p class="text-sm text-gray-800">"Nice! Can we make it... rainy, with reflections on the streets?"</p>
+                            </div>
+                            <img src="https://placehold.co/40x40/EB5757/FFFFFF?text=B&font=sans-serif" alt="Avatar B" class="w-10 h-10 rounded-full">
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <img src="https://placehold.co/40x40/517CBE/FFFFFF?text=A&font=sans-serif" alt="Avatar A" class="w-10 h-10 rounded-full">
+                            <div class="flex-1 bg-gray-100 rounded-xl p-3">
+                                <p class="text-sm text-gray-800">"Generating image..."</p>
+                                <img src="https://placehold.co/400x225/333333/555555?text=Rainy+Cityscape" alt="Generated Image" class="mt-2 rounded-lg w-full h-auto">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How Agencies Benefit Section -->
+        <section class="py-24 md:py-32">
+            <div class="max-w-6xl mx-auto px-4">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight text-center">
+                    Built for the speed of creativity.
+                </h2>
+                <div class="mt-16 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Benefit Card 1 -->
+                    <div class="benefit-card">
+                        <svg class="w-8 h-8 text-[#517CBE]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M5 11v2m14-2v2"></path></svg>
+                        <h3 class="mt-4 font-semibold text-lg text-gray-900">Centralized Workspace</h3>
+                        <p class="mt-1 text-gray-500">All your team's projects, assets, and iterations in one unified place.</p>
+                    </div>
+                    <!-- Benefit Card 2 -->
+                    <div class="benefit-card">
+                        <svg class="w-8 h-8 text-[#517CBE]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <h3 class="mt-4 font-semibold text-lg text-gray-900">Brand-Consistent AI</h3>
+                        <p class="mt-1 text-gray-500">Fine-tune models to ensure every image aligns with your client's brand identity.</p>
+                    </div>
+                    <!-- Benefit Card 3 -->
+                    <div class="benefit-card">
+                        <svg class="w-8 h-8 text-[#517CBE]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <h3 class="mt-4 font-semibold text-lg text-gray-900">Fast Client Iterations</h3>
+                        <p class="mt-1 text-gray-500">Go from concept to final visual in minutes, not days. Perfect for client projects.</p>
+                    </div>
+                    <!-- Benefit Card 4 -->
+                    <div class="benefit-card">
+                        <svg class="w-8 h-8 text-[#517CBE]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3l-4-4-4 4z"></path></svg>
+                        <h3 class="mt-4 font-semibold text-lg text-gray-900">Seamless Handoff</h3>
+                        <p class="mt-1 text-gray-500">Easily review, approve, and export high-resolution assets for any campaign.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Testimonials Section -->
+        <section class="py-24 md:py-32 bg-gray-50/70">
+            <div class="max-w-4xl mx-auto px-4">
+                <div class="relative team-testimonial-card">
+                    <svg class="w-12 h-12 text-gray-400/80 absolute top-8 left-8" fill="currentColor" viewBox="0 0 32 32">
+                        <path d="M9.333 12h-2.667c-1.473 0-2.667 1.193-2.667 2.667v8c0 1.473 1.193 2.667 2.667 2.667h2.667v-13.333zM25.333 12h-2.667c-1.473 0-2.667 1.193-2.667 2.667v8c0 1.473 1.193 2.667 2.667 2.667h2.667v-13.333z"></path>
+                    </svg>
+                    <p class="text-2xl font-medium text-gray-200 relative z-10">
+                        "GenArt has redefined our design workflow — from ideation to execution. What used to take days of back-and-forth now happens in a single afternoon."
+                    </p>
+                    <div class="mt-6 pt-6 border-t border-gray-400/30 relative z-10">
+                        <p class="font-semibold text-gray-100">Alex Chen</p>
+                        <p class="text-sm text-gray-300">Creative Director, Studio Bright</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final CTA Section -->
+        <section id="team-cta-section" class="py-24 md:py-32 text-center relative">
+            <div class="max-w-3xl mx-auto px-4">
+                <h2 class="text-4xl sm:text-5xl font-bold text-gray-800 tracking-tighter team-cta-item">
+                    Ready to transform how your team creates?
+                </h2>
+                <div class="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4 team-cta-item">
+                    <button id="scroll-to-collab-btn-2" class="team-cta-button team-cta-secondary">
+                        Use it
+                    </button>
+                    <a href="index.html" class="team-cta-button team-cta-primary">
+                        Get Started
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <!-- Footer -->
+    <footer class="relative z-10 text-center py-8 border-t border-gray-200 bg-white">
+        <p class="text-xs text-gray-500">&copy; 2025 GenArt. All rights reserved.</p>
+        <a href="privacy-policy.html" class="text-xs text-gray-500 hover:text-gray-800 mt-2 inline-block">Privacy Policy</a>
+    </footer>
+
+    <!-- Auth Modal (re-using from index.html) -->
+    <div id="auth-modal" role="dialog" aria-hidden="true" class="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm md:max-w-3xl overflow-hidden grid md:grid-cols-2" onclick="event.stopPropagation()">
+            <!-- Image Section -->
+            <div class="relative h-56 md:h-auto">
+                <img src="https://images.unsplash.com/photo-1677756119517-756a188d2d94?q=80&w=800&auto=format&fit=crop" class="absolute h-full w-full object-cover" alt="Abstract AI art">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#517CBE]/60 to-transparent"></div>
+                <div class="relative h-full flex flex-col justify-end p-6 md:p-8 text-white">
+                    <h3 class="text-2xl md:text-3xl font-bold leading-tight">Create without limits.</h3>
+                    <p class="mt-1 md:mt-2 text-gray-200 text-base md:text-lg">Join our community to save and share your creations.</p>
+                </div>
+            </div>
+            <!-- Sign-in Section -->
+            <div class="p-8 md:p-12 flex flex-col justify-center text-center relative">
+                <button class="close-modal-btn absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Unlock Your Creativity</h2>
+                <p class="text-gray-500 mt-3 mb-8">Sign in to generate, save, and share your unique AI-powered art.</p>
+                <button id="google-signin-btn" class="w-full bg-[#4285F4] text-white font-semibold py-3 px-4 rounded-lg hover:bg-[#357ae8] flex items-center justify-center space-x-3 transition-colors shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4285F4]">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/>
+                    </svg>
+                    <span>Sign In with Google</span>
+                </button>
+                <p class="mt-6 text-xs text-gray-400">
+                    By continuing, you agree to our <a href="#" class="underline hover:text-gray-600">Terms of Service</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- New User Welcome Modal (for auth flow consistency) -->
+    <div id="new-user-credits-modal" role="dialog" aria-hidden="true" class="modal-backdrop fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Congratulations!</h2>
+            <p class="text-gray-500 mb-6">You've received <span class="font-bold text-[#517CBE]">10 free credits</span> to start creating.</p>
+            <button class="close-modal-btn w-full bg-[#517CBE] text-white font-semibold py-3 px-4 rounded-lg hover:bg-[#4168a3] block">Start Generating</button>
+        </div>
+    </div>
+
+    <script type="module" src="teams.js"></script>
+</body>
+</html>
