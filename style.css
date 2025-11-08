@@ -85,7 +85,7 @@ header.scrolled #header-nav {
 .animate-shake { animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both; }
 
 
-/* --- NEW: Style Selector --- */
+/* --- Style Selector --- */
 .style-btn {
     padding: 0.25rem 0.75rem;
     font-size: 0.875rem;
@@ -109,7 +109,7 @@ header.scrolled #header-nav {
 }
 
 
-/* --- Testimonial Section --- */
+/* --- Testimonial Section (Homepage) --- */
 .testimonial-image {
     border-radius: 1.5rem;
     width: 100%;
@@ -143,7 +143,16 @@ header.scrolled #header-nav {
 .use-cases-content { display: none; }
 
 
-/* --- NEW: Teams Page Styles --- */
+/* ---
+--- NEW: Teams Page Styles ---
+--- */
+
+/* --- GSAP Animation Base --- */
+.team-hero-item, .love-card, .workflow-step, .agency-card, .feature-card, .feature-visual, .security-item, .team-testimonial-item, .final-cta-item, .section-title, .workflow-line-glow {
+    opacity: 0;
+}
+
+/* --- Team CTA Buttons --- */
 .team-cta-button {
     padding: 0.75rem 1.5rem;
     font-size: 1rem;
@@ -175,60 +184,88 @@ header.scrolled #header-nav {
     transform: translateY(-2px);
 }
 
-/* --- Benefits Cards --- */
-.benefit-card {
+/* --- "Why Love" Cards (re-using .benefit-card) --- */
+.love-card {
     background-color: white;
     border-radius: 1rem;
     border: 1px solid rgba(229, 231, 235, 0.8);
     padding: 1.5rem;
     transition: all 0.3s ease;
-    opacity: 0; /* For GSAP */
     box-shadow: 0 4px 10px -5px rgba(0, 0, 0, 0.02);
 }
-.benefit-card:hover {
+.love-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 12px 22px -8px rgba(0, 0, 0, 0.08);
 }
 
-/* --- Team Testimonial Card --- */
-.team-testimonial-card {
+/* --- Workflow Timeline --- */
+.workflow-dot {
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
     background-color: #517CBE;
-    background-image: linear-gradient(135deg, #517CBE 0%, #3a5a8a 100%);
     color: white;
-    border-radius: 1.5rem;
-    padding: 2.5rem;
+    font-weight: 600;
+    font-size: 1.125rem;
+    margin: 0 auto 1rem auto;
+    border: 4px solid white;
+    box-shadow: 0 0 0 2px #517CBE;
     position: relative;
-    box-shadow: 0 25px 50px -12px rgba(81, 124, 190, 0.3);
-    overflow: hidden;
-    opacity: 0; /* For GSAP */
+    z-index: 10;
 }
-/* Adding a subtle gradient overlay */
-.team-testimonial-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
-    opacity: 0.5;
+.workflow-line-glow {
+    animation: pulse-glow 2.5s ease-in-out infinite;
+}
+@keyframes pulse-glow {
+    0% { opacity: 0.3; }
+    50% { opacity: 0.6; }
+    100% { opacity: 0.3; }
 }
 
-/* --- NEW: Collab Window Styles --- */
-.collab-window {
-    padding: 0;
-    overflow: hidden;
+/* --- Agency Cards --- */
+.agency-card {
+    background-color: white;
+    border-radius: 1rem;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px -5px rgba(0, 0, 0, 0.02);
+    overflow: hidden; /* To contain the image */
 }
-.collab-content {
-    /* making the content scrollable if it gets too long, more realistic */
-    max-height: 400px;
-    overflow-y: auto;
+.agency-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 22px -8px rgba(0, 0, 0, 0.08);
 }
-.chat-bubble-container {
-    opacity: 0; /* For GSAP */
+.agency-card-img {
+    width: 100%;
+    height: 200px; /* Fixed height for uniformity */
+    object-fit: cover;
+}
+
+/* --- Feature Cards --- */
+.feature-card {
+    background-color: white;
+    border-radius: 1rem;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    padding: 1.5rem;
+    box-shadow: 0 4px 10px -5px rgba(0, 0, 0, 0.02);
+}
+
+/* --- Team Testimonial Items --- */
+.team-testimonial-item {
+    background-color: white;
+    border-radius: 1rem;
+    border: 1px solid rgba(229, 231, 235, 0.8);
+    padding: 2rem;
+    box-shadow: 0 4px 10px -5px rgba(0, 0, 0, 0.02);
 }
 
 
 /* --- Mobile Responsiveness --- */
 @media (max-width: 767px) {
-    main { padding-bottom: 10rem; /* More space for taller footer */ }
+    main { padding-bottom: 10rem; }
     #hero-headline { font-size: 2.5rem; line-height: 1.1; text-align: center; }
     #hero-subline { font-size: 1rem; }
     #first-screen-content { padding-left: 1rem; padding-right: 1rem; }
@@ -242,10 +279,21 @@ header.scrolled #header-nav {
     .testimonial-text { font-size: 1.125rem; }
     
     /* --- Teams Page Mobile --- */
-    #team-hero-section, #collaboration-section, .benefit-card, .team-testimonial-card, #team-cta-section {
+    #team-hero-section, #workflow-section, .love-card, .agency-card, .feature-card, .security-item, .team-testimonial-item, #team-cta-section {
         padding-left: 1rem;
         padding-right: 1rem;
     }
-    .team-testimonial-card { padding: 2rem; }
-    .collab-item-visual { padding: 0; } /* Change padding to 0 to let window header span */
+    .team-testimonial-card { padding: 2rem; } /* Old class, just in case */
+
+    /* Mobile workflow */
+    #workflow-section .relative.grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    #workflow-section .absolute {
+        display: none; /* Hide horizontal timeline on mobile */
+    }
+    .workflow-dot {
+        margin-bottom: 0.5rem;
+    }
 }
