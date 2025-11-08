@@ -27,6 +27,9 @@
                  <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 w-auto">
             </a>
             <div id="header-auth-section" class="hidden md:flex items-center space-x-6">
+                <!-- Navigation Links Updated -->
+                <a href="index.html" class="text-sm font-medium text-gray-900">Home</a>
+                <a href="teams.html" class="text-sm font-medium text-gray-900">For Teams</a>
                 <a href="pricing.html" class="text-sm font-medium text-gray-900">Pricing</a>
                 <div id="generation-counter" class="text-sm font-medium text-gray-500"></div>
                 <button id="auth-btn" class="text-sm font-medium border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100">
@@ -40,6 +43,9 @@
             </div>
             <div id="mobile-menu" class="hidden md:hidden absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl z-50 border">
                 <div class="p-2">
+                    <!-- Mobile Navigation Links Updated -->
+                    <a href="index.html" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Home</a>
+                    <a href="teams.html" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">For Teams</a>
                     <a href="pricing.html" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md">Pricing</a>
                     <div class="border-t my-1"></div>
                     <div id="mobile-generation-counter" class="px-2 py-2 text-sm text-center text-gray-600"></div>
@@ -51,31 +57,79 @@
         </header>
 
         <main class="flex-grow flex flex-col items-center justify-center text-center p-4">
-            <div class="w-full max-w-3xl fade-in-slide-up">
+            <div class="w-full max-w-5xl fade-in-slide-up">
                 <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Choose Your Plan</h1>
                 <p class="text-lg md:text-xl text-gray-500 mb-10">Purchase credits to continue creating with the most advanced AI.</p>
                 
-                <!-- 💰 Pricing Section (Dynamic) -->
-                <div id="pricing-section" class="w-full max-w-4xl mx-auto text-left">
-                
-                    <!-- Billing toggle -->
-                    <div class="flex items-center justify-center gap-3 mb-10">
-                        <span class="text-gray-600 font-medium">Monthly</span>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="billing-toggle" class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-gray-700 
-                            peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] 
-                            after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 
-                            after:border after:rounded-full after:h-5 after:w-5 after:transition-all 
-                            peer-checked:bg-blue-600">
+                <div class="grid md:grid-cols-3 gap-8 text-left">
+                    <!-- Pricing Card 1: Create -->
+                    <div class="bg-white p-8 rounded-2xl border border-gray-200/80 shadow-lg transform hover:scale-105 transition-transform duration-300 flex flex-col">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-2">Create</h2>
+                        <p class="text-gray-500 mb-4 text-sm">Perfect for hobbyists & casual creators.</p>
+                        <div class="my-4">
+                            <span class="text-5xl font-bold text-gray-900">575</span>
+                            <span class="text-gray-500 font-medium">Credits</span>
                         </div>
-                        </label>
-                        <span class="text-gray-600 font-medium">Yearly</span>
+                        <p class="text-lg font-semibold text-gray-700 mb-6">$9 / ₹798</p>
+                        <ul class="space-y-3 text-gray-600 mb-8">
+                            <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>High-Quality Generations</li>
+                            <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Credits Expire in 3 Months</li>
+                        </ul>
+                        <button class="buy-now-btn mt-auto w-full bg-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-black transition-colors" data-plan="create">Buy Now</button>
                     </div>
 
-                    <!-- Plan cards will be injected dynamically -->
-                    <div id="pricing-cards" class="grid md:grid-cols-3 gap-8 text-left"></div>
-                </div>  
+                    <!-- Pricing Card 2: Elevate -->
+                    <div class="bg-white p-8 rounded-2xl border-2 border-blue-500 shadow-xl transform hover:scale-105 transition-transform duration-300 relative flex flex-col">
+                        <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full">POPULAR</div>
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-2">Elevate</h2>
+                         <p class="text-gray-500 mb-4 text-sm">Perfect for regular creators & freelancers.</p>
+                        <div class="my-4">
+                            <span class="text-5xl font-bold text-gray-900">975</span>
+                            <span class="text-gray-500 font-medium">Credits</span>
+                        </div>
+                        <p class="text-lg font-semibold text-gray-700 mb-6">$18 / ₹1596</p>
+                        <ul class="space-y-3 text-gray-600 mb-8">
+                             <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>High-Quality Generations</li>
+                             <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Credits Expire in 5 Months</li>
+                        </ul>
+                        <button class="buy-now-btn mt-auto w-full bg-blue-500 text-white font-semibold py-3 rounded-lg hover:bg-blue-600 transition-colors" data-plan="elevate">Buy Now</button>
+                    </div>
+
+                    <!-- Pricing Card 3: Pro -->
+                     <div class="bg-white p-8 rounded-2xl border border-gray-200/80 shadow-lg transform hover:scale-105 transition-transform duration-300 flex flex-col">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-2">Pro</h2>
+                        <p class="text-gray-500 mb-4 text-sm">Perfect for professionals & agencies.</p>
+                        <div class="my-4">
+                             <span class="text-5xl font-bold text-gray-900">1950</span>
+                             <span class="text-gray-500 font-medium">Credits</span>
+                        </div>
+                        <p class="text-lg font-semibold text-gray-700 mb-6">$29 / ₹2571</p>
+                         <ul class="space-y-3 text-gray-600 mb-8">
+                             <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>High-Quality Generations</li>
+                             <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Credits Never Expire</li>
+                        </ul>
+                        <button class="buy-now-btn mt-auto w-full bg-gray-800 text-white font-semibold py-3 rounded-lg hover:bg-black transition-colors" data-plan="pro">Buy Now</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- FAQ Section -->
+            <div class="w-full max-w-3xl mt-20 text-left">
+                <h2 class="text-3xl font-bold text-center text-gray-900 mb-10">Frequently Asked Questions</h2>
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="font-semibold text-gray-800">What counts as one credit?</h3>
+                        <p class="text-gray-600 mt-1">One credit allows you to generate one image. If you generate a batch of four images, it will use four credits.</p>
+                    </div>
+                     <div class="border-t pt-4">
+                        <h3 class="font-semibold text-gray-800">Do my credits expire?</h3>
+                        <p class="text-gray-600 mt-1">It depends on your plan. The 'Create' plan credits expire in 3 months, and 'Elevate' in 5 months. Credits from the 'Pro' plan never expire.</p>
+                    </div>
+                     <div class="border-t pt-4">
+                        <h3 class="font-semibold text-gray-800">Can I get a refund?</h3>
+                        <p class="text-gray-600 mt-1">Due to the computational costs of AI generation, we do not offer refunds on credit purchases. All sales are final.</p>
+                    </div>
+                </div>
             </div>
         </main>
 
@@ -101,5 +155,3 @@
     <script type="module" src="pricing.js"></script>
 </body>
 </html>
-
-
