@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GenArt for Teams</title>
-    <meta name="description" content="Empower your entire creative team to generate stunning visuals — faster, together.">
+    <meta name="description" content="AI-Powered Image Generation for Agencies & Teams. Bring your entire team on GenArt to create, collaborate, and deliver visuals faster than ever.">
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
@@ -28,7 +28,7 @@
                 <!-- Auth state content injected by teams.js -->
             </div>
             <!-- Mobile Menu Button -->
-            <button id="mobile-menu-btn" class="md:hidden p-2 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 text-slate-800 z-50">
+            <button id="mobile-menu-btn" class="md:hidden p-2 rounded-full bg-white/70 backdrop-blur-md border-slate-200/80 text-slate-800 z-50">
                 <svg id="menu-open-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
                 </svg>
@@ -46,140 +46,279 @@
     <!-- Main Content -->
     <main class="relative z-10 pt-24 md:pt-32 overflow-x-hidden">
 
-        <!-- Hero Section -->
-        <section id="team-hero-section" class="py-20 md:py-32 text-center relative">
-            <div class="max-w-4xl mx-auto px-4">
+        <!-- 1. Hero Section -->
+        <section id="team-hero-section" class="py-20 md:py-32 relative">
+            <div class="max-w-5xl mx-auto px-4 text-center">
                 <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-800 tracking-tighter team-hero-item">
-                    GenArt for Teams
+                    AI-Powered Image Generation for Agencies & Teams
                 </h1>
-                <p class="mt-4 text-lg md:text-xl text-gray-500 max-w-2xl mx-auto team-hero-item">
-                    Empower your entire creative team to generate stunning visuals — faster, together.
+                <p class="mt-4 text-lg md:text-xl text-gray-500 max-w-3xl mx-auto team-hero-item">
+                    Bring your entire team on GenArt to create, collaborate, and deliver visuals faster than ever.
                 </p>
                 <div class="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4 team-hero-item">
-                    <button id="scroll-to-collab-btn" class="team-cta-button team-cta-secondary">
-                        Use it
-                    </button>
-                    <!-- This button redirects to the main app, ideally with a param for team mode -->
                     <a href="index.html" class="team-cta-button team-cta-primary">
                         Get Started
                     </a>
+                    <button id="see-how-it-works-btn" class="team-cta-button team-cta-secondary">
+                        See How It Works
+                    </button>
                 </div>
             </div>
-        </section>
-
-        <!-- Collaboration Showcase Section -->
-        <section id="collaboration-section" class="py-24 md:py-32">
-            <div class="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
-                <div class="collab-item-text">
-                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight">
-                        Collaborate in real-time. Create as one.
-                    </h2>
-                    <p class="mt-4 text-lg text-gray-600">
-                        Stop passing files back and forth. With GenArt's shared workspace, your entire team can generate, edit, and approve visuals in one place. See changes instantly and build on each other's ideas for rapid creative iteration.
-                    </p>
-                </div>
-                <!-- Visual Element: Mockup of collaborative prompts -->
-                <div class="collab-item-visual collab-window bg-white rounded-2xl shadow-xl border border-gray-200/80">
-                    <!-- Fake Window Header -->
+            <!-- Visual: Dynamic Mockup -->
+            <div class="max-w-6xl mx-auto px-4 mt-20 md:mt-32 team-hero-item">
+                <div class="relative bg-white rounded-2xl shadow-xl border border-gray-200/80 p-2">
                     <div class="flex items-center space-x-2 px-4 py-3 border-b border-gray-200/80">
                         <div class="w-3 h-3 bg-gray-300 rounded-full"></div>
                         <div class="w-3 h-3 bg-gray-300 rounded-full"></div>
                         <div class="w-3 h-3 bg-gray-300 rounded-full"></div>
                     </div>
-                    
-                    <div class="space-y-4 p-6 collab-content">
-                        <div class="flex items-start space-x-3 chat-bubble-container">
-                            <img src="https://placehold.co/40x40/517CBE/FFFFFF?text=A&font=sans-serif" alt="Avatar A" class="w-10 h-10 rounded-full flex-shrink-0">
-                            <div class="flex-1 bg-gray-100 rounded-xl p-3">
-                                <p class="text-sm text-gray-800">"A cinematic shot of a futuristic cityscape at dusk, neon-lit..."</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start space-x-3 justify-end chat-bubble-container">
-                            <div class="flex-1 bg-blue-100 rounded-xl p-3 max-w-xs">
-                                <p class="text-sm text-gray-800">"Nice! Can we make it... rainy, with reflections on the streets?"</p>
-                            </div>
-                            <img src="https://placehold.co/40x40/EB5757/FFFFFF?text=B&font=sans-serif" alt="Avatar B" class="w-10 h-10 rounded-full flex-shrink-0">
-                        </div>
-                        <div class="flex items-start space-x-3 chat-bubble-container">
-                            <img src="https://placehold.co/40x40/517CBE/FFFFFF?text=A&font=sans-serif" alt="Avatar A" class="w-10 h-10 rounded-full flex-shrink-0">
-                            <div class="flex-1 bg-gray-100 rounded-xl p-3">
-                                <p class="text-sm text-gray-800">"Generating image..."</p>
-                                <img src="https://images.unsplash.com/photo-1505678261036-1dcfcc503ca6?q=80&w=800&auto=format&fit=crop" 
-                                     alt="Generated Image of a neon city" 
-                                     onerror="this.onerror=null;this.src='https://placehold.co/400x225/333333/555555?text=Neon+Cityscape';"
-                                     class="mt-2 rounded-lg w-full h-auto">
-                            </div>
-                        </div>
-                    </div>
+                    <img src="https://images.unsplash.com/photo-1678845708741-9658b763e03b?q=80&w=1600&auto=format&fit=crop"
+                         alt="Team dashboard mockup"
+                         onerror="this.onerror=null;this.src='https://placehold.co/1200x600/e0f2fe/517CBE?text=Team+Dashboard+Mockup';"
+                         class="w-full h-auto rounded-lg mt-2">
                 </div>
             </div>
         </section>
 
-        <!-- How Agencies Benefit Section -->
+        <!-- 2. Why Teams Love GenArt -->
         <section class="py-24 md:py-32">
             <div class="max-w-6xl mx-auto px-4">
-                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight text-center">
-                    Built for the speed of creativity.
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight text-center section-title">
+                    Why Teams Love GenArt
                 </h2>
                 <div class="mt-16 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <!-- Benefit Card 1 -->
-                    <div class="benefit-card">
-                        <svg class="w-8 h-8 text-[#517CBE]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M5 11v2m14-2v2"></path></svg>
-                        <h3 class="mt-4 font-semibold text-lg text-gray-900">Centralized Workspace</h3>
-                        <p class="mt-1 text-gray-500">All your team's projects, assets, and iterations in one unified place.</p>
+                    <!-- Card 1 -->
+                    <div class="love-card">
+                        <svg class="w-8 h-8 text-[#517CBE]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-2.131M17 20H8m9 0v-2c0-1.01-.42-1.93-.9-2.6M8 20H3v-2a3 3 0 015.356-2.131M8 20v-2c0-1.01.42-1.93.9-2.6M12 12a3 3 0 100-6 3 3 0 000 6zM6 9a3 3 0 100-6 3 3 0 000 6zm12 0a3 3 0 100-6 3 3 0 000 6z"></path></svg>
+                        <h3 class="mt-4 font-semibold text-lg text-gray-900">Collaborate in Real Time</h3>
+                        <p class="mt-1 text-gray-500">Work with your entire creative team on one workspace.</p>
                     </div>
-                    <!-- Benefit Card 2 -->
-                    <div class="benefit-card">
+                    <!-- Card 2 -->
+                    <div class="love-card">
                         <svg class="w-8 h-8 text-[#517CBE]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                        <h3 class="mt-4 font-semibold text-lg text-gray-900">Brand-Consistent AI</h3>
-                        <p class="mt-1 text-gray-500">Fine-tune models to ensure every image aligns with your client's brand identity.</p>
+                        <h3 class="mt-4 font-semibold text-lg text-gray-900">Brand Consistency</h3>
+                        <p class="mt-1 text-gray-500">Generate visuals that align perfectly with your brand tone and color.</p>
                     </div>
-                    <!-- Benefit Card 3 -->
-                    <div class="benefit-card">
+                    <!-- Card 3 -->
+                    <div class="love-card">
                         <svg class="w-8 h-8 text-[#517CBE]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        <h3 class="mt-4 font-semibold text-lg text-gray-900">Fast Client Iterations</h3>
-                        <p class="mt-1 text-gray-500">Go from concept to final visual in minutes, not days. Perfect for client projects.</p>
+                        <h3 class="mt-4 font-semibold text-lg text-gray-900">Faster Client Deliverables</h3>
+                        <p class="mt-1 text-gray-500">Deliver 10x visuals with AI speed.</p>
                     </div>
-                    <!-- Benefit Card 4 -->
-                    <div class="benefit-card">
-                        <svg class="w-8 h-8 text-[#517CBE]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3l-4-4-4 4z"></path></svg>
-                        <h3 class="mt-4 font-semibold text-lg text-gray-900">Seamless Handoff</h3>
-                        <p class="mt-1 text-gray-500">Easily review, approve, and export high-resolution assets for any campaign.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- Testimonials Section -->
-        <section class="py-24 md:py-32">
-            <div class="max-w-4xl mx-auto px-4">
-                <div class="relative team-testimonial-card">
-                    <svg class="w-12 h-12 text-gray-400/80 absolute top-8 left-8" fill="currentColor" viewBox="0 0 32 32">
-                        <path d="M9.333 12h-2.667c-1.473 0-2.667 1.193-2.667 2.667v8c0 1.473 1.193 2.667 2.667 2.667h2.667v-13.333zM25.333 12h-2.667c-1.473 0-2.667 1.193-2.667 2.667v8c0 1.473 1.193 2.667 2.667 2.667h2.667v-13.333z"></path>
-                    </svg>
-                    <p class="text-2xl font-medium text-gray-200 relative z-10">
-                        "GenArt has redefined our design workflow — from ideation to execution. What used to take days of back-and-forth now happens in a single afternoon."
-                    </p>
-                    <div class="mt-6 pt-6 border-t border-gray-400/30 relative z-10">
-                        <p class="font-semibold text-gray-100">Alex Chen</p>
-                        <p class="text-sm text-gray-300">Creative Director, Studio Bright</p>
+                    <!-- Card 4 -->
+                    <div class="love-card">
+                        <svg class="w-8 h-8 text-[#517CBE]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        <h3 class="mt-4 font-semibold text-lg text-gray-900">Secure & Private</h3>
+                        <p class="mt-1 text-gray-500">Every image and project stays safe within your workspace.</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Final CTA Section -->
+        <!-- 3. Team Workflow Showcase -->
+        <section id="workflow-section" class="py-24 md:py-32">
+            <div class="max-w-6xl mx-auto px-4">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight text-center section-title">
+                    A Smarter Workflow
+                </h2>
+                <div class="relative mt-20">
+                    <!-- Glowing Timeline -->
+                    <div class="absolute top-1/2 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#517CBE] to-transparent opacity-30 workflow-line-glow"></div>
+                    <div class="absolute top-1/2 left-0 w-full h-px bg-gray-300"></div>
+                    
+                    <div class="relative grid md:grid-cols-4 gap-8">
+                        <!-- Step 1 -->
+                        <div class="workflow-step text-center">
+                            <div class="workflow-dot">1</div>
+                            <h3 class="mt-4 font-semibold text-lg text-gray-900">Brainstorm Together</h3>
+                            <p class="mt-1 text-gray-500">Upload text ideas, client briefs, and moodboards.</p>
+                        </div>
+                        <!-- Step 2 -->
+                        <div class="workflow-step text-center">
+                            <div class="workflow-dot">2</div>
+                            <h3 class="mt-4 font-semibold text-lg text-gray-900">Generate Visuals</h3>
+                            <p class="mt-1 text-gray-500">Create stunning AI images collaboratively in seconds.</p>
+                        </div>
+                        <!-- Step 3 -->
+                        <div class="workflow-step text-center">
+                            <div class="workflow-dot">3</div>
+                            <h3 class="mt-4 font-semibold text-lg text-gray-900">Edit & Refine</h3>
+                            <p class="mt-1 text-gray-500">Tweak prompts, edit images, and regenerate options.</p>
+                        </div>
+                        <!-- Step 4 -->
+                        <div class="workflow-step text-center">
+                            <div class="workflow-dot">4</div>
+                            <h3 class="mt-4 font-semibold text-lg text-gray-900">Deliver</h3>
+                            <p class="mt-1 text-gray-500">Download, share, or integrate with client portals.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Built for Agencies -->
+        <section class="py-24 md:py-32">
+            <div class="max-w-6xl mx-auto px-4">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight text-center section-title">
+                    Built for Agencies
+                </h2>
+                <div class="mt-16 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Agency Card 1 -->
+                    <div class="agency-card">
+                        <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=800&auto=format&fit=crop" 
+                             alt="Advertising Agency" 
+                             onerror="this.onerror=null;this.src='https://placehold.co/400x300/e0f2fe/517CBE?text=Campaign';"
+                             class="agency-card-img">
+                        <div class="p-5">
+                            <h3 class="font-semibold text-lg text-gray-900">Advertising Agencies</h3>
+                            <p class="mt-1 text-gray-500">Instant mockups for campaigns.</p>
+                        </div>
+                    </div>
+                    <!-- Agency Card 2 -->
+                    <div class="agency-card">
+                        <img src="https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=800&auto=format&fit=crop" 
+                             alt="Design Studios" 
+                             onerror="this.onerror=null;this.src='https://placehold.co/400x300/e0f2fe/517CBE?text=Brand';"
+                             class="agency-card-img">
+                        <div class="p-5">
+                            <h3 class="font-semibold text-lg text-gray-900">Design Studios</h3>
+                            <p class="mt-1 text-gray-500">Generate brand visuals at scale.</p>
+                        </div>
+                    </div>
+                    <!-- Agency Card 3 -->
+                    <div class="agency-card">
+                        <img src="https://images.unsplash.com/photo-1496171367470-9ed9a91ea430?q=80&w=800&auto=format&fit=crop" 
+                             alt="Marketing Teams"
+                             onerror="this.onerror=null;this.src='https://placehold.co/400x300/e0f2fe/517CBE?text=Assets';"
+                             class="agency-card-img">
+                        <div class="p-5">
+                            <h3 class="font-semibold text-lg text-gray-900">Marketing Teams</h3>
+                            <p class="mt-1 text-gray-500">Create assets in seconds, not days.</p>
+                        </div>
+                    </div>
+                    <!-- Agency Card 4 -->
+                    <div class="agency-card">
+                        <img src="https://images.unsplash.com/photo-1516131206147-3023165786a3?q=80&w=800&auto=format&fit=crop" 
+                             alt="Production Houses" 
+                             onerror="this.onerror=null;this.src='https://placehold.co/400x300/e0f2fe/517CBE?text=Concept';"
+                             class="agency-card-img">
+                        <div class="p-5">
+                            <h3 class="font-semibold text-lg text-gray-900">Production Houses</h3>
+                            <p class="mt-1 text-gray-500">Concept visuals ready for pitch decks.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Collaboration Features -->
+        <section class="py-24 md:py-32">
+            <div class="max-w-6xl mx-auto px-4">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight text-center section-title">
+                    Powerful Collaboration Features
+                </h2>
+                <div class="mt-16 grid md:grid-cols-3 gap-8">
+                    <!-- Feature Card 1 -->
+                    <div class="feature-card">
+                        <h3 class="font-semibold text-lg text-gray-900">Shared Workspaces</h3>
+                        <p class="mt-1 text-gray-500">One source of truth for all your team's creative projects.</p>
+                    </div>
+                    <!-- Feature Card 2 -->
+                    <div class="feature-card">
+                        <h3 class="font-semibold text-lg text-gray-900">Project-Based Folders</h3>
+                        <p class="mt-1 text-gray-500">Keep assets organized by client, campaign, or project.</p>
+                    </div>
+                    <!-- Feature Card 3 -->
+                    <div class="feature-card">
+                        <h3 class="font-semibold text-lg text-gray-900">Role Permissions</h3>
+                        <p class="mt-1 text-gray-500">Manage access for Admins, Designers, and Client Viewers.</p>
+                    </div>
+                    <!-- Feature Card 4 -->
+                    <div class="feature-card">
+                        <h3 class="font-semibold text-lg text-gray-900">Comment & Feedback</h3>
+                        <p class="mt-1 text-gray-500">Leave feedback directly on images to iterate faster.</p>
+                    </div>
+                    <!-- Feature Card 5 -->
+                    <div class="feature-card">
+                        <h3 class="font-semibold text-lg text-gray-900">Cloud Sync & History</h3>
+                        <p class="mt-1 text-gray-500">Access your work from anywhere and revert to previous versions.</p>
+                    </div>
+                    <!-- Visual -->
+                    <div class="md:col-span-3 mt-8 feature-visual">
+                        <img src="https://images.unsplash.com/photo-1678845708813-b386f67117c3?q=80&w=1200&auto=format&fit=crop" 
+                             alt="Collaboration UI" 
+                             onerror="this.onerror=null;this.src='https://placehold.co/1200x400/3a5a8a/FFFFFF?text=Collaboration+UI+Mockup';"
+                             class="w-full h-auto rounded-xl shadow-lg border border-gray-200/80">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. Security & Privacy -->
+        <section class="py-24 md:py-32">
+            <div class="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-16 items-center">
+                <div class="security-item">
+                    <img src="https://images.unsplash.com/photo-1529612700361-c88a209c3132?q=80&w=800&auto=format&fit=crop" 
+                         alt="Digital security" 
+                         onerror="this.onerror=null;this.src='https://placehold.co/600x400/517CBE/FFFFFF?text=Security';"
+                         class="w-full h-auto rounded-2xl shadow-xl">
+                </div>
+                <div class="security-item">
+                    <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight">
+                        Your data is yours. Period.
+                    </h2>
+                    <p class="mt-4 text-lg text-gray-600">
+                        Your data, images, and creative assets are encrypted and stored securely in GenArt’s cloud environment. Only your team has access — never shared, never reused.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8. Testimonials -->
+        <section class="py-24 md:py-32">
+            <div class="max-w-6xl mx-auto px-4">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 tracking-tight text-center section-title">
+                    Trusted by modern creative teams
+                </h2>
+                <div class="mt-16 grid md:grid-cols-2 gap-8">
+                    <!-- Testimonial 1 -->
+                    <div class="team-testimonial-item">
+                        <p class="text-xl font-medium text-gray-800">"Our creative output doubled since adopting GenArt. It's transformed our workflow from concept to final delivery."</p>
+                        <div class="mt-4 flex items-center">
+                            <img src="https://placehold.co/48x48/517CBE/FFFFFF?text=A&font=sans-serif" alt="Avatar" class="w-12 h-12 rounded-full">
+                            <div class="ml-4">
+                                <p class="font-semibold text-gray-900">Alex Chen</p>
+                                <p class="text-gray-500">Design Agency, Mumbai</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Testimonial 2 -->
+                    <div class="team-testimonial-item">
+                        <p class="text-xl font-medium text-gray-800">"The ability to maintain brand consistency while generating hundreds of assets is a game-changer for our clients."</p>
+                        <div class="mt-4 flex items-center">
+                            <img src="https://placehold.co/48x48/EB5757/FFFFFF?text=S&font=sans-serif" alt="Avatar" class="w-12 h-12 rounded-full">
+                            <div class="ml-4">
+                                <p class="font-semibold text-gray-900">Sara Khan</p>
+                                <p class="text-gray-500">Marketing Director, Studio Bright</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 10. Final Call to Action -->
         <section id="team-cta-section" class="py-24 md:py-32 text-center relative">
             <div class="max-w-3xl mx-auto px-4">
-                <h2 class="text-4xl sm:text-5xl font-bold text-gray-800 tracking-tighter team-cta-item">
-                    Ready to transform how your team creates?
+                <h2 class="text-4xl sm:text-5xl font-bold text-gray-800 tracking-tighter final-cta-item">
+                    Empower your team with AI creativity.
                 </h2>
-                <div class="mt-10 flex flex-col sm:flex-row justify-center items-center gap-4 team-cta-item">
-                    <button id="scroll-to-collab-btn-2" class="team-cta-button team-cta-secondary">
-                        Use it
-                    </button>
-                    <a href="index.html" class="team-cta-button team-cta-primary">
-                        Get Started
+                <p class="mt-4 text-lg md:text-xl text-gray-500 max-w-2xl mx-auto final-cta-item">
+                    Join hundreds of modern agencies using GenArt to lead the next visual revolution.
+                </p>
+                <div class="mt-10 final-cta-item">
+                    <a href="index.html" class="team-cta-button team-cta-primary text-lg px-8 py-3">
+                        Use It Now
                     </a>
                 </div>
             </div>
