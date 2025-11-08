@@ -396,3 +396,57 @@ as the starting point. This is the correct way.
 .preset-card {
     @apply w-full flex flex-col p-3 bg-gray-50 border border-gray-200 rounded-lg transition-colors hover:bg-gray-100 hover:border-gray-300;
 }
+
+/* NEW: Improved Preset Card Layout */
+.preset-card {
+    @apply w-full flex flex-col p-3 bg-white border border-gray-200 rounded-lg transition-all hover:border-gray-300 hover:shadow-sm cursor-pointer;
+}
+
+/* NEW: Improved Toggle Switch */
+.toggle-switch {
+    @apply w-9 h-5 bg-gray-200 rounded-full flex items-center p-0.5 transition-colors cursor-pointer;
+}
+.toggle-switch .toggle-knob {
+    @apply w-4 h-4 bg-white rounded-full shadow-md transform transition-transform;
+}
+.toggle-switch.active {
+    @apply bg-blue-500;
+}
+.toggle-switch.active .toggle-knob {
+    @apply translate-x-4;
+}
+
+/* NEW: Visual Ratio Chips */
+.ratio-chip {
+    @apply text-xs font-medium text-gray-700 bg-gray-100 rounded-lg p-1 w-full transition-all border border-gray-200 hover:bg-gray-200 flex flex-col items-center justify-center space-y-1 h-12;
+}
+.ratio-chip.selected {
+    @apply bg-blue-50 text-blue-600 border-blue-500 shadow-sm;
+}
+.ratio-chip-visual {
+    @apply w-5 h-5 border-2 border-current rounded-sm;
+    width: 20px;
+    height: 20px;
+}
+.ratio-chip-label {
+    @apply text-xs text-gray-500;
+}
+.ratio-chip.selected .ratio-chip-label {
+    @apply text-blue-600;
+}
+.ratio-chip[data-ratio="Custom"] .ratio-chip-visual {
+    @apply border-none; /* Hide visual for custom button */
+}
+
+/* NEW: Clickable Quality Labels */
+.quality-label {
+    @apply text-xs text-gray-500 cursor-pointer transition-colors hover:text-gray-900;
+}
+.quality-label-selected {
+    @apply text-blue-600 font-semibold;
+}
+
+/* NEW: Action Chip Buttons (Save, Reset) */
+.action-chip-btn {
+    @apply flex items-center space-x-1.5 text-xs text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full px-3 py-1.5 transition-colors;
+}
