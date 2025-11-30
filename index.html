@@ -1,318 +1,889 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>GenArt: AI Image Generator</title>
-        <link rel="icon" type="image/png" href="favicon.png">
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link rel="stylesheet" href="style.css">
-        <!-- GSAP for animations -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
-    </head>
-    <body>
-        <!-- Full-page animated gradient background -->
-        <div id="animated-gradient-bg"></div>
-        <!-- Header -->
-        <header class="fixed top-0 left-0 right-0 z-30 p-4 transition-all duration-300">
-            <div class="max-w-7xl mx-auto flex justify-between items-center">
-                <a href="index.html">
-                    <img src="https://iili.io/FsAoG2I.md.png" alt="GenArt Logo" class="h-6 md:h-7 w-auto">
-                </a>
-                <div id="header-nav" class="hidden md:flex items-center space-x-2 bg-white/70 backdrop-blur-md border border-slate-200/80 shadow-sm rounded-full px-2 py-1">
-                <!-- Auth state content injected by script.js -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evoluter - Intelligent Exam Prep</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .slide-up { animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* Scanning Animation for Mains Evaluator */
+        .scanner-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: #4f46e5;
+            box-shadow: 0 0 10px #4f46e5;
+            animation: scan 2s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Knowledge Graph Node Pulse */
+        .node-pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { r: 6; opacity: 1; } 100% { r: 12; opacity: 0; } }
+
+        /* Zen Mode Transitions */
+        .zen-enter { transition: all 0.5s ease; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 overflow-x-hidden selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Main App Container -->
+    <div id="app"></div>
+
+    <!-- Firebase & Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, increment, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- 1. CONFIGURATION ---
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        let app, auth, db;
+        
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (e) {
+            console.error("Firebase Init Error:", e);
+        }
+
+        // --- 2. STATE MANAGEMENT ---
+        const state = {
+            user: null,
+            userData: null,
+            view: 'landing', 
+            activeTest: null,
+            testResult: null,
+            isAdminMode: false,
+            isZenMode: false, // New High-End Feature
+            mainsAnalysis: null, // New High-End Feature
+            dbQuestions: [],
+            chatHistory: [
+                { sender: 'ai', text: "Hello Evoluter! I'm your AI UPSC Mentor. I noticed you struggled with 'Economics' in your last test. Shall we review 'Inflation targeting' concepts?" }
+            ],
+            chatInput: "",
+            newQ: { text: '', subject: 'Polity', difficulty: 'Medium', explanation: '', options: ['', '', '', ''], correct: 0 }
+        };
+
+        // --- 3. MOCK DATA ---
+        const INITIAL_QUESTIONS = [
+            { id: 'q1', text: "Which Schedule of the Indian Constitution distributes powers between the Union and the States?", options: ["First Schedule", "Seventh Schedule", "Ninth Schedule", "Tenth Schedule"], correct: 1, subject: "Polity", difficulty: "Medium", explanation: "The Seventh Schedule contains the Union List, State List, and Concurrent List.", source: "Laxmikant Ch. 3" },
+            { id: 'q2', text: "Consider the following statements regarding the 'Monetary Policy Committee': 1. It is headed by the Finance Minister. 2. It decides the benchmark interest rates. Which is correct?", options: ["1 only", "2 only", "Both 1 and 2", "Neither 1 nor 2"], correct: 1, subject: "Economics", difficulty: "Hard", explanation: "MPC is headed by the RBI Governor, not the Finance Minister.", source: "The Hindu" },
+            { id: 'q3', text: "The term 'West Texas Intermediate' is frequently used in the context of:", options: ["Rare Earth elements", "Crude Oil", "Bullion Market", "Semiconductors"], correct: 1, subject: "Current Affairs", difficulty: "Easy", explanation: "WTI is a grade of crude oil used as a benchmark in oil pricing.", source: "Economic Times" }
+        ];
+        
+        state.dbQuestions = [...INITIAL_QUESTIONS];
+
+        const TESTIMONIALS = [
+            { name: "Priya Sharma", rank: "AIR 42", text: "The Mains Evaluator is scary accurate. It caught my lack of 'Way Forward' in 3 answers straight.", role: "IAS 2023 Batch" },
+            { name: "Rahul Verma", rank: "AIR 105", text: "The Knowledge Graph changed how I revise. I can literally see my weak links turning green.", role: "IPS 2023 Batch" }
+        ];
+
+        const PRICING_PLANS = [
+            { name: "Starter", price: "$3", period: "/month", features: ["10 Full Mock Tests", "Basic Stats", "Past 3 Years Papers"], color: "blue", recommended: false },
+            { name: "Pro aspirant", price: "$9", period: "/month", features: ["Unlimited Tests", "Mains Answer Grading", "Daily Schedule", "Priority Support"], color: "indigo", recommended: true },
+            { name: "Elite", price: "$13", period: "/month", features: ["Everything in Pro", "1-on-1 AI Mentor", "Live Doubt Sessions", "Interview Prep"], color: "purple", recommended: false }
+        ];
+
+        const MOCK_NOTES = [
+            { id: 1, title: "Anti-Defection Law", date: "2 days ago", tags: ["Polity"], content: "Added by 52nd Amendment, 1985. Decisions made by Speaker/Chairman." },
+            { id: 2, title: "Monetary Policy", date: "5 days ago", tags: ["Economy"], content: "Monetary: RBI (Repo, CRR). Fiscal: Govt (Tax, Budget)." }
+        ];
+
+        // --- 4. UTILITY FUNCTIONS ---
+        window.showToast = (msg, type = 'info') => {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-red-600' : 'bg-gray-900';
+            toast.className = `pointer-events-auto px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 text-white ${bgClass} fade-in backdrop-blur-md`;
+            toast.innerHTML = `<span class="font-medium">${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        };
+
+        const refreshIcons = () => {
+            if (window.lucide) window.lucide.createIcons();
+        };
+
+        // --- 5. RENDER LOGIC (THE ROUTER) ---
+        const render = () => {
+            const appDiv = document.getElementById('app');
+            
+            let content = '';
+            switch (state.view) {
+                case 'landing': content = renderLandingPage(); break;
+                case 'dashboard': content = renderDashboard(); break;
+                case 'test': content = renderTestEngine(); break;
+                case 'mains': content = renderMainsEvaluator(); break; // New
+                case 'processing': content = renderProcessing(); break;
+                case 'result': content = renderResultPage(); break;
+                case 'pricing': content = renderPricingPage(); break;
+                case 'library': content = renderLibraryPage(); break;
+                case 'notes': content = renderNotesPage(); break;
+                case 'mentor': content = renderMentorPage(); break;
+                case 'howitworks': content = renderHowItWorksPage(); break;
+                default: content = renderLandingPage();
+            }
+            
+            appDiv.innerHTML = content;
+            refreshIcons();
+        };
+
+        // --- 6. VIEW GENERATORS ---
+
+        // Helper: Knowledge Graph SVG Generator
+        const renderKnowledgeGraph = () => {
+            return `
+            <div class="relative w-full h-64 bg-gray-900 rounded-xl overflow-hidden border border-gray-700 shadow-inner group">
+                <div class="absolute top-4 left-4 z-10 flex gap-2">
+                    <span class="text-xs text-green-400 flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-green-400"></div> Mastered</span>
+                    <span class="text-xs text-red-400 flex items-center gap-1"><div class="w-2 h-2 rounded-full bg-red-400"></div> Weak</span>
                 </div>
-                <button id="mobile-menu-btn" class="md:hidden p-2 rounded-full bg-white/70 backdrop-blur-md border border-slate-200/80 text-slate-800 z-50">
-                    <svg id="menu-open-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-                    </svg>
-                    <svg id="menu-close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
+                <svg width="100%" height="100%" viewBox="0 0 400 200" class="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity">
+                    <!-- Connections -->
+                    <line x1="200" y1="100" x2="100" y2="50" stroke="#4b5563" stroke-width="1" />
+                    <line x1="200" y1="100" x2="300" y2="50" stroke="#4b5563" stroke-width="1" />
+                    <line x1="200" y1="100" x2="100" y2="150" stroke="#4b5563" stroke-width="1" />
+                    <line x1="200" y1="100" x2="300" y2="150" stroke="#4b5563" stroke-width="1" />
+                    <line x1="100" y1="50" x2="50" y2="80" stroke="#4b5563" stroke-width="1" />
+                    
+                    <!-- Central Node -->
+                    <circle cx="200" cy="100" r="20" fill="#4f46e5" class="drop-shadow-lg" />
+                    <text x="200" y="105" text-anchor="middle" fill="white" font-size="8" font-family="sans-serif">UPSC</text>
+                    
+                    <!-- Subject Nodes -->
+                    <circle cx="100" cy="50" r="15" fill="#10b981" class="cursor-pointer hover:stroke-white hover:stroke-2 transition-all" />
+                    <text x="100" y="54" text-anchor="middle" fill="white" font-size="6">Polity</text>
+                    
+                    <circle cx="300" cy="50" r="15" fill="#ef4444" class="cursor-pointer node-pulse" />
+                    <text x="300" y="54" text-anchor="middle" fill="white" font-size="6">Economy</text>
+                    
+                    <circle cx="100" cy="150" r="12" fill="#f59e0b" class="cursor-pointer" />
+                    <text x="100" y="154" text-anchor="middle" fill="white" font-size="6">History</text>
+                    
+                    <circle cx="300" cy="150" r="12" fill="#3b82f6" class="cursor-pointer" />
+                    <text x="300" y="154" text-anchor="middle" fill="white" font-size="6">Geog</text>
+
+                    <!-- Leaf Nodes -->
+                    <circle cx="50" cy="80" r="8" fill="#10b981" opacity="0.6" />
+                </svg>
+            </div>`;
+        };
+
+        const renderLandingPage = () => `
+            <div class="min-h-screen bg-white font-sans text-gray-900 flex flex-col">
+                <nav class="border-b bg-white/80 backdrop-blur-md sticky top-0 z-50">
+                    <div class="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto">
+                        <div class="flex items-center gap-2 font-bold text-2xl text-indigo-900 tracking-tight">
+                            <div class="bg-indigo-600 text-white p-1.5 rounded-lg"><i data-lucide="brain"></i></div>
+                            <span>Eklavya<span class="text-indigo-600">.AI</span></span>
+                        </div>
+                        <div class="hidden md:flex gap-8 items-center">
+                            <button onclick="window.navigate('mains')" class="flex items-center gap-1 text-gray-600 hover:text-indigo-600 font-medium text-sm"><i data-lucide="pen-tool" size="14"></i> Mains Evaluator</button>
+                            <button onclick="window.navigate('mentor')" class="text-gray-600 hover:text-indigo-600 font-medium text-sm">AI Mentor</button>
+                            <button onclick="window.navigate('pricing')" class="text-gray-600 hover:text-indigo-600 font-medium text-sm">Pricing</button>
+                            <button onclick="window.navigate('dashboard')" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 shadow-md transition-all">
+                                ${state.user ? "Go to Dashboard" : "Start Free Trial"}
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+
+                <main class="flex-1">
+                    <section class="pt-20 pb-32 px-6 max-w-7xl mx-auto">
+                        <div class="grid lg:grid-cols-2 gap-16 items-center">
+                            <div class="space-y-8 fade-in">
+                                <div class="flex gap-2">
+                                    <span class="bg-blue-100 text-blue-800 border-blue-200 px-4 py-1.5 text-sm font-semibold rounded-full border">New: Mains AI Grading</span>
+                                    <span class="bg-purple-100 text-purple-800 border-purple-200 px-4 py-1.5 text-sm font-semibold rounded-full border">Zen Mode</span>
+                                </div>
+                                <h1 class="text-5xl md:text-6xl font-extrabold leading-[1.1] tracking-tight text-gray-900">
+                                    The Intelligent<br/> <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-500">Neuro-Adaptive</span> Platform.
+                                </h1>
+                                <p class="text-xl text-gray-600 leading-relaxed max-w-lg">
+                                    Experience the world's first Knowledge Graph driven prep engine. Upload handwritten answers for instant AI grading.
+                                </p>
+                                <div class="flex flex-col sm:flex-row gap-4">
+                                    <button onclick="window.navigate('dashboard')" class="h-14 px-8 text-lg bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 shadow-lg flex items-center justify-center gap-2 w-full sm:w-auto hover:-translate-y-1 transition-transform">
+                                        Launch Cockpit <i data-lucide="rocket" size="20"></i>
+                                    </button>
+                                    <button onclick="window.navigate('mains')" class="h-14 px-8 text-lg bg-white text-indigo-700 border border-indigo-200 rounded-lg font-medium hover:bg-indigo-50 flex items-center justify-center gap-2 w-full sm:w-auto">
+                                        <i data-lucide="pen-tool" size="20"></i> Try Mains Evaluator
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Hero Feature Visual -->
+                            <div class="relative fade-in group cursor-pointer" onclick="window.navigate('dashboard')">
+                                <div class="absolute -inset-2 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl blur opacity-30 group-hover:opacity-50 transition-opacity duration-1000"></div>
+                                <div class="relative bg-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-700 p-1">
+                                     ${renderKnowledgeGraph()}
+                                </div>
+                                <div class="absolute -bottom-6 -right-6 bg-white p-4 rounded-xl shadow-xl border border-gray-100 flex items-center gap-4 animate-bounce">
+                                    <div class="bg-green-100 p-2 rounded-lg text-green-600"><i data-lucide="trending-up"></i></div>
+                                    <div>
+                                        <p class="text-xs text-gray-500 font-bold uppercase">Learning Velocity</p>
+                                        <p class="text-lg font-bold text-gray-900">+24% / week</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="py-20 max-w-7xl mx-auto px-6 bg-gray-50 rounded-3xl">
+                        <h2 class="text-3xl font-bold text-center mb-16">Results Speak Louder</h2>
+                        <div class="grid md:grid-cols-2 gap-8">
+                            ${TESTIMONIALS.map(t => `
+                                <div class="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 relative hover:shadow-xl transition-shadow">
+                                    <div class="absolute top-0 right-0 p-4 opacity-10"><i data-lucide="quote" size="40"></i></div>
+                                    <p class="text-gray-600 text-lg mb-6 italic relative z-10">"${t.text}"</p>
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-600">${t.name[0]}</div>
+                                        <div>
+                                            <p class="font-bold text-gray-900">${t.name}</p>
+                                            <p class="text-sm text-indigo-600 font-medium">${t.role} • ${t.rank}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </section>
+                </main>
+                
+                 <footer class="bg-gray-900 text-gray-400 py-12 px-6 mt-12">
+                    <div class="max-w-7xl mx-auto text-center">
+                        <div class="text-white font-bold text-xl mb-4">Eklavya</div>
+                        <p class="text-sm">Empowering aspirants with data-driven preparation strategies.</p>
+                        <div class="border-t border-gray-800 pt-8 mt-8 text-xs">
+                            © 2025 Evoluter Technologies. All rights reserved.
+                        </div>
+                    </div>
+                </footer>
             </div>
-            <div id="mobile-menu" class="hidden md:hidden fixed inset-0 bg-white/90 backdrop-blur-xl z-40 p-4 pt-24">
-            <!-- Mobile nav content injected by script.js -->
-            </div>
-        </header>
-        <!-- Main Content -->
-        <main class="relative z-10 pb-40">
-            <!-- Added padding-bottom to avoid overlap with fixed footer -->
-            <div id="first-screen-content" class="min-h-screen flex flex-col items-center justify-center text-center p-4">
-                <!-- Hero Section -->
-                <section id="hero-section">
-                    <h1 id="hero-headline" class="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-800 tracking-tighter">Turn imagination into visuals in seconds.
-                </h1>
-                    <p id="hero-subline" class="mt-4 text-base md:text-xl text-gray-500 max-w-3xl mx-auto">
-                        The world's most advanced generative AI, built for <span id="typewriter" class="font-semibold text-[#517CBE]"></span>
-                        <span class="cursor">|</span>
-                    </p>
-                </section>
-                <!-- Stats Section -->
-                <section id="stats-section" class="w-full mt-16">
-                    <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div class="stat-card">
-                            <h3 class="text-4xl md:text-5xl font-bold text-[#517CBE]">
-                                <span class="counter" data-target="50">0</span>
-                                M+
+        `;
+
+        const renderDashboard = () => `
+            <div class="min-h-screen bg-gray-50 flex flex-col md:flex-row font-sans">
+                <!-- Sidebar -->
+                <aside class="w-full md:w-72 bg-white border-r border-gray-200 flex-shrink-0 z-20 hidden md:block">
+                    <div class="p-6 border-b border-gray-100 flex items-center gap-2 font-bold text-xl text-indigo-900">
+                        <div class="bg-indigo-600 text-white p-1 rounded"><i data-lucide="brain"></i></div> Eklavya
+                    </div>
+                    <nav class="p-4 space-y-1">
+                        <button onclick="window.navigate('dashboard')" class="w-full flex items-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-700 rounded-lg font-medium shadow-sm ring-1 ring-indigo-200">
+                            <i data-lucide="bar-chart-2" size="20"></i> Dashboard
+                        </button>
+                        <button onclick="window.navigate('mains')" class="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors">
+                            <i data-lucide="pen-tool" size="20"></i> Mains Evaluator <span class="bg-purple-100 text-purple-700 text-[10px] font-bold px-1.5 py-0.5 rounded ml-auto">NEW</span>
+                        </button>
+                        <button onclick="window.navigate('library')" class="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors">
+                            <i data-lucide="layers" size="20"></i> Tests Library
+                        </button>
+                        <button onclick="window.navigate('notes')" class="w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors">
+                            <i data-lucide="book-open" size="20"></i> Saved Notes
+                        </button>
+                        <div class="pt-4 mt-4 border-t border-gray-100">
+                            <button onclick="window.handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors">
+                                <i data-lucide="log-out" size="20"></i> Logout
+                            </button>
+                        </div>
+                    </nav>
+                </aside>
+
+                <!-- Main Content -->
+                <main class="flex-1 overflow-y-auto">
+                    <header class="bg-white border-b px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4 sticky top-0 z-10 shadow-sm">
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900 flex items-center gap-2">Welcome, ${state.userData?.name || "Evoluter"} 👋</h1>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <button onclick="window.toggleAdminMode()" class="px-3 py-1.5 border rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2">
+                                <i data-lucide="settings" size="16"></i> ${state.isAdminMode ? "Close Admin" : "Admin Cockpit"}
+                            </button>
+                            <div class="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold border border-indigo-200">
+                                ${state.userData?.name?.[0] || "E"}
+                            </div>
+                        </div>
+                    </header>
+
+                    <div class="p-8 max-w-7xl mx-auto space-y-8">
+                        <!-- Knowledge Graph Widget -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="lg:col-span-2 space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2"><i data-lucide="share-2" class="text-indigo-600"></i> Knowledge Graph</h2>
+                                    <span class="text-xs text-gray-500">Live Sync</span>
+                                </div>
+                                ${renderKnowledgeGraph()}
+                            </div>
                             
-                            </h3>
-                            <p class="text-sm text-gray-500 mt-2">Generations</p>
+                            <!-- Stats Cards -->
+                            <div class="space-y-4">
+                                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                                    <div class="h-12 w-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center"><i data-lucide="check-circle"></i></div>
+                                    <div><p class="text-sm text-gray-500 font-medium">Tests Attempted</p><p class="text-3xl font-bold text-gray-900">${state.userData?.testsTaken || 0}</p></div>
+                                </div>
+                                <div class="bg-gradient-to-br from-purple-600 to-indigo-600 text-white p-6 rounded-xl shadow-lg relative overflow-hidden">
+                                    <div class="relative z-10">
+                                        <p class="text-indigo-100 font-medium text-sm mb-1">Mains Readiness</p>
+                                        <p class="text-3xl font-bold">Low</p>
+                                        <button onclick="window.navigate('mains')" class="mt-3 bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-2 rounded-lg font-bold backdrop-blur-sm transition-all flex items-center gap-2">
+                                            Upload Answer <i data-lucide="upload-cloud" size="14"></i>
+                                        </button>
+                                    </div>
+                                    <i data-lucide="file-text" class="absolute -right-4 -bottom-4 text-white/10 w-32 h-32"></i>
+                                </div>
+                            </div>
                         </div>
-                        <div class="stat-card">
-                            <h3 class="text-4xl md:text-5xl font-bold text-[#517CBE]">
-                                <span class="counter" data-target="500">0</span>
-                                K+
-                            
-                            </h3>
-                            <p class="text-sm text-gray-500 mt-2">Happy Creators</p>
-                        </div>
-                        <div class="stat-card">
-                            <h3 class="text-4xl md:text-5xl font-bold text-[#517CBE]">&lt;17s</h3>
-                            <p class="text-sm text-gray-500 mt-2">Avg. Generation Speed</p>
-                        </div>
-                    </div>
-                </section>
-            </div>
-            <!-- Masonry Gallery Container -->
-            <div id="masonry-gallery-wrapper" class="px-4 pb-24 md:pb-32">
-                <div id="masonry-gallery">
-                    <div class="masonry-column">
-                        <div class="masonry-item">
-                            <img src="https://iili.io/K7bN7Hl.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art">
-                        </div>
-                        <div class="masonry-item">
-                            <img src="https://iili.io/K7b6OPV.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art">
-                        </div>
-                    </div>
-                    <div class="masonry-column">
-                        <div class="masonry-item">
-                            <img src="https://iili.io/K7bOTzP.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art">
-                        </div>
-                    </div>
-                    <div class="masonry-column">
-                        <div class="masonry-item">
-                            <img src="https://iili.io/K7yYoqN.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art">
-                        </div>
-                        <div class="masonry-item">
-                            <img src="https://iili.io/K7b894e.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art">
-                        </div>
-                    </div>
-                    <div class="masonry-column">
-                        <div class="masonry-item">
-                            <img src="https://iili.io/K7bk3Ku.md.png" class="rounded-lg w-full h-auto block" loading="eager" alt="Generated Art">
-                        </div>
-                        <div class="masonry-item">
-                            <img src="https://iili.io/K7y1cUN.md.png" class="rounded-lg w-full h-auto block" loading="lazy" alt="Generated Art">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Testimonial Section -->
-            <section id="testimonial-section" class="py-24 md:py-32 overflow-hidden">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="relative grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-                        <div class="testimonial-image-container">
-                            <!-- IMPORTANT: Replace this src with your image link -->
-                            <img src="https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=2000&auto=format&fit=crop" alt="AI art collage" class="testimonial-image">
-                        </div>
-                        <div class="testimonial-card-container">
-                            <div class="testimonial-card">
-                                <svg class="w-12 h-12 text-gray-400/80 absolute top-8 left-8" fill="currentColor" viewBox="0 0 32 32">
-                                    <path d="M9.333 12h-2.667c-1.473 0-2.667 1.193-2.667 2.667v8c0 1.473 1.193 2.667 2.667 2.667h2.667v-13.333zM25.333 12h-2.667c-1.473 0-2.667 1.193-2.667 2.667v8c0 1.473 1.193 2.667 2.667 2.667h2.667v-13.333z"></path>
-                                </svg>
-                                <p class="testimonial-text">"I like to describe it as 'photoshop on steroids.' GenArt's advanced capabilities enable us to seamlessly blend and enhance images, resulting in highly detailed and expressive visual assets."
-                            </p>
-                                <div class="testimonial-author">
-                                    <p class="font-semibold text-gray-200">Chris Charles</p>
-                                    <p class="text-sm text-gray-400">CEO, Charles Group</p>
+
+                        <!-- Recommendations -->
+                        <div class="space-y-6">
+                            <h2 class="text-lg font-bold text-gray-900">Recommended Tests</h2>
+                            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+                                <div onclick="window.startTest('GS Full Mock', 120)" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-indigo-300 hover:shadow-lg transition-all cursor-pointer group">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">Full Syllabus</span>
+                                        <span class="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded">120 MIN</span>
+                                    </div>
+                                    <h3 class="font-bold text-lg text-gray-900 group-hover:text-indigo-600">UPSC Prelims Simulator I</h3>
+                                    <p class="text-sm text-gray-500 mt-2 mb-6">Strict UPSC pattern: 100 Qs, -0.66 Neg Marking.</p>
+                                    <span class="text-indigo-600 font-bold text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform">Start <i data-lucide="chevron-right" size="16"></i></span>
+                                </div>
+                                
+                                <div onclick="window.startTest('2023 PYQ', 120)" class="bg-white rounded-xl border border-gray-200 p-5 hover:border-green-300 hover:shadow-lg transition-all cursor-pointer group">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">PYQ</span>
+                                        <span class="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded">2023</span>
+                                    </div>
+                                    <h3 class="font-bold text-lg text-gray-900 group-hover:text-green-600">CSE Prelims 2023 (GS)</h3>
+                                    <p class="text-sm text-gray-500 mt-2 mb-6">Attempt the actual 2023 paper in simulated mode.</p>
+                                    <span class="text-green-600 font-bold text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform">Simulate <i data-lucide="chevron-right" size="16"></i></span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
-        </main>
-        <!-- Prompt Bar -->
-        <footer class="fixed bottom-0 left-0 right-0 p-4 z-40">
-            <div class="max-w-2xl mx-auto flex flex-col items-center gap-3">
-                <!-- Desktop Style Selector (hidden on mobile) -->
-                <div id="style-selector" class="hidden md:flex flex-wrap justify-center gap-2">
-                    <button class="style-btn selected" data-style="Realistic">Realistic</button>
-                    <button class="style-btn" data-style="Anime">Anime</button>
-                    <button class="style-btn" data-style="Graffiti">Graffiti</button>
-                    <button class="style-btn" data-style="Pixel Art">Pixel Art</button>
-                    <button class="style-btn" data-style="Cartoon">Cartoon</button>
-                </div>
-                <!-- Prompt Bar Container -->
-                <div id="prompt-bar-container" class="w-full bg-white/70 backdrop-blur-lg border border-gray-200/80 shadow-2xl rounded-full p-2 flex items-center space-x-1.5">
-                    <div id="image-preview-container" class="hidden relative w-10 h-10 flex-shrink-0 ml-1">
-                        <img id="image-preview" class="w-full h-full object-cover rounded-full" src="" alt="Image preview">
-                        <button id="remove-image-btn" class="absolute -top-1 -right-1 bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-black">&times;</button>
-                    </div>
-                    <input type="file" id="image-upload-input" class="hidden" accept="image/png, image/jpeg">
-                    <button id="image-upload-btn" class="w-10 h-10 rounded-full hover:bg-gray-200/70 transition-colors flex-shrink-0 flex items-center justify-center" title="Upload Image">
-                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                    </button>
-                    <!-- NEW: Mobile Style Button (hidden on desktop) -->
-                    <div class="relative flex-shrink-0 md:hidden">
-                        <button id="mobile-style-toggle-btn" class="w-10 h-10 rounded-full hover:bg-gray-200/70 transition-colors flex items-center justify-center" title="Select Style">
-                            <span class="font-bold text-lg text-gray-600">S</span>
-                        </button>
-                        <div id="mobile-style-options" class="hidden absolute bottom-full left-0 mb-2 w-48 bg-white/80 backdrop-blur-md rounded-lg border border-gray-200/80 shadow-xl p-1">
-                            <button class="style-btn w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md" data-style="Realistic">Realistic</button>
-                            <button class="style-btn w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md" data-style="Anime">Anime</button>
-                            <button class="style-btn w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md" data-style="Graffiti">Graffiti</button>
-                            <button class="style-btn w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md" data-style="Pixel Art">Pixel Art</button>
-                            <button class="style-btn w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 rounded-md" data-style="Cartoon">Cartoon</button>
-                        </div>
-                    </div>
-                    <textarea id="prompt-input" rows="1" class="w-full bg-transparent text-gray-800 placeholder-gray-500 focus:outline-none resize-none text-base py-2 px-2" placeholder="Describe your vision..."></textarea>
-                    <div class="relative flex-shrink-0">
-                        <button id="ratio-btn" class="w-10 h-10 rounded-full hover:bg-gray-200/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center" title="Aspect Ratio">
-                            <svg class="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            </svg>
-                        </button>
-                        <div id="ratio-options" class="hidden absolute bottom-full right-0 mb-2 w-48 bg-white/80 backdrop-blur-md rounded-lg border border-gray-200/80 shadow-xl p-1">
-                            <button class="ratio-option selected w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md" data-ratio="1:1">
-                                Square <span class="text-xs opacity-60">1:1</span>
-                            </button>
-                            <button class="ratio-option w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md" data-ratio="16:9">
-                                Landscape <span class="text-xs opacity-60">16:9</span>
-                            </button>
-                            <button class="ratio-option w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md" data-ratio="9:16">
-                                Portrait <span class="text-xs opacity-60">9:16</span>
-                            </button>
-                            <button class="ratio-option w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-blue-500 hover:text-white rounded-md" data-ratio="4:5">
-                                Instagram <span class="text-xs opacity-60">4:5</span>
-                            </button>
-                        </div>
-                    </div>
-                    <button id="generate-btn" class="w-10 h-10 text-white rounded-full flex items-center justify-center transition-all duration-300 flex-shrink-0 disabled:opacity-50 mr-1 bg-[#517CBE] relative">
-                        <span id="button-content" class="flex items-center justify-center">
-                            <svg id="generate-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"></path>
-                            </svg>
-                        </span>
-                        <span id="button-timer" class="absolute inset-0 flex items-center justify-center font-semibold text-sm hidden">17.00</span>
-                    </button>
-                </div>
+                </main>
             </div>
-        </footer>
-        <!-- Modals -->
-        <div id="auth-modal" role="dialog" aria-hidden="true" class="modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" style="display: none;">
-            <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm md:max-w-3xl overflow-hidden grid md:grid-cols-2" onclick="event.stopPropagation()">
-                <!-- Image Section -->
-                <div class="relative h-56 md:h-auto">
-                    <img src="https://images.unsplash.com/photo-1677756119517-756a188d2d94?q=80&w=800&auto=format&fit=crop" class="absolute h-full w-full object-cover" alt="Abstract AI art">
-                    <div class="absolute inset-0 bg-gradient-to-t from-[#517CBE]/60 to-transparent"></div>
-                    <div class="relative h-full flex flex-col justify-end p-6 md:p-8 text-white">
-                        <h3 class="text-2xl md:text-3xl font-bold leading-tight">Create without limits.</h3>
-                        <p class="mt-1 md:mt-2 text-gray-200 text-base md:text-lg">Join our community to save and share your creations.</p>
-                    </div>
-                </div>
-                <!-- Sign-in Section -->
-                <div class="p-8 md:p-12 flex flex-col justify-center text-center relative">
-                    <button class="close-modal-btn absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Unlock Your Creativity</h2>
-                    <p class="text-gray-500 mt-3 mb-8">Sign in to generate, save, and share your unique AI-powered art.</p>
-                    <button id="google-signin-btn" class="w-full bg-[#4285F4] text-white font-semibold py-3 px-4 rounded-lg hover:bg-[#357ae8] flex items-center justify-center space-x-3 transition-colors shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4285F4]">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z"/>
-                        </svg>
-                        <span>Sign In with Google</span>
-                    </button>
-                    <p class="mt-6 text-xs text-gray-400">
-                        By continuing, you agree to our <a href="#" class="underline hover:text-gray-600">Terms of Service</a>
-                        .
-                    </p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- New User Welcome Modal -->
-        <div id="new-user-credits-modal" role="dialog" aria-hidden="true" class="modal-backdrop fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;">
-            <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Congratulations!</h2>
-                <p class="text-gray-500 mb-6">You've received <span class="font-bold text-[#517CBE]">10 free credits</span> to start creating your masterpieces.</p>
-                <button class="close-modal-btn w-full bg-[#517CBE] text-white font-semibold py-3 px-4 rounded-lg hover:bg-[#4168a3] block">Start Generating</button>
-            </div>
-        </div>
+        `;
 
-        <div id="out-of-credits-modal" role="dialog" aria-hidden="true" class="modal-backdrop fixed inset-0 bg-black/40 backdrop-blur-sm z-50 items-center justify-center p-4" style="display: none;">
-            <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full text-center" onclick="event.stopPropagation()">
-                <h2 class="text-2xl font-semibold text-gray-800 mb-2">Out of Credits</h2>
-                <p class="text-gray-500 mb-6">Please purchase more to continue.</p>
-                <a href="pricing.html" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 block">Buy Credits</a>
-                <button class="close-modal-btn mt-4 text-sm text-gray-500 hover:text-gray-700">Not now</button>
-            </div>
-        </div>
-        <div id="preview-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-            <div class="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
-                <div class="md:w-2/3 h-64 md:h-auto bg-gray-100 flex items-center justify-center">
-                    <img id="preview-image" src="" alt="Generated Image" class="max-w-full max-h-full object-contain">
-                </div>
-                <div class="md:w-1/3 p-6 flex flex-col">
-                    <h3 class="text-lg font-bold text-gray-800">Edit & Regenerate</h3>
-                    <div id="preview-input-image-container" class="hidden mt-4">
-                        <label class="text-sm font-semibold text-gray-500">YOUR UPLOADED IMAGE</label>
-                        <div class="relative mt-2 w-fit">
-                            <img id="preview-input-image" src="" class="w-24 h-24 object-cover rounded-lg">
-                            <div class="absolute top-1 right-1 flex flex-col space-y-1">
-                                <button id="change-input-image-btn" class="bg-white/80 p-1.5 rounded-full text-gray-700 hover:bg-white" title="Change Image">
-                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M7.409 4.821a.75.75 0 011.06 0l3.5 3.5a.75.75 0 010 1.06l-3.5 3.5a.75.75 0 11-1.06-1.06l2.97-2.97-2.97-2.97a.75.75 0 010-1.06zM12.75 9.25a.75.75 0 000-1.5h-5.5a.75.75 0 000 1.5h5.5z"></path>
-                                    </svg>
-                                </button>
-                                <input type="file" id="preview-image-upload-input" class="hidden" accept="image/png, image/jpeg">
-                                <button id="remove-input-image-btn" class="bg-white/80 p-1.5 rounded-full text-gray-700 hover:bg-white" title="Remove Image">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                </button>
+        const renderMainsEvaluator = () => {
+            return `
+            <div class="min-h-screen bg-gray-50 font-sans">
+                <nav class="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+                    <div class="flex items-center gap-3"><button onclick="window.navigate('dashboard')" class="p-2 hover:bg-gray-100 rounded-lg text-gray-600"><i data-lucide="chevron-left"></i></button><h1 class="text-xl font-bold text-gray-900">AI Mains Evaluator</h1></div>
+                </nav>
+                <div class="max-w-4xl mx-auto p-8">
+                    ${!state.mainsAnalysis ? `
+                        <div class="bg-white rounded-2xl border-2 border-dashed border-indigo-200 p-12 text-center hover:bg-indigo-50 transition-colors cursor-pointer" onclick="window.simulateMainsAnalysis()">
+                            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6"><i data-lucide="upload-cloud" size="32"></i></div>
+                            <h2 class="text-2xl font-bold text-gray-900 mb-2">Upload Answer Sheet</h2>
+                            <p class="text-gray-500 mb-6">Supports PDF, JPG, PNG. AI will scan handwriting.</p>
+                            <button class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-indigo-700">Select File</button>
+                        </div>
+                        <div class="mt-8">
+                            <h3 class="font-bold text-gray-900 mb-4">Recent Evaluations</h3>
+                            <div class="bg-white p-4 rounded-xl border flex items-center justify-between opacity-50">
+                                <div class="flex items-center gap-4"><div class="bg-gray-100 p-2 rounded"><i data-lucide="file-text"></i></div><div><p class="font-bold">GS2_Polity_Answer.pdf</p><p class="text-xs text-gray-500">Processed 2 days ago</p></div></div>
+                                <span class="font-bold text-orange-500">5.5 / 15</span>
                             </div>
                         </div>
-                    </div>
-                    <div class="mt-4 flex-grow flex flex-col">
-                        <label class="text-sm font-semibold text-gray-500" for="preview-prompt-input">PROMPT</label>
-                        <textarea id="preview-prompt-input" rows="5" class="mt-2 w-full text-gray-800 bg-gray-100 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition flex-grow"></textarea>
-                    </div>
-                    <div class="mt-4">
-                        <button id="regenerate-btn" class="w-full bg-blue-600 text-white font-semibold py-3 px-5 rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center justify-center space-x-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 9a9 9 0 0114.13-5.22M20 15a9 9 0 01-14.13 5.22"></path>
-                            </svg>
-                            <span>Regenerate</span>
-                        </button>
-                    </div>
+                    ` : `
+                        <!-- Result View -->
+                        <div class="grid md:grid-cols-2 gap-8 slide-up">
+                            <!-- Answer Preview with Overlay -->
+                            <div class="bg-gray-100 rounded-xl p-4 relative overflow-hidden h-[600px] border">
+                                <div class="absolute inset-0 bg-white opacity-50"></div>
+                                <div class="absolute top-10 left-10 right-10 bottom-10 border-2 border-red-400 rounded p-2"><span class="bg-red-400 text-white text-xs px-2 py-1 absolute -top-3 left-2">Structure Weak</span></div>
+                                <div class="absolute top-1/2 left-10 right-10 h-20 border-2 border-green-400 rounded p-2"><span class="bg-green-400 text-white text-xs px-2 py-1 absolute -top-3 left-2">Good Keypoint</span></div>
+                                <div class="flex items-center justify-center h-full text-gray-400 font-bold text-xl rotate-45">Answer Sheet Preview</div>
+                            </div>
+                            
+                            <!-- Analysis Panel -->
+                            <div class="space-y-6">
+                                <div class="bg-white p-6 rounded-xl border shadow-sm">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h3 class="font-bold text-gray-900">AI Score</h3>
+                                        <span class="text-2xl font-bold text-indigo-600">6.5 <span class="text-sm text-gray-400 font-normal">/ 15</span></span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2.5"><div class="bg-indigo-600 h-2.5 rounded-full" style="width: 45%"></div></div>
+                                </div>
+
+                                <div class="bg-white p-6 rounded-xl border shadow-sm space-y-4">
+                                    <h3 class="font-bold text-gray-900">Detailed Breakdown</h3>
+                                    <div class="space-y-3">
+                                        <div class="flex items-start gap-3">
+                                            <i data-lucide="check-circle" class="text-green-500 mt-1 flex-shrink-0"></i>
+                                            <p class="text-sm"><strong>Introduction:</strong> Good definition of 'Judicial Activism'.</p>
+                                        </div>
+                                        <div class="flex items-start gap-3">
+                                            <i data-lucide="x-circle" class="text-red-500 mt-1 flex-shrink-0"></i>
+                                            <p class="text-sm"><strong>Body:</strong> Missing Supreme Court Article 142 reference.</p>
+                                        </div>
+                                        <div class="flex items-start gap-3">
+                                            <i data-lucide="alert-triangle" class="text-yellow-500 mt-1 flex-shrink-0"></i>
+                                            <p class="text-sm"><strong>Conclusion:</strong> Too abrupt. Needs a way forward.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button onclick="state.mainsAnalysis=null; render()" class="w-full border border-gray-300 py-3 rounded-lg font-bold text-gray-600 hover:bg-gray-50">Upload Another</button>
+                            </div>
+                        </div>
+                    `}
                 </div>
-                <div class="absolute top-4 right-4 md:right-auto md:left-4 flex space-x-2">
-                    <button id="download-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Download Image">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                        </svg>
-                    </button>
-                    <button id="close-preview-btn" class="bg-white/80 text-gray-800 p-2.5 rounded-full hover:bg-white shadow-md transition-transform hover:scale-105" title="Close">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
+                
+                <!-- Loading Overlay for Scanning -->
+                <div id="scanner-overlay" class="hidden fixed inset-0 bg-black/80 z-[60] flex items-center justify-center flex-col">
+                    <div class="relative w-64 h-80 bg-white rounded-lg overflow-hidden mb-8 opacity-80">
+                        <div class="scanner-line"></div>
+                        <div class="absolute inset-0 flex items-center justify-center text-gray-300 font-serif text-4xl opacity-20">Essay</div>
+                    </div>
+                    <p class="text-white font-mono text-lg animate-pulse" id="scan-text">Initializing OCR...</p>
+                </div>
+            </div>`;
+        };
+
+        const renderTestEngine = () => {
+            if (!state.activeTest) return '<div>Error: No active test</div>';
+            const q = state.activeTest.questions[state.activeTest.currentQ];
+            const isSelected = (idx) => state.activeTest.answers[state.activeTest.currentQ] === idx;
+            
+            // Zen Mode Classes
+            const containerClass = state.isZenMode ? "bg-gray-900 text-gray-200" : "bg-gray-50 text-gray-900";
+            const cardClass = state.isZenMode ? "bg-gray-800 border-gray-700 text-gray-200" : "bg-white border-gray-200";
+            
+            return `
+            <div class="min-h-screen flex flex-col h-screen font-sans ${containerClass} zen-enter">
+                <header class="${state.isZenMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'} border-b px-6 py-3 flex items-center justify-between shadow-sm z-10 select-none transition-colors duration-500">
+                    <div>
+                        <h2 class="font-bold text-lg">${state.activeTest.name}</h2>
+                        ${!state.isZenMode ? `<div class="flex items-center gap-2 text-xs text-gray-500"><i data-lucide="shield" size="12"></i> Proctoring Active</div>` : ''}
+                    </div>
+                    <div class="flex items-center gap-4">
+                         <button onclick="window.toggleZenMode()" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${state.isZenMode ? 'bg-indigo-900 border-indigo-700 text-indigo-300' : 'bg-gray-100 border-gray-300 text-gray-600'}">
+                            <i data-lucide="${state.isZenMode ? 'minimize' : 'maximize'}" size="14"></i> ${state.isZenMode ? 'Exit Zen' : 'Zen Mode'}
+                         </button>
+                         <div class="flex items-center gap-2 ${state.isZenMode ? 'bg-gray-800 text-white' : 'bg-gray-900 text-white'} px-4 py-2 rounded-lg font-mono font-bold shadow-lg">
+                           <i data-lucide="clock" class="text-red-400" size="18"></i>
+                           ${Math.floor(state.activeTest.timeLeft / 60)}:${(state.activeTest.timeLeft % 60).toString().padStart(2, '0')}
+                         </div>
+                         ${!state.isZenMode ? `<button onclick="window.submitTest()" class="bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600">Submit Test</button>` : ''}
+                    </div>
+                </header>
+                <div class="flex-1 flex overflow-hidden">
+                    <main class="flex-1 overflow-y-auto p-4 md:p-8 ${state.isZenMode ? 'flex items-center justify-center' : ''}">
+                        <div class="max-w-4xl mx-auto w-full">
+                             ${!state.isZenMode ? `
+                             <div class="flex items-center justify-between mb-6">
+                                <span class="text-sm font-bold text-gray-500 uppercase tracking-wide">Question ${state.activeTest.currentQ + 1} of ${state.activeTest.questions.length}</span>
+                                <div class="flex gap-2"><span class="px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-800">+2.0 Marks</span><span class="px-2 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-800">-0.66 Marks</span></div>
+                             </div>` : ''}
+                             
+                             <div class="${cardClass} rounded-2xl shadow-sm border p-8 mb-6 fade-in transition-colors duration-500">
+                                <p class="text-xl font-medium leading-loose mb-8 font-serif">${q.text}</p>
+                                <div class="space-y-3">
+                                    ${q.options.map((opt, idx) => `
+                                        <button onclick="window.handleAnswer(${idx})" class="w-full text-left p-4 rounded-xl border-2 transition-all flex items-center gap-4 group relative overflow-hidden 
+                                            ${isSelected(idx) 
+                                                ? (state.isZenMode ? 'border-indigo-500 bg-indigo-900/30' : 'border-indigo-600 bg-indigo-50 shadow-inner') 
+                                                : (state.isZenMode ? 'border-gray-700 hover:border-gray-500 hover:bg-gray-800' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50')}">
+                                            <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors 
+                                                ${isSelected(idx) 
+                                                    ? 'border-indigo-600 bg-indigo-600 text-white' 
+                                                    : (state.isZenMode ? 'border-gray-600 text-gray-500' : 'border-gray-300 text-gray-400')}">
+                                                ${isSelected(idx) ? '<div class="w-2 h-2 bg-white rounded-full"></div>' : ''}
+                                            </div>
+                                            <span class="${isSelected(idx) ? (state.isZenMode ? 'text-indigo-300' : 'text-indigo-900 font-semibold') : ''}">${opt}</span>
+                                        </button>
+                                    `).join('')}
+                                </div>
+                             </div>
+                             
+                             <div class="flex items-center justify-between">
+                                <button onclick="window.handleAnswer(null)" class="${state.isZenMode ? 'text-gray-400 hover:text-white' : 'bg-white text-indigo-700 border border-indigo-200 px-4 py-2 rounded-lg font-medium hover:bg-indigo-50'}">Clear</button>
+                                <div class="flex gap-3">
+                                    <button onclick="window.navigateTest(-1)" ${state.activeTest.currentQ === 0 ? 'disabled class="opacity-50 cursor-not-allowed border px-4 py-2 rounded-lg"' : `class="${state.isZenMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white border'} px-4 py-2 rounded-lg hover:opacity-80"`}>Previous</button>
+                                    <button onclick="window.navigateTest(1)" ${state.activeTest.currentQ === state.activeTest.questions.length - 1 ? (state.isZenMode ? 'onclick="window.submitTest()" class="bg-red-600 text-white px-6 py-2 rounded-lg"' : 'disabled class="opacity-50 cursor-not-allowed bg-indigo-600 text-white px-4 py-2 rounded-lg"') : 'class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"'}>${state.activeTest.currentQ === state.activeTest.questions.length - 1 && state.isZenMode ? "Submit Test" : "Save & Next"}</button>
+                                </div>
+                             </div>
+                        </div>
+                    </main>
+                    ${!state.isZenMode ? `
+                    <aside class="w-72 bg-white border-l p-6 hidden lg:flex flex-col">
+                        <div class="flex-1 overflow-y-auto">
+                            <h3 class="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wider">Question Palette</h3>
+                            <div class="grid grid-cols-4 gap-3">
+                                ${state.activeTest.questions.map((_, i) => {
+                                    const isAnswered = state.activeTest.answers[i] !== undefined && state.activeTest.answers[i] !== null;
+                                    const isCurrent = state.activeTest.currentQ === i;
+                                    let cls = "bg-white border-gray-200 text-gray-600 hover:border-gray-400";
+                                    if(isCurrent) cls = "ring-2 ring-indigo-600 border-indigo-600 text-indigo-700 font-bold";
+                                    else if(isAnswered) cls = "bg-green-500 border-green-600 text-white font-bold shadow-sm";
+                                    return `<button onclick="window.jumpToQuestion(${i})" class="w-10 h-10 rounded-lg text-sm border flex items-center justify-center transition-all ${cls}">${i+1}</button>`;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </aside>` : ''}
+                </div>
+            </div>`;
+        };
+
+        const renderProcessing = () => `
+            <div class="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 fade-in">
+                <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl border border-indigo-100 text-center">
+                    <div class="mx-auto w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-6 relative"><i data-lucide="brain" class="text-indigo-600 w-10 h-10 animate-pulse"></i><div class="absolute inset-0 border-4 border-indigo-100 rounded-full border-t-indigo-600 spin"></div></div>
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">Analyzing Performance</h2>
+                    <p class="text-gray-500 mb-8 text-sm">Our AI is checking for conceptual gaps...</p>
                 </div>
             </div>
-        </div>
-        <script type="module" src="script.js"></script>
-    </body>
+        `;
+
+        const renderResultPage = () => {
+            if (!state.testResult) return 'Error loading result';
+            const res = state.testResult;
+            return `
+            <div class="min-h-screen bg-gray-50 pb-20">
+                <nav class="bg-gray-900 text-white p-4 sticky top-0 z-50 shadow-lg">
+                    <div class="max-w-6xl mx-auto flex justify-between items-center"><div class="flex items-center gap-2 font-bold"><i data-lucide="award" class="text-yellow-400"></i> Test Report</div><button onclick="window.navigate('dashboard')" class="text-sm hover:text-gray-300">Close Report</button></div>
+                </nav>
+                <div class="max-w-6xl mx-auto p-6 mt-6 space-y-8 fade-in">
+                    <div class="bg-white rounded-xl shadow-sm p-8 text-center md:text-left flex flex-col md:flex-row items-center gap-8">
+                         <div class="relative w-40 h-40 flex-shrink-0"><div class="w-40 h-40 rounded-full border-8 border-indigo-100 flex items-center justify-center border-t-indigo-600 transform -rotate-45"><div class="text-center transform rotate-45"><span class="text-4xl font-extrabold text-gray-900 block">${res.score}</span><span class="text-sm text-gray-400">/ ${res.maxScore}</span></div></div></div>
+                         <div class="flex-1"><span class="inline-block bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-xs font-bold mb-3 uppercase">AI Insight</span><h2 class="text-2xl font-bold text-gray-900 mb-2">${res.score > 90 ? "Excellent Performance!" : "Good Attempt, Keep Improving"}</h2><p class="text-gray-600 max-w-xl">${res.aiAdvice}</p></div>
+                    </div>
+                    <div class="bg-indigo-900 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+                        <h3 class="text-xl font-bold mb-6 flex items-center gap-2"><i data-lucide="brain" class="text-yellow-400"></i> AI Recommended Plan</h3>
+                        <div class="grid md:grid-cols-3 gap-6 relative z-10">${res.studyPlan.map(step => `<div class="bg-white/10 p-5 rounded-xl border border-white/10"><div class="text-indigo-300 text-xs font-bold uppercase mb-2">${step.day} • ${step.type}</div><p class="font-medium">${step.task}</p></div>`).join('')}</div>
+                    </div>
+                </div>
+            </div>`;
+        };
+
+        const renderLibraryPage = () => `
+            <div class="min-h-screen bg-gray-50 font-sans">
+                <nav class="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+                    <div class="flex items-center gap-3"><button onclick="window.navigate('dashboard')" class="p-2 hover:bg-gray-100 rounded-lg text-gray-600"><i data-lucide="chevron-left"></i></button><h1 class="text-xl font-bold text-gray-900">Test Library</h1></div>
+                </nav>
+                <div class="max-w-7xl mx-auto p-8 grid md:grid-cols-3 gap-6">
+                    ${[1,2,3,4,5,6].map(i => `<div onclick="window.startTest('Mock Test ${i}', 60)" class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-lg transition-shadow cursor-pointer"><div class="flex justify-between items-start mb-4"><span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs font-bold">Mock</span><span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">60 MIN</span></div><h3 class="font-bold text-lg text-gray-900">UPSC GS Mock #${i}</h3><p class="text-sm text-gray-500 mt-2 mb-4">Focus areas: Polity, Governance.</p><span class="text-indigo-600 font-bold text-sm">Start Test</span></div>`).join('')}
+                </div>
+            </div>`;
+        
+        const renderPricingPage = () => `
+             <div class="min-h-screen bg-gray-50 font-sans">
+                <nav class="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+                    <div class="flex items-center gap-3"><button onclick="window.navigate('dashboard')" class="p-2 hover:bg-gray-100 rounded-lg text-gray-600"><i data-lucide="chevron-left"></i></button><h1 class="text-xl font-bold text-gray-900">Plans</h1></div>
+                </nav>
+                <div class="max-w-7xl mx-auto p-8 text-center">
+                    <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                        ${PRICING_PLANS.map(p => `<div class="bg-white rounded-2xl shadow-xl p-8 border-2 ${p.recommended ? 'border-indigo-600' : 'border-transparent'}">${p.recommended ? '<div class="text-indigo-600 font-bold uppercase text-xs mb-2">Most Popular</div>' : ''}<h3 class="text-xl font-bold text-gray-900 mb-2">${p.name}</h3><div class="flex items-center justify-center mb-6"><span class="text-4xl font-extrabold">${p.price}</span><span class="text-gray-500 ml-2">${p.period}</span></div><button class="w-full mb-8 bg-indigo-600 text-white py-2 rounded-lg font-bold">Choose Plan</button><ul class="space-y-4 text-left">${p.features.map(f => `<li class="flex items-center gap-3 text-sm text-gray-700"><i data-lucide="check-circle" class="text-green-500" size="16"></i> ${f}</li>`).join('')}</ul></div>`).join('')}
+                    </div>
+                </div>
+             </div>`;
+
+        const renderMentorPage = () => `
+            <div class="min-h-screen bg-gray-50 font-sans flex flex-col h-screen">
+                <nav class="bg-white border-b px-6 py-4 flex items-center justify-between flex-shrink-0">
+                    <div class="flex items-center gap-3"><button onclick="window.navigate('dashboard')" class="p-2 hover:bg-gray-100 rounded-lg text-gray-600"><i data-lucide="chevron-left"></i></button><h1 class="text-xl font-bold text-gray-900">AI Personal Mentor</h1></div>
+                </nav>
+                <div class="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col overflow-hidden">
+                    <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+                        <div id="chat-box" class="flex-1 p-6 overflow-y-auto space-y-6 bg-gray-50/50">
+                            ${state.chatHistory.map(msg => `<div class="flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}"><div class="max-w-[80%] p-4 rounded-2xl shadow-sm ${msg.sender === 'user' ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none'}">${msg.sender === 'ai' ? '<div class="flex items-center gap-2 mb-2 text-xs font-bold text-indigo-600"><i data-lucide="brain" size="12"></i> AI MENTOR</div>' : ''}<p class="leading-relaxed">${msg.text}</p></div></div>`).join('')}
+                        </div>
+                        <div class="p-4 bg-white border-t">
+                            <form onsubmit="window.handleChatSubmit(event)" class="flex gap-2">
+                                <button type="button" class="text-gray-400 hover:text-indigo-600 transition-colors"><i data-lucide="mic"></i></button>
+                                <input id="chat-input" type="text" placeholder="Ask doubt..." class="flex-1 bg-gray-100 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none">
+                                <button type="submit" class="bg-indigo-600 text-white px-4 rounded-xl hover:bg-indigo-700"><i data-lucide="arrow-right"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+
+        const renderNotesPage = () => `
+             <div class="min-h-screen bg-gray-50 font-sans">
+                <nav class="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+                    <div class="flex items-center gap-3"><button onclick="window.navigate('dashboard')" class="p-2 hover:bg-gray-100 rounded-lg text-gray-600"><i data-lucide="chevron-left"></i></button><h1 class="text-xl font-bold text-gray-900">Saved Notes</h1></div>
+                </nav>
+                <div class="max-w-5xl mx-auto p-8 grid gap-6">
+                    ${MOCK_NOTES.map(n => `<div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm"><h3 class="font-bold text-lg text-gray-900 mb-2">${n.title}</h3><p class="text-gray-700 bg-yellow-50 p-4 rounded-lg border border-yellow-100 font-serif">${n.content}</p></div>`).join('')}
+                </div>
+             </div>`;
+
+        const renderHowItWorksPage = () => `
+            <div class="min-h-screen bg-white font-sans">
+                 <nav class="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+                    <div class="flex items-center gap-3"><button onclick="window.navigate('landing')" class="p-2 hover:bg-gray-100 rounded-lg text-gray-600"><i data-lucide="chevron-left"></i></button><h1 class="text-xl font-bold text-gray-900">How It Works</h1></div>
+                </nav>
+                <div class="max-w-4xl mx-auto p-12 text-center">
+                    <h2 class="text-4xl font-extrabold text-gray-900 mb-6">Master UPSC in 4 Steps</h2>
+                    <div class="space-y-12 text-left">
+                        <div class="flex gap-4"><div class="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xl flex-shrink-0">1</div><div><h3 class="text-xl font-bold">Diagnostic Test</h3><p>Take a test so AI can learn your patterns.</p></div></div>
+                        <div class="flex gap-4"><div class="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xl flex-shrink-0">2</div><div><h3 class="text-xl font-bold">AI Analysis</h3><p>We find conceptual gaps down to micro-topics.</p></div></div>
+                         <div class="flex gap-4"><div class="w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xl flex-shrink-0">3</div><div><h3 class="text-xl font-bold">Daily Plan</h3><p>Get a custom schedule every morning.</p></div></div>
+                    </div>
+                     <button onclick="window.navigate('dashboard')" class="mt-12 px-8 py-3 bg-indigo-600 text-white rounded-lg font-bold text-lg">Start Now</button>
+                </div>
+            </div>`;
+
+        // --- 7. GLOBAL ACTIONS ---
+        window.navigate = (viewName) => {
+            state.view = viewName;
+            state.mainsAnalysis = null; // Reset mains view state
+            render();
+        };
+
+        window.toggleAdminMode = () => {
+            state.isAdminMode = !state.isAdminMode;
+            render();
+        };
+
+        window.toggleZenMode = () => {
+            state.isZenMode = !state.isZenMode;
+            render();
+        };
+
+        window.simulateMainsAnalysis = async () => {
+            const overlay = document.getElementById('scanner-overlay');
+            const text = document.getElementById('scan-text');
+            
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            
+            const steps = ["Scanning Answer Sheet...", "Recognizing Handwriting...", "Evaluating Structure...", "Comparing with Model Answer..."];
+            
+            for (const step of steps) {
+                text.innerText = step;
+                await new Promise(r => setTimeout(r, 1200));
+            }
+            
+            overlay.classList.add('hidden');
+            state.mainsAnalysis = true;
+            render();
+        };
+
+        window.handleLogout = async () => {
+            await signOut(auth);
+            state.user = null;
+            state.userData = null;
+            window.navigate('landing');
+            window.showToast("Logged out successfully");
+        };
+
+        window.startTest = (name, duration) => {
+            if (!state.userData) {
+                if(!state.user) { window.showToast("Please login first", "error"); return; }
+                return; 
+            }
+            if (state.userData.freeTestsRemaining <= 0 && state.userData.role !== 'admin') {
+                window.showToast("No free tests left! Upgrade to continue.", "error");
+                return;
+            }
+
+            state.activeTest = {
+                name,
+                duration,
+                questions: [...state.dbQuestions], 
+                answers: {},
+                currentQ: 0,
+                timeLeft: duration * 60
+            };
+
+            if (state.userData.role !== 'admin') {
+                const userRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'main');
+                updateDoc(userRef, { freeTestsRemaining: increment(-1) });
+                state.userData.freeTestsRemaining--; 
+            }
+
+            window.navigate('test');
+            if (window.testTimer) clearInterval(window.testTimer);
+            window.testTimer = setInterval(() => {
+                if (state.activeTest && state.activeTest.timeLeft > 0) {
+                    state.activeTest.timeLeft--;
+                    // Direct DOM manipulation for timer to avoid full re-render flickering
+                    const timerEl = document.querySelector('.font-mono');
+                    if(timerEl) {
+                        const m = Math.floor(state.activeTest.timeLeft / 60);
+                        const s = (state.activeTest.timeLeft % 60).toString().padStart(2, '0');
+                        timerEl.innerHTML = `<i data-lucide="clock" class="text-red-400 inline mr-1" size="18"></i> ${m}:${s}`;
+                        refreshIcons();
+                    }
+                } else if (state.activeTest && state.activeTest.timeLeft === 0) {
+                    window.submitTest();
+                }
+            }, 1000);
+        };
+
+        window.handleAnswer = (idx) => {
+            if (!state.activeTest) return;
+            state.activeTest.answers[state.activeTest.currentQ] = idx;
+            render(); 
+        };
+
+        window.navigateTest = (dir) => {
+            if (!state.activeTest) return;
+            state.activeTest.currentQ += dir;
+            render();
+        };
+
+        window.jumpToQuestion = (idx) => {
+             if (!state.activeTest) return;
+             state.activeTest.currentQ = idx;
+             render();
+        };
+
+        window.submitTest = async () => {
+            if (window.testTimer) clearInterval(window.testTimer);
+            state.isZenMode = false; // Force exit zen mode on submit
+            window.navigate('processing');
+            await new Promise(r => setTimeout(r, 2000));
+
+            const answers = state.activeTest.answers;
+            let correct = 0, incorrect = 0;
+            state.activeTest.questions.forEach((q, i) => {
+                const a = answers[i];
+                if (a === q.correct) correct++;
+                else if (a !== undefined && a !== null) incorrect++;
+            });
+            
+            const score = Math.max(0, (correct * 2) - (incorrect * 0.66)).toFixed(2);
+            const percentage = (score / (state.activeTest.questions.length * 2)) * 100;
+
+            let advice = "Needs Improvement.";
+            if (percentage > 90) advice = "Exceptional! Ready for Prelims.";
+            else if (percentage > 50) advice = "Good effort. Focus on weak areas.";
+
+            const plan = [
+                { day: "Tomorrow", type: "Concept", task: "Revise Fundamental Rights" },
+                { day: "Day 2", type: "Practice", task: "Attempt 20 Polity MCQs" }
+            ];
+
+            state.testResult = {
+                score,
+                maxScore: state.activeTest.questions.length * 2,
+                accuracy: ((correct / (correct + incorrect || 1)) * 100).toFixed(0),
+                aiAdvice: advice,
+                studyPlan: plan,
+                incorrectCount: incorrect
+            };
+
+            if (percentage >= 95) {
+                 const userRef = doc(db, 'artifacts', appId, 'users', state.user.uid, 'profile', 'main');
+                 updateDoc(userRef, { freeTestsRemaining: increment(3) });
+                 window.showToast("🎉 95% Score! 3 FREE Tests Unlocked!", "success");
+            }
+
+            try {
+                 await addDoc(collection(db, 'artifacts', appId, 'users', state.user.uid, 'attempts'), {
+                     score, date: serverTimestamp()
+                 });
+                 state.userData.testsTaken = (state.userData.testsTaken || 0) + 1;
+            } catch(e) { console.error(e); }
+
+            state.activeTest = null;
+            window.navigate('result');
+        };
+
+        window.handleChatSubmit = (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const text = input.value;
+            if(!text) return;
+            
+            state.chatHistory.push({ sender: 'user', text });
+            input.value = '';
+            render();
+
+            setTimeout(() => {
+                state.chatHistory.push({ sender: 'ai', text: "That's an interesting point. Let's break down the concept of 'Judicial Review' further..." });
+                render();
+                const box = document.getElementById('chat-box');
+                if(box) box.scrollTop = box.scrollHeight;
+            }, 1000);
+        };
+
+        window.handleAddQuestion = () => {
+             const text = document.getElementById('admin-q-text').value;
+             if(!text) return alert("Text required");
+             state.dbQuestions.push({
+                 id: Date.now(),
+                 text,
+                 options: ["Opt 1", "Opt 2", "Opt 3", "Opt 4"],
+                 correct: 0,
+                 subject: document.getElementById('admin-q-sub').value,
+                 difficulty: document.getElementById('admin-q-diff').value
+             });
+             window.showToast("Question Added");
+             render();
+        };
+
+        const attachEventHandlers = () => {
+            refreshIcons();
+        };
+
+        // --- 8. INITIALIZATION ---
+        const init = async () => {
+            render();
+
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                 await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                 await signInAnonymously(auth);
+            }
+            
+            onAuthStateChanged(auth, (u) => {
+                state.user = u;
+                if (u) {
+                    const userRef = doc(db, 'artifacts', appId, 'users', u.uid, 'profile', 'main');
+                    onSnapshot(userRef, (snap) => {
+                        if (snap.exists()) {
+                            state.userData = snap.data();
+                        } else {
+                            const profile = { name: "Eklavya", freeTestsRemaining: 3, testsTaken: 0, role: 'student' };
+                            setDoc(userRef, profile);
+                            state.userData = profile;
+                        }
+                        render();
+                    });
+                } else {
+                    render();
+                }
+            });
+        };
+
+        init();
+
+    </script>
+</body>
 </html>
