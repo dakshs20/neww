@@ -1003,4 +1003,12 @@ function subscribeNL(){const e=document.getElementById('nlEmail').value;if(e){sh
 // ===== UTILS =====
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 window.addEventListener('scroll',()=>{document.getElementById('nav').classList.toggle('scrolled',window.scrollY>50)});
-function initRv(){const obs=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting)en.target.classList.add('vi
+function initRv(){const obs=new IntersectionObserver(e=>{e.forEach(en=>{if(en.isIntersecting)en.target.classList.add('vis')})},{threshold:.1,rootMargin:'0px 0px -50px 0px'});document.querySelectorAll('.rv').forEach(el=>{el.classList.remove('vis');obs.observe(el)})}
+
+// ===== INIT =====
+function initSite(){renderShop();initRv();showNL();document.getElementById('loader').classList.add('h')}
+if(document.readyState==='complete'){initSite()}else{window.addEventListener('load',initSite)}
+setTimeout(()=>{document.getElementById('loader').classList.add('h')},2500);
+</script>
+</body>
+</html>
